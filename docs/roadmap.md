@@ -1,67 +1,117 @@
-# Färdplan
+# Roadmap
 
-Varje fas slutar i något spelbart och testat. Hela analysen finns i den ursprungliga planen. Arkitekturbesluten finns i [architecture.md](architecture.md).
+Every phase ends in something playable and tested. Architectural decisions are in [architecture.md](architecture.md) and [adr/](adr/).
 
-## ✅ Fas 0 – Grunden (klar 2026-10-16)
+## ✅ Phase 0 – Foundation (done 2026-10-16)
 
-- [x] .NET 10 SDK, `.gitignore`, `.gitattributes` (LFS) och `CLAUDE.md`
-- [x] Solution: Shared, ClientCore, Server, Content, Bots, Tests och ContentTool. All bygg-output hamnar i `/artifacts`
-- [x] Unity 6-projekt (URP) med Shared och ClientCore som lokala paket, plus asmdef-spärr mot motorkod
-- [x] `deploy/docker-compose.yml` (Postgres + Seq) för Fas 2
-- [x] Dokumentation: arkitektur, ADR 0001–0007 och GDD-utkast
+- [x] .NET 10 SDK, `.gitignore`, `.gitattributes` (LFS), `CLAUDE.md`
+- [x] Solution: Shared, ClientCore, Server, Content, Bots, Tests and ContentTool. All build output goes to `/artifacts`
+- [x] Unity 6 project (URP) with Shared and ClientCore as local packages, plus an asmdef guard against engine code
+- [x] `deploy/docker-compose.yml` (Postgres + Seq) for Phase 2
+- [x] Docs: architecture, ADR 0001–0007, game design draft
 
-## ✅ Fas 1 – Gående skelett (klar 2026-10-16)
+## ✅ Phase 1 – Walking skeleton (done 2026-10-16)
 
 - [x] Server
-  - [x] 20 Hz-loop och LiteNetLib med handskakning och protokollversion
-  - [x] Dev-inloggning
-  - [x] (mapId, instanceId), AoI-rutnät och spawn/despawn
-  - [x] EntityMoves uppdelade per MTU
-- [x] Rörelsevalidering: klocka, hastighet, kartgräns, höjdkarta och NaN. Korrigering med kvittering
-- [x] Rate limits, räkning av överträdelser och utkastning med orsak
-- [x] Klient
-  - [x] Styrning och kamera i WoW-stil, hopp utan luftstyrning, autorun
-  - [x] Interpolering och dead reckoning för andra spelare
-  - [x] Klocksynk och debugpanel (F3)
-- [x] Testvärld som genereras av kod, och Export Map (höjdkarta) till `content/maps/0001`
-- [x] Botar: 200 st, samma klientkod som spelet
-- [x] 46 tester, bland annat riktig UDP-integration
-- [x] **Uppmätt:** 200 botar och 1 klient, 0 korrigeringar, tick i snitt 0,4–0,9 ms
+  - [x] 20 Hz loop and LiteNetLib with a handshake and protocol version
+  - [x] Dev login
+  - [x] (mapId, instanceId), AoI grid, spawn/despawn
+  - [x] EntityMoves chunked per MTU
+- [x] Movement validation: clock, speed, map bounds, height map and NaN. Corrections with acknowledgement
+- [x] Rate limits, violation counting, and kicks with a reason
+- [x] Client
+  - [x] WoW-style controls and camera, jumping without air control, autorun
+  - [x] Interpolation and dead reckoning of other players
+  - [x] Clock sync and a debug overlay (F3)
+- [x] Code-generated test world and Export Map (height map) to `content/maps/0001`
+- [x] Bots: 200 of them, using the same client code as the game
+- [x] 46 tests, including real UDP integration
+- [x] **Measured:** 200 bots + 1 client, 0 corrections, average tick 0.4–0.9 ms
 
-**Väntar på dig:** speltesta styrning och känsla med två klienter, se README. Säg vad som känns fel.
+**Open:** playtest controls and feel with two clients (see README).
 
-## Fas 2 – Konton, karaktärer, persistens
+## 🔜 Phase 2 – Accounts, characters, persistence
 
-- [ ] PostgreSQL och DbUp-migreringar
-- [ ] Konton: registrering och inloggning över HTTPS med Argon2id, sessionstoken
-- [ ] Karaktärer: skapa, välja och ta bort (namn, ras och klass som platshållare). Spelar-id kommer från databasen
-- [ ] Sparning av position och tillstånd med write-behind
-- [ ] Inloggnings- och karaktärsvalsskärmar i UI Toolkit
-- [ ] Lokalisering: textnycklar för sv och en (installera Localization-paketet)
+- [ ] PostgreSQL and DbUp migrations
+- [ ] Accounts: registration and login over HTTPS with Argon2id, session token
+- [ ] Characters: create, select and delete (name, placeholder race and class). Player ids come from the database
+- [ ] Saving position and state with write-behind
+- [ ] Login and character-select screens in UI Toolkit
+- [ ] Localization: text keys, English first (install the Localization package)
 
-## Fas 3 – Kärnstrid
+## Phase 3 – Core combat
 
-- [ ] Map-export del 2: statisk geometri → navmesh och LoS (DotRecast)
-- [ ] Välja mål och autoattack. Spell- och aurasystemet enligt ADR 0005. Stats och modifierare
-- [ ] NPC:er: spawns som data, AI (aggro, jakt, leash, threat), död och respawn, XP och nivåer
-- [ ] HUD: unit frames, action bar, castbar, stridstext, namnplattor
-- [ ] GM-kommandon (`.tele`, `.spawn`, `.level` …)
+- [ ] Map export part 2: static geometry → navmesh and line of sight (DotRecast)
+- [ ] Targeting and auto-attack. The spell and aura system per ADR 0005. Stats and modifiers
+- [ ] NPCs: spawns as data, AI (aggro, chase, leash, threat), death and respawn, XP and levels
+- [ ] HUD: unit frames, action bar, cast bar, floating combat text, nameplates
+- [ ] GM commands (`.tele`, `.spawn`, `.level` …)
 
-## Fas 4 – Items, loot, quests
-## Fas 5 – Vertikal skiva: startzonen (grinden för "är det kul?")
-## Fas 6 – Socialt · Fas 7 – Dungeons · Fas 8 – Större värld och drift · Fas 9 – Djup · Fas 10 – Lansering
+## Phase 4 – Items, loot, economy, quests
 
-Se den ursprungliga planen för innehållet i varje fas.
+- [ ] Bags and inventory
+- [ ] Equipment slots that affect stats, with a `displayId` for visuals
+- [ ] Loot tables and loot window, vendors and gold
+- [ ] A data-driven quest system: givers, prerequisites, objectives (kill, collect, talk, explore), rewards and chains
+- [ ] Quest log, quest tracker and NPC dialogue
 
-## Teknisk skuld och uppföljning
+## Phase 5 – Vertical slice: the first real zone (the "is it fun?" gate)
 
-- **Bandbredd:** `EntityMoves` skickar okomprimerade flyttal. Det blir cirka 15 MB/s ut när 200 spelare ser varandra.
-  - Kvantisera position, yaw och hastighet.
-  - Glesare uppdateringar på avstånd.
-  - Gör det senast före Fas 5.
-- **Tick-spikar:** p99 och max nådde ibland 8–17 ms under botlast. Mät GC och schemaläggning, och flytta botarna till en annan maskin vid mätning.
-- **Tidsstämplar för rörelse:** servern stämplar med mottagningstid, vilket ger lite jitter över internet. Överväg att mappa klientens tid (redan validerad).
-- **Servern känner bara höjder, inte väggar och träd.** LoS och navmesh i Fas 3.
-- **IMGUI används för debug-UI och namnskyltar.** Byt till UI Toolkit i Fas 2–3.
-- **Addressables och Localization** installeras när de första gången används.
-- **CI** (GitHub Actions: build, test, content validate) när repot har en remote.
+- [ ] A coherent set of Synty-style asset packs, including a modular character system so gear is visible on the character
+- [ ] Animations retargeted to a shared humanoid rig
+- [ ] 1–2 races and 3 classes (tank, DPS, healer)
+- [ ] A level 1–10 zone with a hub village, 20–30 quests, 10–15 creature types and a world boss
+- [ ] Minimap, world map, sound, music, settings and key bindings
+- [ ] First deployment to a VPS and playtests with friends
+
+## Phase 6 – Social
+
+- [ ] Chat channels: say, yell, whisper, party, guild and general channels
+- [ ] Groups with shared XP and loot, plus party frames
+- [ ] Friends list and guilds
+- [ ] Player-to-player trade and mail, both transactional
+
+## Phase 7 – Instances and dungeons
+
+- [ ] Instance servers. They reuse `(mapId, instanceId)`, so the model already exists
+- [ ] Boss scripting with phases, timers and abilities
+- [ ] Loot rules (need/greed) and lockouts
+- [ ] The first 5-player dungeon
+
+## Phase 8 – Bigger world and operations
+
+- [ ] Several zones, seamless transitions and flight paths
+- [ ] Mounts, graveyards and hearthstone
+- [ ] **Splitting the monolith** into login and one or more world servers along the module boundaries
+- [ ] Layering when a zone fills up
+- [ ] Monitoring (Prometheus/Grafana), backups and a launcher/patcher (Addressables)
+
+## Phase 9 – Depth (ongoing)
+
+- [ ] Talents and specializations
+- [ ] Professions: gathering and crafting
+- [ ] Auction house and reputation
+- [ ] PvP: duels first, then battlegrounds
+- [ ] Achievements and raids
+
+## Phase 10 – Launch and live ops (ongoing)
+
+- [ ] Alpha and beta
+- [ ] Load tests with bots
+- [ ] Basic anti-cheat
+- [ ] Account security
+- [ ] Legal: GDPR, terms of service, asset licenses and possibly payments
+
+## Tech debt and follow-ups
+
+- **Bandwidth:** `EntityMoves` sends uncompressed floats. That adds up to about 15 MB/s out when 200 players see each other.
+  - Quantize position, yaw and velocity.
+  - Send less often at distance.
+  - Do it before Phase 5 at the latest.
+- **Tick spikes:** p99 and max sometimes reached 8–17 ms under bot load. Profile GC and scheduling, and run the bots on another machine when measuring.
+- **Movement timestamps:** the server stamps with receive time, which adds some jitter over the internet. Consider mapping the client's (already validated) time instead.
+- **The server only knows heights, not walls and trees.** Line of sight and navmesh come in Phase 3.
+- **IMGUI is used for the debug UI and nameplates.** Move to UI Toolkit in Phases 2–3.
+- **LiteNetLib reports 0 RTT in threaded mode.** The overlay uses our own Ping/Pong measurement instead.
+- **Addressables and Localization** get installed when first used.
+- **CI** (GitHub Actions: build, test, content validate).

@@ -1,7 +1,9 @@
 # Madlands – notes for AI sessions
 
 WoW-like MMORPG. Unity 6 client (URP) + authoritative .NET 10 server + shared C# code.
-The user writes Swedish; answer in Swedish. Docs in `docs/` are Swedish, code/comments English.
+**Language:** the user chats in Swedish — reply in Swedish. But the **entire project is English**: code,
+comments, in-game UI text, docs, README, commit messages, GitHub description, file names, lore. Never write
+Swedish into repo files (non-ASCII *test data* like "Räksmörgås" in ProtocolTests is intentional).
 Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisions: `docs/architecture.md`, `docs/adr/`.
 
 ## Layout
@@ -61,6 +63,6 @@ Then read the PNG to verify. Use `-logFile` for the player log.
 - Binary assets go through Git LFS (`.gitattributes`), except `docs/images/` (plain git so README images render).
 - **The GitHub repo (Mad-Mange/Madlands) is PUBLIC.** Never commit paid/licensed asset packs (Synty etc.):
   they go in `client/Assets/ThirdParty/Paid/`, which is gitignored. Only free/CC0 or own assets in git.
-- README progress images: `docs/images/fasN-*.jpg`, captured with the client's `-screenshot` flags
+- README progress images: `docs/images/phaseN-*.jpg`, captured with the client's `-screenshot` flags
   (`-campitch/-camdistance/-camyaw/-hidedebug` for framing) and `BuildTools.CaptureWorldScreenshot`.
   Update the README progress table + development log when a phase completes.

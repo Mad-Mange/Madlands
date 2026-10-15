@@ -36,7 +36,7 @@ public class ProtocolTests
         w.WriteFloat(-0.125f);
         w.WriteVec3(new Vec3(1, 2, 3));
         w.WriteGuid(EntityGuid.Create(EntityType.Creature, 99));
-        w.WriteString("Räksmörgås ⚔");
+        w.WriteString("Räksmörgås ⚔"); // deliberate non-ASCII test data (multi-byte UTF-8)
         w.WriteString(null!);
 
         var r = new PacketReader(w.AsSpan());

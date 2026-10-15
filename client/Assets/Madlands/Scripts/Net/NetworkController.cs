@@ -94,11 +94,11 @@ namespace Madlands.Client
 
             const float w = 320f, h = 190f;
             GUILayout.BeginArea(new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h), GUI.skin.box);
-            GUILayout.Label("<b>Madlands</b> – dev login (Fas 1)", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 16 });
+            GUILayout.Label("<b>Madlands</b> – dev login (Phase 1)", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 16 });
             bool idle = Client.State == ClientState.Disconnected;
             GUI.enabled = idle;
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Namn", GUILayout.Width(60));
+            GUILayout.Label("Name", GUILayout.Width(60));
             _settings.Name = GUILayout.TextField(_settings.Name ?? "", 24);
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
@@ -106,7 +106,7 @@ namespace Madlands.Client
             _settings.Host = GUILayout.TextField(_settings.Host ?? "", 64);
             _portText = GUILayout.TextField(_portText, 5, GUILayout.Width(60));
             GUILayout.EndHorizontal();
-            if (GUILayout.Button(idle ? "Anslut" : "Ansluter...", GUILayout.Height(32)) && idle)
+            if (GUILayout.Button(idle ? "Connect" : "Connecting...", GUILayout.Height(32)) && idle)
             {
                 if (int.TryParse(_portText, out var port)) _settings.Port = port;
                 Connect();

@@ -1,55 +1,55 @@
-# Madlands – speldesign (UTKAST)
+# Madlands – game design (DRAFT)
 
-> **Förslag att godkänna, ändra eller slänga.** Inget här är låst ännu. Det enda som låser är tekniken i [architecture.md](architecture.md).
-> Inga namn, ingen lore och inga assets från WoW eller Blizzard: inspiration är okej, kopior inte.
+> **A proposal to approve, change or throw away.** Nothing here is locked yet. Only the technology in [architecture.md](architecture.md) is.
+> No names, lore or assets from WoW or Blizzard: inspiration is fine, copies are not.
 
-## Premiss
+## Premise
 
-För tre hundra år sedan sprack månen **Ysolde**. Skärvor av den regnade över kontinenten **Calderra**. Där skärvorna landade vrids landet: djur blir monster, skogar växer i fel riktning och människor hör viskningar. Folket kallar de drabbade områdena **Madlands**, Vansinneslanden.
+Three hundred years ago the moon **Ysolde** cracked. Shards of it rained down across the continent of **Calderra**. Wherever the shards landed, the land twisted: animals turned into monsters, forests grew in the wrong direction, and people began to hear whispers. The affected regions are known as **the Madlands**.
 
-Skärvorna är också källan till all magi. Därför finns en konflikt som driver världen: några vill **skörda** skärvornas kraft, och andra vill **försegla** dem innan vansinnet sprider sig.
+The shards are also the source of all magic. That creates the conflict driving the world: some want to **harvest** the shards' power, and others want to **seal** them before the madness spreads.
 
-**Ton:** stiliserad och färgstark med glimten i ögat, men med mörker under ytan. Low-poly i Synty-stil.
+**Tone:** stylized and colorful with a wink, but with darkness underneath. Synty-style low-poly.
 
-## Raser (förslag, 2 till den vertikala skivan)
+## Races (proposal, 2 for the vertical slice)
 
-| Ras | Kort | Startområde |
+| Race | In short | Starting area |
 |---|---|---|
-| **Människor från Brightvale** | Envisa nybyggare som återuppbyggde efter skärvfallet. Allsidiga. | Hollowmere |
-| **Korrin** | Stenhyade gruvfolk som lever nära skärvorna och bär kristallväxter i huden. Sega och misstänksamma. | (Fas 8) |
+| **Brightvale Humans** | Stubborn settlers who rebuilt after the shardfall. Versatile. | Hollowmere |
+| **Korrin** | Stone-skinned mining folk who live close to the shards and carry crystal growths in their skin. Tough and suspicious. | (Phase 8) |
 
-Senare: Ylvar (skogsfolk som förvridits av skärvmagi) och Vildfolk (djurfolk).
+Later: Ylvar (forest folk twisted by shard magic) and the Wildfolk (beastfolk).
 
-## Klasser (3 till den vertikala skivan, en per roll)
+## Classes (3 for the vertical slice, one per role)
 
-| Klass | Roll | Resurs | Idé |
+| Class | Role | Resource | Idea |
 |---|---|---|---|
-| **Krigare** | Tank / närstrid | Rage | Sköld, provokation, slag som bygger upp rage |
-| **Skärvmagiker** | Avståndsskada | Mana | Kanaliserar skärvmagi. Eld, frost, "överladdning" med risk |
-| **Väktare** | Healer | Mana | Förseglare som läker och skyddar. HoT:ar, sköldar |
+| **Warrior** | Tank / melee | Rage | Shield, taunts, blows that build rage |
+| **Shardmage** | Ranged damage | Mana | Channels shard magic. Fire, frost, and a risky "overcharge" |
+| **Warden** | Healer | Mana | A sealer who heals and protects. HoTs and shields |
 
-Senare: Jägare, Skugga (rogue) och Stormtalare (shaman).
+Later: Hunter, Shade (rogue) and Stormcaller (shaman).
 
-## Startzon (Fas 5): Hollowmere, nivå 1–10
+## Starting zone (Phase 5): Hollowmere, levels 1–10
 
-En dimmig dalsänka med en sjö där en skärva föll för en generation sedan. Byn **Hollowmere** är navet, med questgivare, försäljare, värdshus och en flygplats senare.
+A misty valley with a lake where a shard fell a generation ago. The village of **Hollowmere** is the hub, with quest givers, vendors, an inn and later a flight point.
 
-**Hot:**
+**Threats:**
 
-- Förvridna grodor och vargar
-- Banditer som smugglar skärvor
-- En sekt som vill väcka det som bor i sjön
+- Twisted frogs and wolves
+- Bandits smuggling shards
+- A cult that wants to wake what lives in the lake
 
-**Slutboss i världen:** *Den drunknade väktaren*. Sjöns gamla skyddsande, som skärvan har vänt.
+**World boss:** *The Drowned Warden*. The lake's ancient guardian spirit, turned by the shard.
 
-**Questbåge (20–30 quests):**
+**Quest arc (20–30 quests):**
 
-1. Hjälp byn.
-2. Spåra smugglarna.
-3. Avslöja sekten.
-4. Besegra väktaren.
-5. Få veta att det finns fler skärvor, vilket leder vidare till nästa zon.
+1. Help the village.
+2. Track down the smugglers.
+3. Expose the cult.
+4. Defeat the Warden.
+5. Learn that there are more shards, which leads on to the next zone.
 
-## Kärnloopen (det Fas 3–5 ska bevisa är kul)
+## The core loop (what Phases 3–5 must prove is fun)
 
-Ta quest → res ut → slåss tab-target med rotation och cooldowns → loota och få bättre utrustning → lämna in → levla → nya förmågor → nästa område.
+Pick up a quest → head out → fight tab-target with a rotation and cooldowns → loot and get better gear → turn in → level up → new abilities → next area.
