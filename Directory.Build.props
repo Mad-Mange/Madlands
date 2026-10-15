@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    All bin/obj output goes to /artifacts. This matters: shared/* folders are also Unity
+    packages, and Unity would otherwise import generated files from obj/ and fail to compile.
+  -->
+  <PropertyGroup>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

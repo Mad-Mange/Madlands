@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/server/">
+    <Project Path="server/Madlands.Bots/Madlands.Bots.csproj" />
+    <Project Path="server/Madlands.Content/Madlands.Content.csproj" />
+    <Project Path="server/Madlands.Server.Tests/Madlands.Server.Tests.csproj" />
+    <Project Path="server/Madlands.Server/Madlands.Server.csproj" />
+  </Folder>
+  <Folder Name="/shared/">
+    <Project Path="shared/Madlands.ClientCore/Madlands.ClientCore.csproj" />
+    <Project Path="shared/Madlands.Shared/Madlands.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Madlands.ContentTool/Madlands.ContentTool.csproj" />
+  </Folder>
+</Solution>

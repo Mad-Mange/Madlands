@@ -1,0 +1,18 @@
+{
+    "name": "Madlands.ClientCore",
+    "rootNamespace": "Madlands.ClientCore",
+    "references": [
+        "Madlands.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "LiteNetLib.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

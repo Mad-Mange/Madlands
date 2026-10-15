@@ -1,0 +1,31 @@
+# Local development services. Start with:  docker compose -f deploy/docker-compose.yml up -d
+# Used from Phase 2 (persistence). Ports are bound to localhost only.
+name: madlands
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: madlands
+      POSTGRES_PASSWORD: madlands_dev
+      POSTGRES_DB: madlands
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  seq:
+    image: datalust/seq:latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "127.0.0.1:5341:80"
+    volumes:
+      - seqdata:/data
+
+volumes:
+  pgdata:
+  seqdata:

@@ -1,0 +1,8 @@
+{
+  "$schema": "../../schemas/map.schema.json",
+  "_generated": "Written by Unity (Madlands > Export Map). Edit the scene, not this file.",
+  "id": 1,
+  "name": "Testlands",
+  "heightmap": "height.bin",
+  "spawn": { "x": 0.00, "z": 0.00, "yawDegrees": 0.0 }
+}

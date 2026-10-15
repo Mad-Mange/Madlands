@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Engine-independent client logic: networking, clock sync, client world state, interpolation.
+    Used by BOTH the Unity client (as a local Unity package) and the headless bots, so bots
+    exercise exactly the same code path as real players. Same Unity constraints as Madlands.Shared.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Madlands.ClientCore</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Keep in sync with server/Madlands.Server/Madlands.Server.csproj -->
+    <PackageReference Include="LiteNetLib" Version="2.1.4" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Madlands.Shared\Madlands.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- Keep the LiteNetLib.dll that Unity loads (Plugins/) in sync with the NuGet version above. -->
+  <Target Name="CopyLiteNetLibForUnity" AfterTargets="Build">
+    <Copy SourceFiles="$(PkgLiteNetLib)\lib\netstandard2.1\LiteNetLib.dll"
+          DestinationFolder="$(MSBuildProjectDirectory)\Plugins"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

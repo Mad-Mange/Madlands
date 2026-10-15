@@ -1,0 +1,7 @@
+{
+  "name": "com.madlands.shared",
+  "version": "0.1.0",
+  "displayName": "Madlands Shared",
+  "description": "Engine-independent code shared by the Madlands server and client: protocol, movement rules, ids, terrain data. The same sources are compiled by dotnet (Madlands.Shared.csproj).",
+  "unity": "6000.0"
+}

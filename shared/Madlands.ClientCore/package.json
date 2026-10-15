@@ -1,0 +1,10 @@
+{
+  "name": "com.madlands.clientcore",
+  "version": "0.1.0",
+  "displayName": "Madlands Client Core",
+  "description": "Engine-independent client logic (networking, clock sync, interpolation) used by the Unity client and the headless bots. Plugins/LiteNetLib.dll is copied from NuGet by Madlands.ClientCore.csproj.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.madlands.shared": "0.1.0"
+  }
+}

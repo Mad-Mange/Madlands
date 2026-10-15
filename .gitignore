@@ -1,0 +1,54 @@
+# ---- .NET (all build output goes to /artifacts via Directory.Build.props) ----
+/artifacts/
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+
+# ---- Unity (client/) ----
+/client/[Ll]ibrary/
+/client/[Tt]emp/
+/client/[Oo]bj/
+/client/[Bb]uild/
+/client/[Bb]uilds/
+/client/[Ll]ogs/
+/client/[Uu]ser[Ss]ettings/
+/client/[Mm]emoryCaptures/
+/client/[Rr]ecordings/
+/client/*.csproj
+/client/*.sln
+/client/*.slnx
+/client/*.pidb
+/client/*.booproj
+/client/*.svd
+/client/*.pdb
+/client/*.mdb
+/client/*.opendb
+/client/*.VC.db
+/client/.vsconfig
+/client/Assets/AddressableAssetsData/*/*.bin*
+/client/Assets/StreamingAssets/aa.meta
+/client/Assets/StreamingAssets/aa/*
+crashlytics-build.properties
+sysinfo.txt
+
+# ---- Paid / licensed third-party assets (Synty etc.) ----
+# The repo is PUBLIC and these licenses forbid redistribution: keep them only here (local) or in a private repo.
+/client/Assets/ThirdParty/Paid/
+/client/Assets/ThirdParty/Paid.meta
+
+# ---- Builds & generated content ----
+/builds/
+/content/build/
+
+# ---- Blender autosaves ----
+*.blend1
+*.blend2
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
