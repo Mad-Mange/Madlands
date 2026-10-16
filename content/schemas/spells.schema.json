@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/spells.schema.json",
+  "title": "Spells and abilities (content/spells.json)",
+  "description": "ADR 0005: a spell is cast data plus a list of effects; an aura is a duration plus a list of effects.",
+  "type": "object",
+  "required": [
+    "spells"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "spells": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Stable id (action bars, auras, the client). Never reuse."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Client icon id."
+          },
+          "school": {
+            "enum": [
+              "physical",
+              "arcane",
+              "fire",
+              "frost",
+              "nature",
+              "holy",
+              "shadow"
+            ]
+          },
+          "target": {
+            "enum": [
+              "self",
+              "enemy",
+              "friend",
+              "none"
+            ],
+            "default": "enemy"
+          },
+          "rangeMin": {
+            "type": "number",
+            "minimum": 0
+          },
+          "rangeMax": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 5
+          },
+          "castTimeMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cooldownMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "gcdMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2000,
+            "default": 1500
+          },
+          "powerType": {
+            "enum": [
+              "none",
+              "mana",
+              "rage",
+              "energy"
+            ]
+          },
+          "cost": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "projectileSpeed": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Meters per second; 0 = instant."
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "requiresFacing",
+                "ignoreLineOfSight",
+                "autoAttack",
+                "harmfulAura",
+                "hidden"
+              ]
+            }
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "enum": [
+                    "schoolDamage",
+                    "weaponDamage",
+                    "heal",
+                    "applyAura",
+                    "energize"
+                  ]
+                },
+                "targets": {
+                  "enum": [
+                    "target",
+                    "caster",
+                    "enemiesNearCaster",
+                    "enemiesNearTarget",
+                    "alliesNearCaster"
+                  ],
+                  "default": "target"
+                },
+                "radius": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 50
+                },
+                "min": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "max": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "perLevel": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Added per caster level above 1."
+                },
+                "coefficient": {
+                  "type": "number",
+                  "description": "Share of attack power (physical) or spell power added."
+                },
+                "percent": {
+                  "type": "number",
+                  "minimum": 0,
+                  "default": 100,
+                  "description": "weaponDamage: percent of a normal swing."
+                },
+                "bonus": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "bonusPerLevel": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "power": {
+                  "enum": [
+                    "none",
+                    "mana",
+                    "rage",
+                    "energy"
+                  ]
+                }
+              }
+            }
+          },
+          "aura": {
+            "type": "object",
+            "required": [
+              "durationMs",
+              "effects"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "durationMs": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "tickMs": {
+                "type": "integer",
+                "minimum": 250,
+                "default": 3000
+              },
+              "maxStacks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 255,
+                "default": 1
+              },
+              "effects": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "type"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "periodicDamage",
+                        "periodicHeal",
+                        "modStat",
+                        "modSpeed",
+                        "modDamageDone",
+                        "stun",
+                        "root",
+                        "absorb"
+                      ]
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "perLevel": {
+                      "type": "number"
+                    },
+                    "stat": {
+                      "enum": [
+                        "strength",
+                        "agility",
+                        "stamina",
+                        "intellect",
+                        "spirit",
+                        "armor",
+                        "attackPower",
+                        "spellPower"
+                      ]
+                    },
+                    "percent": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

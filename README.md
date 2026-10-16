@@ -5,21 +5,21 @@
 **A WoW-inspired MMORPG, built from scratch, one playable step at a time.**
 
 ![Status](https://img.shields.io/badge/status-work%20in%20progress-orange)
-![Phase](https://img.shields.io/badge/phase-2%20of%2010%20done-blue)
+![Phase](https://img.shields.io/badge/phase-3%20of%2010%20done-blue)
 [![CI](https://github.com/Mad-Mange/Madlands/actions/workflows/ci.yml/badge.svg)](https://github.com/Mad-Mange/Madlands/actions/workflows/ci.yml)
 ![Unity](https://img.shields.io/badge/Unity-6-000000?logo=unity)
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)
-![Tests](https://img.shields.io/badge/tests-72%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-98%20passing-brightgreen)
 
-<img src="docs/images/phase1-overview.jpg" alt="The player (blue) among 200 bots (orange) in the test world" width="100%">
+<img src="docs/images/phase3-combat.jpg" alt="A Shardmage casting Shard Bolt at a wolf pack, with unit frames, cast bar, action bar and floating combat text" width="100%">
 
-<sub><i>Phase 1: a real player (blue) and 200 bots (orange) sharing one world, kept in sync by the server.</i></sub>
+<sub><i>Phase 3: a Shardmage fights the Dusk Wolf pack. The server decides every hit; the client draws the cast bar, debuffs, nameplates and damage numbers.</i></sub>
 
 </div>
 
 > [!NOTE]
 > **This is an early-stage, work-in-progress project.** Madlands is a solo project with a big goal: a homemade MMORPG in the spirit of World of Warcraft, with tab-target combat, quests, dungeons and a shared world.
-> What you see today is **the engine room**. All art is placeholder (capsules and lollipop trees). Real art arrives in Phase 5.
+> What you see today is **the engine room**. All art is placeholder (capsules, boxes and lollipop trees). Real art arrives in Phase 5.
 > Development is AI-assisted (Claude Code).
 
 ## What is Madlands?
@@ -42,25 +42,39 @@ Three hundred years ago the moon **Ysolde** cracked and rained shards across the
 | 0 | Foundation: repo, tooling, architecture, decision log | ✅ Done |
 | 1 | **Walking skeleton:** many players in one world, synced by the server | ✅ Done |
 | 2 | **Accounts, login, characters, database** | ✅ Done |
-| 3 | Core combat: targeting, spells, auras, NPC AI, XP | 🔜 Next |
-| 4 | Items, loot, economy, quests | ⬜ |
+| 3 | **Core combat:** targeting, spells, auras, creature AI, XP and levels | ✅ Done |
+| 4 | Items, loot, economy, quests | 🔜 Next |
 | 5 | Vertical slice: the first real zone, with real art. *"Is it fun?"* | ⬜ |
 | 6–7 | Social (chat, groups, guilds) and dungeons | ⬜ |
 | 8–10 | Bigger world, talents, professions, PvP, launch | ⬜ |
 
 Details: [docs/roadmap.md](docs/roadmap.md)
 
-### Latest milestone: Phase 2 ✅
+### Latest milestone: Phase 3 ✅
 
-Players now have **accounts and persistent characters**. You log in, pick or create a character, enter the world, and come back to the same spot after logging out or a server restart.
+You can now **fight**. Pick a Warrior, a Shardmage or a Warden, target a creature and use your abilities. Creatures notice you, call their friends, chase you around obstacles and give up if you drag them too far from home. Kills give experience, levels teach new spells, and dying sends you back to the graveyard.
+
+| What | How |
+|---|---|
+| Classes | **Warrior** (rage, melee), **Shardmage** (mana, ranged, slows and roots), **Warden** (mana, heals and shields); 5–6 abilities each, learned from level 1 to 8 |
+| Spells & auras | 19 spells as data: cast times, cooldowns, projectiles, area effects, damage and heals over time, slows, roots, stuns, absorbs, buffs ([ADR 0005](docs/adr/0005-spell-and-aura-model.md)) |
+| Creatures | Frogs, a wolf pack, a walled bandit camp with casters, and training dummies. AI with aggro, threat, call for help, pathfinding (DotRecast navmesh) and evading |
+| Rules | Server-side hit tables (miss, dodge, parry, crit), armor, line of sight, facing, range; levels 1–10 with classic experience rules |
+| HUD | Unit frames, buffs and debuffs, cast bars, an action bar with cooldowns, nameplates, floating combat text, chat, tooltips |
+| Tools | GM commands (`.level`, `.tele`, `.spawn`, `.god`, `.info` …); bots that hunt creatures for load tests |
+| Verified | 100 fighting bots at 1–1.7 ms per tick (Debug build) with 0 corrections; 98 automated tests, including whole fights on a real server |
+
+<details>
+<summary>Phase 2: accounts and characters</summary>
 
 | What | How |
 |---|---|
 | Accounts | Register and log in through an HTTP account API; Argon2id password hashes, hashed session tokens |
 | Characters | Create, select, delete; up to 10 per account, realm-unique names; races and classes are data |
-| Persistence | PostgreSQL with migrations; positions saved write-behind (the game loop never waits for the database) |
+| Persistence | PostgreSQL with migrations; state saved write-behind (the game loop never waits for the database) |
 | Client | Login, character select and create screens in UI Toolkit; the map scene is loaded by the id the server sends |
-| Verified | 100 bots registering and playing at once; a full server restart keeps everyone's position; 72 automated tests |
+
+</details>
 
 <details>
 <summary>Phase 1 measurements</summary>
@@ -79,6 +93,14 @@ Players now have **accounts and persistent characters**. You log in, pick or cre
 
 <table>
   <tr>
+    <td width="50%"><img src="docs/images/phase3-hud.jpg" alt="Warrior fighting training dummies"></td>
+    <td width="50%"><img src="docs/images/phase3-camp.jpg" alt="The walled bandit camp"></td>
+  </tr>
+  <tr>
+    <td><sub><b>Phase 3 · The HUD.</b> A level 8 Warrior at the training dummies: Rend and Hamstring on the target, rage bar, damage numbers and the action bar with all six warrior abilities.</sub></td>
+    <td><sub><b>Phase 3 · The bandit camp.</b> Palisade, tents and crates are exported from Unity as collision geometry. The server builds its navmesh from it, so bandits path around walls, and spells need line of sight.</sub></td>
+  </tr>
+  <tr>
     <td width="50%"><img src="docs/images/phase2-login.jpg" alt="Login screen"></td>
     <td width="50%"><img src="docs/images/phase2-character-select.jpg" alt="Character select screen"></td>
   </tr>
@@ -87,20 +109,19 @@ Players now have **accounts and persistent characters**. You log in, pick or cre
     <td><sub><b>Phase 2 · Character select.</b> Characters live in PostgreSQL; race and class names come from the server's content files.</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/images/phase1-gameplay.jpg" alt="Gameplay view with debug overlay"></td>
+    <td width="50%"><img src="docs/images/phase1-overview.jpg" alt="The player among 200 bots"></td>
     <td width="50%"><img src="docs/images/phase1-test-world.jpg" alt="The test world"></td>
   </tr>
   <tr>
-    <td><sub><b>Gameplay view.</b> WoW-style third-person camera, nameplates, and the debug overlay (F3) with ping, entity count and position.</sub></td>
+    <td><sub><b>Phase 1 · 200 bots.</b> A real player (blue) and 200 bots (orange) sharing one world, kept in sync by the server.</sub></td>
     <td><sub><b>The "Testlands" test world.</b> 512 × 512 m of hills, forest and fog, generated entirely from code.</sub></td>
   </tr>
   <tr>
     <td><img src="docs/images/phase1-map.jpg" alt="The test world from above"></td>
     <td valign="top">
-      <sub><b>Top-down map.</b> The dirt clearing in the middle is the spawn point. The rocky rim keeps players inside. The height map is exported from Unity to the server, which uses it to decide whether a movement is possible.</sub>
-      <br><br>
       <b>Dev log</b>
       <ul>
+        <li><sub><b>2026-10-16 – Phase 3 done.</b> Combat: three classes, spells and auras as data, creature AI with navmesh pathfinding, experience and levels, a full HUD. Bots fight too.</sub></li>
         <li><sub><b>2026-10-16 – Phase 2 done.</b> Accounts, persistent characters, PostgreSQL, login and character screens, CI. Characters survive logout and server restarts.</sub></li>
         <li><sub><b>2026-10-16 – Phases 0 & 1 done.</b> Server, client, bots and tests are in place. 200 players run around without a single movement correction.</sub></li>
       </ul>
@@ -113,23 +134,27 @@ Players now have **accounts and persistent characters**. You log in, pick or cre
 ```mermaid
 flowchart LR
     subgraph client["🎮 Unity 6 client"]
-        input["Controls & camera<br/>(predicts own movement)"]
-        view["Other players<br/>(interpolation)"]
+        input["Controls, camera, targeting<br/>(predicts own movement)"]
+        view["World view · HUD<br/>(interpolation, combat text)"]
     end
     subgraph shared["📦 Shared C# code"]
-        core["ClientCore<br/>networking · clock sync"]
+        core["ClientCore<br/>networking · unit state"]
         sh["Shared<br/>protocol · game rules"]
     end
     subgraph server["🖥️ .NET 10 realm server – authoritative"]
         api["Account API<br/>login · characters"]
         loop["Game loop 20 Hz"]
         maps["Map instances<br/>AoI · movement validation"]
+        combat["Combat · spells · auras<br/>creature AI"]
+        nav["Navmesh · line of sight<br/>(DotRecast)"]
         saver["Write-behind saver"]
         loop --> maps
+        maps --> combat
+        combat --> nav
         maps --> saver
     end
     bots["🤖 Bots<br/>(same client code)"]
-    content[("content/<br/>maps · races · classes")]
+    content[("content/<br/>maps · spells · creatures · classes")]
     db[("PostgreSQL<br/>accounts · characters")]
 
     client --> core
@@ -143,9 +168,9 @@ flowchart LR
 
 **Core principles**
 
-- **The server is the authority.** The client moves its own character immediately so it feels responsive. The server checks every move (speed, clock, terrain) and corrects cheating.
+- **The server is the authority.** The client moves its own character immediately so it feels responsive. The server checks every move and decides every hit, miss and heal.
 - **The engine is replaceable.** All game logic lives in the server and in shared C# code that is not allowed to reference Unity. The client is "just" a view.
-- **Content is data.** Maps, and later spells, items and quests, are text files with stable IDs, validated automatically.
+- **Content is data.** Maps, races, classes, spells, creatures and spawns are text files with stable IDs, validated automatically. The server sends the client what it needs to show them, so a new spell needs no client rebuild.
 - **Bots run the exact same client code as the game.** That makes it possible to load-test with hundreds of "players" on one machine.
 
 More in [docs/architecture.md](docs/architecture.md) and the decision log in [docs/adr/](docs/adr/).
@@ -155,11 +180,11 @@ More in [docs/architecture.md](docs/architecture.md) and the decision log in [do
 | Part | Choice |
 |---|---|
 | Client | Unity 6 (URP), Input System, UI Toolkit |
-| Server | .NET 10, LiteNetLib (UDP), ASP.NET Core minimal API (account API), Serilog |
+| Server | .NET 10, LiteNetLib (UDP), ASP.NET Core minimal API (account API), Serilog, DotRecast (navmesh) |
 | Persistence | PostgreSQL, Npgsql + Dapper, DbUp migrations, Argon2id |
 | Shared code | C# (netstandard2.1), compiled by both Unity and .NET |
 | Testing | xUnit, headless bot clients, GitHub Actions CI with PostgreSQL |
-| Coming up | DotRecast (navmesh), Addressables, Localization |
+| Coming up | Addressables, Localization |
 
 ## 🚀 Getting started
 
@@ -169,19 +194,21 @@ Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/), Unity 6000.6.5f1 and
 # 1. Start PostgreSQL (once; it keeps running in Docker)
 docker compose -f deploy/docker-compose.yml up -d
 
-# 2. Start the realm server: game on UDP 7777, account API on HTTP 7780 (local only)
-dotnet run --project server/Madlands.Server -c Release -- --bind 127.0.0.1
+# 2. Start the realm server: game on UDP 7777, account API on HTTP 7780 (local only).
+#    --gm-all lets every account use GM commands (development only).
+dotnet run --project server/Madlands.Server -c Release -- --bind 127.0.0.1 --gm-all
 #    No Docker? Add --db memory (accounts and characters are lost when the server stops).
+#    Give one account GM commands permanently instead: ... -- set-gm <account> 3
 
-# 3. (optional) bots that register, log in and run around (lift the API rate limit for many bots)
+# 3. (optional) bots that register, log in and hunt creatures (lift the API rate limit for many bots)
 #    server: ... --api-rate-limit 0
-dotnet run --project server/Madlands.Bots -c Release -- --count 100
+dotnet run --project server/Madlands.Bots -c Release -- --count 100        # --mode wander to just run around
 
 # 4. Client: open client/ in Unity Hub and press Play (it always starts at the login screen),
 #    or build an exe via Madlands > Build Windows Client. Create an account on the login screen, or
 #    skip the screens in dev: -autoconnect logs in as the lowercased name, creating account and character.
-builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Alice
-builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Bob
+builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Alice -class warrior
+builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Bob -class shardmage
 ```
 
 Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if the database is not running).
@@ -199,22 +226,31 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | Mouse wheel | Zoom |
 | Space | Jump (no air control) |
 | Num Lock / R | Autorun |
-| Esc | Menu (log out to character select, exit) |
+| Left click a unit | Target it |
+| Right click a unit | Target it and attack |
+| Tab | Cycle through enemies in front of you |
+| 1–0, -, = | Action bar (hover a button for its tooltip) |
+| Right click a buff | Cancel it |
+| Enter | Chat. Lines starting with `.` are GM commands; `.help` lists them |
+| Esc | Close chat, clear the target, or open the menu |
 | F3 | Toggle the debug overlay |
+
+**Where to go in the test world:** training dummies stand next to the spawn. Frogs (neutral) live south-east, the wolf pack (hostile) north-west and the walled bandit camp north-east. `.level 5` and `.tele 70 50` (outside the camp) are handy shortcuts.
 
 ## 📁 Project structure
 
 ```
-client/                    Unity 6 project (our code in Assets/Madlands)
-shared/Madlands.Shared     Protocol and game rules, shared by server and client
-shared/Madlands.ClientCore Engine-free networking & sync, used by the client and bots
-server/Madlands.Server     The realm server: game loop, account API, persistence
-server/Madlands.Bots       Bot players for load testing
-server/Madlands.Content    Loads and validates game data
-content/                   Game data (maps, races, classes; later spells, items, quests …)
-deploy/                    Docker Compose for PostgreSQL and Seq (logs)
-tools/                     Tooling (ContentTool)
-docs/                      Architecture, decision log (ADR), roadmap, game design
+client/                     Unity 6 project (our code in Assets/Madlands)
+shared/Madlands.Shared      Protocol and game rules, shared by server and client
+shared/Madlands.ClientCore  Engine-free networking and unit state, used by the client and bots
+server/Madlands.Server      The realm server: game loop, combat, AI, account API, persistence
+server/Madlands.Navigation  Navmesh (DotRecast) and line of sight
+server/Madlands.Content     Loads and validates game data
+server/Madlands.Bots        Bot players for load testing
+content/                    Game data: maps, races, classes, factions, spells, creatures, levels
+deploy/                     Docker Compose for PostgreSQL and Seq (logs)
+tools/                      Tooling (ContentTool)
+docs/                       Architecture, decision log (ADR), roadmap, game design
 ```
 
 ## 📚 Documentation

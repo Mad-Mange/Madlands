@@ -49,13 +49,29 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] 72 tests, including a full realm restart on PostgreSQL. CI on GitHub Actions
 - [ ] ~~Localization~~ moved to Phase 5: all UI text is already in UXML, ready for string tables
 
-## Phase 3 – Core combat
+## ✅ Phase 3 – Core combat (done 2026-10-16)
 
-- [ ] Map export part 2: static geometry → navmesh and line of sight (DotRecast)
-- [ ] Targeting and auto-attack. The spell and aura system per ADR 0005. Stats and modifiers
-- [ ] NPCs: spawns as data, AI (aggro, chase, leash, threat), death and respawn, XP and levels
-- [ ] HUD: unit frames, action bar, cast bar, floating combat text, nameplates
-- [ ] GM commands (`.tele`, `.spawn`, `.level` …)
+- [x] Map export part 2: static colliders → `collision.bin`, `CreatureSpawnPoint` markers → `spawns.json` (ADR 0009)
+- [x] Navmesh built at server startup with DotRecast (0.5 s for the test map); line of sight against terrain and obstacles
+- [x] Targeting (click, right-click attack, Tab), auto-attack with the melee hit table (miss, dodge, parry, crit), armor
+- [x] Spells and auras per ADR 0005: cast times, interrupts, cooldowns, global cooldown, projectiles, area effects,
+  damage and heal over time, slows, roots, stuns, absorbs, stat buffs. 19 spells as data
+- [x] Stats from class, race and level plus aura modifiers. Mana, rage (from dealing and taking damage) and regeneration
+- [x] Three classes with 5–6 abilities each: Warrior (rage), Shardmage (mana, ranged), Warden (mana, healer)
+- [x] Creatures as data: 5 templates, spawns from the map, AI (wander, aggro with line of sight, call for help, chase
+  along the navmesh, threat, leash/evade), corpses and respawns, a training dummy, a caster that keeps its distance
+- [x] Factions and reactions (hostile, neutral, friendly), shared by server and client
+- [x] Death and release, experience (classic formula, gray levels), level-ups that teach spells, levels 1–10
+- [x] HUD in UI Toolkit: unit frames, auras, cast bars, action bar with cooldowns, experience bar, tooltips, errors,
+  chat, death panel, nameplates and floating combat text
+- [x] GM commands (`.tele`, `.spawn`, `.level`, `.xp`, `.kill`, `.god`, `.aura`, `.cast`, `.info` …) and say chat
+- [x] The server sends the client its display data at login (ADR 0008): content changes need no client rebuild
+- [x] Persistence of experience, health and power; GM levels on accounts (migration 0002, `set-gm` command)
+- [x] Bots fight creatures (`--mode fight`). Measured: 100 fighting bots, 1.0–1.7 ms average tick (Debug build), 0 corrections
+- [x] 98 tests, including combat end to end on a real realm (auto-attack kills, aggro and evade, casts and interrupts,
+  refused casts, auras, death and release, chat, persistence)
+
+**Open:** playtest the feel of combat (numbers, pacing, controls). All numbers are in `content/` and `StatFormulas.cs`.
 
 ## Phase 4 – Items, loot, economy, quests
 
@@ -115,14 +131,21 @@ Every phase ends in something playable and tested. Architectural decisions are i
 
 ## Tech debt and follow-ups
 
+- **Players are not checked against walls**, only the terrain. Reject moves that cross obstacle triangles, with
+  tolerance for the client capsule sliding along colliders (ADR 0009).
+- **Combat balance is a first guess.** Tune with real playtests; the formulas are in `StatFormulas.cs`.
+- **Action bar layout is automatic** (spells in learn order). Let players drag spells around and save the layout on the server.
+- **No spell queueing:** pressing a key just before the global cooldown ends does nothing (WoW queues it).
+- **Kill credit goes to one player.** Groups (Phase 6) need shared credit and tapping rules.
+- **Tree crowns have no colliders**, so they block neither line of sight nor the camera.
+
 - **Bandwidth:** `EntityMoves` sends uncompressed floats. That adds up to about 15 MB/s out when 200 players see each other.
   - Quantize position, yaw and velocity.
   - Send less often at distance.
   - Do it before Phase 5 at the latest.
 - **Tick spikes:** p99 and max sometimes reached 8–17 ms under bot load. Profile GC and scheduling, and run the bots on another machine when measuring.
 - **Movement timestamps:** the server stamps with receive time, which adds some jitter over the internet. Consider mapping the client's (already validated) time instead.
-- **The server only knows heights, not walls and trees.** Line of sight and navmesh come in Phase 3.
-- **IMGUI is used for the debug UI and nameplates.** Move to UI Toolkit in Phases 2–3.
+- **IMGUI is still used for the debug overlay (F3).** Everything else is UI Toolkit.
 - **LiteNetLib reports 0 RTT in threaded mode.** The overlay uses our own Ping/Pong measurement instead.
 - **Addressables and Localization** get installed when first used.
 - **TLS for the account API:** dev uses plain HTTP on loopback. Before the first public deployment (Phase 5), put

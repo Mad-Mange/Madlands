@@ -3,20 +3,140 @@
   "$id": "https://madlands.local/schemas/classes.schema.json",
   "title": "Playable classes (content/classes.json)",
   "type": "object",
-  "required": ["classes"],
+  "required": [
+    "classes"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
+    "$schema": {
+      "type": "string"
+    },
     "classes": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "name"],
+        "required": [
+          "id",
+          "name"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "integer", "minimum": 1, "maximum": 255, "description": "Stable id stored on characters. Never reuse." },
-          "name": { "type": "string", "minLength": 1 }
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 255,
+            "description": "Stable id stored on characters. Never reuse."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "powerType": {
+            "enum": [
+              "none",
+              "mana",
+              "rage",
+              "energy"
+            ]
+          },
+          "baseStats": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "strength": {
+                "type": "number"
+              },
+              "agility": {
+                "type": "number"
+              },
+              "stamina": {
+                "type": "number"
+              },
+              "intellect": {
+                "type": "number"
+              },
+              "spirit": {
+                "type": "number"
+              }
+            },
+            "description": "Attributes at level 1."
+          },
+          "statsPerLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "strength": {
+                "type": "number"
+              },
+              "agility": {
+                "type": "number"
+              },
+              "stamina": {
+                "type": "number"
+              },
+              "intellect": {
+                "type": "number"
+              },
+              "spirit": {
+                "type": "number"
+              }
+            },
+            "description": "Attribute gain per level."
+          },
+          "baseHealth": {
+            "type": "number"
+          },
+          "healthPerLevel": {
+            "type": "number"
+          },
+          "baseMana": {
+            "type": "number"
+          },
+          "manaPerLevel": {
+            "type": "number"
+          },
+          "weapon": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Built-in weapon until items exist.",
+            "properties": {
+              "minDamage": {
+                "type": "number"
+              },
+              "maxDamage": {
+                "type": "number"
+              },
+              "damagePerLevel": {
+                "type": "number"
+              },
+              "speedMs": {
+                "type": "integer",
+                "minimum": 500
+              }
+            }
+          },
+          "spells": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "spell"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "spell": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "level": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 1
+                }
+              }
+            }
+          }
         }
       }
     }

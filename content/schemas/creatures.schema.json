@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/creatures.schema.json",
+  "title": "Creature templates (content/creatures.json)",
+  "description": "Health, damage, armor and mana scale with level; the numbers here are multipliers.",
+  "type": "object",
+  "required": [
+    "creatures"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "creatures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "displayId",
+          "faction"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Stable id (spawns refer to it). Never reuse."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "displayId": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Client display table id."
+          },
+          "minLevel": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 255
+          },
+          "maxLevel": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 255
+          },
+          "faction": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "ai": {
+            "enum": [
+              "melee",
+              "caster",
+              "dummy"
+            ],
+            "default": "melee"
+          },
+          "aggroRadius": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60,
+            "description": "0 = only fights back."
+          },
+          "runSpeed": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 20
+          },
+          "walkSpeed": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "health": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "damage": {
+            "type": "number",
+            "minimum": 0
+          },
+          "armor": {
+            "type": "number",
+            "minimum": 0
+          },
+          "mana": {
+            "type": "number",
+            "minimum": 0
+          },
+          "attackSpeedMs": {
+            "type": "integer",
+            "minimum": 500
+          },
+          "spells": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "spell"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "spell": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "chance": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                },
+                "cooldownMs": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "respawnSeconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "corpseSeconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "xp": {
+            "type": "number",
+            "minimum": 0
+          },
+          "callForHelpRadius": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

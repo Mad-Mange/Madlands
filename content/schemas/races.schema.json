@@ -3,21 +3,69 @@
   "$id": "https://madlands.local/schemas/races.schema.json",
   "title": "Playable races (content/races.json)",
   "type": "object",
-  "required": ["races"],
+  "required": [
+    "races"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
+    "$schema": {
+      "type": "string"
+    },
     "races": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "name", "startMap"],
+        "required": [
+          "id",
+          "name",
+          "startMap"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "integer", "minimum": 1, "maximum": 255, "description": "Stable id stored on characters. Never reuse." },
-          "name": { "type": "string", "minLength": 1 },
-          "startMap": { "type": "integer", "minimum": 1, "description": "Map id where new characters start (at its spawn)." }
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 255,
+            "description": "Stable id stored on characters. Never reuse."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "startMap": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Map id where new characters start (at its spawn)."
+          },
+          "faction": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "factions.json id."
+          },
+          "stats": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "strength": {
+                "type": "number"
+              },
+              "agility": {
+                "type": "number"
+              },
+              "stamina": {
+                "type": "number"
+              },
+              "intellect": {
+                "type": "number"
+              },
+              "spirit": {
+                "type": "number"
+              }
+            },
+            "description": "Added to the class's attributes."
+          }
         }
       }
     }

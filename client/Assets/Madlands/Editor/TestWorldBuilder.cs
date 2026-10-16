@@ -290,7 +290,8 @@ namespace Madlands.Client.Editor
                 float x = CampCenter.x + Mathf.Sin(angle) * CampRadius, z = CampCenter.y + Mathf.Cos(angle) * CampRadius;
                 var wall = AddPrimitive(PrimitiveType.Cube, parent, Ground(x, z) + Vector3.up * 1.1f, new Vector3(6.6f, 3.2f, 0.5f), wood, keepCollider: true);
                 wall.name = "Palisade";
-                wall.transform.rotation = Quaternion.Euler(0f, angle * Mathf.Rad2Deg + 90f, 0f);
+                // Local X runs along the ring (the tangent at this angle).
+                wall.transform.rotation = Quaternion.Euler(0f, angle * Mathf.Rad2Deg, 0f);
             }
 
             // Two tents, crates and a campfire.

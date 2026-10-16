@@ -10,25 +10,27 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 
 | Path | What |
 |---|---|
-| `shared/Madlands.Shared` | Protocol, movement rules, ids, height map format. Compiled by dotnet AND Unity (local UPM package). |
-| `shared/Madlands.ClientCore` | Engine-free client logic (GameClient, ClockSync, InterpolationBuffer, MovementSender). Used by Unity client and bots. |
-| `server/Madlands.Server` | One realm process (`ServerHost`): UDP game server (20 Hz loop, map instances, AoI, movement validation), HTTP account API (`Api/`), persistence (`Persistence/`: Postgres + in-memory, DbUp migrations, write-behind `CharacterSaver`), Argon2id auth (`Auth/`). |
-| `server/Madlands.Content` | Loads + validates `content/` (JSON + binary). Server/tools only. |
-| `server/Madlands.Bots` | Headless bot players (register/login via the API, then play) for load/integration testing. |
+| `shared/Madlands.Shared` | Protocol, movement rules, ids, `UnitValues`, `FactionTable`, `SpellInfo`, height map + collision mesh formats. Compiled by dotnet AND Unity (local UPM package). |
+| `shared/Madlands.ClientCore` | Engine-free client logic (GameClient with unit state/auras/casts/cooldowns, ClientGameData, ClockSync, InterpolationBuffer, MovementSender). Used by Unity client and bots. |
+| `server/Madlands.Server` | One realm process (`ServerHost`): UDP game server (20 Hz loop, map instances, AoI, movement validation), combat (`Combat/`: CombatSystem, SpellSystem, AuraSystem, StatFormulas), creature AI (`AI/`), chat + GM commands (`Commands/`), HTTP account API (`Api/`), persistence (`Persistence/`: Postgres + in-memory, DbUp migrations, write-behind `CharacterSaver`), Argon2id auth (`Auth/`). |
+| `server/Madlands.Navigation` | DotRecast navmesh (built at server startup from height map + `collision.bin`) and line-of-sight ray casts. |
+| `server/Madlands.Content` | Loads + validates `content/` (JSON + binary), cross-checks references. Server/tools only. |
+| `server/Madlands.Bots` | Headless bot players (register/login via the API, then hunt creatures or wander) for load/integration testing. |
 | `server/Madlands.Server.Tests` | xUnit: protocol roundtrips, world logic, client core, real HTTP+UDP realm tests (`TestRealm`), Postgres tests (`[PostgresFact]`, skipped if no DB). |
-| `tools/Madlands.ContentTool` | `validate` content (later: compile content, build navmeshes). |
+| `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. |
-| `content/` | Game data: `races.json`, `classes.json`, `maps/<id>/` (written by Unity: Madlands > Export Map). |
+| `content/` | Game data: races, classes, factions, spells, creatures, levels (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, map.json: written by Unity, Madlands > Export Map). |
 
 ## Commands (PowerShell; dotnet may need PATH refresh in old shells)
 
 ```powershell
 docker compose -f deploy/docker-compose.yml up -d   # PostgreSQL (+ Seq) for the server and the Postgres tests
 dotnet build Madlands.slnx                      # all .NET projects (output in /artifacts)
-dotnet test Madlands.slnx                       # 72+ tests incl. real HTTP+UDP realm and Postgres
-dotnet run --project server/Madlands.Server -- --bind 127.0.0.1                    # UDP 7777 + HTTP 7780, PostgreSQL
+dotnet test Madlands.slnx                       # 98+ tests incl. real HTTP+UDP realm, combat end to end, Postgres
+dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --gm-all           # UDP 7777 + HTTP 7780, PostgreSQL, GM commands for all
 dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --db memory        # no Docker; data lost on exit
-dotnet run --project server/Madlands.Bots -- --count 200 --seconds 60   # server needs --api-rate-limit 0 for big runs
+dotnet run --project server/Madlands.Server -- set-gm <account> 3                  # permanent GM level for one account
+dotnet run --project server/Madlands.Bots -- --count 200 --seconds 60   # fight creatures (--mode wander: just run); server needs --api-rate-limit 0
 dotnet run --project tools/Madlands.ContentTool -- validate
 
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"
@@ -46,8 +48,13 @@ $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Tester -screenshot builds/screenshots/world.png -screenshotdelay 7 -quitafter 13
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Tester -stopat charselect -screenshot builds/screenshots/chars.png -screenshotdelay 6 -quitafter 8
 builds/client/Madlands.exe -screen-fullscreen 0 -screenshot builds/screenshots/login.png -screenshotdelay 4 -quitafter 6
+# Combat (server with --gm-all): -class picks the class of a new character, -exec sends chat lines/GM commands
+# after entering the world, -autofight targets the nearest enemy and uses the action bar.
+builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 6;.tele -4 2" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
 ```
-Then read the PNG to verify. Use `-logFile` for the player log.
+Then read the PNG to verify. Use `-logFile` for the player log. A running Release server locks
+`artifacts/bin/*/release`; build and test with `-c Debug` meanwhile (or run a second realm on other ports:
+`--port 7787 --http-port 7790`, client `-httpport 7790`).
 
 ## Gotchas learned the hard way
 
@@ -55,6 +62,11 @@ Then read the PNG to verify. Use `-logFile` for the player log.
   `m_PanelSettings` via `SerializedObject` (FrontEndBuilder does). Symptom: UI invisible in builds, no errors.
 - Unity has its own `UnityEngine.CharacterInfo`; avoid type names that clash with UnityEngine in Shared.
 - `ScreenCapture.CaptureScreenshot` does include UI Toolkit; if UI is missing, the UI is really not rendering.
+- Content enums are camelCase strings in JSON (`"powerType": "rage"`); spell flags are a string list.
+- `GameData` (spells, factions, classes, XP table) is built from content at server startup and sent at login
+  (ADR 0008): content changes need a server restart, not a client rebuild.
+- Pushing changes to `.github/workflows/` needs a GitHub token with the `workflow` scope
+  (`gh auth refresh -h github.com -s workflow`, run by the user: it opens a browser).
 - Windows: a Git Credential Manager prompt cannot be shown from here; push with
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (or the user runs `gh auth setup-git`).
 
@@ -65,8 +77,10 @@ Then read the PNG to verify. Use `-logFile` for the player log.
   `noEngineReferences: true`, so UnityEngine can never leak into shared code.
 - **Any wire or shared-rule change bumps `ProtocolVersion.Current`.** Never renumber opcodes. Every message
   gets a roundtrip test in `ProtocolTests.cs`.
-- **Server is authoritative.** Clients only predict their own movement; the server validates
-  (`MovementValidator`) and corrects. Never trust client data; reject NaN; rate-limit every message type.
+- **Server is authoritative.** Clients only predict their own movement (and the global cooldown); the server validates
+  (`MovementValidator`, `SpellSystem.Check`) and corrects. Never trust client data; reject NaN; rate-limit every message type.
+- **Combat rules are data + one formula file.** New spell/aura behaviour = a new effect type with a handler, never a
+  special case per spell id (ADR 0005). Balance numbers live in `content/` and `Combat/StatFormulas.cs`.
 - **Content ids are stable and never reused.** Content is data (`content/`), validated by `ContentLoader`
   (collect all errors, then fail). The server sends `displayId`s, never asset names.
 - Entities live in `(mapId, instanceId)`; map instances share no mutable state (future: one thread/process each).

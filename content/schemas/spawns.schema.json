@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/spawns.schema.json",
+  "title": "Creature spawns (content/maps/<id>/spawns.json)",
+  "description": "Written by Unity (Madlands > Export Map) from CreatureSpawnPoint markers. The scene is the source of truth.",
+  "type": "object",
+  "required": [
+    "spawns"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "_generated": {
+      "type": "string"
+    },
+    "spawns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "creature",
+          "x",
+          "z"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "creature": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "yawDegrees": {
+            "type": "number"
+          },
+          "wanderRadius": {
+            "type": "number",
+            "minimum": 0
+          },
+          "respawnSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0 = the creature's default."
+          }
+        }
+      }
+    }
+  }
+}

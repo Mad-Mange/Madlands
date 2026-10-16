@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/levels.schema.json",
+  "title": "Experience table (content/levels.json)",
+  "type": "object",
+  "required": [
+    "maxLevel",
+    "xpToNextLevel"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "maxLevel": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 255
+    },
+    "xpToNextLevel": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "description": "One entry per level below the cap."
+    }
+  }
+}

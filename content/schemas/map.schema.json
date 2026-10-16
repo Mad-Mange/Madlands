@@ -4,22 +4,59 @@
   "title": "Madlands map definition (content/maps/<id>/map.json)",
   "description": "Written by Unity (Madlands > Export Map). The scene is the source of truth.",
   "type": "object",
-  "required": ["id", "name", "spawn"],
+  "required": [
+    "id",
+    "name",
+    "spawn"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
-    "_generated": { "type": "string" },
-    "id": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Stable map id. Never reuse." },
-    "name": { "type": "string", "minLength": 1 },
-    "heightmap": { "type": "string", "default": "height.bin" },
+    "$schema": {
+      "type": "string"
+    },
+    "_generated": {
+      "type": "string"
+    },
+    "id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "Stable map id. Never reuse."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "heightmap": {
+      "type": "string",
+      "default": "height.bin"
+    },
+    "collision": {
+      "type": "string",
+      "description": "Static obstacle triangles (navmesh obstacles, line of sight)."
+    },
+    "spawns": {
+      "type": "string",
+      "description": "Creature spawn list (spawns.json)."
+    },
     "spawn": {
       "type": "object",
-      "required": ["x", "z"],
+      "required": [
+        "x",
+        "z"
+      ],
       "additionalProperties": false,
       "properties": {
-        "x": { "type": "number" },
-        "z": { "type": "number" },
-        "yawDegrees": { "type": "number", "default": 0 }
+        "x": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        },
+        "yawDegrees": {
+          "type": "number",
+          "default": 0
+        }
       }
     }
   }
