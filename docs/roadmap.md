@@ -67,7 +67,7 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] GM commands (`.tele`, `.spawn`, `.level`, `.xp`, `.kill`, `.god`, `.aura`, `.cast`, `.info` …) and say chat
 - [x] The server sends the client its display data at login (ADR 0008): content changes need no client rebuild
 - [x] Persistence of experience, health and power; GM levels on accounts (migration 0002, `set-gm` command)
-- [x] Bots fight creatures (`--mode fight`). Measured: 100 fighting bots, 1.0–1.7 ms average tick (Debug build), 0 corrections
+- [x] Bots fight creatures (`--mode fight`). Measured: 200 fighting bots, 0.8–1.1 ms average tick, p99 2–7 ms, 0 corrections
 - [x] 98 tests, including combat end to end on a real realm (auto-attack kills, aggro and evade, casts and interrupts,
   refused casts, auras, death and release, chat, persistence)
 

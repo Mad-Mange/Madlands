@@ -62,7 +62,7 @@ You can now **fight**. Pick a Warrior, a Shardmage or a Warden, target a creatur
 | Rules | Server-side hit tables (miss, dodge, parry, crit), armor, line of sight, facing, range; levels 1–10 with classic experience rules |
 | HUD | Unit frames, buffs and debuffs, cast bars, an action bar with cooldowns, nameplates, floating combat text, chat, tooltips |
 | Tools | GM commands (`.level`, `.tele`, `.spawn`, `.god`, `.info` …); bots that hunt creatures for load tests |
-| Verified | 100 fighting bots at 1–1.7 ms per tick (Debug build) with 0 corrections; 98 automated tests, including whole fights on a real server |
+| Verified | 200 bots hunting creatures at 0.8–1.1 ms per server tick, 0 movement corrections; 98 automated tests, including whole fights on a real server |
 
 <details>
 <summary>Phase 2: accounts and characters</summary>

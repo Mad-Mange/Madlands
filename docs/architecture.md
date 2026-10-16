@@ -142,10 +142,11 @@ Map instances share no mutable state and own their own `PacketWriter`, random ge
 - Server tick 0.4–0.9 ms average, p99 2–8 ms. Outgoing traffic about 15 MB/s (uncompressed floats; on the roadmap).
 - 0 movement corrections over 75 s.
 
-**Phase 3** (2026-10-16, Debug build): 100 bots fighting the creatures of the test map (`Madlands.Bots --mode fight`).
+**Phase 3** (2026-10-16, Release build): 200 bots fighting the creatures of the test map (`Madlands.Bots --mode fight`).
 
-- Server tick 1.0–1.7 ms average, p99 under 7 ms, with combat, auras, AI and pathfinding running.
+- Server tick 0.8–1.1 ms average, p99 2–7 ms, max 10 ms, with combat, auras, AI and pathfinding running.
 - 0 movement corrections. The bots killed creatures, died and released, and gained experience.
+- Outgoing traffic 8–16 MB/s with most bots seeing each other (still uncompressed; on the roadmap).
 - The navmesh of the 512 × 512 m map with 49 000 obstacle triangles builds in about 0.5 s at startup.
 
 ## Decisions that are expensive to change
