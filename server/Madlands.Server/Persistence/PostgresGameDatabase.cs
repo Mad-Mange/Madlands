@@ -11,7 +11,7 @@ namespace Madlands.Server.Persistence;
 /// </summary>
 public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
 {
-    private const string CharacterColumns = "id, account_id, name, race, class, level, map_id, pos_x, pos_y, pos_z, yaw";
+    private const string CharacterColumns = "id, account_id, name, race, class, level, map_id, pos_x, pos_y, pos_z, yaw, xp, health, power";
 
     private readonly NpgsqlDataSource _dataSource;
 
@@ -65,6 +65,13 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         await using var conn = await _dataSource.OpenConnectionAsync(ct);
         await conn.ExecuteAsync(new CommandDefinition(
             "UPDATE accounts SET last_login_at = now() WHERE id = @accountId", new { accountId }, cancellationToken: ct));
+    }
+
+    public async Task<int> GetGmLevelAsync(long accountId, CancellationToken ct = default)
+    {
+        await using var conn = await _dataSource.OpenConnectionAsync(ct);
+        return await conn.ExecuteScalarAsync<short>(new CommandDefinition(
+            "SELECT gm_level FROM accounts WHERE id = @accountId", new { accountId }, cancellationToken: ct));
     }
 
     public async Task CreateSessionAsync(byte[] tokenHash, long accountId, DateTime expiresUtc, CancellationToken ct = default)
@@ -160,10 +167,11 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         await conn.ExecuteAsync(new CommandDefinition(
             """
             UPDATE characters
-            SET map_id = @MapId, pos_x = @X, pos_y = @Y, pos_z = @Z, yaw = @Yaw, level = @Level, last_saved_at = now()
+            SET map_id = @MapId, pos_x = @X, pos_y = @Y, pos_z = @Z, yaw = @Yaw, level = @Level,
+                xp = @Xp, health = @Health, power = @Power, last_saved_at = now()
             WHERE id = @CharacterId
             """,
-            new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level },
+            new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level, s.Xp, s.Health, s.Power },
             cancellationToken: ct));
     }
 
@@ -187,8 +195,11 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         public float PosY { get; set; }
         public float PosZ { get; set; }
         public float Yaw { get; set; }
+        public int Xp { get; set; }
+        public int? Health { get; set; }
+        public int? Power { get; set; }
 
         public CharacterRecord ToRecord() =>
-            new(Id, AccountId, Name, (byte)Race, (byte)Class, (byte)Level, (ushort)MapId, PosX, PosY, PosZ, Yaw);
+            new(Id, AccountId, Name, (byte)Race, (byte)Class, (byte)Level, (ushort)MapId, PosX, PosY, PosZ, Yaw, Xp, Health, Power);
     }
 }

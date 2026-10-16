@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Madlands.Shared.Game;
 using Madlands.Shared.Movement;
 
 namespace Madlands.Shared.Net
@@ -77,32 +78,42 @@ namespace Madlands.Shared.Net
 
     // ---------------------------------------------------------------- Server -> Client
 
+    /// <summary>
+    /// The server accepted the player into the world: who they are, where, and their own unit
+    /// values. <see cref="GameData"/> always arrives just before this.
+    /// </summary>
     public sealed class Welcome : IMessage
     {
         public EntityGuid PlayerGuid;
+        public string Name;
         public long ServerTimeMs;
         public ushort MapId;
         public uint InstanceId;
         public MovementState Spawn;
+        public readonly UnitValues Self = new UnitValues();
 
         public Opcode Opcode => Opcode.Welcome;
 
         public void Write(PacketWriter w)
         {
             w.WriteGuid(PlayerGuid);
+            w.WriteString(Name);
             w.WriteLong(ServerTimeMs);
             w.WriteUShort(MapId);
             w.WriteUInt(InstanceId);
             Spawn.Write(w);
+            Self.Write(w, UnitFieldMask.All);
         }
 
         public void Read(ref PacketReader r)
         {
             PlayerGuid = r.ReadGuid();
+            Name = r.ReadString(Hello.MaxNameBytes);
             ServerTimeMs = r.ReadLong();
             MapId = r.ReadUShort();
             InstanceId = r.ReadUInt();
             Spawn = MovementState.Read(ref r);
+            Self.Read(ref r, UnitFieldMask.All);
         }
     }
 
@@ -146,7 +157,10 @@ namespace Madlands.Shared.Net
         }
     }
 
-    /// <summary>An entity entered the receiver's area of interest.</summary>
+    /// <summary>
+    /// An entity entered the receiver's area of interest. Units (players, creatures) carry their
+    /// full <see cref="UnitValues"/>; their auras follow in an <see cref="AuraUpdate"/>.
+    /// </summary>
     public sealed class EntitySpawn : IMessage
     {
         public EntityGuid Guid;
@@ -155,6 +169,8 @@ namespace Madlands.Shared.Net
         public uint DisplayId;
         public long StateServerTimeMs;
         public MovementState State;
+        /// <summary>Only written and read when <see cref="EntityGuid.IsUnit"/>.</summary>
+        public readonly UnitValues Unit = new UnitValues();
 
         public Opcode Opcode => Opcode.EntitySpawn;
 
@@ -165,6 +181,7 @@ namespace Madlands.Shared.Net
             w.WriteUInt(DisplayId);
             w.WriteLong(StateServerTimeMs);
             State.Write(w);
+            if (Guid.IsUnit) Unit.Write(w, UnitFieldMask.All);
         }
 
         public void Read(ref PacketReader r)
@@ -174,6 +191,7 @@ namespace Madlands.Shared.Net
             DisplayId = r.ReadUInt();
             StateServerTimeMs = r.ReadLong();
             State = MovementState.Read(ref r);
+            if (Guid.IsUnit) Unit.Read(ref r, UnitFieldMask.All);
         }
     }
 

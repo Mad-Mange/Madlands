@@ -17,6 +17,7 @@ public sealed class InMemoryGameDatabase : IGameDatabase
     private readonly Dictionary<string, Session> _sessions = new();
     private readonly Dictionary<long, CharacterRecord> _characters = new();
     private readonly HashSet<long> _deleted = new();
+    private readonly Dictionary<long, int> _gmLevels = new();
     private long _nextAccountId = 1;
     private long _nextCharacterId = 1;
 
@@ -37,6 +38,17 @@ public sealed class InMemoryGameDatabase : IGameDatabase
     }
 
     public Task TouchLoginAsync(long accountId, CancellationToken ct = default) => Task.CompletedTask;
+
+    public Task<int> GetGmLevelAsync(long accountId, CancellationToken ct = default)
+    {
+        lock (_lock) return Task.FromResult(_gmLevels.GetValueOrDefault(accountId));
+    }
+
+    /// <summary>Tests: grant GM commands to an account.</summary>
+    public void SetGmLevel(long accountId, int level)
+    {
+        lock (_lock) _gmLevels[accountId] = level;
+    }
 
     public Task CreateSessionAsync(byte[] tokenHash, long accountId, DateTime expiresUtc, CancellationToken ct = default)
     {
@@ -106,7 +118,10 @@ public sealed class InMemoryGameDatabase : IGameDatabase
         lock (_lock)
         {
             if (_characters.TryGetValue(s.CharacterId, out var c))
-                _characters[s.CharacterId] = c with { MapId = s.MapId, X = s.X, Y = s.Y, Z = s.Z, Yaw = s.Yaw, Level = s.Level };
+                _characters[s.CharacterId] = c with
+                {
+                    MapId = s.MapId, X = s.X, Y = s.Y, Z = s.Z, Yaw = s.Yaw, Level = s.Level, Xp = s.Xp, Health = s.Health, Power = s.Power,
+                };
         }
         return Task.CompletedTask;
     }

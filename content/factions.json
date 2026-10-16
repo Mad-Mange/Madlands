@@ -1,0 +1,8 @@
+{
+  "$schema": "schemas/factions.schema.json",
+  "factions": [
+    { "id": 1, "name": "Calderran Settlers", "friendly": [1], "hostile": [2] },
+    { "id": 2, "name": "Shard-touched", "friendly": [2], "hostile": [1] },
+    { "id": 3, "name": "Wildlife" }
+  ]
+}

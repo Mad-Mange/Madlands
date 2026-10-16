@@ -122,13 +122,22 @@ public class PostgresDatabaseTests : IAsyncLifetime
     }
 
     [PostgresFact]
-    public async Task Save_updates_position_and_level()
+    public async Task Save_updates_position_level_and_combat_state()
     {
         long account = (await Db.CreateAccountAsync("saver", "h"))!.Value;
         var (_, c) = await Db.CreateCharacterAsync(Template(account, "Saver"), 10);
-        await Db.SaveCharacterAsync(new CharacterSnapshot(c!.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7));
+        Assert.Equal((0, (int?)null, (int?)null), (c!.Xp, c.Health, c.Power));
+        await Db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12));
         var loaded = await Db.LoadCharacterAsync(account, c.Id);
         Assert.Equal((-12.5f, 30.25f, 99f, 3.1f, (byte)7), (loaded!.X, loaded.Y, loaded.Z, loaded.Yaw, loaded.Level));
+        Assert.Equal((345, (int?)80, (int?)12), (loaded.Xp, loaded.Health, loaded.Power));
+    }
+
+    [PostgresFact]
+    public async Task Gm_level_defaults_to_zero()
+    {
+        long account = (await Db.CreateAccountAsync("plainuser", "h"))!.Value;
+        Assert.Equal(0, await Db.GetGmLevelAsync(account));
     }
 
     [PostgresFact]

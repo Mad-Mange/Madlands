@@ -30,6 +30,11 @@ public sealed class ClientSession
 
     public RateLimiter MoveLimiter { get; } = new(ratePerSecond: 40, burst: 80);
     public RateLimiter PingLimiter { get; } = new(ratePerSecond: 5, burst: 10);
+    /// <summary>Targeting, casting, cancelling: a fast player presses a lot of keys, but not this many.</summary>
+    public RateLimiter ActionLimiter { get; } = new(ratePerSecond: 25, burst: 50);
+    public RateLimiter ChatLimiter { get; } = new(ratePerSecond: 2, burst: 8);
+    /// <summary>0 = player; GM commands need more.</summary>
+    public int GmLevel { get; set; }
     public int Violations { get; set; }
 
     public int MaxUnreliablePacketSize => Peer.GetMaxSinglePacketSize(DeliveryMethod.Unreliable);
@@ -40,6 +45,9 @@ public sealed class ClientSession
         Packet.Encode(writer, message);
         Peer.Send(writer.AsSpan(), method);
     }
+
+    /// <summary>Sends an already encoded packet (broadcasts encode once for all receivers).</summary>
+    public void SendRaw(ReadOnlySpan<byte> packet, DeliveryMethod method) => Peer.Send(packet, method);
 
     public override string ToString() => Player is null ? $"session {Id} ({Peer})" : $"{Player.Name} (session {Id})";
 }

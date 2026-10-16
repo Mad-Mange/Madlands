@@ -1,8 +1,63 @@
 {
   "$schema": "schemas/classes.schema.json",
   "classes": [
-    { "id": 1, "name": "Warrior" },
-    { "id": 2, "name": "Shardmage" },
-    { "id": 3, "name": "Warden" }
+    {
+      "id": 1,
+      "name": "Warrior",
+      "powerType": "rage",
+      "baseStats": { "strength": 23, "agility": 20, "stamina": 22, "intellect": 17, "spirit": 19 },
+      "statsPerLevel": { "strength": 2, "agility": 1, "stamina": 2, "intellect": 0, "spirit": 0.5 },
+      "baseHealth": 30,
+      "healthPerLevel": 14,
+      "weapon": { "minDamage": 3, "maxDamage": 6, "damagePerLevel": 1, "speedMs": 2000 },
+      "spells": [
+        { "spell": 1, "level": 1 },
+        { "spell": 100, "level": 1 },
+        { "spell": 103, "level": 2 },
+        { "spell": 101, "level": 4 },
+        { "spell": 102, "level": 6 },
+        { "spell": 104, "level": 8 }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Shardmage",
+      "powerType": "mana",
+      "baseStats": { "strength": 17, "agility": 18, "stamina": 19, "intellect": 24, "spirit": 22 },
+      "statsPerLevel": { "strength": 0, "agility": 0.5, "stamina": 1, "intellect": 2, "spirit": 1.5 },
+      "baseHealth": 25,
+      "healthPerLevel": 10,
+      "baseMana": 40,
+      "manaPerLevel": 15,
+      "weapon": { "minDamage": 1, "maxDamage": 3, "damagePerLevel": 0.5, "speedMs": 2400 },
+      "spells": [
+        { "spell": 1, "level": 1 },
+        { "spell": 200, "level": 1 },
+        { "spell": 201, "level": 2 },
+        { "spell": 202, "level": 4 },
+        { "spell": 203, "level": 6 },
+        { "spell": 204, "level": 8 }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Warden",
+      "powerType": "mana",
+      "baseStats": { "strength": 20, "agility": 18, "stamina": 21, "intellect": 22, "spirit": 24 },
+      "statsPerLevel": { "strength": 1, "agility": 0.5, "stamina": 1.5, "intellect": 1.5, "spirit": 2 },
+      "baseHealth": 28,
+      "healthPerLevel": 12,
+      "baseMana": 50,
+      "manaPerLevel": 14,
+      "weapon": { "minDamage": 2, "maxDamage": 4, "damagePerLevel": 0.7, "speedMs": 2200 },
+      "spells": [
+        { "spell": 1, "level": 1 },
+        { "spell": 300, "level": 1 },
+        { "spell": 301, "level": 1 },
+        { "spell": 302, "level": 2 },
+        { "spell": 303, "level": 4 },
+        { "spell": 304, "level": 6 }
+      ]
+    }
   ]
 }

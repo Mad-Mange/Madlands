@@ -23,11 +23,15 @@ public sealed class ServerOptions
     public ushort StartMapId { get; set; } = 1;
     public long StatsIntervalMs { get; set; } = 10_000;
     public bool Verbose { get; set; }
+    /// <summary>Development: every account may use GM commands (.tele, .spawn, .level ...).</summary>
+    public bool GmAll { get; set; }
+    /// <summary>Seed for combat rolls and creature levels; null = random. Tests use a fixed seed.</summary>
+    public int? RandomSeed { get; set; }
 
     public const string Usage =
         "Madlands.Server [--port 7777] [--http-port 7780] [--bind 127.0.0.1] [--public-host <host>] [--content <path>]\n" +
         "                [--db postgres|memory] [--connection-string <npgsql>] [--api-rate-limit 120]\n" +
-        "                [--map 1] [--max-connections 1000] [--stats-interval 10] [--verbose]";
+        "                [--map 1] [--max-connections 1000] [--stats-interval 10] [--gm-all] [--seed <n>] [--verbose]";
 
     public static ServerOptions Parse(string[] args)
     {
@@ -50,6 +54,8 @@ public sealed class ServerOptions
                 case "--map": o.StartMapId = ushort.Parse(Next()); break;
                 case "--stats-interval": o.StatsIntervalMs = long.Parse(Next()) * 1000; break;
                 case "--verbose": o.Verbose = true; break;
+                case "--gm-all": o.GmAll = true; break;
+                case "--seed": o.RandomSeed = int.Parse(Next()); break;
                 case "--help":
                 case "-h":
                     Console.WriteLine(Usage);

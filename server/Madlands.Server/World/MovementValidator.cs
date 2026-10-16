@@ -18,7 +18,9 @@ public enum MoveVerdict
 /// only accepts what is physically possible):
 ///  - client clock may not run faster than the server's (defeats "speed hacks" that accelerate time),
 ///  - horizontal distance per client-time step is bounded by run speed,
-///  - position must be inside the map and near the ground (height map from Unity export).
+///  - position must be inside the map and near the ground (height map from Unity export),
+///  - slows, roots and stuns (from the unit's auras) lower the allowed speed after a short grace
+///    period, because the client only learns about them one round trip later.
 /// </summary>
 public sealed class MovementValidator
 {
@@ -29,6 +31,10 @@ public sealed class MovementValidator
     public const float DistanceSlack = 0.3f;
     public const float MaxBelowGround = 1.0f;
     public const float MaxAboveGround = 10f;
+    /// <summary>After the allowed speed drops, the old speed stays allowed this long (latency).</summary>
+    public const long LimitGraceMs = 1000;
+    /// <summary>Per-update slack while immobile (rooted, stunned, dead).</summary>
+    public const float ImmobileSlack = 0.05f;
 
     private readonly HeightMap _heightMap;
     private MovementState _last;
@@ -37,6 +43,9 @@ public sealed class MovementValidator
     private long _anchorClientMs;
     private long _anchorServerMs;
     private long _resetServerMs;
+    private float _speedMultiplier = 1f;
+    private float _graceMultiplier;
+    private long _graceUntilMs;
 
     public MovementValidator(HeightMap heightMap)
     {
@@ -53,6 +62,23 @@ public sealed class MovementValidator
         _hasClientTime = false;
         _resetServerMs = serverNowMs;
     }
+
+    /// <summary>Current speed limits from the unit (speed percent, rooted/stunned/dead).</summary>
+    public void SetLimits(float speedMultiplier, bool immobile, long serverNowMs)
+    {
+        float effective = immobile ? 0f : Math.Max(0f, speedMultiplier);
+        if (effective < _speedMultiplier)
+        {
+            float before = serverNowMs < _graceUntilMs ? Math.Max(_graceMultiplier, _speedMultiplier) : _speedMultiplier;
+            _graceMultiplier = before;
+            _graceUntilMs = serverNowMs + LimitGraceMs;
+        }
+        _speedMultiplier = effective;
+    }
+
+    /// <summary>The fastest speed factor currently allowed (including the grace period after a slowdown).</summary>
+    public float AllowedMultiplier(long serverNowMs) =>
+        serverNowMs < _graceUntilMs ? Math.Max(_speedMultiplier, _graceMultiplier) : _speedMultiplier;
 
     public MoveVerdict Validate(in MovementState next, long clientMs, long serverNowMs)
     {
@@ -83,10 +109,12 @@ public sealed class MovementValidator
         }
 
         float seconds = Math.Clamp(stepMs, 0, MaxStepMs) / 1000f;
-        float maxDistance = GameConstants.RunSpeed * seconds * SpeedTolerance + DistanceSlack;
+        float multiplier = AllowedMultiplier(serverNowMs);
+        float slack = multiplier > 0f ? DistanceSlack : ImmobileSlack;
+        float maxDistance = GameConstants.RunSpeed * multiplier * seconds * SpeedTolerance + slack;
         float distance = Vec3.HorizontalDistance(_last.Position, next.Position);
         if (distance > maxDistance) return Reject($"moved {distance:0.00} m in {stepMs} ms (max {maxDistance:0.00} m)");
-        if (next.Velocity.HorizontalLength > GameConstants.RunSpeed * 1.05f) return Reject("velocity above run speed");
+        if (next.Velocity.HorizontalLength > GameConstants.RunSpeed * multiplier * 1.05f + 0.01f) return Reject("velocity above allowed speed");
 
         var p = next.Position;
         if (!_heightMap.Contains(p.X, p.Z)) return Reject("outside map bounds");

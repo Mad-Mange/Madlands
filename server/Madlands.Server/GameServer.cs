@@ -4,12 +4,14 @@ using System.Net;
 using LiteNetLib;
 using Madlands.Content;
 using Madlands.Server.Auth;
+using Madlands.Server.Commands;
 using Madlands.Server.Core;
 using Madlands.Server.Diagnostics;
 using Madlands.Server.Net;
 using Madlands.Server.Persistence;
 using Madlands.Server.World;
 using Madlands.Shared;
+using Madlands.Shared.Game;
 using Madlands.Shared.Movement;
 using Madlands.Shared.Net;
 using Serilog;
@@ -48,6 +50,13 @@ public sealed class GameServer : IDisposable
     private readonly Pong _pong = new();
     private readonly Welcome _welcome = new();
     private readonly Rejected _rejected = new();
+    private readonly SetTarget _setTarget = new();
+    private readonly CastSpell _castSpell = new();
+    private readonly ChatInput _chatInput = new();
+    private readonly CancelAura _cancelAura = new();
+    private readonly ChatHandler _chat;
+    /// <summary>Client display data, encoded once at startup and sent to everyone before Welcome.</summary>
+    private readonly byte[] _gameData;
 
     private long _tick;
 
@@ -56,9 +65,11 @@ public sealed class GameServer : IDisposable
         _options = options;
         _database = database;
         _saver = saver;
-        World = new WorldManager(content);
+        World = new WorldManager(content, options.RandomSeed);
         if (World.GetInstance(options.StartMapId, WorldManager.OpenWorldInstance) is null)
             throw new ArgumentException($"Start map {options.StartMapId} does not exist in content.");
+        _gameData = BuildGameData(content);
+        _chat = new ChatHandler(this);
 
         _net = new NetManager(_listener)
         {
@@ -73,6 +84,9 @@ public sealed class GameServer : IDisposable
     }
 
     public WorldManager World { get; }
+    public ServerOptions Options => _options;
+    /// <summary>Players in the world, on all maps (loop thread only).</summary>
+    public IEnumerable<Player> OnlinePlayers => _sessions.Values.Where(s => s.Player is not null).Select(s => s.Player!);
     public TickStats Stats { get; } = new();
     public int Port => _net.LocalPort;
     public long NowMs => _clock.ElapsedMilliseconds;
@@ -241,7 +255,8 @@ public sealed class GameServer : IDisposable
     private static CharacterSnapshot Snapshot(Player player)
     {
         var p = player.Movement.Position;
-        return new CharacterSnapshot(player.CharacterId, player.Map?.MapId ?? 0, p.X, p.Y, p.Z, player.Movement.Yaw, player.Level);
+        return new CharacterSnapshot(player.CharacterId, player.Map?.MapId ?? 0, p.X, p.Y, p.Z, player.Movement.Yaw, player.Level,
+            player.Xp, player.Health, player.Power);
     }
 
     // ------------------------------------------------------------------ messages
@@ -284,6 +299,26 @@ public sealed class GameServer : IDisposable
                     session.Send(_writer, _pong, DeliveryMethod.Unreliable);
                     break;
 
+                case Opcode.SetTarget or Opcode.CastSpell or Opcode.CancelCast or Opcode.StopAttack or Opcode.ReleaseSpirit or Opcode.CancelAura
+                    when session.State == SessionState.InWorld:
+                    if (!session.ActionLimiter.TryConsume(now))
+                    {
+                        AddViolation(session, "action rate");
+                        break;
+                    }
+                    HandleAction(session.Player!, opcode, ref reader, now);
+                    break;
+
+                case Opcode.ChatInput when session.State == SessionState.InWorld:
+                    if (!session.ChatLimiter.TryConsume(now))
+                    {
+                        AddViolation(session, "chat rate");
+                        break;
+                    }
+                    _chatInput.Read(ref reader);
+                    _chat.Handle(session.Player!, _chatInput.Text, now);
+                    break;
+
                 default:
                     AddViolation(session, $"unexpected {opcode} in state {session.State}");
                     break;
@@ -292,6 +327,46 @@ public sealed class GameServer : IDisposable
         catch (PacketException ex)
         {
             Kick(session, RejectReason.Kicked, "Malformed packet: " + ex.Message);
+        }
+    }
+
+    /// <summary>Targeting and spell requests. The systems validate everything; the client only asks.</summary>
+    private void HandleAction(Player player, Opcode opcode, ref PacketReader reader, long now)
+    {
+        var map = player.Map;
+        if (map is null) return;
+        switch (opcode)
+        {
+            case Opcode.SetTarget:
+            {
+                _setTarget.Read(ref reader);
+                var target = map.FindUnit(_setTarget.Target);
+                player.TargetGuid = target?.Guid ?? EntityGuid.Empty;
+                // Switching targets while swinging keeps swinging at the new target, if it can be attacked.
+                if (player.AttackTarget is not null && player.AttackTarget != target)
+                {
+                    if (target is not null && map.CanAttack(player, target)) player.AttackTarget = target;
+                    else map.Combat.StopAutoAttack(player);
+                }
+                break;
+            }
+            case Opcode.CastSpell:
+                _castSpell.Read(ref reader);
+                map.Spells.TryCast(player, _castSpell.SpellId, _castSpell.Target, _castSpell.CastId, now);
+                break;
+            case Opcode.CancelCast:
+                map.Spells.Interrupt(player, CastResult.Cancelled, now);
+                break;
+            case Opcode.StopAttack:
+                map.Combat.StopAutoAttack(player);
+                break;
+            case Opcode.ReleaseSpirit:
+                if (player.IsDead) map.Combat.Resurrect(player, now);
+                break;
+            case Opcode.CancelAura:
+                _cancelAura.Read(ref reader);
+                if (map.Auras.Find(player, _cancelAura.SpellId) is { IsHarmful: false } aura) map.Auras.Remove(player, aura, now);
+                break;
         }
     }
 
@@ -327,9 +402,10 @@ public sealed class GameServer : IDisposable
                 else
                 {
                     var character = await _database.LoadCharacterAsync(accountId.Value, characterId);
+                    int gmLevel = character is null ? 0 : await _database.GetGmLevelAsync(accountId.Value);
                     result = character is null
                         ? LoginResult.Fail(RejectReason.CharacterNotFound, "That character does not exist.")
-                        : new LoginResult(accountId.Value, character, RejectReason.Unknown, "");
+                        : new LoginResult(accountId.Value, character, RejectReason.Unknown, "", gmLevel);
                 }
             }
             catch (Exception ex)
@@ -341,7 +417,7 @@ public sealed class GameServer : IDisposable
         });
     }
 
-    private sealed record LoginResult(long AccountId, CharacterRecord? Character, RejectReason Reason, string Message)
+    private sealed record LoginResult(long AccountId, CharacterRecord? Character, RejectReason Reason, string Message, int GmLevel = 0)
     {
         public static LoginResult Fail(RejectReason reason, string message) => new(0, null, reason, message);
     }
@@ -362,31 +438,96 @@ public sealed class GameServer : IDisposable
             if (other != session && other.Player is not null && other.AccountId == result.AccountId) _sessionScratch.Add(other);
         foreach (var other in _sessionScratch) Kick(other, RejectReason.LoggedInElsewhere, "You logged in from another location.");
 
+        var content = World.Content;
+        if (!content.Classes.TryGetValue(character.Class, out var cls) || !content.Races.TryGetValue(character.Race, out var race))
+        {
+            Kick(session, RejectReason.ServerError, "Your character's race or class no longer exists.");
+            return;
+        }
+
         var map = World.GetInstance(character.MapId, WorldManager.OpenWorldInstance)
                   ?? World.GetInstance(_options.StartMapId, WorldManager.OpenWorldInstance)!;
-        var spawn = SpawnStateFor(map, character);
+        // Logged out dead: come back at the graveyard (the map's spawn point) with half health.
+        bool wasDead = character.Health is <= 0;
+        var spawn = wasDead ? MovementState.Idle(map.Map.SpawnPosition, map.Map.SpawnYaw) : SpawnStateFor(map, character);
 
         long now = NowMs;
-        var player = new Player(character.Id, character.Name, session, new MovementValidator(map.HeightMap))
+        var player = new Player(character.Id, character.Name, session, new MovementValidator(map.HeightMap), cls, race)
         {
             Movement = spawn,
-            Level = character.Level,
+            Level = (byte)Math.Clamp((int)character.Level, 1, content.Levels.MaxLevel),
+            Xp = Math.Max(0, character.Xp),
             NextSaveAtMs = now + SaveIntervalMs,
+            GmLevel = _options.GmAll ? Math.Max(1, result.GmLevel) : result.GmLevel,
         };
+        player.RecalculateStats();
+        player.UpdateKnownSpells();
+        player.Health = wasDead ? player.MaxHealth / 2 : character.Health ?? player.MaxHealth;
+        player.Power = character.Power ?? (player.PowerType == PowerType.Mana ? player.MaxPower : 0);
+
         session.AccountId = result.AccountId;
+        session.GmLevel = player.GmLevel;
         session.Player = player;
         session.State = SessionState.InWorld;
         _onlineCharacters[character.Id] = session;
 
+        session.Peer.Send(_gameData, DeliveryMethod.ReliableOrdered);
         _welcome.PlayerGuid = player.Guid;
+        _welcome.Name = player.Name;
         _welcome.ServerTimeMs = now;
         _welcome.MapId = map.MapId;
         _welcome.InstanceId = map.InstanceId;
         _welcome.Spawn = spawn;
+        _welcome.Self.CopyFrom(player.Values);
         session.Send(_writer, _welcome, DeliveryMethod.ReliableOrdered);
+        player.Dirty = UnitFieldMask.None;
 
         map.AddPlayer(player, now);
+        map.Spells.SendSpellbook(player);
+        map.SendPlayerStats(player);
         Log.Information("{Player} entered map {MapId} from {Address}", player, map.MapId, session.Peer);
+    }
+
+    /// <summary>Spell, faction, class and experience data for the client (see <see cref="GameData"/>).</summary>
+    private static byte[] BuildGameData(ContentDatabase content)
+    {
+        var learnLevels = new Dictionary<uint, int>();
+        foreach (var cls in content.Classes.Values)
+            foreach (var cs in cls.Spells)
+                learnLevels[cs.Spell] = Math.Min(learnLevels.GetValueOrDefault(cs.Spell, int.MaxValue), cs.Level);
+
+        var msg = new GameData();
+        foreach (var s in content.Spells.Values.OrderBy(s => s.Id))
+        {
+            msg.Spells.Add(new SpellInfo
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Description = s.Description,
+                Icon = s.Icon,
+                School = s.School,
+                Target = s.Target,
+                Flags = s.AllFlags,
+                MinRange = s.RangeMin,
+                MaxRange = s.RangeMax,
+                CastTimeMs = s.CastTimeMs,
+                CooldownMs = s.CooldownMs,
+                GcdMs = s.GcdMs,
+                PowerType = s.PowerType,
+                Cost = s.Cost,
+                AuraDurationMs = s.Aura?.DurationMs ?? 0,
+                ProjectileSpeed = s.ProjectileSpeed,
+                LearnLevel = (byte)Math.Min(learnLevels.GetValueOrDefault(s.Id, 0), 255),
+            });
+        }
+        msg.Factions.AddRange(content.FactionTable.All.OrderBy(f => f.Id));
+        foreach (var c in content.Classes.Values.OrderBy(c => c.Id))
+            msg.Classes.Add(new ClassInfo { Id = (byte)c.Id, Name = c.Name, PowerType = c.PowerType });
+        msg.XpToNextLevel.AddRange(content.Levels.XpToNextLevel);
+
+        var writer = new PacketWriter(4096);
+        Packet.Encode(writer, msg);
+        return writer.ToArray();
     }
 
     /// <summary>The saved position if it is still valid on this map, otherwise the map's spawn point.</summary>

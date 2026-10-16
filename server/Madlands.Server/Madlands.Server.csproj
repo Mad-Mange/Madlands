@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\shared\Madlands.Shared\Madlands.Shared.csproj" />
     <ProjectReference Include="..\Madlands.Content\Madlands.Content.csproj" />
+    <ProjectReference Include="..\Madlands.Navigation\Madlands.Navigation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

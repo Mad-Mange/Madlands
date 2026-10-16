@@ -6,7 +6,7 @@ namespace Madlands.Shared.Net
         /// Bump on ANY wire-format or shared-rule change. Checked in the handshake; a mismatching
         /// client is rejected with <see cref="RejectReason.ProtocolMismatch"/> ("please update").
         /// </summary>
-        public const ushort Current = 2;
+        public const ushort Current = 3;
 
         /// <summary>LiteNetLib connection key; filters out stray traffic before the handshake.</summary>
         public const string ConnectionKey = "Madlands";
@@ -28,6 +28,13 @@ namespace Madlands.Shared.Net
         Hello = 0x0101,
         MoveUpdate = 0x0102,
         Ping = 0x0103,
+        SetTarget = 0x0104,
+        CastSpell = 0x0105,
+        CancelCast = 0x0106,
+        StopAttack = 0x0107,
+        ChatInput = 0x0108,
+        ReleaseSpirit = 0x0109,
+        CancelAura = 0x010A,
 
         // Client -> Server (account API)
         RegisterRequest = 0x0201,
@@ -45,6 +52,18 @@ namespace Madlands.Shared.Net
         EntityDespawn = 0x8005,
         EntityMoves = 0x8006,
         MoveCorrection = 0x8007,
+        GameData = 0x8008,
+        UnitUpdates = 0x8009,
+        SpellStart = 0x800A,
+        SpellGo = 0x800B,
+        SpellFailed = 0x800C,
+        CombatEvent = 0x800D,
+        AuraUpdate = 0x800E,
+        Cooldown = 0x800F,
+        PlayerStats = 0x8010,
+        Spellbook = 0x8011,
+        ChatMessage = 0x8012,
+        ExperienceGained = 0x8013,
 
         // Server -> Client (account API)
         AuthResponse = 0x8101,

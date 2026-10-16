@@ -2,6 +2,7 @@
   <Folder Name="/server/">
     <Project Path="server/Madlands.Bots/Madlands.Bots.csproj" />
     <Project Path="server/Madlands.Content/Madlands.Content.csproj" />
+    <Project Path="server/Madlands.Navigation/Madlands.Navigation.csproj" />
     <Project Path="server/Madlands.Server.Tests/Madlands.Server.Tests.csproj" />
     <Project Path="server/Madlands.Server/Madlands.Server.csproj" />
   </Folder>

@@ -1,0 +1,119 @@
+using System;
+using Madlands.Shared.Net;
+
+namespace Madlands.Shared.Game
+{
+    /// <summary>Bit per <see cref="UnitValues"/> field; fields are written in bit order.</summary>
+    [Flags]
+    public enum UnitFieldMask : ushort
+    {
+        None = 0,
+        Level = 1 << 0,
+        Health = 1 << 1,
+        MaxHealth = 1 << 2,
+        PowerType = 1 << 3,
+        Power = 1 << 4,
+        MaxPower = 1 << 5,
+        Faction = 1 << 6,
+        Flags = 1 << 7,
+        Target = 1 << 8,
+        SpeedPercent = 1 << 9,
+        ClassId = 1 << 10,
+
+        All = Level | Health | MaxHealth | PowerType | Power | MaxPower | Faction | Flags | Target | SpeedPercent | ClassId,
+    }
+
+    /// <summary>
+    /// The publicly visible state of a unit (player or creature): what unit frames, nameplates and
+    /// other clients need. Sent in full with a spawn, then as masked deltas (<see cref="UnitUpdates"/>).
+    /// Private details (stats, experience) go only to the owning player.
+    /// </summary>
+    public sealed class UnitValues
+    {
+        public byte Level = 1;
+        public int Health;
+        public int MaxHealth;
+        public PowerType PowerType;
+        public int Power;
+        public int MaxPower;
+        public ushort Faction;
+        public UnitFlags Flags;
+        public EntityGuid Target;
+        /// <summary>Movement speed in percent of normal (slows and sprints change it).</summary>
+        public ushort SpeedPercent = 100;
+        /// <summary>Player class id (content/classes.json), 0 for creatures.</summary>
+        public byte ClassId;
+
+        public bool IsDead => (Flags & UnitFlags.Dead) != 0;
+        public bool Has(UnitFlags flag) => (Flags & flag) != 0;
+        public float HealthFraction => MaxHealth > 0 ? (float)Health / MaxHealth : 0f;
+        public float PowerFraction => MaxPower > 0 ? (float)Power / MaxPower : 0f;
+
+        public void CopyFrom(UnitValues other)
+        {
+            Level = other.Level;
+            Health = other.Health;
+            MaxHealth = other.MaxHealth;
+            PowerType = other.PowerType;
+            Power = other.Power;
+            MaxPower = other.MaxPower;
+            Faction = other.Faction;
+            Flags = other.Flags;
+            Target = other.Target;
+            SpeedPercent = other.SpeedPercent;
+            ClassId = other.ClassId;
+        }
+
+        /// <summary>Copies only the fields in <paramref name="mask"/> (applying a delta).</summary>
+        public void CopyFrom(UnitValues other, UnitFieldMask mask)
+        {
+            if ((mask & UnitFieldMask.Level) != 0) Level = other.Level;
+            if ((mask & UnitFieldMask.Health) != 0) Health = other.Health;
+            if ((mask & UnitFieldMask.MaxHealth) != 0) MaxHealth = other.MaxHealth;
+            if ((mask & UnitFieldMask.PowerType) != 0) PowerType = other.PowerType;
+            if ((mask & UnitFieldMask.Power) != 0) Power = other.Power;
+            if ((mask & UnitFieldMask.MaxPower) != 0) MaxPower = other.MaxPower;
+            if ((mask & UnitFieldMask.Faction) != 0) Faction = other.Faction;
+            if ((mask & UnitFieldMask.Flags) != 0) Flags = other.Flags;
+            if ((mask & UnitFieldMask.Target) != 0) Target = other.Target;
+            if ((mask & UnitFieldMask.SpeedPercent) != 0) SpeedPercent = other.SpeedPercent;
+            if ((mask & UnitFieldMask.ClassId) != 0) ClassId = other.ClassId;
+        }
+
+        public void Write(PacketWriter w, UnitFieldMask mask)
+        {
+            if ((mask & UnitFieldMask.Level) != 0) w.WriteByte(Level);
+            if ((mask & UnitFieldMask.Health) != 0) w.WriteInt(Health);
+            if ((mask & UnitFieldMask.MaxHealth) != 0) w.WriteInt(MaxHealth);
+            if ((mask & UnitFieldMask.PowerType) != 0) w.WriteByte((byte)PowerType);
+            if ((mask & UnitFieldMask.Power) != 0) w.WriteInt(Power);
+            if ((mask & UnitFieldMask.MaxPower) != 0) w.WriteInt(MaxPower);
+            if ((mask & UnitFieldMask.Faction) != 0) w.WriteUShort(Faction);
+            if ((mask & UnitFieldMask.Flags) != 0) w.WriteUInt((uint)Flags);
+            if ((mask & UnitFieldMask.Target) != 0) w.WriteGuid(Target);
+            if ((mask & UnitFieldMask.SpeedPercent) != 0) w.WriteUShort(SpeedPercent);
+            if ((mask & UnitFieldMask.ClassId) != 0) w.WriteByte(ClassId);
+        }
+
+        public void Read(ref PacketReader r, UnitFieldMask mask)
+        {
+            if ((mask & ~UnitFieldMask.All) != 0) throw new PacketException("Unknown unit fields in mask " + (ushort)mask + ".");
+            if ((mask & UnitFieldMask.Level) != 0) Level = r.ReadByte();
+            if ((mask & UnitFieldMask.Health) != 0) Health = r.ReadInt();
+            if ((mask & UnitFieldMask.MaxHealth) != 0) MaxHealth = r.ReadInt();
+            if ((mask & UnitFieldMask.PowerType) != 0) PowerType = (PowerType)r.ReadByte();
+            if ((mask & UnitFieldMask.Power) != 0) Power = r.ReadInt();
+            if ((mask & UnitFieldMask.MaxPower) != 0) MaxPower = r.ReadInt();
+            if ((mask & UnitFieldMask.Faction) != 0) Faction = r.ReadUShort();
+            if ((mask & UnitFieldMask.Flags) != 0) Flags = (UnitFlags)r.ReadUInt();
+            if ((mask & UnitFieldMask.Target) != 0) Target = r.ReadGuid();
+            if ((mask & UnitFieldMask.SpeedPercent) != 0) SpeedPercent = r.ReadUShort();
+            if ((mask & UnitFieldMask.ClassId) != 0) ClassId = r.ReadByte();
+        }
+
+        public bool ValueEquals(UnitValues o) =>
+            Level == o.Level && Health == o.Health && MaxHealth == o.MaxHealth && PowerType == o.PowerType &&
+            Power == o.Power && MaxPower == o.MaxPower && Faction == o.Faction && Flags == o.Flags &&
+            Target == o.Target && SpeedPercent == o.SpeedPercent && ClassId == o.ClassId;
+    }
+}

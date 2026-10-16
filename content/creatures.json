@@ -1,0 +1,28 @@
+{
+  "$schema": "schemas/creatures.schema.json",
+  "creatures": [
+    {
+      "id": 1, "name": "Mire Frog", "displayId": 101, "minLevel": 1, "maxLevel": 2, "faction": 3,
+      "health": 0.8, "damage": 0.7, "runSpeed": 6, "respawnSeconds": 30, "corpseSeconds": 15
+    },
+    {
+      "id": 2, "name": "Dusk Wolf", "displayId": 102, "minLevel": 2, "maxLevel": 3, "faction": 2,
+      "aggroRadius": 14, "runSpeed": 7.5, "respawnSeconds": 45,
+      "spells": [ { "spell": 900, "chance": 0.3, "cooldownMs": 10000 } ]
+    },
+    {
+      "id": 3, "name": "Shard Bandit", "displayId": 103, "minLevel": 3, "maxLevel": 4, "faction": 2,
+      "aggroRadius": 13, "health": 1.1, "armor": 1.3, "respawnSeconds": 60,
+      "spells": [ { "spell": 902, "chance": 0.25, "cooldownMs": 9000 } ]
+    },
+    {
+      "id": 4, "name": "Bandit Shardcaster", "displayId": 104, "minLevel": 4, "maxLevel": 4, "faction": 2,
+      "ai": "caster", "aggroRadius": 16, "health": 0.85, "damage": 0.6, "mana": 1, "respawnSeconds": 60,
+      "spells": [ { "spell": 901, "chance": 1, "cooldownMs": 0 } ]
+    },
+    {
+      "id": 5, "name": "Training Dummy", "displayId": 105, "minLevel": 5, "maxLevel": 5, "faction": 3,
+      "ai": "dummy", "health": 20, "armor": 0, "damage": 0, "xp": 0, "respawnSeconds": 10, "callForHelpRadius": 0
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\shared\Madlands.ClientCore\Madlands.ClientCore.csproj" />
     <ProjectReference Include="..\..\shared\Madlands.Shared\Madlands.Shared.csproj" />
     <ProjectReference Include="..\Madlands.Content\Madlands.Content.csproj" />
+    <ProjectReference Include="..\Madlands.Navigation\Madlands.Navigation.csproj" />
   </ItemGroup>
 
 </Project>

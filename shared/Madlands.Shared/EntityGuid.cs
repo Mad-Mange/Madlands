@@ -37,6 +37,8 @@ namespace Madlands.Shared
         public EntityType Type => (EntityType)(Raw >> 56);
         public ulong Counter => Raw & CounterMask;
         public bool IsEmpty => Raw == 0;
+        /// <summary>Players and creatures: entities with health, auras and combat.</summary>
+        public bool IsUnit => Type == EntityType.Player || Type == EntityType.Creature;
 
         public bool Equals(EntityGuid other) => Raw == other.Raw;
         public override bool Equals(object obj) => obj is EntityGuid other && Equals(other);

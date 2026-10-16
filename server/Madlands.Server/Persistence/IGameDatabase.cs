@@ -2,12 +2,15 @@ namespace Madlands.Server.Persistence;
 
 public sealed record AccountRecord(long Id, string Username, string PasswordHash);
 
+/// <param name="Health">Current health; null = full (a new character).</param>
+/// <param name="Power">Current mana/rage; null = the class default.</param>
 public sealed record CharacterRecord(
     long Id, long AccountId, string Name, byte Race, byte Class, byte Level,
-    ushort MapId, float X, float Y, float Z, float Yaw);
+    ushort MapId, float X, float Y, float Z, float Yaw, int Xp = 0, int? Health = null, int? Power = null);
 
 /// <summary>What the write-behind saver persists for an online character.</summary>
-public readonly record struct CharacterSnapshot(long CharacterId, ushort MapId, float X, float Y, float Z, float Yaw, byte Level);
+public readonly record struct CharacterSnapshot(
+    long CharacterId, ushort MapId, float X, float Y, float Z, float Yaw, byte Level, int Xp, int Health, int Power);
 
 public enum CreateCharacterOutcome
 {
@@ -27,6 +30,8 @@ public interface IGameDatabase
     Task<long?> CreateAccountAsync(string username, string passwordHash, CancellationToken ct = default);
     Task<AccountRecord?> FindAccountAsync(string username, CancellationToken ct = default);
     Task TouchLoginAsync(long accountId, CancellationToken ct = default);
+    /// <summary>0 for players; higher levels may use GM commands.</summary>
+    Task<int> GetGmLevelAsync(long accountId, CancellationToken ct = default);
 
     Task CreateSessionAsync(byte[] tokenHash, long accountId, DateTime expiresUtc, CancellationToken ct = default);
     /// <summary>Account id for a valid, unexpired session; null otherwise.</summary>

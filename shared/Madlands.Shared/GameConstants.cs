@@ -19,5 +19,17 @@ namespace Madlands.Shared
 
         /// <summary>Maps must stay within +-MaxMapExtent of the origin to keep float precision (~1 mm).</summary>
         public const float MaxMapExtent = 8192f;
+
+        // Combat (meters, milliseconds).
+        /// <summary>Reach of melee attacks and melee abilities, center to center.</summary>
+        public const float MeleeRange = 5f;
+        /// <summary>The global cooldown most abilities trigger.</summary>
+        public const int DefaultGcdMs = 1500;
+        /// <summary>Eye height above the feet for line-of-sight checks.</summary>
+        public const float EyeHeight = 1.5f;
+        /// <summary>How far /say carries.</summary>
+        public const float SayRange = 40f;
+        /// <summary>Half-angle of the "in front of" cone for facing checks (radians, 90 degrees = front half).</summary>
+        public const float FacingHalfAngle = MathUtil.Pi / 2f;
     }
 }

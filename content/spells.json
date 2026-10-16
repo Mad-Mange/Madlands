@@ -1,0 +1,166 @@
+{
+  "$schema": "schemas/spells.schema.json",
+  "spells": [
+    {
+      "id": 1, "name": "Attack", "icon": 1,
+      "description": "Starts attacking your target in melee. Swings continue until you stop or the target dies.",
+      "school": "physical", "target": "enemy", "rangeMax": 5, "gcdMs": 0,
+      "flags": ["autoAttack", "requiresFacing"]
+    },
+
+    {
+      "id": 100, "name": "Heroic Strike", "icon": 100,
+      "description": "A mighty blow that deals your weapon damage plus extra damage.",
+      "school": "physical", "target": "enemy", "rangeMax": 5, "powerType": "rage", "cost": 15,
+      "flags": ["requiresFacing"],
+      "effects": [ { "type": "weaponDamage", "percent": 100, "bonus": 6, "bonusPerLevel": 1.5 } ]
+    },
+    {
+      "id": 101, "name": "Rend", "icon": 101,
+      "description": "Wounds the target, causing it to bleed over 12 seconds.",
+      "school": "physical", "target": "enemy", "rangeMax": 5, "powerType": "rage", "cost": 10,
+      "flags": ["requiresFacing", "harmfulAura"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 12000, "tickMs": 3000, "effects": [ { "type": "periodicDamage", "amount": 3, "perLevel": 1 } ] }
+    },
+    {
+      "id": 102, "name": "Hamstring", "icon": 102,
+      "description": "Maims the target, dealing damage and slowing its movement by 50% for 10 seconds.",
+      "school": "physical", "target": "enemy", "rangeMax": 5, "powerType": "rage", "cost": 10,
+      "flags": ["requiresFacing", "harmfulAura"],
+      "effects": [
+        { "type": "weaponDamage", "percent": 0, "bonus": 5, "bonusPerLevel": 1 },
+        { "type": "applyAura" }
+      ],
+      "aura": { "durationMs": 10000, "effects": [ { "type": "modSpeed", "amount": -50 } ] }
+    },
+    {
+      "id": 103, "name": "Battle Shout", "icon": 103,
+      "description": "A rallying cry that raises the attack power of you and allies within 20 meters for 2 minutes.",
+      "school": "physical", "target": "self", "rangeMax": 0, "powerType": "rage", "cost": 10,
+      "effects": [ { "type": "applyAura", "targets": "alliesNearCaster", "radius": 20 } ],
+      "aura": { "durationMs": 120000, "effects": [ { "type": "modStat", "stat": "attackPower", "amount": 15, "perLevel": 3 } ] }
+    },
+    {
+      "id": 104, "name": "Thunder Clap", "icon": 104,
+      "description": "Strikes the ground, damaging all enemies within 8 meters and slowing them by 30% for 10 seconds.",
+      "school": "physical", "target": "none", "rangeMax": 0, "powerType": "rage", "cost": 20, "cooldownMs": 6000,
+      "flags": ["harmfulAura"],
+      "effects": [
+        { "type": "schoolDamage", "targets": "enemiesNearCaster", "radius": 8, "min": 10, "max": 10, "perLevel": 2 },
+        { "type": "applyAura", "targets": "enemiesNearCaster", "radius": 8 }
+      ],
+      "aura": { "durationMs": 10000, "effects": [ { "type": "modSpeed", "amount": -30 } ] }
+    },
+
+    {
+      "id": 200, "name": "Shard Bolt", "icon": 200,
+      "description": "Hurls a sliver of moon shard at the target, dealing arcane damage.",
+      "school": "arcane", "target": "enemy", "rangeMax": 30, "castTimeMs": 1800, "powerType": "mana", "cost": 25,
+      "projectileSpeed": 24, "flags": ["requiresFacing"],
+      "effects": [ { "type": "schoolDamage", "min": 12, "max": 17, "perLevel": 4, "coefficient": 0.8 } ]
+    },
+    {
+      "id": 201, "name": "Frost Shard", "icon": 201,
+      "description": "Launches a freezing shard that deals frost damage and slows the target by 40% for 5 seconds.",
+      "school": "frost", "target": "enemy", "rangeMax": 30, "castTimeMs": 1500, "powerType": "mana", "cost": 20,
+      "projectileSpeed": 22, "flags": ["requiresFacing", "harmfulAura"],
+      "effects": [
+        { "type": "schoolDamage", "min": 9, "max": 12, "perLevel": 3, "coefficient": 0.7 },
+        { "type": "applyAura" }
+      ],
+      "aura": { "durationMs": 5000, "effects": [ { "type": "modSpeed", "amount": -40 } ] }
+    },
+    {
+      "id": 202, "name": "Shard Nova", "icon": 202,
+      "description": "Erupts with frost, damaging enemies within 8 meters and freezing them in place for 6 seconds.",
+      "school": "frost", "target": "none", "rangeMax": 0, "powerType": "mana", "cost": 35, "cooldownMs": 20000,
+      "flags": ["harmfulAura"],
+      "effects": [
+        { "type": "schoolDamage", "targets": "enemiesNearCaster", "radius": 8, "min": 6, "max": 9, "perLevel": 1.5, "coefficient": 0.2 },
+        { "type": "applyAura", "targets": "enemiesNearCaster", "radius": 8 }
+      ],
+      "aura": { "durationMs": 6000, "effects": [ { "type": "root" } ] }
+    },
+    {
+      "id": 203, "name": "Overcharge", "icon": 203,
+      "description": "Lets raw shard power flow through you, increasing all damage you deal by 25% for 12 seconds.",
+      "school": "arcane", "target": "self", "rangeMax": 0, "powerType": "mana", "cost": 30, "cooldownMs": 45000, "gcdMs": 0,
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 12000, "effects": [ { "type": "modDamageDone", "amount": 25 } ] }
+    },
+    {
+      "id": 204, "name": "Searing Shard", "icon": 204,
+      "description": "Embeds a burning shard in the target: fire damage now and more over 12 seconds.",
+      "school": "fire", "target": "enemy", "rangeMax": 30, "powerType": "mana", "cost": 30,
+      "flags": ["requiresFacing", "harmfulAura"],
+      "effects": [
+        { "type": "schoolDamage", "min": 6, "max": 8, "perLevel": 1, "coefficient": 0.3 },
+        { "type": "applyAura" }
+      ],
+      "aura": { "durationMs": 12000, "tickMs": 3000, "effects": [ { "type": "periodicDamage", "amount": 4, "perLevel": 1 } ] }
+    },
+
+    {
+      "id": 300, "name": "Mending Light", "icon": 300,
+      "description": "Heals a friendly target. Heals you if your target is not friendly.",
+      "school": "holy", "target": "friend", "rangeMax": 30, "castTimeMs": 2000, "powerType": "mana", "cost": 25,
+      "effects": [ { "type": "heal", "min": 22, "max": 28, "perLevel": 6, "coefficient": 0.8 } ]
+    },
+    {
+      "id": 301, "name": "Judgment Spark", "icon": 301,
+      "description": "Smites the target with a spark of sealing light, dealing holy damage.",
+      "school": "holy", "target": "enemy", "rangeMax": 30, "castTimeMs": 1500, "powerType": "mana", "cost": 20,
+      "projectileSpeed": 26, "flags": ["requiresFacing"],
+      "effects": [ { "type": "schoolDamage", "min": 9, "max": 13, "perLevel": 3, "coefficient": 0.7 } ]
+    },
+    {
+      "id": 302, "name": "Renewal", "icon": 302,
+      "description": "Heals a friendly target over 12 seconds.",
+      "school": "nature", "target": "friend", "rangeMax": 30, "powerType": "mana", "cost": 30,
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 12000, "tickMs": 3000, "effects": [ { "type": "periodicHeal", "amount": 6, "perLevel": 2 } ] }
+    },
+    {
+      "id": 303, "name": "Ward", "icon": 303,
+      "description": "Shields a friendly target, absorbing damage for 20 seconds.",
+      "school": "holy", "target": "friend", "rangeMax": 30, "powerType": "mana", "cost": 35, "cooldownMs": 10000,
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 20000, "effects": [ { "type": "absorb", "amount": 30, "perLevel": 8 } ] }
+    },
+    {
+      "id": 304, "name": "Binding Seal", "icon": 304,
+      "description": "Seals the target in light, dealing holy damage and stunning it for 3 seconds.",
+      "school": "holy", "target": "enemy", "rangeMax": 20, "powerType": "mana", "cost": 30, "cooldownMs": 30000,
+      "flags": ["requiresFacing", "harmfulAura"],
+      "effects": [
+        { "type": "schoolDamage", "min": 5, "max": 7, "perLevel": 1 },
+        { "type": "applyAura" }
+      ],
+      "aura": { "durationMs": 3000, "effects": [ { "type": "stun" } ] }
+    },
+
+    {
+      "id": 900, "name": "Rend Flesh", "icon": 900,
+      "description": "Tears into the target, causing it to bleed for 9 seconds.",
+      "school": "physical", "target": "enemy", "rangeMax": 5, "gcdMs": 0,
+      "flags": ["hidden", "harmfulAura"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 9000, "tickMs": 3000, "effects": [ { "type": "periodicDamage", "amount": 2, "perLevel": 1 } ] }
+    },
+    {
+      "id": 901, "name": "Shard Spark", "icon": 901,
+      "description": "A crackling bolt of stolen shard power.",
+      "school": "arcane", "target": "enemy", "rangeMax": 30, "castTimeMs": 2000, "powerType": "mana", "cost": 20,
+      "projectileSpeed": 20, "flags": ["hidden", "requiresFacing"],
+      "effects": [ { "type": "schoolDamage", "min": 7, "max": 10, "perLevel": 2.5 } ]
+    },
+    {
+      "id": 902, "name": "Heavy Blow", "icon": 902,
+      "description": "A slow, crushing swing.",
+      "school": "physical", "target": "enemy", "rangeMax": 5, "gcdMs": 0,
+      "flags": ["hidden", "requiresFacing"],
+      "effects": [ { "type": "weaponDamage", "percent": 150 } ]
+    }
+  ]
+}

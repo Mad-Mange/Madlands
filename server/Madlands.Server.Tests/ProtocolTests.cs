@@ -1,4 +1,5 @@
 using Madlands.Shared;
+using Madlands.Shared.Game;
 using Madlands.Shared.Movement;
 using Madlands.Shared.Net;
 
@@ -9,7 +10,7 @@ public class ProtocolTests
     private static readonly MovementState SampleState = new(
         new Vec3(12.5f, 3.25f, -40f), 1.5f, new Vec3(7f, 2f, 0f), MovementFlags.Forward | MovementFlags.Airborne);
 
-    private static T Roundtrip<T>(T message) where T : IMessage, new()
+    internal static T Roundtrip<T>(T message) where T : IMessage, new()
     {
         var writer = new PacketWriter(8);
         Packet.Encode(writer, message);
@@ -168,8 +169,12 @@ public class ProtocolTests
     public void Welcome_roundtrips()
     {
         var guid = EntityGuid.Create(EntityType.Player, 5);
-        var copy = Roundtrip(new Welcome { PlayerGuid = guid, ServerTimeMs = 99, MapId = 2, InstanceId = 3, Spawn = SampleState });
+        var welcome = new Welcome { PlayerGuid = guid, Name = "Alice", ServerTimeMs = 99, MapId = 2, InstanceId = 3, Spawn = SampleState };
+        welcome.Self.CopyFrom(CombatProtocolTests.SampleValues);
+        var copy = Roundtrip(welcome);
         Assert.Equal(guid, copy.PlayerGuid);
+        Assert.Equal("Alice", copy.Name);
+        Assert.True(copy.Self.ValueEquals(CombatProtocolTests.SampleValues));
         Assert.Equal(99, copy.ServerTimeMs);
         Assert.Equal(2, copy.MapId);
         Assert.Equal(3u, copy.InstanceId);
@@ -188,13 +193,20 @@ public class ProtocolTests
     public void EntitySpawn_and_Despawn_roundtrip()
     {
         var guid = EntityGuid.Create(EntityType.Creature, 77);
-        var spawn = Roundtrip(new EntitySpawn { Guid = guid, Name = "Wolf", DisplayId = 12, StateServerTimeMs = 555, State = SampleState });
+        var message = new EntitySpawn { Guid = guid, Name = "Wolf", DisplayId = 12, StateServerTimeMs = 555, State = SampleState };
+        message.Unit.CopyFrom(CombatProtocolTests.SampleValues);
+        var spawn = Roundtrip(message);
+        Assert.True(spawn.Unit.ValueEquals(CombatProtocolTests.SampleValues));
         Assert.Equal(guid, spawn.Guid);
         Assert.Equal("Wolf", spawn.Name);
         Assert.Equal(12u, spawn.DisplayId);
         Assert.Equal(555, spawn.StateServerTimeMs);
         Assert.Equal(SampleState, spawn.State);
         Assert.Equal(guid, Roundtrip(new EntityDespawn { Guid = guid }).Guid);
+
+        // Non-unit entities carry no unit values.
+        var objectGuid = EntityGuid.Create(EntityType.GameObject, 3);
+        Assert.Equal(objectGuid, Roundtrip(new EntitySpawn { Guid = objectGuid, Name = "Chest", DisplayId = 5, State = SampleState }).Guid);
     }
 
     [Fact]

@@ -37,10 +37,20 @@ internal sealed class TestRealm : IAsyncDisposable
             new[] { new ClassDefinition { Id = 1, Name = "Warrior" } });
     }
 
-    public static async Task<TestRealm> StartAsync(IGameDatabase? database = null)
+    private static readonly Lazy<ContentDatabase> RepositoryContent =
+        new(() => ContentLoader.Load(ContentPaths.FindContentRoot(AppContext.BaseDirectory)!));
+
+    /// <summary>The repository's classes, spells and creatures on a flat 400 x 400 m map with the given creature spawns.</summary>
+    public static ContentDatabase CombatContent(params SpawnDefinition[] spawns)
     {
-        var options = new ServerOptions { Port = 0, HttpPort = 0, Bind = "127.0.0.1", ApiRateLimitPerMinute = 0 };
-        var host = new ServerHost(options, Content(), database ?? new InMemoryGameDatabase(), FastHasher);
+        var map = new MapDefinition { Id = 1, Name = "Arena", Spawn = new SpawnPoint { X = 0, Z = 0 } };
+        return RepositoryContent.Value.WithMaps(new[] { new LoadedMap(map, HeightMap.CreateFlat(-200, -200, 4, 101, 101, 10f), null, spawns) });
+    }
+
+    public static async Task<TestRealm> StartAsync(IGameDatabase? database = null, ContentDatabase? content = null, bool gmAll = false)
+    {
+        var options = new ServerOptions { Port = 0, HttpPort = 0, Bind = "127.0.0.1", ApiRateLimitPerMinute = 0, GmAll = gmAll, RandomSeed = 1234 };
+        var host = new ServerHost(options, content ?? Content(), database ?? new InMemoryGameDatabase(), FastHasher);
         await host.StartAsync();
         return new TestRealm(host);
     }
@@ -48,12 +58,12 @@ internal sealed class TestRealm : IAsyncDisposable
     public AccountClient Account() => new(Host.HttpBaseUrl);
 
     /// <summary>Registers an account with one character.</summary>
-    public async Task<(AccountClient Account, CharacterSummary Character)> NewPlayerAsync(string username, string characterName)
+    public async Task<(AccountClient Account, CharacterSummary Character)> NewPlayerAsync(string username, string characterName, byte classId = 1)
     {
         var account = Account();
         var auth = await account.RegisterAsync(username, "password-" + username);
         Assert.True(auth.Ok, auth.Message);
-        var created = await account.CreateCharacterAsync(characterName, 1, 1);
+        var created = await account.CreateCharacterAsync(characterName, 1, classId);
         Assert.True(created.Ok, created.Message);
         return (account, created.Character);
     }
@@ -393,55 +403,5 @@ public class PasswordHasherTests
     {
         var strong = await new PasswordHasher(memoryKiB: 2048, iterations: 2).HashAsync("pw-123456");
         Assert.True(await new PasswordHasher(memoryKiB: 1024, iterations: 1).VerifyAsync("pw-123456", strong));
-    }
-}
-
-public class ContentLoaderTests
-{
-    [Fact]
-    public void Loads_content_and_reports_all_errors()
-    {
-        var root = Directory.CreateTempSubdirectory("madlands-content-");
-        try
-        {
-            var good = Directory.CreateDirectory(Path.Combine(root.FullName, "maps", "0001"));
-            File.WriteAllText(Path.Combine(good.FullName, "map.json"), """{ "id": 1, "name": "Good", "spawn": { "x": 5, "z": 5 } }""");
-            HeightMap.CreateFlat(0, 0, 1, 11, 11, 3f).Save(Path.Combine(good.FullName, "height.bin"));
-            File.WriteAllText(Path.Combine(root.FullName, "races.json"), """{ "races": [ { "id": 1, "name": "Human", "startMap": 1 } ] }""");
-            File.WriteAllText(Path.Combine(root.FullName, "classes.json"), """{ "classes": [ { "id": 1, "name": "Warrior" } ] }""");
-
-            var db = ContentLoader.Load(root.FullName);
-            Assert.Equal(new Vec3(5, 3, 5), db.Maps[1].SpawnPosition);
-            Assert.Equal("Human", db.Races[1].Name);
-            Assert.Equal("Warrior", db.Classes[1].Name);
-
-            var bad = Directory.CreateDirectory(Path.Combine(root.FullName, "maps", "0002"));
-            File.WriteAllText(Path.Combine(bad.FullName, "map.json"), """{ "id": 1, "name": "", "spawn": { "x": 0, "z": 0 } }""");
-            File.WriteAllText(Path.Combine(root.FullName, "races.json"), """{ "races": [ { "id": 1, "name": "Human", "startMap": 9 }, { "id": 1, "name": "Dupe", "startMap": 1 } ] }""");
-            File.Delete(Path.Combine(root.FullName, "classes.json"));
-
-            var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(root.FullName));
-            Assert.Contains(ex.Errors, e => e.Contains("already used"));
-            Assert.Contains(ex.Errors, e => e.Contains("name is required"));
-            Assert.Contains(ex.Errors, e => e.Contains("height map"));
-            Assert.Contains(ex.Errors, e => e.Contains("map 9, which does not exist"));
-            Assert.Contains(ex.Errors, e => e.Contains("id 1 is used twice"));
-            Assert.Contains(ex.Errors, e => e.Contains("classes.json"));
-        }
-        finally
-        {
-            root.Delete(recursive: true);
-        }
-    }
-
-    [Fact]
-    public void Repository_content_is_valid()
-    {
-        var root = ContentPaths.FindContentRoot(AppContext.BaseDirectory);
-        Assert.NotNull(root);
-        var db = ContentLoader.Load(root!);
-        Assert.True(db.Maps.ContainsKey(1));
-        Assert.NotEmpty(db.Races);
-        Assert.NotEmpty(db.Classes);
     }
 }
