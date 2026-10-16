@@ -23,7 +23,7 @@ public sealed class ChatHandler
     public ChatHandler(GameServer server)
     {
         _server = server;
-        Add("help", "", "Lists the commands.", Help);
+        Add("help", "[command]", "Lists the commands, or explains one.", Help);
         Add("gps", "", "Shows where you are.", Gps);
         Add("tele", "<x> <z> | spawn | <player>", "Teleports you.", Tele);
         Add("spawn", "<creature id or name> [count]", "Spawns creatures in front of you (they do not respawn).", Spawn);
@@ -103,8 +103,12 @@ public sealed class ChatHandler
 
     private string? Help(Player player, string[] args, long now)
     {
-        var lines = _commands.Select(c => $".{c.Key} {c.Value.Usage} - {c.Value.Help}".Replace("  ", " "));
-        return "Commands:\n" + string.Join("\n", lines);
+        if (args.Length > 0)
+        {
+            var name = args[0].TrimStart('.');
+            return _commands.TryGetValue(name, out var c) ? $".{name} {c.Usage}".TrimEnd() + " - " + c.Help : $"Unknown command .{name}.";
+        }
+        return "Commands: " + string.Join("  ", _commands.Keys.Select(k => "." + k)) + "\nType .help <command> for details, e.g. .help tele";
     }
 
     private static string? Gps(Player player, string[] args, long now)

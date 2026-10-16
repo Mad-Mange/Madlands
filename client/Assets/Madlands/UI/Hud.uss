@@ -528,13 +528,14 @@
 }
 
 .chat-line {
-    font-size: 15px;
-    color: rgb(240, 240, 240);
+    font-size: 16px;
+    color: rgb(245, 245, 245);
     white-space: normal;
-    padding: 0 4px;
-    margin: 0;
-    -unity-text-outline-width: 1px;
-    -unity-text-outline-color: rgba(0, 0, 0, 0.9);
+    align-self: flex-start;
+    padding: 1px 6px;
+    margin: 1px 0;
+    background-color: rgba(0, 0, 0, 0.62);
+    border-radius: 3px;
 }
 
 .chat-line.system {

@@ -12,8 +12,8 @@ namespace Madlands.Client
     public sealed class ChatPanel
     {
         private const int MaxLines = 60;
-        private const int VisibleLines = 10;
-        private const float FadeAfterSeconds = 25f;
+        private const int VisibleLines = 16;
+        private const float FadeAfterSeconds = 30f;
 
         private readonly VisualElement _log;
         private readonly TextField _input;

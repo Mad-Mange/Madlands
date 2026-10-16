@@ -20,6 +20,8 @@ namespace Madlands.Client
         private float _yaw;
         private float _pitch = 18f;
         private float _distance = 9f;
+        private bool _wasDragging;
+        private Vector2 _grabPosition;
 
         public float YawDegrees => _yaw;
         public bool IsMouseSteering { get; private set; }
@@ -48,8 +50,13 @@ namespace Madlands.Client
             bool dragging = _target != null && (lmb || rmb);
             IsMouseSteering = _target != null && rmb;
 
+            // The cursor hides while dragging and comes back where the drag started, like in WoW.
+            // (A locked cursor sits at the screen center, so other code must not read its position then.)
+            if (dragging && !_wasDragging) _grabPosition = mouse.position.ReadValue();
             Cursor.lockState = dragging ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !dragging;
+            if (!dragging && _wasDragging && Mouse.current != null) Mouse.current.WarpCursorPosition(_grabPosition);
+            _wasDragging = dragging;
 
             if (_target == null) return;
 

@@ -11,7 +11,9 @@ namespace Madlands.Client
     /// <summary>
     /// WoW-style targeting: left-click a unit to select it, right-click to select and attack, Tab
     /// cycles through enemies in front of you. A click is a short press without dragging (dragging
-    /// turns the camera). A ring under the target shows its reaction color.
+    /// turns the camera). The camera locks the cursor at the screen center while a button is held,
+    /// so the click is judged by how far the mouse moved and picked where the press started.
+    /// A ring under the target shows its reaction color.
     /// </summary>
     public sealed class TargetingController : MonoBehaviour
     {
@@ -24,6 +26,7 @@ namespace Madlands.Client
 
         private Vector2 _pressPosition;
         private float _pressTime;
+        private float _movedPixels;
         private bool _pressing;
         private Transform _ring;
         private Color _ringColor;
@@ -60,6 +63,11 @@ namespace Madlands.Client
                 _pressing = true;
                 _pressPosition = mouse.position.ReadValue();
                 _pressTime = Time.unscaledTime;
+                _movedPixels = 0f;
+            }
+            else if (_pressing)
+            {
+                _movedPixels += mouse.delta.ReadValue().magnitude;
             }
             bool leftUp = mouse.leftButton.wasReleasedThisFrame;
             bool rightUp = mouse.rightButton.wasReleasedThisFrame;
@@ -67,11 +75,10 @@ namespace Madlands.Client
             if (mouse.leftButton.isPressed || mouse.rightButton.isPressed) return; // wait for both buttons
             _pressing = false;
 
-            var position = mouse.position.ReadValue();
-            bool click = (position - _pressPosition).magnitude <= ClickMaxPixels && Time.unscaledTime - _pressTime <= ClickMaxSeconds;
-            if (!click || IsOverUi(position)) return;
+            bool click = _movedPixels <= ClickMaxPixels && Time.unscaledTime - _pressTime <= ClickMaxSeconds;
+            if (!click || IsOverUi(_pressPosition)) return;
 
-            var unit = PickUnit(position);
+            var unit = PickUnit(_pressPosition);
             if (unit == null) return;
             Client.SetTarget(unit.Guid);
             if (rightUp && Client.CanAttack(unit.Guid)) Attack(unit.Guid);
