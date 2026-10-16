@@ -4,5 +4,7 @@
   "id": 1,
   "name": "Testlands",
   "heightmap": "height.bin",
+  "collision": "collision.bin",
+  "spawns": "spawns.json",
   "spawn": { "x": 0.00, "z": 0.00, "yawDegrees": 0.0 }
 }

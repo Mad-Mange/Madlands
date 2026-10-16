@@ -1,10 +1,26 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Madlands.Content;
 using Madlands.Server;
 using Madlands.Server.Persistence;
 using Npgsql;
 using Serilog;
 using Serilog.Events;
+
+// Admin: "set-gm <account> <level>" grants GM commands to an account (0 revokes), then exits.
+if (args.Length > 0 && args[0] == "set-gm")
+{
+    if (args.Length < 3 || !int.TryParse(args[2], out int gmLevel))
+    {
+        Console.WriteLine("Usage: Madlands.Server set-gm <account> <level> [--connection-string <npgsql>]");
+        return 1;
+    }
+    var adminOptions = ServerOptions.Parse(args[3..]);
+    var username = Madlands.Shared.NameRules.NormalizeUsername(args[1]) ?? args[1];
+    var adminDb = PostgresGameDatabase.Open(adminOptions.ConnectionString);
+    bool updated = await adminDb.SetGmLevelAsync(username, gmLevel);
+    Console.WriteLine(updated ? $"Account '{username}' now has GM level {gmLevel}." : $"No account named '{username}'.");
+    return updated ? 0 : 2;
+}
 
 var options = ServerOptions.Parse(args);
 

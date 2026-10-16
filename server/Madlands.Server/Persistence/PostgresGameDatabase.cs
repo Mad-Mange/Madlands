@@ -74,6 +74,14 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
             "SELECT gm_level FROM accounts WHERE id = @accountId", new { accountId }, cancellationToken: ct));
     }
 
+    public async Task<bool> SetGmLevelAsync(string username, int level, CancellationToken ct = default)
+    {
+        await using var conn = await _dataSource.OpenConnectionAsync(ct);
+        int rows = await conn.ExecuteAsync(new CommandDefinition(
+            "UPDATE accounts SET gm_level = @level WHERE username = @username", new { username, level = (short)level }, cancellationToken: ct));
+        return rows == 1;
+    }
+
     public async Task CreateSessionAsync(byte[] tokenHash, long accountId, DateTime expiresUtc, CancellationToken ct = default)
     {
         await using var conn = await _dataSource.OpenConnectionAsync(ct);

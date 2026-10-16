@@ -44,6 +44,17 @@ public sealed class InMemoryGameDatabase : IGameDatabase
         lock (_lock) return Task.FromResult(_gmLevels.GetValueOrDefault(accountId));
     }
 
+    public Task<bool> SetGmLevelAsync(string username, int level, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            var account = _accounts.Values.FirstOrDefault(a => a.Username == username);
+            if (account is null) return Task.FromResult(false);
+            _gmLevels[account.Id] = level;
+            return Task.FromResult(true);
+        }
+    }
+
     /// <summary>Tests: grant GM commands to an account.</summary>
     public void SetGmLevel(long accountId, int level)
     {

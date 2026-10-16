@@ -1,5 +1,6 @@
 using Madlands.ClientCore;
 using Madlands.Shared;
+using Madlands.Shared.Game;
 using Madlands.Shared.Movement;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,6 +15,8 @@ namespace Madlands.Client
     ///   W/S forward/back, A/D turn (strafe while right mouse is held), Q/E strafe,
     ///   both mouse buttons = forward, Space jump, Num Lock or R = autorun.
     ///   No air control: horizontal velocity is locked at take-off, like WoW.
+    /// Speed follows the unit's SpeedPercent from the server (slows); rooted units can only turn,
+    /// stunned and dead ones cannot act at all.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public sealed class PlayerController : MonoBehaviour
@@ -33,6 +36,7 @@ namespace Madlands.Client
         private bool _autorun;
 
         public MovementState State => _state;
+        public UnitView View { get; private set; }
         public bool IsMovingForward => (_state.Flags & MovementFlags.Forward) != 0;
 
         public static PlayerController Create(MovementState spawn, NetworkController network, CameraController camera)
@@ -48,9 +52,10 @@ namespace Madlands.Client
             controller.slopeLimit = 50f;
             controller.skinWidth = 0.04f;
 
-            EntityVisuals.CreatePlaceholder(go.transform, EntityVisuals.LocalPlayerColor);
+            var view = UnitView.Attach(go, network.Client.LocalGuid, EntityVisuals.PlayerDisplay, EntityVisuals.LocalPlayerColor, isLocal: true);
 
             var player = go.AddComponent<PlayerController>();
+            player.View = view;
             player._network = network;
             player._camera = camera;
             player._state = spawn;
@@ -67,8 +72,11 @@ namespace Madlands.Client
         {
             float dt = Time.deltaTime;
             // While a menu is open the character keeps simulating (falling, finishing a jump) but takes no input.
-            var keyboard = InputGate.Blocked ? null : Keyboard.current;
-            var mouse = InputGate.Blocked ? null : Mouse.current;
+            var self = _network.Client.Self.Values;
+            bool stunned = self.IsDead || self.Has(UnitFlags.Stunned);
+            bool rooted = stunned || self.Has(UnitFlags.Rooted);
+            var keyboard = InputGate.KeyboardBlocked || stunned ? null : Keyboard.current;
+            var mouse = InputGate.Blocked || stunned ? null : Mouse.current;
             bool rmb = mouse != null && mouse.rightButton.isPressed;
             bool lmb = mouse != null && mouse.leftButton.isPressed;
             bool Held(Key k) => keyboard != null && keyboard[k].isPressed;
@@ -85,11 +93,16 @@ namespace Madlands.Client
             bool strafeRight = Held(Key.E) || (rmb && Held(Key.D));
             bool turnLeft = !rmb && Held(Key.A);
             bool turnRight = !rmb && Held(Key.D);
-            bool jump = keyboard != null && keyboard.spaceKey.wasPressedThisFrame;
+            bool jump = keyboard != null && keyboard.spaceKey.wasPressedThisFrame && !rooted;
+            if (rooted)
+            {
+                forward = backward = strafeLeft = strafeRight = false;
+                _autorun = false;
+            }
 
             // Facing: mouse look (right button) steers the character; keyboard turning turns
             // character and camera together.
-            if (_camera != null && _camera.IsMouseSteering)
+            if (_camera != null && _camera.IsMouseSteering && !stunned)
             {
                 _yaw = _camera.YawDegrees * Mathf.Deg2Rad;
             }
@@ -155,6 +168,7 @@ namespace Madlands.Client
 
             var client = _network.Client;
             long now = client.LocalTimeMs;
+            client.SetLocalMovement(_state);
             if (_sender.ShouldSend(_state, now))
             {
                 client.SendMovement(_state);
@@ -167,7 +181,7 @@ namespace Madlands.Client
             float z = ((flags & MovementFlags.Forward) != 0 ? 1f : 0f) - ((flags & MovementFlags.Backward) != 0 ? 1f : 0f);
             float x = ((flags & MovementFlags.StrafeRight) != 0 ? 1f : 0f) - ((flags & MovementFlags.StrafeLeft) != 0 ? 1f : 0f);
             if (x == 0f && z == 0f) return Vector3.zero;
-            float speed = z < 0f ? GameConstants.BackwardSpeed : GameConstants.RunSpeed;
+            float speed = (z < 0f ? GameConstants.BackwardSpeed : GameConstants.RunSpeed) * _network.Client.Self.Values.SpeedPercent / 100f;
             var local = new Vector3(x, 0f, z).normalized * speed;
             return Conversions.YawToRotation(_yaw) * local;
         }
@@ -189,17 +203,30 @@ namespace Madlands.Client
             }
         }
 
+        /// <summary>Turns the character (and the camera with it) to face a point, e.g. the target.</summary>
+        public void FaceTowards(Vector3 point)
+        {
+            var to = point - transform.position;
+            if (to.x * to.x + to.z * to.z < 0.01f) return;
+            float yaw = Mathf.Atan2(to.x, to.z);
+            float delta = MathUtil.WrapAngle(yaw - _yaw);
+            _yaw = yaw;
+            if (_camera != null) _camera.AddYaw(delta * Mathf.Rad2Deg);
+        }
+
         public void ApplyCorrection(MovementState state)
         {
             _controller.enabled = false;
             transform.SetPositionAndRotation(state.Position.ToUnity(), Conversions.YawToRotation(state.Yaw));
             _controller.enabled = true;
             _state = state;
+            // Keep the camera where it was relative to the character (teleports can turn us).
+            if (_camera != null) _camera.AddYaw(MathUtil.WrapAngle(state.Yaw - _yaw) * Mathf.Rad2Deg);
             _yaw = state.Yaw;
             _airborne = false;
             _verticalVelocity = 0f;
             _sender.Reset();
-            Debug.LogWarning("[Net] Position corrected by server to " + state.Position);
+            Debug.Log("[Net] Moved by the server to " + state.Position);
         }
     }
 }

@@ -492,6 +492,12 @@ namespace Madlands.ClientCore
             _despawn.Read(ref r);
             var entity = World.Remove(_despawn.Guid);
             if (entity != null) EntityDespawned?.Invoke(entity);
+            // A target that left our view (or vanished, e.g. a corpse) is no longer selectable.
+            if (_despawn.Guid == Target)
+            {
+                Target = EntityGuid.Empty;
+                TargetChanged?.Invoke(Target);
+            }
         }
 
         private void HandleMoves(ref PacketReader r)

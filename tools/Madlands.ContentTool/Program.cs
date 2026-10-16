@@ -1,7 +1,7 @@
-﻿using Madlands.Content;
+using Madlands.Content;
 
-// Content pipeline entry point. Phase 1: validation only. Later phases add compiling content
-// into the binary format the client ships with, and building navmeshes (DotRecast).
+// Content pipeline entry point: validates everything under content/ (the server does the same
+// at startup, so this is for CI and quick checks). Navmeshes are built by the server at startup.
 //   dotnet run --project tools/Madlands.ContentTool -- validate [--content <path>]
 string command = args.Length > 0 ? args[0] : "validate";
 string? contentPath = null;
@@ -22,8 +22,11 @@ switch (command)
             {
                 var h = map.HeightMap;
                 Console.WriteLine($"  map {map.Id} '{map.Definition.Name}': {h.Width}x{h.Depth} samples @ {h.CellSize} m, " +
-                                  $"x {h.OriginX}..{h.MaxX}, z {h.OriginZ}..{h.MaxZ}, spawn {map.SpawnPosition}");
+                                  $"x {h.OriginX}..{h.MaxX}, z {h.OriginZ}..{h.MaxZ}, spawn {map.SpawnPosition}, " +
+                                  $"{map.Collision.TriangleCount} obstacle triangles, {map.Spawns.Count} creature spawns");
             }
+            Console.WriteLine($"  {db.Races.Count} races, {db.Classes.Count} classes, {db.Factions.Count} factions, " +
+                              $"{db.Spells.Count} spells, {db.Creatures.Count} creatures, level cap {db.Levels.MaxLevel}");
             return 0;
         }
         catch (ContentException ex)

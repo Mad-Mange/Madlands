@@ -9,9 +9,10 @@ using Object = UnityEngine.Object;
 namespace Madlands.Client.Editor
 {
     /// <summary>
-    /// Generates the Phase 1 test map (World_0001) entirely from code: rolling hills with a flat
-    /// clearing at the spawn, a rim of hills at the edge, painted terrain layers, primitive trees
-    /// and rocks, sun + fog, and the Game/Map objects. Deterministic: same code, same world.
+    /// Generates the test map (World_0001) entirely from code: rolling hills with a flat clearing at
+    /// the spawn, a rim of hills at the edge, painted terrain layers, primitive trees and rocks, a
+    /// walled bandit camp, creature spawn markers, sun + fog, and the Map object.
+    /// Deterministic: same code, same world.
     /// Real zones (Phase 5) are built by hand in the editor instead.
     ///   Batch: -executeMethod Madlands.Client.Editor.TestWorldBuilder.BuildFromCommandLine
     /// </summary>
@@ -24,6 +25,9 @@ namespace Madlands.Client.Editor
         private const int Resolution = 513;
         private const float Size = 512f;
         private const float MaxHeight = 100f;
+        /// <summary>The bandit camp: a palisade ring with crates and tents (obstacles for the navmesh and line of sight).</summary>
+        private static readonly Vector2 CampCenter = new Vector2(95f, 75f);
+        private const float CampRadius = 14f;
 
         [MenuItem("Madlands/Rebuild Test World (World_0001)")]
         public static void BuildMenu()
@@ -66,6 +70,8 @@ namespace Madlands.Client.Editor
             var terrain = CreateTerrain();
             SetupLightingAndFog();
             CreateProps(terrain);
+            CreateCamp();
+            CreateSpawns();
             CreateMapInfo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -137,6 +143,8 @@ namespace Madlands.Client.Editor
                     float rock = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(24f, 34f, data.GetSteepness(nx, nz)));
                     float d = Mathf.Sqrt(wx * wx + wz * wz);
                     float plaza = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(9f, 15f, d));
+                    float camp = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(CampRadius, CampRadius + 6f, Vector2.Distance(new Vector2(wx, wz), CampCenter)));
+                    plaza = Mathf.Max(plaza, camp);
                     float patches = Mathf.Clamp01((Mathf.PerlinNoise(wx * 0.03f + 9f, wz * 0.03f + 4f) - 0.62f) * 4f);
                     float dirt = Mathf.Max(plaza, patches) * (1f - rock);
                     alpha[y, x, 0] = Mathf.Max(0f, 1f - rock - dirt);
@@ -227,6 +235,7 @@ namespace Madlands.Client.Editor
                 float x = (float)(rng.NextDouble() * 460 - 230), z = (float)(rng.NextDouble() * 460 - 230);
                 position = new Vector3(x, terrain.SampleHeight(new Vector3(x, 0f, z)) + terrain.GetPosition().y, z);
                 return x * x + z * z >= minDistance * minDistance
+                       && Vector2.Distance(new Vector2(x, z), CampCenter) > CampRadius + 8f
                        && data.GetSteepness((x + Size / 2) / Size, (z + Size / 2) / Size) <= maxSteepness;
             }
 
@@ -260,6 +269,91 @@ namespace Madlands.Client.Editor
 
             foreach (Transform child in parent.GetComponentsInChildren<Transform>())
                 GameObjectUtility.SetStaticEditorFlags(child.gameObject, StaticEditorFlags.BatchingStatic);
+        }
+
+        // ------------------------------------------------------------------ bandit camp
+
+        private static void CreateCamp()
+        {
+            var wood = AssetDatabase.LoadAssetAtPath<Material>(MaterialDir + "/TreeTrunk.mat");
+            var canvas = CreateMaterial(MaterialDir + "/Canvas.mat", new Color(0.62f, 0.52f, 0.36f));
+            var parent = new GameObject("BanditCamp").transform;
+            Vector3 Ground(float x, float z) => new Vector3(x, HeightAt(x, z), z);
+
+            // Palisade ring with an opening toward the spawn (south-west).
+            const int segments = 14;
+            float entrance = Mathf.Atan2(-CampCenter.x, -CampCenter.y);
+            for (int i = 0; i < segments; i++)
+            {
+                float angle = i * Mathf.PI * 2f / segments;
+                if (Mathf.Abs(Mathf.DeltaAngle(angle * Mathf.Rad2Deg, entrance * Mathf.Rad2Deg)) < 22f) continue;
+                float x = CampCenter.x + Mathf.Sin(angle) * CampRadius, z = CampCenter.y + Mathf.Cos(angle) * CampRadius;
+                var wall = AddPrimitive(PrimitiveType.Cube, parent, Ground(x, z) + Vector3.up * 1.1f, new Vector3(6.6f, 3.2f, 0.5f), wood, keepCollider: true);
+                wall.name = "Palisade";
+                wall.transform.rotation = Quaternion.Euler(0f, angle * Mathf.Rad2Deg + 90f, 0f);
+            }
+
+            // Two tents, crates and a campfire.
+            var tentA = AddPrimitive(PrimitiveType.Cube, parent, Ground(CampCenter.x + 6f, CampCenter.y + 4f) + Vector3.up * 1.2f, new Vector3(4f, 2.4f, 3f), canvas, keepCollider: true);
+            tentA.name = "Tent";
+            tentA.transform.rotation = Quaternion.Euler(0f, 20f, 0f);
+            var tentB = AddPrimitive(PrimitiveType.Cube, parent, Ground(CampCenter.x - 5f, CampCenter.y + 6f) + Vector3.up * 1.2f, new Vector3(3.5f, 2.4f, 3f), canvas, keepCollider: true);
+            tentB.name = "Tent";
+            tentB.transform.rotation = Quaternion.Euler(0f, -35f, 0f);
+            var rng = new System.Random(77);
+            for (int i = 0; i < 7; i++)
+            {
+                float x = CampCenter.x + (float)(rng.NextDouble() * 16 - 8), z = CampCenter.y + (float)(rng.NextDouble() * 10 - 9);
+                if (Vector2.Distance(new Vector2(x, z), CampCenter) < 3f) continue;
+                float size = 0.9f + (float)rng.NextDouble() * 0.5f;
+                var crate = AddPrimitive(PrimitiveType.Cube, parent, Ground(x, z) + Vector3.up * size * 0.5f, Vector3.one * size, wood, keepCollider: true);
+                crate.name = "Crate";
+                crate.transform.rotation = Quaternion.Euler(0f, (float)rng.NextDouble() * 90f, 0f);
+            }
+            var fire = AddPrimitive(PrimitiveType.Cylinder, parent, Ground(CampCenter.x, CampCenter.y) + Vector3.up * 0.15f, new Vector3(1.4f, 0.15f, 1.4f), wood, keepCollider: false);
+            fire.name = "Campfire";
+            foreach (Transform child in parent.GetComponentsInChildren<Transform>())
+                GameObjectUtility.SetStaticEditorFlags(child.gameObject, StaticEditorFlags.BatchingStatic);
+        }
+
+        // ------------------------------------------------------------------ creature spawns
+
+        private const int MireFrog = 1, DuskWolf = 2, ShardBandit = 3, BanditShardcaster = 4, TrainingDummy = 5;
+
+        /// <summary>Spawn markers (exported to spawns.json). EditorOnly: they are not part of player builds.</summary>
+        private static void CreateSpawns()
+        {
+            var parent = new GameObject("CreatureSpawns") { tag = "EditorOnly" }.transform;
+            void Spawn(int creature, float x, float z, float yaw, float wander)
+            {
+                var go = new GameObject("Spawn " + creature) { tag = "EditorOnly" };
+                go.transform.SetParent(parent);
+                go.transform.SetPositionAndRotation(new Vector3(x, HeightAt(x, z), z), Quaternion.Euler(0f, yaw, 0f));
+                var marker = go.AddComponent<CreatureSpawnPoint>();
+                marker.creatureId = creature;
+                marker.wanderRadius = wander;
+            }
+
+            // Practice targets next to the spawn, facing it.
+            Spawn(TrainingDummy, -9f, 7f, 125f, 0f);
+            Spawn(TrainingDummy, -12f, 10f, 130f, 0f);
+            Spawn(TrainingDummy, -15f, 13f, 135f, 0f);
+
+            // Frogs in the low ground south-east: harmless unless attacked.
+            var frogs = new[] { (48f, -42f), (56f, -50f), (63f, -40f), (52f, -60f), (68f, -55f), (44f, -55f) };
+            foreach (var (x, z) in frogs) Spawn(MireFrog, x, z, 0f, 8f);
+
+            // A wolf pack north-west: hostile, they come at you.
+            var wolves = new[] { (-62f, 66f), (-70f, 74f), (-78f, 62f), (-66f, 84f), (-84f, 78f), (-90f, 92f), (-74f, 98f) };
+            foreach (var (x, z) in wolves) Spawn(DuskWolf, x, z, 180f, 10f);
+
+            // The bandit camp: fighters around the fire, casters at the back.
+            Spawn(ShardBandit, CampCenter.x - 3f, CampCenter.y - 4f, 225f, 3f);
+            Spawn(ShardBandit, CampCenter.x + 3f, CampCenter.y - 3f, 200f, 3f);
+            Spawn(ShardBandit, CampCenter.x - 7f, CampCenter.y + 1f, 250f, 2f);
+            Spawn(ShardBandit, CampCenter.x + 7f, CampCenter.y - 2f, 190f, 2f);
+            Spawn(BanditShardcaster, CampCenter.x + 1f, CampCenter.y + 8f, 210f, 0f);
+            Spawn(BanditShardcaster, CampCenter.x - 2f, CampCenter.y + 9f, 220f, 0f);
         }
 
         private static GameObject AddPrimitive(PrimitiveType type, Transform parent, Vector3 localPosition, Vector3 localScale, Material material, bool keepCollider)

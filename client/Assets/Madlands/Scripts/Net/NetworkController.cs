@@ -28,6 +28,7 @@ namespace Madlands.Client
         public GameClient Client { get; private set; }
         public ClientSettings Settings { get; private set; }
         public PlayerController LocalPlayer => _localPlayer;
+        public WorldView WorldView => worldView;
         public bool InWorld => _localPlayer != null;
         public float EnteredWorldAt { get; private set; } = -1f;
 
@@ -102,6 +103,7 @@ namespace Madlands.Client
             // The map scene's lighting, fog and sky apply to everything created from now on.
             SceneManager.SetActiveScene(SceneManager.GetSceneByName(sceneName));
             _localPlayer = PlayerController.Create(_pendingSpawn, this, cameraController);
+            worldView.RegisterLocal(_localPlayer.View);
             cameraController.SetTarget(_localPlayer);
             cameraController.Frame(Settings.CameraPitch, Settings.CameraDistance, Settings.CameraYawOffset);
             worldView.SetReady(true);

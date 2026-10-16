@@ -13,8 +13,9 @@ namespace Madlands.Client.Editor
 {
     /// <summary>
     /// Generates the persistent FrontEnd scene (build index 0): camera, networking, world view,
-    /// UI Toolkit document with the login/character screens. Map scenes (World_NNNN) are loaded
-    /// additively on top of it when the server says which map the character is on.
+    /// UI Toolkit document with the login/character screens and the in-game HUD, targeting and
+    /// spell effects. Map scenes (World_NNNN) are loaded additively on top of it when the server
+    /// says which map the character is on.
     ///   Batch: -executeMethod Madlands.Client.Editor.FrontEndBuilder.BuildFromCommandLine
     /// </summary>
     public static class FrontEndBuilder
@@ -43,6 +44,7 @@ namespace Madlands.Client.Editor
         public static void Build()
         {
             var panelSettings = CreatePanelSettings();
+            CreateUnlitMaterial();
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -69,10 +71,23 @@ namespace Madlands.Client.Editor
             SetReference(document, "m_PanelSettings", panelSettings);
             SetReference(document, "sourceAsset", tree);
             var frontEnd = game.AddComponent<FrontEndController>();
+            var targeting = game.AddComponent<TargetingController>();
+            var hud = game.AddComponent<HudController>();
+            var effects = game.AddComponent<SpellEffects>();
+            var autoPlay = game.AddComponent<AutoPlay>();
 
             SetReference(network, "worldView", worldView);
             SetReference(network, "cameraController", cameraController);
             SetReference(frontEnd, "network", network);
+            SetReference(frontEnd, "hud", hud);
+            SetReference(targeting, "network", network);
+            SetReference(targeting, "document", document);
+            SetReference(hud, "network", network);
+            SetReference(hud, "targeting", targeting);
+            SetReference(effects, "network", network);
+            SetReference(autoPlay, "network", network);
+            SetReference(autoPlay, "hud", hud);
+            SetReference(autoPlay, "targeting", targeting);
 
             if (new SerializedObject(document).FindProperty("m_PanelSettings").objectReferenceValue != panelSettings)
                 throw new InvalidOperationException("UIDocument panel settings were not assigned.");
@@ -81,6 +96,15 @@ namespace Madlands.Client.Editor
             SceneList.Apply();
             AssetDatabase.SaveAssets();
             Debug.Log("[FrontEndBuilder] Built " + ScenePath);
+        }
+
+        /// <summary>Self-lit material for glowing placeholder effects; in Resources/ so player builds include the shader.</summary>
+        private static void CreateUnlitMaterial()
+        {
+            const string path = "Assets/Madlands/Resources/Unlit.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(path) != null) return;
+            var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? throw new InvalidOperationException("URP Unlit shader not found.");
+            AssetDatabase.CreateAsset(new Material(shader) { color = Color.white }, path);
         }
 
         private static PanelSettings CreatePanelSettings()

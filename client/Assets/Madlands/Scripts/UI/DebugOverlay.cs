@@ -67,7 +67,9 @@ namespace Madlands.Client
                         (player != null ? $"Pos: {player.State.Position}\nFlags: {player.State.Flags}\n" : "") +
                         $"Server time: {client.ServerTimeMs / 1000.0:0.0} s";
             }
-            GUI.Box(new Rect(10, 10, 300, client.State == ClientState.InWorld ? 140 : 50), text, _style);
+            // Below the HUD's unit frames.
+            float top = Screen.height * 0.12f;
+            GUI.Box(new Rect(10, top, 300, client.State == ClientState.InWorld ? 140 : 50), text, _style);
         }
     }
 }

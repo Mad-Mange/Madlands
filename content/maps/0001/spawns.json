@@ -1,0 +1,28 @@
+{
+  "$schema": "../../schemas/spawns.schema.json",
+  "_generated": "Written by Unity (Madlands > Export Map) from CreatureSpawnPoint markers. Edit the scene, not this file.",
+  "spawns": [
+    { "creature": 1, "x": 44.00, "z": -55.00, "yawDegrees": 0, "wanderRadius": 8, "respawnSeconds": 0 },
+    { "creature": 1, "x": 48.00, "z": -42.00, "yawDegrees": 0, "wanderRadius": 8, "respawnSeconds": 0 },
+    { "creature": 1, "x": 52.00, "z": -60.00, "yawDegrees": 0, "wanderRadius": 8, "respawnSeconds": 0 },
+    { "creature": 1, "x": 56.00, "z": -50.00, "yawDegrees": 0, "wanderRadius": 8, "respawnSeconds": 0 },
+    { "creature": 1, "x": 63.00, "z": -40.00, "yawDegrees": 0, "wanderRadius": 8, "respawnSeconds": 0 },
+    { "creature": 1, "x": 68.00, "z": -55.00, "yawDegrees": 0, "wanderRadius": 8, "respawnSeconds": 0 },
+    { "creature": 2, "x": -90.00, "z": 92.00, "yawDegrees": 180, "wanderRadius": 10, "respawnSeconds": 0 },
+    { "creature": 2, "x": -84.00, "z": 78.00, "yawDegrees": 180, "wanderRadius": 10, "respawnSeconds": 0 },
+    { "creature": 2, "x": -78.00, "z": 62.00, "yawDegrees": 180, "wanderRadius": 10, "respawnSeconds": 0 },
+    { "creature": 2, "x": -74.00, "z": 98.00, "yawDegrees": 180, "wanderRadius": 10, "respawnSeconds": 0 },
+    { "creature": 2, "x": -70.00, "z": 74.00, "yawDegrees": 180, "wanderRadius": 10, "respawnSeconds": 0 },
+    { "creature": 2, "x": -66.00, "z": 84.00, "yawDegrees": 180, "wanderRadius": 10, "respawnSeconds": 0 },
+    { "creature": 2, "x": -62.00, "z": 66.00, "yawDegrees": 180, "wanderRadius": 10, "respawnSeconds": 0 },
+    { "creature": 3, "x": 88.00, "z": 76.00, "yawDegrees": 250, "wanderRadius": 2, "respawnSeconds": 0 },
+    { "creature": 3, "x": 92.00, "z": 71.00, "yawDegrees": 225, "wanderRadius": 3, "respawnSeconds": 0 },
+    { "creature": 3, "x": 98.00, "z": 72.00, "yawDegrees": 200, "wanderRadius": 3, "respawnSeconds": 0 },
+    { "creature": 3, "x": 102.00, "z": 73.00, "yawDegrees": 190, "wanderRadius": 2, "respawnSeconds": 0 },
+    { "creature": 4, "x": 93.00, "z": 84.00, "yawDegrees": 220, "wanderRadius": 0, "respawnSeconds": 0 },
+    { "creature": 4, "x": 96.00, "z": 83.00, "yawDegrees": 210, "wanderRadius": 0, "respawnSeconds": 0 },
+    { "creature": 5, "x": -15.00, "z": 13.00, "yawDegrees": 135, "wanderRadius": 0, "respawnSeconds": 0 },
+    { "creature": 5, "x": -12.00, "z": 10.00, "yawDegrees": 130, "wanderRadius": 0, "respawnSeconds": 0 },
+    { "creature": 5, "x": -9.00, "z": 7.00, "yawDegrees": 125, "wanderRadius": 0, "respawnSeconds": 0 }
+  ]
+}

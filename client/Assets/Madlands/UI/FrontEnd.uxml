@@ -1,6 +1,86 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="Madlands.uss" />
+    <Style src="Hud.uss" />
     <ui:VisualElement name="root" class="root frontend" picking-mode="Ignore">
+
+        <!-- In-game HUD (HudController). Lowest layer: menus and overlays draw on top of it. -->
+        <ui:VisualElement name="hud" class="hud hidden" picking-mode="Ignore">
+            <ui:VisualElement name="nameplates" class="layer" picking-mode="Ignore" />
+            <ui:VisualElement name="combat-text" class="layer" picking-mode="Ignore" />
+
+            <ui:VisualElement name="player-frame" class="unit-frame player" picking-mode="Ignore">
+                <ui:VisualElement class="portrait" picking-mode="Ignore">
+                    <ui:Label name="player-level" class="portrait-level" />
+                </ui:VisualElement>
+                <ui:VisualElement class="frame-body" picking-mode="Ignore">
+                    <ui:Label name="player-name" class="frame-name" />
+                    <ui:VisualElement class="bar health" picking-mode="Ignore">
+                        <ui:VisualElement name="player-health-fill" class="bar-fill" picking-mode="Ignore" />
+                        <ui:Label name="player-health-text" class="bar-text" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="player-power" class="bar power" picking-mode="Ignore">
+                        <ui:VisualElement name="player-power-fill" class="bar-fill" picking-mode="Ignore" />
+                        <ui:Label name="player-power-text" class="bar-text" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="target-frame" class="unit-frame target hidden" picking-mode="Ignore">
+                <ui:VisualElement class="portrait" picking-mode="Ignore">
+                    <ui:Label name="target-level" class="portrait-level" />
+                </ui:VisualElement>
+                <ui:VisualElement class="frame-body" picking-mode="Ignore">
+                    <ui:Label name="target-name" class="frame-name" />
+                    <ui:VisualElement class="bar health" picking-mode="Ignore">
+                        <ui:VisualElement name="target-health-fill" class="bar-fill" picking-mode="Ignore" />
+                        <ui:Label name="target-health-text" class="bar-text" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="target-power" class="bar power" picking-mode="Ignore">
+                        <ui:VisualElement name="target-power-fill" class="bar-fill" picking-mode="Ignore" />
+                        <ui:Label name="target-power-text" class="bar-text" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="target-auras" class="aura-row" picking-mode="Ignore" />
+                    <ui:VisualElement name="target-cast" class="cast-bar small hidden" picking-mode="Ignore">
+                        <ui:VisualElement name="target-cast-fill" class="bar-fill" picking-mode="Ignore" />
+                        <ui:Label name="target-cast-text" class="bar-text" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="player-auras" class="player-auras" picking-mode="Ignore" />
+
+            <ui:Label name="error-text" class="error-text" />
+            <ui:Label name="notice-text" class="notice-text" />
+
+            <ui:VisualElement name="player-cast" class="cast-bar player hidden" picking-mode="Ignore">
+                <ui:VisualElement name="player-cast-fill" class="bar-fill" picking-mode="Ignore" />
+                <ui:Label name="player-cast-text" class="bar-text" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="bottom-bar" class="bottom-bar" picking-mode="Ignore">
+                <ui:VisualElement name="action-bar" class="action-bar" picking-mode="Ignore" />
+                <ui:VisualElement name="xp-bar" class="xp-bar" picking-mode="Ignore">
+                    <ui:VisualElement name="xp-fill" class="bar-fill" picking-mode="Ignore" />
+                    <ui:Label name="xp-text" class="bar-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="chat" class="chat" picking-mode="Ignore">
+                <ui:VisualElement name="chat-log" class="chat-log" picking-mode="Ignore" />
+                <ui:TextField name="chat-input" max-length="200" class="chat-input hidden" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="tooltip" class="tooltip hidden" picking-mode="Ignore">
+                <ui:Label name="tooltip-title" class="tooltip-title" />
+                <ui:Label name="tooltip-meta" class="tooltip-meta" />
+                <ui:Label name="tooltip-body" class="tooltip-body" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="death-panel" class="death-panel hidden">
+                <ui:Label text="You have died." class="heading" />
+                <ui:Button name="release-button" text="Release spirit" class="button primary" />
+            </ui:VisualElement>
+        </ui:VisualElement>
 
         <!-- Login -->
         <ui:VisualElement name="login-screen" class="screen" picking-mode="Ignore">

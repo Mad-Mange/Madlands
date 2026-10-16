@@ -12,6 +12,8 @@ namespace Madlands.Client
     ///   Madlands.exe -autoconnect -stopat charselect     (stop at the character screen)
     ///   Madlands.exe -autoconnect -screenshot shot.png -screenshotdelay 6 -quitafter 10
     ///   Framing for screenshots: -campitch 30 -camdistance 25 -camyaw 40 -hidedebug
+    ///   Combat checks: -class shardmage (new characters), -exec ".level 5;.spawn 2" (chat lines
+    ///   sent after entering the world), -autofight (targets the nearest enemy and fights it)
     /// </summary>
     public sealed class ClientSettings
     {
@@ -33,6 +35,11 @@ namespace Madlands.Client
         public float? CameraDistance;
         public float? CameraYawOffset;
         public bool HideDebug;
+        /// <summary>Class name or id for characters created by -autoconnect.</summary>
+        public string ClassName;
+        /// <summary>Chat lines (usually GM commands) to send after entering the world, ';'-separated.</summary>
+        public string[] Exec = new string[0];
+        public bool AutoFight;
 
         public string AccountApiUrl => "http://" + Server + ":" + HttpPort;
 
@@ -103,6 +110,17 @@ namespace Madlands.Client
                     case "-hidedebug":
                         s.HideDebug = true;
                         break;
+                    case "-class" when next != null:
+                        s.ClassName = next;
+                        i++;
+                        break;
+                    case "-exec" when next != null:
+                        s.Exec = next.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        i++;
+                        break;
+                    case "-autofight":
+                        s.AutoFight = true;
+                        break;
                 }
             }
 
@@ -126,6 +144,12 @@ namespace Madlands.Client
     /// <summary>Set while a menu or text input owns the keyboard and mouse, so the game ignores them.</summary>
     public static class InputGate
     {
-        public static bool Blocked;
+        /// <summary>A front-end screen or the Esc menu is open (keyboard and mouse belong to the UI).</summary>
+        public static bool MenuOpen;
+        /// <summary>The chat line has focus (the keyboard belongs to it; the mouse still steers).</summary>
+        public static bool Typing;
+
+        public static bool Blocked => MenuOpen;
+        public static bool KeyboardBlocked => MenuOpen || Typing;
     }
 }

@@ -23,6 +23,7 @@ namespace Madlands.Client
         private const float DeleteConfirmSeconds = 5f;
 
         [SerializeField] private NetworkController network;
+        [SerializeField] private HudController hud;
 
         private AccountClient _account;
         private CharacterListResponse _list;
@@ -41,6 +42,7 @@ namespace Madlands.Client
         private void Awake()
         {
             if (network == null) network = GetComponent<NetworkController>();
+            if (hud == null) hud = GetComponent<HudController>();
         }
 
         private void OnEnable()
@@ -108,7 +110,12 @@ namespace Madlands.Client
         private void Update()
         {
             var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && network.InWorld) SetMenuOpen(!IsVisible(_gameMenu));
+            // Esc closes the menu, else the chat line or the target (HUD), else opens the menu.
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && network.InWorld)
+            {
+                if (IsVisible(_gameMenu)) SetMenuOpen(false);
+                else if (hud == null || !hud.HandleEscape()) SetMenuOpen(true);
+            }
             if (_pendingDeleteId != 0 && Time.time > _pendingDeleteUntil) _pendingDeleteId = 0;
         }
 
@@ -152,7 +159,7 @@ namespace Madlands.Client
             var existing = _list.Characters.FirstOrDefault(c => c.Name == wanted);
             if (existing.Id == 0 && wanted != null && _list.Races.Count > 0 && _list.Classes.Count > 0)
             {
-                var created = await _account.CreateCharacterAsync(wanted, _list.Races[0].Id, _list.Classes[0].Id);
+                var created = await _account.CreateCharacterAsync(wanted, _list.Races[0].Id, ClassForAutoConnect());
                 if (created.Ok)
                 {
                     existing = created.Character;
@@ -164,6 +171,18 @@ namespace Madlands.Client
             Show(_charactersScreen);
             if (existing.Id != 0) Select(existing.Id);
             if (Settings.AutoEntersWorld && existing.Id != 0) EnterWorld();
+        }
+
+        /// <summary>-class name (prefix) or id; the first class otherwise.</summary>
+        private byte ClassForAutoConnect()
+        {
+            var wanted = Settings.ClassName;
+            if (!string.IsNullOrEmpty(wanted))
+            {
+                foreach (var c in _list.Classes)
+                    if (c.Name.StartsWith(wanted, System.StringComparison.OrdinalIgnoreCase) || c.Id.ToString() == wanted) return c.Id;
+            }
+            return _list.Classes[0].Id;
         }
 
         private async Task LogoutAsync()
@@ -342,14 +361,14 @@ namespace Madlands.Client
                 s.EnableInClassList("hidden", s != screen);
             // In the world the root is transparent; on the front-end screens it hides the empty scene.
             _root.EnableInClassList("frontend", screen != null);
-            InputGate.Blocked = screen != null || IsVisible(_gameMenu);
+            InputGate.MenuOpen = screen != null || IsVisible(_gameMenu);
             if (screen == _loginScreen) (_username.value.Length > 0 ? _password : _username).Focus();
         }
 
         private void SetMenuOpen(bool open)
         {
             _gameMenu.EnableInClassList("hidden", !open);
-            InputGate.Blocked = open || !network.InWorld;
+            InputGate.MenuOpen = open || !network.InWorld;
         }
 
         private void SetBusy(string message)

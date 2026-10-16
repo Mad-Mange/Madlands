@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Madlands.Bots;
 using Madlands.ClientCore;
 using Madlands.Content;
 
 // Headless load/integration test clients. Each bot logs in through the account API (registering
-// account "botNNN" and character "BotXXX" on first run), then enters the world:
+// account "botNNN" and character "BotXXX" on first run), then enters the world and hunts
+// creatures ("--mode fight", default) or just runs around ("--mode wander"):
 //   dotnet run --project server/Madlands.Bots -- --count 200
 // For large runs start the server with --api-rate-limit 0 (all bots share one IP).
 string host = "127.0.0.1";
@@ -15,6 +16,7 @@ float radius = 200f;
 float seconds = 0f;   // 0 = run until Ctrl+C
 ushort mapId = 1;
 string? contentPath = null;
+string mode = "fight";
 
 for (int i = 0; i < args.Length; i++)
 {
@@ -29,8 +31,9 @@ for (int i = 0; i < args.Length; i++)
         case "--seconds": seconds = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
         case "--map": mapId = ushort.Parse(Next()); break;
         case "--content": contentPath = Next(); break;
+        case "--mode": mode = Next(); break;
         default:
-            Console.WriteLine("Madlands.Bots [--host 127.0.0.1] [--http-port 7780] [--count 50] [--connect-rate 25] [--radius 200] [--seconds 0] [--map 1] [--content <path>]");
+            Console.WriteLine("Madlands.Bots [--host 127.0.0.1] [--http-port 7780] [--count 50] [--connect-rate 25] [--radius 200] [--seconds 0] [--map 1] [--content <path>] [--mode fight|wander]");
             return 1;
     }
 }
@@ -44,10 +47,11 @@ if (!content.Maps.TryGetValue(mapId, out var map))
 }
 
 string baseUrl = $"http://{host}:{httpPort}";
-Console.WriteLine($"Starting {count} bots against {baseUrl} (wander radius {radius} m)");
+bool fight = mode != "wander";
+Console.WriteLine($"Starting {count} bots against {baseUrl} ({(fight ? "fighting" : "wandering")}, radius {radius} m)");
 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
 var bots = new List<Bot>(count);
-for (int i = 0; i < count; i++) bots.Add(new Bot(i, map.HeightMap, radius));
+for (int i = 0; i < count; i++) bots.Add(new Bot(i, map.HeightMap, radius, fight));
 
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
@@ -79,8 +83,11 @@ while (!cts.IsCancellationRequested)
         int loggingIn = bots.Count(b => b.LoggingIn);
         int corrections = bots.Sum(b => b.Corrections);
         var errors = bots.Where(b => b.LastError is not null).Select(b => b.LastError).Distinct().Take(3).ToList();
+        string combat = fight
+            ? $" | kills {bots.Sum(b => b.Kills)}, deaths {bots.Sum(b => b.Deaths)}, xp {bots.Sum(b => b.XpGained)}, damage {bots.Sum(b => b.DamageDone)}"
+            : "";
         Console.WriteLine($"[{now,6:0}s] in world {inWorld.Count}/{count} (logging in {loggingIn}) | ping avg {avgRtt:0} ms | sees avg {avgSeen:0.0} entities | corrections {corrections}"
-            + (errors.Count > 0 ? " | errors: " + string.Join("; ", errors) : ""));
+            + combat + (errors.Count > 0 ? " | errors: " + string.Join("; ", errors) : ""));
     }
 
     double sleep = FrameSeconds - (clock.Elapsed.TotalSeconds - now);
