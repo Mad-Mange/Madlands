@@ -46,6 +46,8 @@ public sealed class MapInstance
     public uint InstanceId { get; }
     public HeightMap HeightMap => Map.HeightMap;
     public int EntityCount => _entities.Count;
+    /// <summary>Loop thread only.</summary>
+    public IEnumerable<Entity> Entities => _entities.Values;
     public int PlayerCount => _players.Count;
     public long CorrectionsSent { get; private set; }
 

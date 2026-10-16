@@ -8,26 +8,33 @@ namespace Madlands.Shared.Net
 
     // ---------------------------------------------------------------- Client -> Server
 
-    /// <summary>First message after connecting. Phase 1: dev login by name only.</summary>
+    /// <summary>
+    /// First message after connecting: the session token from the account API login plus the
+    /// character to play. The server loads the character from the database before Welcome.
+    /// </summary>
     public sealed class Hello : IMessage
     {
         public const int MaxNameBytes = 64;
+        public const int MaxTokenBytes = 128;
 
         public ushort ProtocolVersion;
-        public string Name;
+        public string SessionToken;
+        public ulong CharacterId;
 
         public Opcode Opcode => Opcode.Hello;
 
         public void Write(PacketWriter w)
         {
             w.WriteUShort(ProtocolVersion);
-            w.WriteString(Name);
+            w.WriteString(SessionToken);
+            w.WriteULong(CharacterId);
         }
 
         public void Read(ref PacketReader r)
         {
             ProtocolVersion = r.ReadUShort();
-            Name = r.ReadString(MaxNameBytes);
+            SessionToken = r.ReadString(MaxTokenBytes);
+            CharacterId = r.ReadULong();
         }
     }
 

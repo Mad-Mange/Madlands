@@ -10,7 +10,6 @@ public sealed class WorldManager
     public const uint OpenWorldInstance = 1;
 
     private readonly Dictionary<(ushort MapId, uint InstanceId), MapInstance> _instances = new();
-    private ulong _nextPlayerCounter = 1;
 
     public WorldManager(ContentDatabase content)
     {
@@ -26,9 +25,6 @@ public sealed class WorldManager
 
     public MapInstance? GetInstance(ushort mapId, uint instanceId) =>
         _instances.TryGetValue((mapId, instanceId), out var instance) ? instance : null;
-
-    // Phase 2: player guids come from the characters table instead.
-    public EntityGuid NextPlayerGuid() => EntityGuid.Create(EntityType.Player, _nextPlayerCounter++);
 
     public void Tick(long nowMs, long tick)
     {

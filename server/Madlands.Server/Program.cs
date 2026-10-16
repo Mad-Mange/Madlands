@@ -1,6 +1,8 @@
 ﻿using System.Runtime.InteropServices;
 using Madlands.Content;
 using Madlands.Server;
+using Madlands.Server.Persistence;
+using Npgsql;
 using Serilog;
 using Serilog.Events;
 
@@ -16,10 +18,22 @@ try
     var contentRoot = ContentPaths.Resolve(options.ContentPath);
     Log.Information("Loading content from {Root}", contentRoot);
     var content = ContentLoader.Load(contentRoot);
-    Log.Information("Loaded {Maps} map(s)", content.Maps.Count);
+    Log.Information("Loaded {Maps} map(s), {Races} race(s), {Classes} class(es)", content.Maps.Count, content.Races.Count, content.Classes.Count);
 
-    using var server = new GameServer(options, content);
-    server.Start();
+    IGameDatabase database;
+    if (options.Database == "memory")
+    {
+        Log.Warning("Using the in-memory database: accounts and characters are lost when the server stops");
+        database = new InMemoryGameDatabase();
+    }
+    else
+    {
+        database = PostgresGameDatabase.Open(options.ConnectionString, message => Log.Information("{Message}", message));
+        Log.Information("Connected to PostgreSQL");
+    }
+
+    await using var host = new ServerHost(options, content, database);
+    await host.StartAsync();
 
     using var cts = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) =>
@@ -32,20 +46,25 @@ try
     if (OperatingSystem.IsWindows()) WinMM.timeBeginPeriod(1);
     try
     {
-        server.Run(cts.Token);
+        host.Game.Run(cts.Token);
     }
     finally
     {
         if (OperatingSystem.IsWindows()) WinMM.timeEndPeriod(1);
     }
 
-    Log.Information("Server stopped");
+    await host.StopAsync();
     return 0;
 }
 catch (ContentException ex)
 {
     Log.Fatal("{Message}", ex.Message);
     return 2;
+}
+catch (Exception ex) when (ex is NpgsqlException || ex.InnerException is NpgsqlException || ex is System.Net.Sockets.SocketException)
+{
+    Log.Fatal("Could not connect to PostgreSQL ({Error}). Start it with 'docker compose -f deploy/docker-compose.yml up -d', or run with '--db memory'.", ex.Message);
+    return 3;
 }
 catch (Exception ex)
 {

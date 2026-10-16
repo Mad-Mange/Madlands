@@ -46,7 +46,8 @@ namespace Madlands.ClientCore
         private readonly MoveCorrection _correction = new MoveCorrection();
 
         private NetPeer _peer;
-        private string _name;
+        private string _sessionToken;
+        private ulong _characterId;
         private long _lastUpdateMs;
         private long _nextPingAtMs;
         private int _pingsSent;
@@ -73,6 +74,8 @@ namespace Madlands.ClientCore
         public ClientWorld World { get; } = new ClientWorld();
         public ClockSync Clock { get; } = new ClockSync();
         public string LastError { get; private set; }
+        /// <summary>Why the server turned us away, if it did (e.g. InvalidSession = log in again).</summary>
+        public RejectReason? LastRejectReason { get; private set; }
         public int RoundTripMs => _peer != null ? _peer.RoundTripTime : 0;
         public long LocalTimeMs => _stopwatch.ElapsedMilliseconds;
         public double ServerTimeMs => Clock.ServerTimeAt(LocalTimeMs);
@@ -86,7 +89,8 @@ namespace Madlands.ClientCore
         public event Action<MovementState> Corrected;
         public event Action<string> Disconnected;
 
-        public void Connect(string host, int port, string name)
+        /// <summary>Enters the world with a session token from <see cref="AccountClient"/> and a character id.</summary>
+        public void Connect(string host, int port, string sessionToken, ulong characterId)
         {
             if (State != ClientState.Disconnected) throw new InvalidOperationException("Already connected or connecting.");
             if (!_net.IsRunning)
@@ -98,8 +102,10 @@ namespace Madlands.ClientCore
                 bool started = _manualMode ? _net.StartInManualMode(v4, v6, 0) : _net.Start(v4, v6, 0);
                 if (!started) throw new InvalidOperationException("Could not start the network socket.");
             }
-            _name = name;
+            _sessionToken = sessionToken;
+            _characterId = characterId;
             LastError = null;
+            LastRejectReason = null;
             _correctionAck = 0;
             _pingsSent = 0;
             _lastUpdateMs = LocalTimeMs;
@@ -156,7 +162,8 @@ namespace Madlands.ClientCore
             _peer = peer; // the connected peer (carries live RTT stats), not the pending one from Connect()
             State = ClientState.Handshaking;
             _hello.ProtocolVersion = ProtocolVersion.Current;
-            _hello.Name = _name;
+            _hello.SessionToken = _sessionToken;
+            _hello.CharacterId = _characterId;
             Send(_hello, DeliveryMethod.ReliableOrdered);
         }
 
@@ -224,6 +231,7 @@ namespace Madlands.ClientCore
         private void HandleRejected(ref PacketReader r)
         {
             _rejected.Read(ref r);
+            LastRejectReason = _rejected.Reason;
             LastError = _rejected.Reason + ": " + _rejected.Message;
             _log?.Invoke("Rejected by server: " + LastError);
         }

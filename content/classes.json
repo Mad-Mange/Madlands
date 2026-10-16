@@ -1,0 +1,8 @@
+{
+  "$schema": "schemas/classes.schema.json",
+  "classes": [
+    { "id": 1, "name": "Warrior" },
+    { "id": 2, "name": "Shardmage" },
+    { "id": 3, "name": "Warden" }
+  ]
+}

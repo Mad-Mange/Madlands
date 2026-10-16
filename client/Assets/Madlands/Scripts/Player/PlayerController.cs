@@ -66,8 +66,9 @@ namespace Madlands.Client
         private void Update()
         {
             float dt = Time.deltaTime;
-            var keyboard = Keyboard.current;
-            var mouse = Mouse.current;
+            // While a menu is open the character keeps simulating (falling, finishing a jump) but takes no input.
+            var keyboard = InputGate.Blocked ? null : Keyboard.current;
+            var mouse = InputGate.Blocked ? null : Mouse.current;
             bool rmb = mouse != null && mouse.rightButton.isPressed;
             bool lmb = mouse != null && mouse.leftButton.isPressed;
             bool Held(Key k) => keyboard != null && keyboard[k].isPressed;

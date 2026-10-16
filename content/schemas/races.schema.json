@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/races.schema.json",
+  "title": "Playable races (content/races.json)",
+  "type": "object",
+  "required": ["races"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "races": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "startMap"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "integer", "minimum": 1, "maximum": 255, "description": "Stable id stored on characters. Never reuse." },
+          "name": { "type": "string", "minLength": 1 },
+          "startMap": { "type": "integer", "minimum": 1, "description": "Map id where new characters start (at its spawn)." }
+        }
+      }
+    }
+  }
+}

@@ -34,8 +34,11 @@ namespace Madlands.Client
 
             var settings = _network.Settings;
             if (settings == null) return;
-            if (!_screenshotTaken && settings.ScreenshotPath != null && _network.EnteredWorldAt >= 0f
-                && Time.time - _network.EnteredWorldAt >= settings.ScreenshotDelay)
+            // Runs that enter the world shoot after arriving; others (login/character screens) after startup.
+            bool due = settings.AutoEntersWorld
+                ? _network.EnteredWorldAt >= 0f && Time.time - _network.EnteredWorldAt >= settings.ScreenshotDelay
+                : Time.realtimeSinceStartup >= settings.ScreenshotDelay;
+            if (!_screenshotTaken && settings.ScreenshotPath != null && due)
             {
                 var path = Path.GetFullPath(settings.ScreenshotPath);
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
@@ -50,7 +53,7 @@ namespace Madlands.Client
         {
             if (!_visible) return;
             var client = _network.Client;
-            if (client == null) return;
+            if (client == null || client.State != ClientState.InWorld) return; // front-end screens have their own UI
             if (_style == null) _style = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.UpperLeft, richText = true, fontSize = 13 };
 
             string text = $"<b>Madlands</b>  {_fps:0} fps\n" +

@@ -35,16 +35,21 @@ public sealed class Player : Entity
 {
     public const uint DefaultDisplayId = 1;
 
-    public Player(EntityGuid guid, string name, ClientSession session, MovementValidator validator)
-        : base(guid, name, DefaultDisplayId)
+    public Player(long characterId, string name, ClientSession session, MovementValidator validator)
+        : base(EntityGuid.Create(EntityType.Player, (ulong)characterId), name, DefaultDisplayId)
     {
+        CharacterId = characterId;
         Session = session;
         Validator = validator;
     }
 
+    /// <summary>Database id; also the counter of the persistent <see cref="Entity.Guid"/>.</summary>
+    public long CharacterId { get; }
     public ClientSession Session { get; }
     public MovementValidator Validator { get; }
+    public byte Level { get; set; } = 1;
     public ushort CorrectionId;
+    public long NextSaveAtMs;
 
     /// <summary>Entities this player's client currently has spawned (its area of interest).</summary>
     public Dictionary<EntityGuid, Entity> Known { get; } = new();

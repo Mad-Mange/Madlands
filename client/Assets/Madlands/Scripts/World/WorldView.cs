@@ -17,14 +17,28 @@ namespace Madlands.Client
         private NetworkController _network;
         private readonly List<RemoteEntity> _views = new List<RemoteEntity>();
         private GUIStyle _nameStyle;
+        private bool _ready;
 
         private void Awake()
         {
             _network = GetComponent<NetworkController>();
         }
 
+        /// <summary>
+        /// Views are only created once the map scene is loaded and active (entities can arrive
+        /// while it is still loading; they wait in <see cref="ClientWorld"/> until then).
+        /// </summary>
+        public void SetReady(bool ready)
+        {
+            _ready = ready;
+            if (!ready) return;
+            foreach (var entity in _network.Client.World.Entities)
+                if (entity.View == null) OnEntitySpawned(entity);
+        }
+
         public void OnEntitySpawned(RemoteEntity entity)
         {
+            if (!_ready) return;
             var go = new GameObject("Entity " + entity.Name);
             bool isBot = entity.Name.StartsWith("Bot", System.StringComparison.Ordinal);
             EntityVisuals.CreatePlaceholder(go.transform, isBot ? EntityVisuals.BotColor : EntityVisuals.PlayerColor);

@@ -42,7 +42,7 @@ namespace Madlands.Client
 
         private void LateUpdate()
         {
-            var mouse = Mouse.current;
+            var mouse = InputGate.Blocked ? null : Mouse.current;
             bool lmb = mouse != null && mouse.leftButton.isPressed;
             bool rmb = mouse != null && mouse.rightButton.isPressed;
             bool dragging = _target != null && (lmb || rmb);

@@ -98,9 +98,53 @@ public class ProtocolTests
     [Fact]
     public void Hello_roundtrips()
     {
-        var copy = Roundtrip(new Hello { ProtocolVersion = 7, Name = "Åsa" });
+        var copy = Roundtrip(new Hello { ProtocolVersion = 7, SessionToken = "abc-123_XYZ", CharacterId = 42 });
         Assert.Equal(7, copy.ProtocolVersion);
-        Assert.Equal("Åsa", copy.Name);
+        Assert.Equal("abc-123_XYZ", copy.SessionToken);
+        Assert.Equal(42UL, copy.CharacterId);
+    }
+
+    [Fact]
+    public void Account_requests_roundtrip()
+    {
+        var register = Roundtrip(new RegisterRequest { Username = "åsa", Password = "hunter22!" });
+        Assert.Equal(("åsa", "hunter22!"), (register.Username, register.Password));
+        var login = Roundtrip(new LoginRequest { Username = "bob", Password = "secret-pw" });
+        Assert.Equal(("bob", "secret-pw"), (login.Username, login.Password));
+        Roundtrip(new CharacterListRequest());
+        var create = Roundtrip(new CreateCharacterRequest { Name = "Alice", Race = 2, Class = 3 });
+        Assert.Equal(("Alice", (byte)2, (byte)3), (create.Name, create.Race, create.Class));
+        Assert.Equal(99UL, Roundtrip(new DeleteCharacterRequest { CharacterId = 99 }).CharacterId);
+        Roundtrip(new LogoutRequest());
+    }
+
+    [Fact]
+    public void Account_responses_roundtrip()
+    {
+        var auth = Roundtrip(new AuthResponse
+        {
+            Result = ApiResultCode.Ok, Message = "", SessionToken = "tok", RealmName = "Realm", RealmHost = "10.0.0.1", RealmPort = 7777,
+        });
+        Assert.Equal(("tok", "Realm", "10.0.0.1", (ushort)7777), (auth.SessionToken, auth.RealmName, auth.RealmHost, auth.RealmPort));
+        Assert.True(auth.Ok);
+
+        var character = new CharacterSummary { Id = 5, Name = "Alice", Race = 1, Class = 2, Level = 3, MapId = 1 };
+        var list = new CharacterListResponse { Result = ApiResultCode.Ok, Message = "", MaxCharacters = 10 };
+        list.Characters.Add(character);
+        list.Races.Add(new NamedOption(1, "Brightvale Human"));
+        list.Classes.Add(new NamedOption(2, "Shardmage"));
+        var listCopy = Roundtrip(list);
+        Assert.Equal(10, listCopy.MaxCharacters);
+        Assert.Equal(character, listCopy.Characters.Single());
+        Assert.Equal("Brightvale Human", listCopy.Races.Single().Name);
+        Assert.Equal(2, listCopy.Classes.Single().Id);
+
+        var created = Roundtrip(new CreateCharacterResponse { Result = ApiResultCode.Ok, Message = "", Character = character });
+        Assert.Equal(character, created.Character);
+
+        var error = Roundtrip(new ApiResult { Result = ApiResultCode.NameTaken, Message = "taken" });
+        Assert.Equal((ApiResultCode.NameTaken, "taken"), (error.Result, error.Message));
+        Assert.False(error.Ok);
     }
 
     [Fact]

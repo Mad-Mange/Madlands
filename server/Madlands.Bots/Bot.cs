@@ -18,33 +18,72 @@ public sealed class Bot
     private readonly Random _random;
     private readonly float _wanderRadius;
 
+    private readonly int _index;
+
     private MovementState _state;
     private Vec3 _center;
     private Vec3 _target;
     private long _pauseUntilMs;
     private bool _inWorld;
+    private Task<(string Host, int Port, string Token, ulong CharacterId)>? _login;
 
-    public Bot(string name, HeightMap heightMap, float wanderRadius, int seed)
+    public Bot(int index, HeightMap heightMap, float wanderRadius)
     {
-        Name = name;
+        _index = index;
+        Name = "Bot" + Letters(index);
+        Username = $"bot{index + 1:000}";
         _heightMap = heightMap;
         _wanderRadius = wanderRadius;
-        _random = new Random(seed);
+        _random = new Random(1000 + index);
         _client = new GameClient(manualMode: true);
         _client.EnteredWorld += OnEnteredWorld;
         _client.Corrected += OnCorrected;
         _client.Disconnected += reason => { _inWorld = false; LastError = reason; };
     }
 
+    /// <summary>Character name; letters only (name rules), "Bot" prefix so clients can tint bots.</summary>
     public string Name { get; }
+    public string Username { get; }
     public GameClient Client => _client;
     public int Corrections { get; private set; }
     public string? LastError { get; private set; }
+    public bool LoggingIn => _login is not null;
 
-    public void Connect(string host, int port) => _client.Connect(host, port, Name);
+    /// <summary>Logs in (registering the bot's account and character on first run), then enters the world.</summary>
+    public void Start(AccountClient account) => _login = LoginAsync(account);
+
+    private async Task<(string, int, string, ulong)> LoginAsync(AccountClient account)
+    {
+        var auth = await account.LoginOrRegisterAsync(Username, $"bot-password-{_index + 1:000}");
+        if (!auth.Ok) throw new InvalidOperationException($"login: {auth.Result} {auth.Message}");
+
+        var list = await account.GetCharactersAsync();
+        if (!list.Ok) throw new InvalidOperationException($"character list: {list.Result} {list.Message}");
+
+        ulong characterId = list.Characters.FirstOrDefault(c => c.Name == Name).Id;
+        if (characterId == 0)
+        {
+            var race = list.Races[_index % list.Races.Count].Id;
+            var cls = list.Classes[_index % list.Classes.Count].Id;
+            var created = await account.CreateCharacterAsync(Name, race, cls);
+            if (!created.Ok) throw new InvalidOperationException($"create character: {created.Result} {created.Message}");
+            characterId = created.Character.Id;
+        }
+        return (auth.RealmHost, auth.RealmPort, auth.SessionToken, characterId);
+    }
+
+    private static string Letters(int i) =>
+        new string(new[] { (char)('a' + i / 676 % 26), (char)('a' + i / 26 % 26), (char)('a' + i % 26) });
 
     public void Update(float dt)
     {
+        if (_login is { IsCompleted: true } login)
+        {
+            _login = null;
+            if (login.IsFaulted) LastError = login.Exception!.InnerException!.Message;
+            else _client.Connect(login.Result.Host, login.Result.Port, login.Result.Token, login.Result.CharacterId);
+        }
+
         _client.Update();
         if (!_inWorld || _client.State != ClientState.InWorld) return;
 

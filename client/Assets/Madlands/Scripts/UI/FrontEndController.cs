@@ -1,0 +1,391 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Madlands.ClientCore;
+using Madlands.Shared;
+using Madlands.Shared.Net;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
+
+namespace Madlands.Client
+{
+    /// <summary>
+    /// Login, character select/create and the in-game Esc menu (UI Toolkit, FrontEnd.uxml).
+    /// Talks to the account API through <see cref="AccountClient"/> and hands the chosen character
+    /// to <see cref="NetworkController"/>. Async calls resume on the Unity main thread.
+    /// </summary>
+    [RequireComponent(typeof(UIDocument))]
+    public sealed class FrontEndController : MonoBehaviour
+    {
+        private const string LastUserKey = "madlands.lastUser";
+        private const string LastServerKey = "madlands.lastServer";
+        private const float DeleteConfirmSeconds = 5f;
+
+        [SerializeField] private NetworkController network;
+
+        private AccountClient _account;
+        private CharacterListResponse _list;
+        private ulong _selectedId;
+        private ulong _pendingDeleteId;
+        private float _pendingDeleteUntil;
+
+        private VisualElement _root, _loginScreen, _charactersScreen, _createScreen, _busyOverlay, _gameMenu;
+        private TextField _username, _password, _server, _createName;
+        private Label _loginStatus, _charactersStatus, _createStatus, _realmLabel, _busyLabel, _charactersEmpty;
+        private ScrollView _characterList;
+        private DropdownField _raceDropdown, _classDropdown;
+
+        private ClientSettings Settings => network.Settings;
+
+        private void Awake()
+        {
+            if (network == null) network = GetComponent<NetworkController>();
+        }
+
+        private void OnEnable()
+        {
+            var doc = GetComponent<UIDocument>();
+            var r = doc.rootVisualElement;
+            r.pickingMode = PickingMode.Ignore;
+
+            _root = r.Q("root");
+            _loginScreen = r.Q("login-screen");
+            _charactersScreen = r.Q("characters-screen");
+            _createScreen = r.Q("create-screen");
+            _busyOverlay = r.Q("busy-overlay");
+            _gameMenu = r.Q("game-menu");
+            _username = r.Q<TextField>("login-username");
+            _password = r.Q<TextField>("login-password");
+            _password.isPasswordField = true;
+            _server = r.Q<TextField>("login-server");
+            _createName = r.Q<TextField>("create-name");
+            _loginStatus = r.Q<Label>("login-status");
+            _charactersStatus = r.Q<Label>("characters-status");
+            _createStatus = r.Q<Label>("create-status");
+            _realmLabel = r.Q<Label>("realm-label");
+            _busyLabel = r.Q<Label>("busy-label");
+            _charactersEmpty = r.Q<Label>("characters-empty");
+            _characterList = r.Q<ScrollView>("character-list");
+            _raceDropdown = r.Q<DropdownField>("create-race");
+            _classDropdown = r.Q<DropdownField>("create-class");
+            r.Q<Label>("version-label").text = $"v{Application.version} · protocol {ProtocolVersion.Current}";
+
+            r.Q<Button>("login-button").clicked += () => _ = LoginAsync(register: false);
+            r.Q<Button>("register-button").clicked += () => _ = LoginAsync(register: true);
+            r.Q<Button>("enter-world-button").clicked += EnterWorld;
+            r.Q<Button>("create-new-button").clicked += ShowCreate;
+            r.Q<Button>("delete-button").clicked += () => _ = DeleteSelectedAsync();
+            r.Q<Button>("logout-button").clicked += () => _ = LogoutAsync();
+            r.Q<Button>("create-button").clicked += () => _ = CreateAsync();
+            r.Q<Button>("create-cancel-button").clicked += () => Show(_charactersScreen);
+            r.Q<Button>("menu-resume-button").clicked += () => SetMenuOpen(false);
+            r.Q<Button>("menu-logout-button").clicked += () => { SetMenuOpen(false); network.LeaveWorld(); };
+            r.Q<Button>("menu-quit-button").clicked += Application.Quit;
+
+            // Enter submits, like any login form.
+            _password.RegisterCallback<KeyDownEvent>(e => { if (IsSubmit(e)) _ = LoginAsync(register: false); }, TrickleDown.TrickleDown);
+            _createName.RegisterCallback<KeyDownEvent>(e => { if (IsSubmit(e)) _ = CreateAsync(); }, TrickleDown.TrickleDown);
+
+            network.EnteredWorld += OnEnteredWorld;
+            network.LeftWorld += OnLeftWorld;
+        }
+
+        private void OnDisable()
+        {
+            network.EnteredWorld -= OnEnteredWorld;
+            network.LeftWorld -= OnLeftWorld;
+        }
+
+        private void Start()
+        {
+            _server.value = Settings.Server != "127.0.0.1" ? Settings.Server : PlayerPrefsGet(LastServerKey, Settings.Server);
+            _username.value = Settings.User ?? PlayerPrefsGet(LastUserKey, "");
+            Show(_loginScreen);
+            if (Settings.AutoConnect) _ = AutoConnectAsync();
+        }
+
+        private void Update()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && network.InWorld) SetMenuOpen(!IsVisible(_gameMenu));
+            if (_pendingDeleteId != 0 && Time.time > _pendingDeleteUntil) _pendingDeleteId = 0;
+        }
+
+        // ------------------------------------------------------------------ login
+
+        private async Task LoginAsync(bool register)
+        {
+            if (IsVisible(_busyOverlay)) return;
+            EnsureAccountClient();
+            SetStatus(_loginStatus, "");
+            SetBusy(register ? "Creating account..." : "Logging in...");
+            var response = register
+                ? await _account.RegisterAsync(_username.value, _password.value)
+                : await _account.LoginAsync(_username.value, _password.value);
+            SetBusy(null);
+            if (!response.Ok)
+            {
+                SetStatus(_loginStatus, response.Message);
+                return;
+            }
+            PlayerPrefs.SetString(LastUserKey, _username.value.Trim());
+            PlayerPrefs.SetString(LastServerKey, _server.value.Trim());
+            _password.value = "";
+            await ShowCharactersAsync();
+        }
+
+        private async Task AutoConnectAsync()
+        {
+            EnsureAccountClient();
+            SetBusy("Logging in as " + Settings.User + "...");
+            var auth = await _account.LoginOrRegisterAsync(Settings.User, Settings.Password);
+            if (!auth.Ok)
+            {
+                SetBusy(null);
+                SetStatus(_loginStatus, auth.Message);
+                return;
+            }
+            if (!await RefreshCharactersAsync()) return;
+
+            var wanted = NameRules.NormalizeCharacterName(Settings.CharacterName);
+            var existing = _list.Characters.FirstOrDefault(c => c.Name == wanted);
+            if (existing.Id == 0 && wanted != null && _list.Races.Count > 0 && _list.Classes.Count > 0)
+            {
+                var created = await _account.CreateCharacterAsync(wanted, _list.Races[0].Id, _list.Classes[0].Id);
+                if (created.Ok)
+                {
+                    existing = created.Character;
+                    await RefreshCharactersAsync();
+                }
+                else SetStatus(_charactersStatus, created.Message);
+            }
+            SetBusy(null);
+            Show(_charactersScreen);
+            if (existing.Id != 0) Select(existing.Id);
+            if (Settings.AutoEntersWorld && existing.Id != 0) EnterWorld();
+        }
+
+        private async Task LogoutAsync()
+        {
+            if (_account != null) await _account.LogoutAsync();
+            _list = null;
+            _selectedId = 0;
+            SetStatus(_loginStatus, "");
+            Show(_loginScreen);
+        }
+
+        private void EnsureAccountClient()
+        {
+            string url = Settings.AutoConnect ? Settings.AccountApiUrl : AccountClient.BaseUrlFor(_server.value);
+            if (_account != null && _account.BaseUrl == url) return;
+            _account?.Dispose();
+            _account = new AccountClient(url);
+        }
+
+        // ------------------------------------------------------------------ characters
+
+        private async Task ShowCharactersAsync(string status = "")
+        {
+            Show(_charactersScreen);
+            SetStatus(_charactersStatus, status, ok: false);
+            await RefreshCharactersAsync();
+        }
+
+        /// <returns>False if the session expired (the login screen is shown instead).</returns>
+        private async Task<bool> RefreshCharactersAsync()
+        {
+            var list = await _account.GetCharactersAsync();
+            if (list.Result == ApiResultCode.Unauthorized)
+            {
+                SetBusy(null);
+                Show(_loginScreen);
+                SetStatus(_loginStatus, list.Message);
+                return false;
+            }
+            if (!list.Ok)
+            {
+                SetStatus(_charactersStatus, list.Message);
+                return true;
+            }
+
+            _list = list;
+            var auth = _account.LastAuth;
+            _realmLabel.text = auth != null ? $"{auth.RealmName} · {list.Characters.Count}/{list.MaxCharacters} characters" : "";
+            _characterList.Clear();
+            foreach (var c in list.Characters) _characterList.Add(CreateEntry(c));
+            _charactersEmpty.style.display = list.Characters.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (list.Characters.All(c => c.Id != _selectedId)) _selectedId = list.Characters.Count > 0 ? list.Characters[0].Id : 0;
+            Select(_selectedId);
+            return true;
+        }
+
+        private VisualElement CreateEntry(CharacterSummary c)
+        {
+            var entry = new VisualElement { userData = c.Id };
+            entry.AddToClassList("character-entry");
+            var name = new Label(c.Name);
+            name.AddToClassList("character-name");
+            var details = new Label($"Level {c.Level} {OptionName(_list.Races, c.Race)} {OptionName(_list.Classes, c.Class)}");
+            details.AddToClassList("character-details");
+            entry.Add(name);
+            entry.Add(details);
+            entry.RegisterCallback<ClickEvent>(e =>
+            {
+                Select(c.Id);
+                if (e.clickCount == 2) EnterWorld();
+            });
+            return entry;
+        }
+
+        private void Select(ulong id)
+        {
+            _selectedId = id;
+            foreach (var child in _characterList.Children())
+                child.EnableInClassList("selected", child.userData is ulong childId && childId == id);
+        }
+
+        private void EnterWorld()
+        {
+            var auth = _account?.LastAuth;
+            if (_selectedId == 0 || auth == null || IsVisible(_busyOverlay)) return;
+            SetStatus(_charactersStatus, "");
+            SetBusy("Entering the world...");
+            // A dev server bound to loopback announces 127.0.0.1; if we reached its API on another
+            // address, the game port is on that address too.
+            string apiHost = new System.Uri(_account.BaseUrl).Host;
+            string host = IsLoopback(auth.RealmHost) && !IsLoopback(apiHost) ? apiHost : auth.RealmHost;
+            network.EnterWorld(host, auth.RealmPort, _account.SessionToken, _selectedId);
+        }
+
+        private async Task DeleteSelectedAsync()
+        {
+            if (_selectedId == 0 || _list == null) return;
+            var character = _list.Characters.First(c => c.Id == _selectedId);
+            if (_pendingDeleteId != _selectedId)
+            {
+                _pendingDeleteId = _selectedId;
+                _pendingDeleteUntil = Time.time + DeleteConfirmSeconds;
+                SetStatus(_charactersStatus, $"Click Delete again to permanently delete {character.Name}.");
+                return;
+            }
+            _pendingDeleteId = 0;
+            var result = await _account.DeleteCharacterAsync(character.Id);
+            SetStatus(_charactersStatus, result.Ok ? $"{character.Name} was deleted." : result.Message, result.Ok);
+            await RefreshCharactersAsync();
+        }
+
+        private void ShowCreate()
+        {
+            if (_list == null) return;
+            _raceDropdown.choices = _list.Races.Select(r => r.Name).ToList();
+            _classDropdown.choices = _list.Classes.Select(c => c.Name).ToList();
+            if (_raceDropdown.index < 0) _raceDropdown.index = 0;
+            if (_classDropdown.index < 0) _classDropdown.index = 0;
+            _createName.value = "";
+            SetStatus(_createStatus, "");
+            Show(_createScreen);
+            _createName.Focus();
+        }
+
+        private async Task CreateAsync()
+        {
+            if (_list == null || IsVisible(_busyOverlay)) return;
+            var name = NameRules.NormalizeCharacterName(_createName.value);
+            if (name == null)
+            {
+                SetStatus(_createStatus, $"Names are {NameRules.CharacterNameMin}-{NameRules.CharacterNameMax} letters, no spaces or digits.");
+                return;
+            }
+            SetBusy("Creating " + name + "...");
+            var race = _list.Races[Mathf.Max(0, _raceDropdown.index)].Id;
+            var cls = _list.Classes[Mathf.Max(0, _classDropdown.index)].Id;
+            var created = await _account.CreateCharacterAsync(name, race, cls);
+            SetBusy(null);
+            if (!created.Ok)
+            {
+                SetStatus(_createStatus, created.Message);
+                return;
+            }
+            _selectedId = created.Character.Id;
+            await ShowCharactersAsync();
+        }
+
+        // ------------------------------------------------------------------ world transitions
+
+        private void OnEnteredWorld()
+        {
+            SetBusy(null);
+            Show(null);
+        }
+
+        private void OnLeftWorld(string reason, RejectReason? rejectReason)
+        {
+            SetMenuOpen(false);
+            SetBusy(null);
+            if (_account == null || rejectReason == RejectReason.InvalidSession)
+            {
+                Show(_loginScreen);
+                SetStatus(_loginStatus, rejectReason == RejectReason.InvalidSession ? "Your session has expired. Please log in again." : reason);
+                return;
+            }
+            bool userLeft = reason == "DisconnectPeerCalled";
+            _ = ShowCharactersAsync(userLeft ? "" : "Disconnected: " + reason);
+        }
+
+        // ------------------------------------------------------------------ helpers
+
+        private void Show(VisualElement screen)
+        {
+            foreach (var s in new[] { _loginScreen, _charactersScreen, _createScreen })
+                s.EnableInClassList("hidden", s != screen);
+            // In the world the root is transparent; on the front-end screens it hides the empty scene.
+            _root.EnableInClassList("frontend", screen != null);
+            InputGate.Blocked = screen != null || IsVisible(_gameMenu);
+            if (screen == _loginScreen) (_username.value.Length > 0 ? _password : _username).Focus();
+        }
+
+        private void SetMenuOpen(bool open)
+        {
+            _gameMenu.EnableInClassList("hidden", !open);
+            InputGate.Blocked = open || !network.InWorld;
+        }
+
+        private void SetBusy(string message)
+        {
+            _busyOverlay.EnableInClassList("hidden", message == null);
+            if (message != null) _busyLabel.text = message;
+        }
+
+        private static void SetStatus(Label label, string text, bool ok = false)
+        {
+            label.text = text ?? "";
+            label.EnableInClassList("ok", ok);
+        }
+
+        private static bool IsVisible(VisualElement e) => !e.ClassListContains("hidden");
+
+        private static bool IsSubmit(KeyDownEvent e) => e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter;
+
+        private static string OptionName(List<NamedOption> options, byte id)
+        {
+            foreach (var o in options) if (o.Id == id) return o.Name;
+            return "?";
+        }
+
+        private static bool IsLoopback(string host) => host == "127.0.0.1" || host == "localhost" || host == "::1";
+
+        private static string PlayerPrefsGet(string key, string fallback)
+        {
+            try
+            {
+                return PlayerPrefs.GetString(key, fallback);
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+    }
+}

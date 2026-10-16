@@ -1,6 +1,6 @@
 # ADR 0007 – Persistence
 
-**Status:** Decided 2026-10-16 (implemented in Phase 2)
+**Status:** Decided and implemented 2026-10-16 (Phase 2). Dev runs the account API as plain HTTP on loopback; production terminates TLS in a reverse proxy in front of it.
 
 ## Decision
 

@@ -1,0 +1,7 @@
+{
+  "$schema": "schemas/races.schema.json",
+  "races": [
+    { "id": 1, "name": "Brightvale Human", "startMap": 1 },
+    { "id": 2, "name": "Korrin", "startMap": 1 }
+  ]
+}

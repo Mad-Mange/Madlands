@@ -7,6 +7,8 @@ namespace Madlands.Server.Net;
 public enum SessionState
 {
     AwaitingHello,
+    /// <summary>Hello received; the session token and character are being loaded off-thread.</summary>
+    Authenticating,
     InWorld,
 }
 
@@ -23,6 +25,7 @@ public sealed class ClientSession
     public int Id => Peer.Id;
     public long ConnectedAtMs { get; }
     public SessionState State { get; set; } = SessionState.AwaitingHello;
+    public long AccountId { get; set; }
     public Player? Player { get; set; }
 
     public RateLimiter MoveLimiter { get; } = new(ratePerSecond: 40, burst: 80);
@@ -58,10 +61,22 @@ public sealed class RateLimiter
 
     public bool TryConsume(long nowMs)
     {
-        if (_lastMs >= 0) _tokens = Math.Min(_burst, _tokens + (nowMs - _lastMs) * _ratePerSecond / 1000f);
-        _lastMs = nowMs;
+        Refill(nowMs);
         if (_tokens < 1f) return false;
         _tokens -= 1f;
         return true;
+    }
+
+    /// <summary>True if a token is available, without consuming it.</summary>
+    public bool Peek(long nowMs)
+    {
+        Refill(nowMs);
+        return _tokens >= 1f;
+    }
+
+    private void Refill(long nowMs)
+    {
+        if (_lastMs >= 0) _tokens = Math.Min(_burst, _tokens + (nowMs - _lastMs) * _ratePerSecond / 1000f);
+        _lastMs = nowMs;
     }
 }

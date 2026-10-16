@@ -5,10 +5,11 @@
 **A WoW-inspired MMORPG, built from scratch, one playable step at a time.**
 
 ![Status](https://img.shields.io/badge/status-work%20in%20progress-orange)
-![Phase](https://img.shields.io/badge/phase-1%20of%2010%20done-blue)
+![Phase](https://img.shields.io/badge/phase-2%20of%2010%20done-blue)
+[![CI](https://github.com/Mad-Mange/Madlands/actions/workflows/ci.yml/badge.svg)](https://github.com/Mad-Mange/Madlands/actions/workflows/ci.yml)
 ![Unity](https://img.shields.io/badge/Unity-6-000000?logo=unity)
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)
-![Tests](https://img.shields.io/badge/tests-46%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-72%20passing-brightgreen)
 
 <img src="docs/images/phase1-overview.jpg" alt="The player (blue) among 200 bots (orange) in the test world" width="100%">
 
@@ -40,8 +41,8 @@ Three hundred years ago the moon **Ysolde** cracked and rained shards across the
 |:---:|---|:---:|
 | 0 | Foundation: repo, tooling, architecture, decision log | ✅ Done |
 | 1 | **Walking skeleton:** many players in one world, synced by the server | ✅ Done |
-| 2 | Accounts, login, characters, database | 🔜 Next |
-| 3 | Core combat: targeting, spells, auras, NPC AI, XP | ⬜ |
+| 2 | **Accounts, login, characters, database** | ✅ Done |
+| 3 | Core combat: targeting, spells, auras, NPC AI, XP | 🔜 Next |
 | 4 | Items, loot, economy, quests | ⬜ |
 | 5 | Vertical slice: the first real zone, with real art. *"Is it fun?"* | ⬜ |
 | 6–7 | Social (chat, groups, guilds) and dungeons | ⬜ |
@@ -49,7 +50,20 @@ Three hundred years ago the moon **Ysolde** cracked and rained shards across the
 
 Details: [docs/roadmap.md](docs/roadmap.md)
 
-### Latest milestone: Phase 1 ✅
+### Latest milestone: Phase 2 ✅
+
+Players now have **accounts and persistent characters**. You log in, pick or create a character, enter the world, and come back to the same spot after logging out or a server restart.
+
+| What | How |
+|---|---|
+| Accounts | Register and log in through an HTTP account API; Argon2id password hashes, hashed session tokens |
+| Characters | Create, select, delete; up to 10 per account, realm-unique names; races and classes are data |
+| Persistence | PostgreSQL with migrations; positions saved write-behind (the game loop never waits for the database) |
+| Client | Login, character select and create screens in UI Toolkit; the map scene is loaded by the id the server sends |
+| Verified | 100 bots registering and playing at once; a full server restart keeps everyone's position; 72 automated tests |
+
+<details>
+<summary>Phase 1 measurements</summary>
 
 | Measurement | Result |
 |---|---|
@@ -58,11 +72,20 @@ Details: [docs/roadmap.md](docs/roadmap.md)
 | Movement corrections by the server | **0** during the whole test |
 | Local ping | ~15–30 ms |
 | Client FPS with 200 visible players | 375–1100 |
-| Automated tests | 46 passing, including a real server and clients over UDP |
+
+</details>
 
 ## 📸 Progress gallery
 
 <table>
+  <tr>
+    <td width="50%"><img src="docs/images/phase2-login.jpg" alt="Login screen"></td>
+    <td width="50%"><img src="docs/images/phase2-character-select.jpg" alt="Character select screen"></td>
+  </tr>
+  <tr>
+    <td><sub><b>Phase 2 · Login.</b> Accounts with Argon2id-hashed passwords; the server field allows connecting to any realm.</sub></td>
+    <td><sub><b>Phase 2 · Character select.</b> Characters live in PostgreSQL; race and class names come from the server's content files.</sub></td>
+  </tr>
   <tr>
     <td width="50%"><img src="docs/images/phase1-gameplay.jpg" alt="Gameplay view with debug overlay"></td>
     <td width="50%"><img src="docs/images/phase1-test-world.jpg" alt="The test world"></td>
@@ -78,6 +101,7 @@ Details: [docs/roadmap.md](docs/roadmap.md)
       <br><br>
       <b>Dev log</b>
       <ul>
+        <li><sub><b>2026-10-16 – Phase 2 done.</b> Accounts, persistent characters, PostgreSQL, login and character screens, CI. Characters survive logout and server restarts.</sub></li>
         <li><sub><b>2026-10-16 – Phases 0 & 1 done.</b> Server, client, bots and tests are in place. 200 players run around without a single movement correction.</sub></li>
       </ul>
     </td>
@@ -96,18 +120,25 @@ flowchart LR
         core["ClientCore<br/>networking · clock sync"]
         sh["Shared<br/>protocol · game rules"]
     end
-    subgraph server["🖥️ .NET 10 server – authoritative"]
+    subgraph server["🖥️ .NET 10 realm server – authoritative"]
+        api["Account API<br/>login · characters"]
         loop["Game loop 20 Hz"]
         maps["Map instances<br/>AoI · movement validation"]
+        saver["Write-behind saver"]
         loop --> maps
+        maps --> saver
     end
     bots["🤖 Bots<br/>(same client code)"]
-    content[("content/<br/>maps & game data")]
+    content[("content/<br/>maps · races · classes")]
+    db[("PostgreSQL<br/>accounts · characters")]
 
     client --> core
     bots --> core
+    core -->|"HTTP · login"| api
     core <-->|"UDP · LiteNetLib"| loop
     content --> maps
+    api --> db
+    saver --> db
 ```
 
 **Core principles**
@@ -123,30 +154,37 @@ More in [docs/architecture.md](docs/architecture.md) and the decision log in [do
 
 | Part | Choice |
 |---|---|
-| Client | Unity 6 (URP), Input System |
-| Server | .NET 10, LiteNetLib (UDP), Serilog |
+| Client | Unity 6 (URP), Input System, UI Toolkit |
+| Server | .NET 10, LiteNetLib (UDP), ASP.NET Core minimal API (account API), Serilog |
+| Persistence | PostgreSQL, Npgsql + Dapper, DbUp migrations, Argon2id |
 | Shared code | C# (netstandard2.1), compiled by both Unity and .NET |
-| Testing | xUnit, headless bot clients |
-| Coming up | PostgreSQL, UI Toolkit, Addressables, DotRecast (navmesh) |
+| Testing | xUnit, headless bot clients, GitHub Actions CI with PostgreSQL |
+| Coming up | DotRecast (navmesh), Addressables, Localization |
 
 ## 🚀 Getting started
 
-Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/) and Unity 6000.6.5f1. Docker is needed from Phase 2.
+Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/), Unity 6000.6.5f1 and Docker (for PostgreSQL).
 
 ```powershell
-# 1. Start the server (UDP 7777, local only)
+# 1. Start PostgreSQL (once; it keeps running in Docker)
+docker compose -f deploy/docker-compose.yml up -d
+
+# 2. Start the realm server: game on UDP 7777, account API on HTTP 7780 (local only)
 dotnet run --project server/Madlands.Server -c Release -- --bind 127.0.0.1
+#    No Docker? Add --db memory (accounts and characters are lost when the server stops).
 
-# 2. (optional) 200 bots running around
-dotnet run --project server/Madlands.Bots -c Release -- --count 200
+# 3. (optional) bots that register, log in and run around (lift the API rate limit for many bots)
+#    server: ... --api-rate-limit 0
+dotnet run --project server/Madlands.Bots -c Release -- --count 100
 
-# 3. Client: open client/ in Unity Hub, open Assets/Madlands/Scenes/World_0001 and press Play.
-#    Or build an exe via the menu Madlands > Build Windows Client and start two windows:
+# 4. Client: open client/ in Unity Hub and press Play (it always starts at the login screen),
+#    or build an exe via Madlands > Build Windows Client. Create an account on the login screen, or
+#    skip the screens in dev: -autoconnect logs in as the lowercased name, creating account and character.
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Alice
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Bob
 ```
 
-Run the tests with `dotnet test Madlands.slnx`.
+Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if the database is not running).
 
 ### 🎮 Controls (WoW-style)
 
@@ -161,6 +199,7 @@ Run the tests with `dotnet test Madlands.slnx`.
 | Mouse wheel | Zoom |
 | Space | Jump (no air control) |
 | Num Lock / R | Autorun |
+| Esc | Menu (log out to character select, exit) |
 | F3 | Toggle the debug overlay |
 
 ## 📁 Project structure
@@ -169,10 +208,11 @@ Run the tests with `dotnet test Madlands.slnx`.
 client/                    Unity 6 project (our code in Assets/Madlands)
 shared/Madlands.Shared     Protocol and game rules, shared by server and client
 shared/Madlands.ClientCore Engine-free networking & sync, used by the client and bots
-server/Madlands.Server     The game server
+server/Madlands.Server     The realm server: game loop, account API, persistence
 server/Madlands.Bots       Bot players for load testing
 server/Madlands.Content    Loads and validates game data
-content/                   Game data (maps; later spells, items, quests …)
+content/                   Game data (maps, races, classes; later spells, items, quests …)
+deploy/                    Docker Compose for PostgreSQL and Seq (logs)
 tools/                     Tooling (ContentTool)
 docs/                      Architecture, decision log (ADR), roadmap, game design
 ```

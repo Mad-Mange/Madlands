@@ -169,14 +169,24 @@ public class MovementValidatorTests
 public class ServerMiscTests
 {
     [Theory]
-    [InlineData("Åsa", "Åsa")]
-    [InlineData("  Gandalf the Grey ", "Gandalf the Grey")]
-    [InlineData("Bot_007", "Bot_007")]
+    [InlineData("Åsa", "Åsa")]       // non-ASCII letters are allowed
+    [InlineData("  aLiCe ", "Alice")] // normalized capitalization
+    [InlineData("Botaaa", "Botaaa")]
     [InlineData("A", null)]
+    [InlineData("Bot007", null)]
+    [InlineData("Gandalf the Grey", null)]
     [InlineData("<script>", null)]
-    [InlineData("ThisNameIsWayTooLongToBeValid", null)]
-    public void Names_are_sanitized(string input, string? expected) =>
-        Assert.Equal(expected, GameServer.SanitizeName(input));
+    [InlineData("Thisnameiswaytoolong", null)]
+    public void Character_names_are_normalized(string input, string? expected) =>
+        Assert.Equal(expected, NameRules.NormalizeCharacterName(input));
+
+    [Theory]
+    [InlineData(" Alice.B-1_ ", "alice.b-1_")]
+    [InlineData("ab", null)]
+    [InlineData("has space", null)]
+    [InlineData("åsa", null)]
+    public void Usernames_are_normalized(string input, string? expected) =>
+        Assert.Equal(expected, NameRules.NormalizeUsername(input));
 
     [Fact]
     public void Rate_limiter_allows_burst_then_refills()

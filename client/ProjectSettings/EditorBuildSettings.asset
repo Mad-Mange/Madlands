@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Madlands/Scenes/FrontEnd.unity
+    guid: 586c39d8edb073244b57567ddb9e826b
+  - enabled: 1
     path: Assets/Madlands/Scenes/World_0001.unity
     guid: 279a9bf5e031b37459e8a7a8dac40177
   m_configObjects:

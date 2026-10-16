@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "phase-*"]
+  pull_request:
+
+jobs:
+  server:
+    name: Build, test, validate content
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: madlands
+          POSTGRES_PASSWORD: madlands_dev
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U madlands"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      # Postgres-backed tests are skipped (not failed) when this server is unreachable.
+      MADLANDS_TEST_PG: "Host=127.0.0.1;Port=5432;Username=madlands;Password=madlands_dev;Database=postgres;Timeout=5"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true # height maps and LiteNetLib.dll live in Git LFS
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore Madlands.slnx
+
+      - name: Build
+        run: dotnet build Madlands.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test Madlands.slnx -c Release --no-build --logger "console;verbosity=normal"
+
+      - name: Validate content
+        run: dotnet run --project tools/Madlands.ContentTool -c Release --no-build -- validate

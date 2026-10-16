@@ -59,17 +59,19 @@ namespace Madlands.Client.Editor
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
+            // Map scenes hold only the world; camera, UI and networking live in the FrontEnd scene.
+            Object.DestroyImmediate(Camera.main.gameObject);
+
             CreateMaterial(Root + "/Resources/EntityPlaceholder.mat", Color.white);
             var terrain = CreateTerrain();
             SetupLightingAndFog();
             CreateProps(terrain);
-            var cameraController = SetupCamera();
-            CreateGameObjects(cameraController);
+            CreateMapInfo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/Scenes/SampleScene.unity") != null)
                 AssetDatabase.DeleteAsset("Assets/Scenes/SampleScene.unity");
+            SceneList.Apply();
             AssetDatabase.SaveAssets();
             Debug.Log("[TestWorldBuilder] Built " + ScenePath);
         }
@@ -301,17 +303,7 @@ namespace Madlands.Client.Editor
             RenderSettings.ambientGroundColor = new Color(0.26f, 0.23f, 0.19f);
         }
 
-        private static CameraController SetupCamera()
-        {
-            var cam = Camera.main;
-            cam.nearClipPlane = 0.2f;
-            cam.farClipPlane = 800f;
-            float y = HeightAt(0f, 0f);
-            cam.transform.SetPositionAndRotation(new Vector3(0f, y + 6f, -12f), Quaternion.Euler(18f, 0f, 0f));
-            return cam.gameObject.AddComponent<CameraController>();
-        }
-
-        private static void CreateGameObjects(CameraController cameraController)
+        private static void CreateMapInfo()
         {
             var map = new GameObject("Map");
             var info = map.AddComponent<MapInfo>();
@@ -321,16 +313,6 @@ namespace Madlands.Client.Editor
             spawn.SetParent(map.transform);
             spawn.position = new Vector3(0f, HeightAt(0f, 0f), 0f);
             info.spawnPoint = spawn;
-
-            var game = new GameObject("Game");
-            var network = game.AddComponent<NetworkController>();
-            var view = game.AddComponent<WorldView>();
-            game.AddComponent<DebugOverlay>();
-
-            var so = new SerializedObject(network);
-            so.FindProperty("worldView").objectReferenceValue = view;
-            so.FindProperty("cameraController").objectReferenceValue = cameraController;
-            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void EnsureFolder(string path)

@@ -3,7 +3,9 @@
     "rootNamespace": "Madlands.Client.Editor",
     "references": [
         "Madlands.Client",
-        "Madlands.Shared"
+        "Madlands.Shared",
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"

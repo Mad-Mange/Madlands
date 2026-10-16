@@ -30,14 +30,24 @@ Every phase ends in something playable and tested. Architectural decisions are i
 
 **Open:** playtest controls and feel with two clients (see README).
 
-## 🔜 Phase 2 – Accounts, characters, persistence
+## ✅ CI
 
-- [ ] PostgreSQL and DbUp migrations
-- [ ] Accounts: registration and login over HTTPS with Argon2id, session token
-- [ ] Characters: create, select and delete (name, placeholder race and class). Player ids come from the database
-- [ ] Saving position and state with write-behind
-- [ ] Login and character-select screens in UI Toolkit
-- [ ] Localization: text keys, English first (install the Localization package)
+- [x] GitHub Actions: build, all tests (with a PostgreSQL service) and content validation on every push and PR
+
+## ✅ Phase 2 – Accounts, characters, persistence (done 2026-10-16)
+
+- [x] PostgreSQL with DbUp migrations (embedded SQL, applied at startup). `--db memory` for runs without Docker
+- [x] Accounts: register and log in over the HTTP account API with Argon2id hashes (PHC strings) and session tokens
+  (SHA-256 hashed at rest, 24 h). In production the API sits behind a TLS reverse proxy
+- [x] Brute-force protection: failed logins limited per account, requests limited per IP, constant-time "no such user"
+- [x] Characters: create, list, select and soft-delete. Names unique per realm and case-insensitive. 10 per account.
+  Races and classes are content (`content/races.json`, `classes.json`)
+- [x] Player entity ids are persistent (`EntityGuid` = Player + character id)
+- [x] Write-behind saving on logout, every 60 s and on shutdown. The game tick never waits for the database
+- [x] One character per account in the world: a new login drops the old connection
+- [x] Login, character select and create screens in UI Toolkit, plus an Esc menu. The client loads the map scene the server names
+- [x] 72 tests, including a full realm restart on PostgreSQL. CI on GitHub Actions
+- [ ] ~~Localization~~ moved to Phase 5: all UI text is already in UXML, ready for string tables
 
 ## Phase 3 – Core combat
 
@@ -58,6 +68,7 @@ Every phase ends in something playable and tested. Architectural decisions are i
 ## Phase 5 – Vertical slice: the first real zone (the "is it fun?" gate)
 
 - [ ] A coherent set of Synty-style asset packs, including a modular character system so gear is visible on the character
+- [ ] Localization (Unity Localization package, English first) and rebindable key bindings
 - [ ] Animations retargeted to a shared humanoid rig
 - [ ] 1–2 races and 3 classes (tank, DPS, healer)
 - [ ] A level 1–10 zone with a hub village, 20–30 quests, 10–15 creature types and a world boss
@@ -114,4 +125,6 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - **IMGUI is used for the debug UI and nameplates.** Move to UI Toolkit in Phases 2–3.
 - **LiteNetLib reports 0 RTT in threaded mode.** The overlay uses our own Ping/Pong measurement instead.
 - **Addressables and Localization** get installed when first used.
-- **CI** (GitHub Actions: build, test, content validate).
+- **TLS for the account API:** dev uses plain HTTP on loopback. Before the first public deployment (Phase 5), put
+  the API behind a TLS reverse proxy (e.g. Caddy) and refuse non-loopback plain HTTP.
+- **Session cleanup:** expired rows in `sessions` are never deleted yet. Add a periodic cleanup job.
