@@ -258,7 +258,7 @@
 .action-button {
     width: 56px;
     height: 56px;
-    margin: 3px;
+    margin: 4px;
     background-color: rgba(0, 0, 0, 0.5);
     border-width: 1px;
     border-color: rgb(88, 96, 122);
@@ -279,6 +279,41 @@
 
 .action-button.out-of-range .icon {
     background-color: rgb(120, 30, 30);
+}
+
+/* Usable right now: a green border and a soft glow (two fading rings; USS has no box-shadow). */
+.action-button.ready {
+    border-color: rgb(120, 235, 140);
+}
+
+.ready-glow-inner,
+.ready-glow-outer {
+    position: absolute;
+    display: none;
+    border-width: 2px;
+}
+
+.ready-glow-inner {
+    left: -3px;
+    right: -3px;
+    top: -3px;
+    bottom: -3px;
+    border-radius: 6px;
+    border-color: rgba(110, 235, 130, 0.7);
+}
+
+.ready-glow-outer {
+    left: -5px;
+    right: -5px;
+    top: -5px;
+    bottom: -5px;
+    border-radius: 8px;
+    border-color: rgba(110, 235, 130, 0.28);
+}
+
+.action-button.ready .ready-glow-inner,
+.action-button.ready .ready-glow-outer {
+    display: flex;
 }
 
 .action-button.active {
@@ -302,11 +337,16 @@
     right: 0;
     bottom: 0;
     height: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    display: none;
+    background-color: rgba(150, 152, 162, 0.62);
+    border-top-width: 2px;
+    border-top-color: rgba(240, 240, 245, 0.95);
 }
 
 .cooldown-shade.global {
-    background-color: rgba(0, 0, 0, 0.35);
+    background-color: rgba(150, 152, 162, 0.32);
+    border-top-width: 1px;
+    border-top-color: rgba(240, 240, 245, 0.55);
 }
 
 .action-button.counting .icon-letters {

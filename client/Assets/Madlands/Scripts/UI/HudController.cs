@@ -339,6 +339,12 @@ namespace Madlands.Client
                 cooldown.AddToClassList("cooldown-text");
                 var key = new Label(SlotLabels[i]) { pickingMode = PickingMode.Ignore };
                 key.AddToClassList("action-key");
+                foreach (var ring in new[] { "ready-glow-outer", "ready-glow-inner" })
+                {
+                    var glow = new VisualElement { pickingMode = PickingMode.Ignore };
+                    glow.AddToClassList(ring);
+                    root.Add(glow);
+                }
                 root.Add(icon);
                 root.Add(shade);
                 root.Add(cooldown);
@@ -381,8 +387,9 @@ namespace Madlands.Client
             {
                 if (slot.SpellId == 0 || !Client.Data.TryGetSpell(slot.SpellId, out var spell))
                 {
-                    slot.Shade.style.height = 0;
+                    slot.Shade.style.display = DisplayStyle.None;
                     slot.Cooldown.text = "";
+                    slot.Root.EnableInClassList("ready", false);
                     continue;
                 }
                 double remaining = 0, duration = 0;
@@ -398,6 +405,8 @@ namespace Madlands.Client
                     duration = Client.GcdDurationMs;
                     global = true;
                 }
+                // The shade has a bright top edge, so it is hidden (not just zero high) when nothing is cooling down.
+                slot.Shade.style.display = remaining > 0 && duration > 0 ? DisplayStyle.Flex : DisplayStyle.None;
                 slot.Shade.style.height = Length.Percent(duration > 0 ? (float)(remaining / duration) * 100f : 0f);
                 // The global cooldown is a light sweep on every button; a spell's own cooldown is dark and counts down.
                 slot.Shade.EnableInClassList("global", global);
@@ -410,6 +419,9 @@ namespace Madlands.Client
                 slot.Root.EnableInClassList("out-of-range", outOfRange);
                 bool active = spell.IsAutoAttack ? self.Values.Has(UnitFlags.AutoAttacking) : self.Cast != null && self.Cast.SpellId == spell.Id;
                 slot.Root.EnableInClassList("active", active);
+                // Green glow: usable right now. The global cooldown has its own sweep, so it does not count.
+                bool ready = !spell.IsAutoAttack && Client.CheckCast(spell.Id, Client.Target, ignoreGlobalCooldown: true) == CastResult.Success;
+                slot.Root.EnableInClassList("ready", ready);
             }
         }
 
