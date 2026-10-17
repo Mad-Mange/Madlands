@@ -326,14 +326,13 @@ namespace Madlands.ClientCore
         /// What the client can tell before asking: known, ready, affordable, valid target in range.
         /// Facing and line of sight are left to the server.
         /// </summary>
-        /// <param name="ignoreGlobalCooldown">For "is this spell ready" displays, which show the global cooldown separately.</param>
-        public CastResult CheckCast(uint spellId, EntityGuid target, bool ignoreGlobalCooldown = false)
+        public CastResult CheckCast(uint spellId, EntityGuid target)
         {
             if (!Data.TryGetSpell(spellId, out var spell) || !_knownSpells.Contains(spellId)) return CastResult.NotKnown;
             if (Self.Values.IsDead) return CastResult.CasterDead;
             if (Self.Values.Has(UnitFlags.Stunned)) return CastResult.Stunned;
             if (TryGetCooldown(spellId, out _, out _)) return CastResult.OnCooldown;
-            if (!ignoreGlobalCooldown && spell.GcdMs > 0 && GcdRemainingMs > 0) return CastResult.NotReady;
+            if (spell.GcdMs > 0 && GcdRemainingMs > 0) return CastResult.NotReady;
             if (spell.Cost > 0 && (Self.Values.PowerType != spell.PowerType || Self.Values.Power < spell.Cost)) return CastResult.NoPower;
             if (spell.Target == SpellTarget.Enemy)
             {

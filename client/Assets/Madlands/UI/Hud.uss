@@ -281,39 +281,60 @@
     background-color: rgb(120, 30, 30);
 }
 
-/* Usable right now: a green border and a soft glow (two fading rings; USS has no box-shadow). */
-.action-button.ready {
-    border-color: rgb(120, 235, 140);
-}
-
-.ready-glow-inner,
-.ready-glow-outer {
+/* A soft glow made of two fading rings (USS has no box-shadow): green = usable right now,
+   orange = busy (cooling down, global cooldown or casting). */
+.glow-inner,
+.glow-outer {
     position: absolute;
     display: none;
     border-width: 2px;
 }
 
-.ready-glow-inner {
+.glow-inner {
     left: -3px;
     right: -3px;
     top: -3px;
     bottom: -3px;
     border-radius: 6px;
-    border-color: rgba(110, 235, 130, 0.7);
 }
 
-.ready-glow-outer {
+.glow-outer {
     left: -5px;
     right: -5px;
     top: -5px;
     bottom: -5px;
     border-radius: 8px;
+}
+
+.action-button.ready .glow-inner,
+.action-button.ready .glow-outer,
+.action-button.busy .glow-inner,
+.action-button.busy .glow-outer {
+    display: flex;
+}
+
+.action-button.ready {
+    border-color: rgb(120, 235, 140);
+}
+
+.action-button.ready .glow-inner {
+    border-color: rgba(110, 235, 130, 0.7);
+}
+
+.action-button.ready .glow-outer {
     border-color: rgba(110, 235, 130, 0.28);
 }
 
-.action-button.ready .ready-glow-inner,
-.action-button.ready .ready-glow-outer {
-    display: flex;
+.action-button.busy {
+    border-color: rgb(240, 156, 64);
+}
+
+.action-button.busy .glow-inner {
+    border-color: rgba(240, 150, 50, 0.65);
+}
+
+.action-button.busy .glow-outer {
+    border-color: rgba(240, 150, 50, 0.24);
 }
 
 .action-button.active {

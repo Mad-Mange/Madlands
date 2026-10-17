@@ -339,7 +339,7 @@ namespace Madlands.Client
                 cooldown.AddToClassList("cooldown-text");
                 var key = new Label(SlotLabels[i]) { pickingMode = PickingMode.Ignore };
                 key.AddToClassList("action-key");
-                foreach (var ring in new[] { "ready-glow-outer", "ready-glow-inner" })
+                foreach (var ring in new[] { "glow-outer", "glow-inner" })
                 {
                     var glow = new VisualElement { pickingMode = PickingMode.Ignore };
                     glow.AddToClassList(ring);
@@ -390,6 +390,7 @@ namespace Madlands.Client
                     slot.Shade.style.display = DisplayStyle.None;
                     slot.Cooldown.text = "";
                     slot.Root.EnableInClassList("ready", false);
+                    slot.Root.EnableInClassList("busy", false);
                     continue;
                 }
                 double remaining = 0, duration = 0;
@@ -419,8 +420,10 @@ namespace Madlands.Client
                 slot.Root.EnableInClassList("out-of-range", outOfRange);
                 bool active = spell.IsAutoAttack ? self.Values.Has(UnitFlags.AutoAttacking) : self.Cast != null && self.Cast.SpellId == spell.Id;
                 slot.Root.EnableInClassList("active", active);
-                // Green glow: usable right now. The global cooldown has its own sweep, so it does not count.
-                bool ready = !spell.IsAutoAttack && Client.CheckCast(spell.Id, Client.Target, ignoreGlobalCooldown: true) == CastResult.Success;
+                // Orange glow while busy (cooling down, global cooldown or casting), green when usable right now.
+                bool busy = !spell.IsAutoAttack && (remaining > 0 || self.Cast != null);
+                bool ready = !spell.IsAutoAttack && !busy && Client.CheckCast(spell.Id, Client.Target) == CastResult.Success;
+                slot.Root.EnableInClassList("busy", busy);
                 slot.Root.EnableInClassList("ready", ready);
             }
         }
