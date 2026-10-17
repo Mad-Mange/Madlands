@@ -386,6 +386,7 @@ namespace Madlands.Client
                     continue;
                 }
                 double remaining = 0, duration = 0;
+                bool global = false;
                 if (Client.TryGetCooldown(spell.Id, out var cdLeft, out var cdTotal))
                 {
                     remaining = cdLeft;
@@ -395,9 +396,13 @@ namespace Madlands.Client
                 {
                     remaining = Client.GcdRemainingMs;
                     duration = Client.GcdDurationMs;
+                    global = true;
                 }
                 slot.Shade.style.height = Length.Percent(duration > 0 ? (float)(remaining / duration) * 100f : 0f);
-                slot.Cooldown.text = remaining > 1500 ? Seconds(remaining) : "";
+                // The global cooldown is a light sweep on every button; a spell's own cooldown is dark and counts down.
+                slot.Shade.EnableInClassList("global", global);
+                slot.Cooldown.text = !global && remaining > 0 ? Seconds(remaining) : "";
+                slot.Root.EnableInClassList("counting", slot.Cooldown.text.Length > 0);
 
                 bool unusable = spell.Cost > 0 && (self.Values.PowerType != spell.PowerType || self.Values.Power < spell.Cost);
                 slot.Root.EnableInClassList("unusable", unusable || self.Values.IsDead);

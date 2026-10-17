@@ -305,6 +305,14 @@
     background-color: rgba(0, 0, 0, 0.7);
 }
 
+.cooldown-shade.global {
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.action-button.counting .icon-letters {
+    opacity: 0;
+}
+
 .cooldown-text {
     position: absolute;
     left: 0;
