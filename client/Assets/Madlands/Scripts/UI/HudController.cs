@@ -80,7 +80,9 @@ namespace Madlands.Client
 
         private void OnEnable()
         {
-            var r = GetComponent<UIDocument>().rootVisualElement;
+            var document = GetComponent<UIDocument>();
+            UiPointer.Register(document);
+            var r = document.rootVisualElement;
             _hud = r.Q("hud");
             // Only buttons, aura icons and the chat line take the mouse; the rest lets clicks through to the world.
             _hud.Query<VisualElement>().ForEach(e => e.pickingMode = PickingMode.Ignore);

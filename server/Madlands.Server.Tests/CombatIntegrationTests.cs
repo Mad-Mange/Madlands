@@ -100,6 +100,24 @@ public class CombatIntegrationTests
     }
 
     [Fact]
+    public async Task Auto_attack_starts_out_of_range_and_swings_once_close()
+    {
+        var (realm, s) = await StartAsync(Warrior, gm: true, At(TrainingDummy, 0, 20));
+        await using var _ = realm;
+        using var __ = s;
+        var c = s.Client;
+        var dummy = s.Find("Training Dummy");
+
+        c.CastSpell(1, dummy.Guid);
+        s.Pump(() => c.Self.Values.Has(UnitFlags.AutoAttacking));
+        s.Pump(() => s.Failures.Contains(CastResult.OutOfRange)); // the swing, not the start, complains
+        Assert.DoesNotContain(s.Events, e => e.Source == c.LocalGuid);
+
+        s.Command(".tele 0 17"); // in front of the dummy, still facing it
+        s.Pump(() => s.Events.Any(e => e.Source == c.LocalGuid && e.Target == dummy.Guid && e.Spell == 0));
+    }
+
+    [Fact]
     public async Task Hostile_creature_aggroes_chases_and_attacks()
     {
         var (realm, s) = await StartAsync(Warrior, gm: true, At(DuskWolf, 0, 12));

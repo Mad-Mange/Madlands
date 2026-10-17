@@ -143,6 +143,8 @@ public sealed class SpellSystem
             if (target.IsDead) return CastResult.TargetDead;
             if (!_map.CanAttack(caster, target)) return CastResult.InvalidTarget;
         }
+        // Auto-attack may start at any distance (like WoW): the swings check range and facing themselves.
+        if (spell.Has(SpellFlags.AutoAttack)) return CastResult.Success;
         if (target is not null && target != caster && spell.Target is SpellTarget.Enemy or SpellTarget.Friend)
         {
             bool melee = spell.RangeMax <= GameConstants.MeleeRange;

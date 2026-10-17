@@ -22,7 +22,6 @@ namespace Madlands.Client
         private const float TabRange = 45f;
 
         [SerializeField] private NetworkController network;
-        [SerializeField] private UIDocument document;
 
         private Vector2 _pressPosition;
         private float _pressTime;
@@ -38,7 +37,6 @@ namespace Madlands.Client
         private void Awake()
         {
             if (network == null) network = GetComponent<NetworkController>();
-            if (document == null) document = GetComponent<UIDocument>();
         }
 
         private void Update()
@@ -76,7 +74,7 @@ namespace Madlands.Client
             _pressing = false;
 
             bool click = _movedPixels <= ClickMaxPixels && Time.unscaledTime - _pressTime <= ClickMaxSeconds;
-            if (!click || IsOverUi(_pressPosition)) return;
+            if (!click || UiPointer.IsOverInteractive(_pressPosition)) return;
 
             var unit = PickUnit(_pressPosition);
             if (unit == null) return;
@@ -93,15 +91,6 @@ namespace Madlands.Client
                 if (!Client.Self.Values.Has(UnitFlags.AutoAttacking)) Client.CastSpell(id, guid);
                 return;
             }
-        }
-
-        private bool IsOverUi(Vector2 screenPosition)
-        {
-            var panel = document != null ? document.rootVisualElement?.panel : null;
-            if (panel == null) return false;
-            var panelPosition = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screenPosition.x, Screen.height - screenPosition.y));
-            var picked = panel.Pick(panelPosition);
-            return picked != null && picked.pickingMode == PickingMode.Position && picked.name != "root";
         }
 
         private static UnitView PickUnit(Vector2 screenPosition)

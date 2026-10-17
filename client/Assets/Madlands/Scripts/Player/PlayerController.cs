@@ -77,8 +77,9 @@ namespace Madlands.Client
             bool rooted = stunned || self.Has(UnitFlags.Rooted);
             var keyboard = InputGate.KeyboardBlocked || stunned ? null : Keyboard.current;
             var mouse = InputGate.Blocked || stunned ? null : Mouse.current;
-            bool rmb = mouse != null && mouse.rightButton.isPressed;
-            bool lmb = mouse != null && mouse.leftButton.isPressed;
+            // Mouse buttons count only when the press started in the world (the camera tracks that).
+            bool rmb = mouse != null && _camera != null && _camera.RightHeld;
+            bool lmb = mouse != null && _camera != null && _camera.LeftHeld;
             bool Held(Key k) => keyboard != null && keyboard[k].isPressed;
 
             if (keyboard != null)

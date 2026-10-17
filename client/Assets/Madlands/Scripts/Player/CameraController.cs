@@ -21,10 +21,15 @@ namespace Madlands.Client
         private float _pitch = 18f;
         private float _distance = 9f;
         private bool _wasDragging;
+        private bool _leftInWorld;
+        private bool _rightInWorld;
         private Vector2 _grabPosition;
 
         public float YawDegrees => _yaw;
         public bool IsMouseSteering { get; private set; }
+        /// <summary>The left/right button is held and the press started in the world (not on a UI button).</summary>
+        public bool LeftHeld { get; private set; }
+        public bool RightHeld { get; private set; }
 
         public void SetTarget(PlayerController target)
         {
@@ -45,8 +50,14 @@ namespace Madlands.Client
         private void LateUpdate()
         {
             var mouse = InputGate.Blocked ? null : Mouse.current;
-            bool lmb = mouse != null && mouse.leftButton.isPressed;
-            bool rmb = mouse != null && mouse.rightButton.isPressed;
+            // A press that starts on a UI button belongs to the UI: locking the cursor for a camera
+            // drag would move it away from the button and the click would never land.
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame) _leftInWorld = !UiPointer.IsOverInteractive(mouse.position.ReadValue());
+            if (mouse != null && mouse.rightButton.wasPressedThisFrame) _rightInWorld = !UiPointer.IsOverInteractive(mouse.position.ReadValue());
+            bool lmb = mouse != null && mouse.leftButton.isPressed && _leftInWorld;
+            bool rmb = mouse != null && mouse.rightButton.isPressed && _rightInWorld;
+            LeftHeld = lmb;
+            RightHeld = rmb;
             bool dragging = _target != null && (lmb || rmb);
             IsMouseSteering = _target != null && rmb;
 

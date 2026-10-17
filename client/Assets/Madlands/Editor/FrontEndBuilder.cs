@@ -81,7 +81,6 @@ namespace Madlands.Client.Editor
             SetReference(frontEnd, "network", network);
             SetReference(frontEnd, "hud", hud);
             SetReference(targeting, "network", network);
-            SetReference(targeting, "document", document);
             SetReference(hud, "network", network);
             SetReference(hud, "targeting", targeting);
             SetReference(effects, "network", network);
