@@ -59,6 +59,32 @@ public sealed class PostgresFactAttribute : FactAttribute
     }
 }
 
+/// <summary>Admin operations, checked against both database implementations.</summary>
+internal static class AccountAdminChecks
+{
+    public static async Task SetPassword(IGameDatabase db)
+    {
+        long id = (await db.CreateAccountAsync("forgetful", "old-hash"))!.Value;
+        long other = (await db.CreateAccountAsync("bystander", "other-hash"))!.Value;
+        var now = DateTime.UtcNow;
+        await db.CreateSessionAsync(new byte[] { 1 }, id, now.AddHours(1));
+        await db.CreateSessionAsync(new byte[] { 2 }, other, now.AddHours(1));
+
+        Assert.True(await db.SetPasswordAsync("forgetful", "new-hash"));
+        Assert.Equal("new-hash", (await db.FindAccountAsync("forgetful"))!.PasswordHash);
+        Assert.Null(await db.FindSessionAccountAsync(new byte[] { 1 }, now));
+        Assert.Equal(other, await db.FindSessionAccountAsync(new byte[] { 2 }, now));
+        Assert.Equal("other-hash", (await db.FindAccountAsync("bystander"))!.PasswordHash);
+        Assert.False(await db.SetPasswordAsync("nobody", "hash"));
+    }
+}
+
+public class InMemoryDatabaseTests
+{
+    [Fact]
+    public Task Set_password_replaces_the_hash_and_ends_sessions() => AccountAdminChecks.SetPassword(new InMemoryGameDatabase());
+}
+
 public class PostgresDatabaseTests : IAsyncLifetime
 {
     private readonly string _databaseName = PostgresTestServer.CreateDatabaseName();
@@ -132,6 +158,9 @@ public class PostgresDatabaseTests : IAsyncLifetime
         Assert.Equal((-12.5f, 30.25f, 99f, 3.1f, (byte)7), (loaded!.X, loaded.Y, loaded.Z, loaded.Yaw, loaded.Level));
         Assert.Equal((345, (int?)80, (int?)12), (loaded.Xp, loaded.Health, loaded.Power));
     }
+
+    [PostgresFact]
+    public Task Set_password_replaces_the_hash_and_ends_sessions() => AccountAdminChecks.SetPassword(Db);
 
     [PostgresFact]
     public async Task Gm_level_defaults_to_zero()

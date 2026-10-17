@@ -138,6 +138,16 @@
     background-color: rgb(134, 52, 52);
 }
 
+/* Temporary playtest shortcut on the login screen. */
+.button.quick {
+    height: 30px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: rgb(170, 182, 206);
+    background-color: rgba(50, 57, 77, 0.5);
+    border-color: rgb(70, 78, 102);
+}
+
 .panel.narrow .button {
     width: 100%;
     margin-left: 0;

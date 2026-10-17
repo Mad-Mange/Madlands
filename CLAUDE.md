@@ -30,6 +30,7 @@ dotnet test Madlands.slnx                       # 98+ tests incl. real HTTP+UDP 
 dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --gm-all           # UDP 7777 + HTTP 7780, PostgreSQL, GM commands for all
 dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --db memory        # no Docker; data lost on exit
 dotnet run --project server/Madlands.Server -- set-gm <account> 3                  # permanent GM level for one account
+dotnet run --project server/Madlands.Server -- set-password <account> <password>   # new password (ends the account's sessions)
 dotnet run --project server/Madlands.Bots -- --count 200 --seconds 60   # fight creatures (--mode wander: just run); server needs --api-rate-limit 0
 dotnet run --project tools/Madlands.ContentTool -- validate
 

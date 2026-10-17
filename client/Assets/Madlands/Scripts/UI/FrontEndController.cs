@@ -20,6 +20,7 @@ namespace Madlands.Client
     {
         private const string LastUserKey = "madlands.lastUser";
         private const string LastServerKey = "madlands.lastServer";
+        private const string LastCharacterKey = "madlands.lastCharacter";
         private const float DeleteConfirmSeconds = 5f;
 
         [SerializeField] private NetworkController network;
@@ -36,6 +37,7 @@ namespace Madlands.Client
         private Label _loginStatus, _charactersStatus, _createStatus, _realmLabel, _busyLabel, _charactersEmpty;
         private ScrollView _characterList;
         private DropdownField _raceDropdown, _classDropdown;
+        private Button _quickLogin;
 
         private ClientSettings Settings => network.Settings;
 
@@ -61,6 +63,7 @@ namespace Madlands.Client
             _password = r.Q<TextField>("login-password");
             _password.isPasswordField = true;
             _server = r.Q<TextField>("login-server");
+            _quickLogin = r.Q<Button>("quick-login-button");
             _createName = r.Q<TextField>("create-name");
             _loginStatus = r.Q<Label>("login-status");
             _charactersStatus = r.Q<Label>("characters-status");
@@ -75,6 +78,9 @@ namespace Madlands.Client
 
             r.Q<Button>("login-button").clicked += () => _ = LoginAsync(register: false);
             r.Q<Button>("register-button").clicked += () => _ = LoginAsync(register: true);
+            _quickLogin.text = "Quick login: " + ClientSettings.QuickLoginAccount;
+            _quickLogin.clicked += () => _ = QuickLoginAsync();
+            _server.RegisterValueChangedCallback(_ => UpdateQuickLogin());
             r.Q<Button>("enter-world-button").clicked += EnterWorld;
             r.Q<Button>("create-new-button").clicked += ShowCreate;
             r.Q<Button>("delete-button").clicked += () => _ = DeleteSelectedAsync();
@@ -103,6 +109,7 @@ namespace Madlands.Client
         {
             _server.value = Settings.Server != "127.0.0.1" ? Settings.Server : PlayerPrefsGet(LastServerKey, Settings.Server);
             _username.value = Settings.User ?? PlayerPrefsGet(LastUserKey, "");
+            UpdateQuickLogin();
             Show(_loginScreen);
             if (Settings.AutoConnect) _ = AutoConnectAsync();
         }
@@ -116,6 +123,9 @@ namespace Madlands.Client
                 if (IsVisible(_gameMenu)) SetMenuOpen(false);
                 else if (hud == null || !hud.HandleEscape()) SetMenuOpen(true);
             }
+            // Enter on the character screen enters the world with the selected character.
+            if (keyboard != null && IsVisible(_charactersScreen) && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame))
+                EnterWorld();
             if (_pendingDeleteId != 0 && Time.time > _pendingDeleteUntil) _pendingDeleteId = 0;
         }
 
@@ -136,11 +146,43 @@ namespace Madlands.Client
                 SetStatus(_loginStatus, response.Message);
                 return;
             }
+            await OnLoggedInAsync();
+        }
+
+        /// <summary>
+        /// Temporary playtest shortcut: logs in to <see cref="ClientSettings.QuickLoginAccount"/> with the
+        /// dev password, creating the account if it does not exist.
+        /// </summary>
+        private async Task QuickLoginAsync()
+        {
+            if (IsVisible(_busyOverlay)) return;
+            EnsureAccountClient();
+            SetStatus(_loginStatus, "");
+            string account = ClientSettings.QuickLoginAccount;
+            SetBusy("Logging in as " + account + "...");
+            var response = await _account.LoginOrRegisterAsync(account, ClientSettings.DevPassword);
+            SetBusy(null);
+            if (!response.Ok)
+            {
+                SetStatus(_loginStatus, response.Result == ApiResultCode.InvalidCredentials
+                    ? $"'{account}' has another password. Give it the dev password with: Madlands.Server set-password {account} {ClientSettings.DevPassword}"
+                    : response.Message);
+                return;
+            }
+            _username.value = account;
+            await OnLoggedInAsync();
+        }
+
+        private async Task OnLoggedInAsync()
+        {
             PlayerPrefs.SetString(LastUserKey, _username.value.Trim());
             PlayerPrefs.SetString(LastServerKey, _server.value.Trim());
             _password.value = "";
             await ShowCharactersAsync();
         }
+
+        /// <summary>The quick-login button is a playtest shortcut: only offered for servers on this machine or the local network.</summary>
+        private void UpdateQuickLogin() => _quickLogin.EnableInClassList("hidden", !IsLocalNetwork(_server.value));
 
         private async Task AutoConnectAsync()
         {
@@ -235,7 +277,7 @@ namespace Madlands.Client
             foreach (var c in list.Characters) _characterList.Add(CreateEntry(c));
             _charactersEmpty.style.display = list.Characters.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
 
-            if (list.Characters.All(c => c.Id != _selectedId)) _selectedId = list.Characters.Count > 0 ? list.Characters[0].Id : 0;
+            if (list.Characters.All(c => c.Id != _selectedId)) _selectedId = LastPlayedOrFirst(list.Characters);
             Select(_selectedId);
             return true;
         }
@@ -269,6 +311,7 @@ namespace Madlands.Client
         {
             var auth = _account?.LastAuth;
             if (_selectedId == 0 || auth == null || IsVisible(_busyOverlay)) return;
+            PlayerPrefs.SetString(LastCharacterKey, _selectedId.ToString());
             SetStatus(_charactersStatus, "");
             SetBusy("Entering the world...");
             // A dev server bound to loopback announces 127.0.0.1; if we reached its API on another
@@ -357,6 +400,8 @@ namespace Madlands.Client
 
         private void Show(VisualElement screen)
         {
+            // A hidden text field must not keep the keyboard focus (its Enter would submit the old form again).
+            _root.panel?.focusController?.focusedElement?.Blur();
             foreach (var s in new[] { _loginScreen, _charactersScreen, _createScreen })
                 s.EnableInClassList("hidden", s != screen);
             // In the world the root is transparent; on the front-end screens it hides the empty scene.
@@ -394,6 +439,34 @@ namespace Madlands.Client
         }
 
         private static bool IsLoopback(string host) => host == "127.0.0.1" || host == "localhost" || host == "::1";
+
+        /// <summary>This machine or a private network address (10/8, 172.16/12, 192.168/16).</summary>
+        private static bool IsLocalNetwork(string server)
+        {
+            string host;
+            try
+            {
+                host = new System.Uri(AccountClient.BaseUrlFor(server)).Host;
+            }
+            catch (System.UriFormatException)
+            {
+                return false;
+            }
+            if (host == "localhost") return true;
+            if (!System.Net.IPAddress.TryParse(host.Trim('[', ']'), out var ip)) return false;
+            if (System.Net.IPAddress.IsLoopback(ip)) return true;
+            var b = ip.GetAddressBytes();
+            return b.Length == 4 && (b[0] == 10 || (b[0] == 172 && b[1] >= 16 && b[1] <= 31) || (b[0] == 192 && b[1] == 168));
+        }
+
+        private static ulong LastPlayedOrFirst(IReadOnlyList<CharacterSummary> characters)
+        {
+            if (characters.Count == 0) return 0;
+            string last = PlayerPrefsGet(LastCharacterKey, "");
+            foreach (var c in characters)
+                if (c.Id.ToString() == last) return c.Id;
+            return characters[0].Id;
+        }
 
         private static string PlayerPrefsGet(string key, string fallback)
         {

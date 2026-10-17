@@ -95,6 +95,7 @@
                     <ui:Button name="login-button" text="Log in" class="button primary" />
                     <ui:Button name="register-button" text="Create account" class="button" />
                 </ui:VisualElement>
+                <ui:Button name="quick-login-button" text="Quick login" class="button quick hidden" />
                 <ui:Label name="login-status" class="status" />
             </ui:VisualElement>
             <ui:VisualElement class="footer" picking-mode="Ignore">

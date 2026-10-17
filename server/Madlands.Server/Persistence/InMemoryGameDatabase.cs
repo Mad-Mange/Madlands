@@ -55,6 +55,18 @@ public sealed class InMemoryGameDatabase : IGameDatabase
         }
     }
 
+    public Task<bool> SetPasswordAsync(string username, string passwordHash, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            var account = _accounts.Values.FirstOrDefault(a => a.Username == username);
+            if (account is null) return Task.FromResult(false);
+            _accounts[account.Id] = account with { PasswordHash = passwordHash };
+            foreach (var key in _sessions.Where(s => s.Value.AccountId == account.Id).Select(s => s.Key).ToList()) _sessions.Remove(key);
+            return Task.FromResult(true);
+        }
+    }
+
     /// <summary>Tests: grant GM commands to an account.</summary>
     public void SetGmLevel(long accountId, int level)
     {

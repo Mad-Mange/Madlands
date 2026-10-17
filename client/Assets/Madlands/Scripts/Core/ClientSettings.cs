@@ -20,6 +20,12 @@ namespace Madlands.Client
         /// <summary>Password used by -autoconnect when none is given. Development convenience only.</summary>
         public const string DevPassword = "madlands-dev";
 
+        /// <summary>
+        /// Temporary playtest shortcut: the login screen's quick-login button logs in to this account with
+        /// <see cref="DevPassword"/>. Offered only for servers on this machine or the local network.
+        /// </summary>
+        public const string QuickLoginAccount = "mange";
+
         public string Server = "127.0.0.1";
         public int HttpPort = 7780;
         public string User;

@@ -34,6 +34,8 @@ public interface IGameDatabase
     Task<int> GetGmLevelAsync(long accountId, CancellationToken ct = default);
     /// <summary>Admin: grants or revokes GM commands. False if the (normalized) account does not exist.</summary>
     Task<bool> SetGmLevelAsync(string username, int level, CancellationToken ct = default);
+    /// <summary>Admin: replaces the password hash and ends the account's sessions. False if the account does not exist.</summary>
+    Task<bool> SetPasswordAsync(string username, string passwordHash, CancellationToken ct = default);
 
     Task CreateSessionAsync(byte[] tokenHash, long accountId, DateTime expiresUtc, CancellationToken ct = default);
     /// <summary>Account id for a valid, unexpired session; null otherwise.</summary>

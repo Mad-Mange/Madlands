@@ -22,6 +22,24 @@ if (args.Length > 0 && args[0] == "set-gm")
     return updated ? 0 : 2;
 }
 
+// Admin: "set-password <account> <password>" replaces an account's password and ends its sessions, then exits.
+if (args.Length > 0 && args[0] == "set-password")
+{
+    if (args.Length < 3 || !Madlands.Shared.NameRules.IsValidPassword(args[2]))
+    {
+        Console.WriteLine($"Usage: Madlands.Server set-password <account> <password> [--connection-string <npgsql>]" +
+                          $" (passwords are {Madlands.Shared.NameRules.PasswordMin}-{Madlands.Shared.NameRules.PasswordMax} characters)");
+        return 1;
+    }
+    var adminOptions = ServerOptions.Parse(args[3..]);
+    var username = Madlands.Shared.NameRules.NormalizeUsername(args[1]) ?? args[1];
+    var adminDb = PostgresGameDatabase.Open(adminOptions.ConnectionString);
+    var hash = await new Madlands.Server.Auth.PasswordHasher().HashAsync(args[2]);
+    bool updated = await adminDb.SetPasswordAsync(username, hash);
+    Console.WriteLine(updated ? $"Account '{username}' has a new password; its sessions were ended." : $"No account named '{username}'.");
+    return updated ? 0 : 2;
+}
+
 var options = ServerOptions.Parse(args);
 
 Log.Logger = new LoggerConfiguration()

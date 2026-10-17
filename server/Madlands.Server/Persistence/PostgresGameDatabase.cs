@@ -82,6 +82,19 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         return rows == 1;
     }
 
+    public async Task<bool> SetPasswordAsync(string username, string passwordHash, CancellationToken ct = default)
+    {
+        await using var conn = await _dataSource.OpenConnectionAsync(ct);
+        long rows = await conn.ExecuteScalarAsync<long>(new CommandDefinition(
+            """
+            WITH updated AS (UPDATE accounts SET password_hash = @passwordHash WHERE username = @username RETURNING id),
+                 ended AS (DELETE FROM sessions WHERE account_id IN (SELECT id FROM updated))
+            SELECT count(*) FROM updated
+            """,
+            new { username, passwordHash }, cancellationToken: ct));
+        return rows == 1;
+    }
+
     public async Task CreateSessionAsync(byte[] tokenHash, long accountId, DateTime expiresUtc, CancellationToken ct = default)
     {
         await using var conn = await _dataSource.OpenConnectionAsync(ct);

@@ -151,3 +151,5 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - **TLS for the account API:** dev uses plain HTTP on loopback. Before the first public deployment (Phase 5), put
   the API behind a TLS reverse proxy (e.g. Caddy) and refuse non-loopback plain HTTP.
 - **Session cleanup:** expired rows in `sessions` are never deleted yet. Add a periodic cleanup job.
+- **Quick-login button** on the login screen (playtest shortcut: one account, the public dev password, local-network
+  servers only). Remove it before any public test.
