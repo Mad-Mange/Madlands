@@ -29,6 +29,13 @@ namespace Madlands.Shared.Movement
     public struct MovementState : IEquatable<MovementState>
     {
         public const int WireSize = 12 + 4 + 12 + 4;
+        /// <summary>Size of <see cref="WriteCompact"/>: 3 x 24-bit position, 16-bit yaw, 3 x 16-bit velocity, 8-bit flags.</summary>
+        public const int CompactWireSize = 9 + 2 + 6 + 1;
+        /// <summary>Compact positions are in 1/512 m (about 2 mm); 24 bits cover +-16384 m, twice the map limit.</summary>
+        public const float PositionScale = 512f;
+        /// <summary>Compact velocities are in 1/256 m/s, up to +-128 m/s.</summary>
+        public const float VelocityScale = 256f;
+        private const float YawScale = 65536f / (2f * MathUtil.Pi);
 
         public Vec3 Position;
         public float Yaw;
@@ -82,6 +89,52 @@ namespace Madlands.Shared.Movement
             s.Flags = (MovementFlags)r.ReadUInt();
             return s;
         }
+
+        /// <summary>
+        /// The compact form used to broadcast other entities' movement (18 bytes instead of 32): precise
+        /// enough to draw them, while the full-precision form stays for a client's own movement.
+        /// All movement flags fit in the byte.
+        /// </summary>
+        public void WriteCompact(PacketWriter w)
+        {
+            w.WriteInt24(Quantize(Position.X, PositionScale));
+            w.WriteInt24(Quantize(Position.Y, PositionScale));
+            w.WriteInt24(Quantize(Position.Z, PositionScale));
+            w.WriteUShort((ushort)(Quantize(MathUtil.WrapAngle(Yaw), YawScale) & 0xFFFF));
+            w.WriteShort(QuantizeShort(Velocity.X));
+            w.WriteShort(QuantizeShort(Velocity.Y));
+            w.WriteShort(QuantizeShort(Velocity.Z));
+            w.WriteByte((byte)Flags);
+        }
+
+        public static MovementState ReadCompact(ref PacketReader r)
+        {
+            MovementState s;
+            float x = r.ReadInt24() / PositionScale;
+            float y = r.ReadInt24() / PositionScale;
+            float z = r.ReadInt24() / PositionScale;
+            s.Position = new Vec3(x, y, z);
+            s.Yaw = MathUtil.WrapAngle(r.ReadUShort() / YawScale);
+            float vx = r.ReadShort() / VelocityScale;
+            float vy = r.ReadShort() / VelocityScale;
+            float vz = r.ReadShort() / VelocityScale;
+            s.Velocity = new Vec3(vx, vy, vz);
+            s.Flags = (MovementFlags)r.ReadByte();
+            return s;
+        }
+
+        /// <summary>This state as it arrives after a <see cref="WriteCompact"/> roundtrip.</summary>
+        public MovementState Quantized()
+        {
+            var w = new PacketWriter(CompactWireSize);
+            WriteCompact(w);
+            var r = new PacketReader(w.AsSpan());
+            return ReadCompact(ref r);
+        }
+
+        private static int Quantize(float value, float scale) => (int)Math.Round(value * scale);
+
+        private static short QuantizeShort(float value) => (short)Math.Max(short.MinValue, Math.Min(short.MaxValue, Quantize(value, VelocityScale)));
 
         public bool Equals(MovementState other) =>
             Position.Equals(other.Position) && Yaw.Equals(other.Yaw) &&

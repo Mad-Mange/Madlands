@@ -200,3 +200,22 @@ public class ServerMiscTests
         Assert.False(limiter.TryConsume(100));
     }
 }
+
+public class MoveBroadcastTests
+{
+    [Fact]
+    public void Far_movement_is_sent_less_often()
+    {
+        Assert.Equal(1u, MapInstance.MoveSendInterval(30f * 30f));
+        Assert.Equal(2u, MapInstance.MoveSendInterval(80f * 80f));
+        Assert.Equal(4u, MapInstance.MoveSendInterval(140f * 140f));
+
+        // Over any four broadcasts a far entity goes out once, a mid-range one twice.
+        var guid = EntityGuid.Create(EntityType.Player, 7);
+        Assert.Equal(1, Enumerable.Range(10, 4).Count(b => MapInstance.IsMoveDue(guid, 4, (uint)b)));
+        Assert.Equal(2, Enumerable.Range(10, 4).Count(b => MapInstance.IsMoveDue(guid, 2, (uint)b)));
+        // Different entities are spread over the broadcasts.
+        var due = Enumerable.Range(1, 8).Select(c => Enumerable.Range(0, 4).First(b => MapInstance.IsMoveDue(EntityGuid.Create(EntityType.Creature, (ulong)c), 4, (uint)b)));
+        Assert.Equal(4, due.Distinct().Count());
+    }
+}

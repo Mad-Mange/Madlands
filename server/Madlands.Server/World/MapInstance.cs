@@ -28,6 +28,12 @@ public sealed class MapInstance
     public const long RecentChangeWindowMs = 1000;
     /// <summary>Visibility and movement broadcasts run every N ticks (20 Hz / 2 = 10 Hz).</summary>
     public const int BroadcastEveryTicks = 2;
+    /// <summary>
+    /// Movement of entities within this range goes out every broadcast (10 Hz), up to <see cref="MidMoveRange"/> every 2nd
+    /// (5 Hz), further away every 4th (2.5 Hz). States are dead-reckoned in between, so far-away movement only costs smoothness.
+    /// </summary>
+    public const float NearMoveRange = 50f;
+    public const float MidMoveRange = 100f;
     /// <summary>Slack on <see cref="GameConstants.InteractRange"/> for a target that moved while the request was in flight.</summary>
     public const float InteractLeeway = 1f;
 
@@ -53,6 +59,7 @@ public sealed class MapInstance
     private readonly PlayerStats _statsMsg = new();
     private readonly ChatMessage _chatMsg = new();
     private long _lastTickMs = -1;
+    private uint _broadcast;
 
     public MapInstance(LoadedMap map, uint instanceId, WorldManager world, NavMesh navMesh, CollisionWorld collision, int? randomSeed = null)
     {
@@ -270,11 +277,12 @@ public sealed class MapInstance
         UpdateDespawnsAndRespawns(nowMs);
 
         if (tick % BroadcastEveryTicks != 0) return;
+        _broadcast++;
         Loot.Update();
         foreach (var player in _players)
         {
             UpdateVisibility(player, nowMs);
-            SendMoves(player, nowMs);
+            SendMoves(player, nowMs, _broadcast);
             SendUnitUpdates(player);
             if (player.StatsDirty) SendPlayerStats(player);
         }
@@ -452,7 +460,14 @@ public sealed class MapInstance
         }
     }
 
-    private void SendMoves(Player player, long nowMs)
+    /// <summary>Every how many broadcasts an entity's movement is sent to an observer this far away (squared meters).</summary>
+    public static uint MoveSendInterval(float distanceSquared) =>
+        distanceSquared <= NearMoveRange * NearMoveRange ? 1u : distanceSquared <= MidMoveRange * MidMoveRange ? 2u : 4u;
+
+    /// <summary>True if <paramref name="entity"/>'s movement is due this broadcast (entities are spread over the broadcasts).</summary>
+    public static bool IsMoveDue(EntityGuid entity, uint interval, uint broadcast) => (broadcast + (uint)entity.Counter) % interval == 0;
+
+    private void SendMoves(Player player, long nowMs, uint broadcast)
     {
         int maxEntries = EntityMoves.MaxEntriesFor(player.Session.MaxUnreliablePacketSize);
         _movesMsg.ServerTimeMs = nowMs;
@@ -460,6 +475,8 @@ public sealed class MapInstance
         foreach (var entity in player.Known.Values)
         {
             if (nowMs - entity.LastChangeMs > RecentChangeWindowMs) continue;
+            uint interval = MoveSendInterval(Vec3.HorizontalDistanceSquared(entity.Position, player.Position));
+            if (interval > 1 && !IsMoveDue(entity.Guid, interval, broadcast)) continue;
             _movesMsg.Entries.Add(new EntityMoveEntry
             {
                 Guid = entity.Guid,

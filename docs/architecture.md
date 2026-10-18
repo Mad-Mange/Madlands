@@ -88,7 +88,8 @@ All three share one `IGameDatabase`: PostgreSQL in production, or in-memory for 
    An impossible move triggers a `MoveCorrection`. The client acknowledges the correction id in its following updates, so updates that were already in flight are ignored. Teleports (GM `.tele`, releasing after death) use the same message.
 4. Every 2nd tick (10 Hz) the server goes through each player's surroundings:
    - It sends `EntitySpawn`/`EntityDespawn` (view range 150 m, despawn at 170 m). Units carry their full `UnitValues`, then their auras.
-   - It sends `EntityMoves` for entities that changed within the last second. These are unreliable, chunked so each packet fits one MTU, and repeated for 1 s so a lost packet goes unnoticed.
+   - It sends `EntityMoves` for entities that changed within the last second. These are unreliable, chunked so each packet fits one MTU, and repeated for 1 s so a lost packet goes unnoticed. Entries are compact (packed guid, positions to about 2 mm, 16-bit yaw and velocity: about 24 bytes), and entities further than 50 m go out every 2nd broadcast, further than 100 m every 4th.
+   - The client's own movement, corrections and spawns keep full float precision.
    - It sends `UnitUpdates`: the changed fields (health, power, flags, target, ...) of the player itself and every unit it sees, in one batch.
 5. Other clients render 100 ms in the past and interpolate between samples. Past the newest sample they dead-reckon (max 1 s). Grounded characters follow the client's own terrain.
 6. **Creatures** move along navmesh paths (`CreatureMover`). Their position is updated every tick on the server, but observers get a new sample only when the direction changes and as a 500 ms heartbeat, exactly like players.
@@ -181,6 +182,10 @@ Map instances share no mutable state and own their own `PacketWriter`, random ge
 
 - Server tick 0.9–1.5 ms average, p99 2–7.6 ms, 0 movement corrections over 75 s.
 - 200 periodic saves with items and quests, none failed.
+
+**Compact movement** (2026-10-18, Release build, the same 200 bots): packed `EntityMoves` entries and lower rates at distance.
+
+- Outgoing traffic 2–3 MB/s in steady state (was 8–15 MB/s), server tick 0.8–1.0 ms average, p99 2–6.5 ms, 0 corrections.
 
 ## Decisions that are expensive to change
 

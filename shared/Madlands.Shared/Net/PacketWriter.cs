@@ -58,6 +58,34 @@ namespace Madlands.Shared.Net
 
         public void WriteGuid(EntityGuid guid) => WriteULong(guid.Raw);
 
+        /// <summary>Signed 24-bit integer (-8388608..8388607), little-endian. Larger values are clamped.</summary>
+        public void WriteInt24(int value)
+        {
+            value = Math.Max(-8388608, Math.Min(8388607, value));
+            var span = Reserve(3);
+            span[0] = (byte)value;
+            span[1] = (byte)(value >> 8);
+            span[2] = (byte)(value >> 16);
+        }
+
+        /// <summary>Unsigned LEB128: 7 bits per byte, small numbers take one byte.</summary>
+        public void WriteVarULong(ulong value)
+        {
+            while (value >= 0x80)
+            {
+                WriteByte((byte)(value | 0x80));
+                value >>= 7;
+            }
+            WriteByte((byte)value);
+        }
+
+        /// <summary>Type byte + variable-length counter: 2-4 bytes for typical ids instead of 8.</summary>
+        public void WritePackedGuid(EntityGuid guid)
+        {
+            WriteByte((byte)guid.Type);
+            WriteVarULong(guid.Counter);
+        }
+
         /// <summary>UTF-8 with a ushort byte-length prefix.</summary>
         public void WriteString(string value)
         {

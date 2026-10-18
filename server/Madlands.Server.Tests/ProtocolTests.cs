@@ -217,11 +217,87 @@ public class ProtocolTests
             msg.Entries.Add(new EntityMoveEntry { Guid = EntityGuid.Create(EntityType.Player, (ulong)i + 1), AgeMs = (ushort)(i * 10), State = SampleState });
         var copy = Roundtrip(msg);
         Assert.Equal(10_000, copy.ServerTimeMs);
-        Assert.Equal(msg.Entries, copy.Entries);
+        Assert.Equal(msg.Entries.Select(e => (e.Guid, e.AgeMs, e.State.Quantized())), copy.Entries.Select(e => (e.Guid, e.AgeMs, e.State)));
 
         int max = EntityMoves.MaxEntriesFor(1200);
-        Assert.True(EntityMoves.HeaderSize + max * EntityMoveEntry.WireSize <= 1200);
-        Assert.True(EntityMoves.HeaderSize + (max + 1) * EntityMoveEntry.WireSize > 1200);
+        Assert.True(EntityMoves.HeaderSize + max * EntityMoveEntry.MaxWireSize <= 1200);
+        Assert.True(EntityMoves.HeaderSize + (max + 1) * EntityMoveEntry.MaxWireSize > 1200);
+
+        // A full packet of the largest possible guids still fits.
+        var full = new EntityMoves();
+        for (int i = 0; i < max; i++)
+            full.Entries.Add(new EntityMoveEntry { Guid = EntityGuid.Create(EntityType.Creature, EntityGuid.CounterMask - (ulong)i), State = SampleState });
+        var w = new PacketWriter();
+        Packet.Encode(w, full);
+        Assert.True(w.Length <= 1200);
+    }
+
+    [Fact]
+    public void Compact_movement_is_close_and_small()
+    {
+        var states = new[]
+        {
+            SampleState,
+            new MovementState(new Vec3(-8191.99f, 812.5f, 8191.99f), -3.1f, new Vec3(-70f, -54f, 70f), MovementFlags.Backward | MovementFlags.Walking),
+            MovementState.Idle(new Vec3(0.001f, -0.001f, 123.4567f), 6.2f),
+        };
+        foreach (var state in states)
+        {
+            var q = state.Quantized();
+            Assert.True(Vec3.Distance(q.Position, state.Position) < 0.002f, $"position {q.Position} vs {state.Position}");
+            Assert.True(MathF.Abs(MathUtil.WrapAngle(q.Yaw - state.Yaw)) < 0.0002f);
+            Assert.True(Vec3.Distance(q.Velocity, state.Velocity) < 0.004f);
+            Assert.Equal(state.Flags, q.Flags);
+        }
+        var writer = new PacketWriter();
+        SampleState.WriteCompact(writer);
+        Assert.Equal(MovementState.CompactWireSize, writer.Length);
+        // Every movement flag fits the compact form's byte.
+        foreach (MovementFlags flag in Enum.GetValues(typeof(MovementFlags))) Assert.True((uint)flag <= byte.MaxValue, flag.ToString());
+    }
+
+    [Fact]
+    public void Packed_numbers_roundtrip()
+    {
+        var w = new PacketWriter(4);
+        foreach (int v in new[] { 0, 1, -1, 8388607, -8388608, 4_194_304, -123_456 }) w.WriteInt24(v);
+        w.WriteInt24(int.MaxValue); // clamped
+        foreach (ulong v in new[] { 0UL, 127UL, 128UL, 300UL, EntityGuid.CounterMask, ulong.MaxValue }) w.WriteVarULong(v);
+        var guids = new[] { EntityGuid.Create(EntityType.Player, 5), EntityGuid.Create(EntityType.Creature, 100_000), EntityGuid.Create(EntityType.Item, EntityGuid.CounterMask) };
+        foreach (var g in guids) w.WritePackedGuid(g);
+
+        var r = new PacketReader(w.AsSpan());
+        foreach (int v in new[] { 0, 1, -1, 8388607, -8388608, 4_194_304, -123_456 }) Assert.Equal(v, r.ReadInt24());
+        Assert.Equal(8388607, r.ReadInt24());
+        foreach (ulong v in new[] { 0UL, 127UL, 128UL, 300UL, EntityGuid.CounterMask, ulong.MaxValue }) Assert.Equal(v, r.ReadVarULong());
+        foreach (var g in guids) Assert.Equal(g, r.ReadPackedGuid());
+        Assert.Equal(0, r.Remaining);
+
+        var small = new PacketWriter();
+        small.WritePackedGuid(EntityGuid.Create(EntityType.Player, 42));
+        Assert.Equal(2, small.Length);
+    }
+
+    [Fact]
+    public void Overlong_numbers_are_rejected()
+    {
+        var w = new PacketWriter();
+        for (int i = 0; i < 11; i++) w.WriteByte(0xFF);
+        var bytes = w.ToArray();
+        Assert.Throws<PacketException>(() =>
+        {
+            var r = new PacketReader(bytes);
+            r.ReadVarULong();
+        });
+        var guid = new PacketWriter();
+        guid.WriteByte((byte)EntityType.Player);
+        guid.WriteVarULong(EntityGuid.CounterMask + 1);
+        var guidBytes = guid.ToArray();
+        Assert.Throws<PacketException>(() =>
+        {
+            var r = new PacketReader(guidBytes);
+            r.ReadPackedGuid();
+        });
     }
 
     [Fact]

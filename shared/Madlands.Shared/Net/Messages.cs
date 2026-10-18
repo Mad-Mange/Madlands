@@ -206,7 +206,10 @@ namespace Madlands.Shared.Net
 
     public struct EntityMoveEntry
     {
-        public const int WireSize = 8 + 2 + MovementState.WireSize;
+        /// <summary>Largest entry: packed guid (type + up to 8 counter bytes), age, compact state.</summary>
+        public const int MaxWireSize = 1 + 8 + 2 + MovementState.CompactWireSize;
+        /// <summary>Smallest entry (a one-byte counter).</summary>
+        public const int MinWireSize = 1 + 1 + 2 + MovementState.CompactWireSize;
 
         public EntityGuid Guid;
         /// <summary>How long before the packet's ServerTimeMs this state was set (capped at 65535).</summary>
@@ -217,7 +220,8 @@ namespace Madlands.Shared.Net
     /// <summary>
     /// Batched movement of nearby entities. Sent unreliably; the server repeats recently changed
     /// states for a while, so a lost packet only costs smoothness. Must fit one MTU: use
-    /// <see cref="MaxEntriesFor"/> when filling.
+    /// <see cref="MaxEntriesFor"/> when filling. Guids are packed and states compact
+    /// (<see cref="MovementState.WriteCompact"/>): about 24 bytes per entry.
     /// </summary>
     public sealed class EntityMoves : IMessage
     {
@@ -228,7 +232,7 @@ namespace Madlands.Shared.Net
 
         public Opcode Opcode => Opcode.EntityMoves;
 
-        public static int MaxEntriesFor(int maxPacketBytes) => (maxPacketBytes - HeaderSize) / EntityMoveEntry.WireSize;
+        public static int MaxEntriesFor(int maxPacketBytes) => (maxPacketBytes - HeaderSize) / EntityMoveEntry.MaxWireSize;
 
         public void Write(PacketWriter w)
         {
@@ -237,9 +241,9 @@ namespace Madlands.Shared.Net
             for (int i = 0; i < Entries.Count; i++)
             {
                 var e = Entries[i];
-                w.WriteGuid(e.Guid);
+                w.WritePackedGuid(e.Guid);
                 w.WriteUShort(e.AgeMs);
-                e.State.Write(w);
+                e.State.WriteCompact(w);
             }
         }
 
@@ -248,14 +252,14 @@ namespace Madlands.Shared.Net
             Entries.Clear();
             ServerTimeMs = r.ReadLong();
             int count = r.ReadUShort();
-            if (count * EntityMoveEntry.WireSize > r.Remaining)
+            if (count * EntityMoveEntry.MinWireSize > r.Remaining)
                 throw new PacketException("EntityMoves count " + count + " exceeds packet size.");
             for (int i = 0; i < count; i++)
             {
                 EntityMoveEntry e;
-                e.Guid = r.ReadGuid();
+                e.Guid = r.ReadPackedGuid();
                 e.AgeMs = r.ReadUShort();
-                e.State = MovementState.Read(ref r);
+                e.State = MovementState.ReadCompact(ref r);
                 Entries.Add(e);
             }
         }

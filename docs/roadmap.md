@@ -160,10 +160,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - **Only weapons and shields are visible on characters.** Armor visuals come with the modular characters of Phase 5.
 - **Tree crowns have no colliders**, so they block neither line of sight nor the camera.
 
-- **Bandwidth:** `EntityMoves` sends uncompressed floats. That adds up to about 15 MB/s out when 200 players see each other.
-  - Quantize position, yaw and velocity.
-  - Send less often at distance.
-  - Do it before Phase 5 at the latest.
+- ~~**Bandwidth**~~ (done 2026-10-18): `EntityMoves` entries are packed (guid as type + varint, ~2 mm positions, 16-bit
+  yaw and velocity: about 24 bytes instead of 42) and far entities are sent at 5 Hz (50–100 m) or 2.5 Hz (beyond 100 m).
+  200 bots seeing each other: 2–3 MB/s out instead of 8–15 MB/s.
 - **Tick spikes:** p99 and max sometimes reached 8–17 ms under bot load. Profile GC and scheduling, and run the bots on another machine when measuring.
 - **Movement timestamps:** the server stamps with receive time, which adds some jitter over the internet. Consider mapping the client's (already validated) time instead.
 - **IMGUI is still used for the debug overlay (F3).** Everything else is UI Toolkit.

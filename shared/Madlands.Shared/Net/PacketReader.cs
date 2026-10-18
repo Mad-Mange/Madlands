@@ -59,6 +59,33 @@ namespace Madlands.Shared.Net
 
         public EntityGuid ReadGuid() => new EntityGuid(ReadULong());
 
+        public int ReadInt24()
+        {
+            var b = Take(3);
+            int value = b[0] | (b[1] << 8) | (b[2] << 16);
+            return (value << 8) >> 8; // sign-extend from 24 bits
+        }
+
+        public ulong ReadVarULong()
+        {
+            ulong value = 0;
+            for (int shift = 0; shift < 64; shift += 7)
+            {
+                byte b = ReadByte();
+                value |= (ulong)(b & 0x7F) << shift;
+                if ((b & 0x80) == 0) return value;
+            }
+            throw new PacketException("Variable-length number is too long.");
+        }
+
+        public EntityGuid ReadPackedGuid()
+        {
+            byte type = ReadByte();
+            ulong counter = ReadVarULong();
+            if (counter > EntityGuid.CounterMask) throw new PacketException("Packed guid counter out of range.");
+            return EntityGuid.Create((EntityType)type, counter);
+        }
+
         public string ReadString(int maxBytes = DefaultMaxStringBytes)
         {
             int length = ReadUShort();
