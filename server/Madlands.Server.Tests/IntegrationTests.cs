@@ -33,7 +33,7 @@ internal sealed class TestRealm : IAsyncDisposable
         var map = new MapDefinition { Id = 1, Name = "Test", Spawn = new SpawnPoint { X = 0, Z = 0 } };
         return new ContentDatabase(
             new[] { new LoadedMap(map, HeightMap.CreateFlat(-200, -200, 4, 101, 101, 10f)) },
-            new[] { new RaceDefinition { Id = 1, Name = "Human", StartMap = 1 }, new RaceDefinition { Id = 2, Name = "Korrin", StartMap = 1 } },
+            new[] { new RaceDefinition { Id = 1, Name = "Human", StartMap = 1 }, new RaceDefinition { Id = 2, Name = "Korrin", StartMap = 1, DisplayId = 2 } },
             new[] { new ClassDefinition { Id = 1, Name = "Warrior" } });
     }
 
@@ -60,12 +60,12 @@ internal sealed class TestRealm : IAsyncDisposable
     public AccountClient Account() => new(Host.HttpBaseUrl);
 
     /// <summary>Registers an account with one character.</summary>
-    public async Task<(AccountClient Account, CharacterSummary Character)> NewPlayerAsync(string username, string characterName, byte classId = 1)
+    public async Task<(AccountClient Account, CharacterSummary Character)> NewPlayerAsync(string username, string characterName, byte classId = 1, byte raceId = 1)
     {
         var account = Account();
         var auth = await account.RegisterAsync(username, "password-" + username);
         Assert.True(auth.Ok, auth.Message);
-        var created = await account.CreateCharacterAsync(characterName, 1, classId);
+        var created = await account.CreateCharacterAsync(characterName, raceId, classId);
         Assert.True(created.Ok, created.Message);
         return (account, created.Character);
     }
@@ -104,7 +104,7 @@ public class WorldIntegrationTests
     public async Task Players_see_each_other_move_and_leave()
     {
         await using var realm = await TestRealm.StartAsync();
-        var (aliceAccount, aliceCharacter) = await realm.NewPlayerAsync("alice", "Alice");
+        var (aliceAccount, aliceCharacter) = await realm.NewPlayerAsync("alice", "Alice", raceId: 2);
         var (bobAccount, bobCharacter) = await realm.NewPlayerAsync("bob", "Bob");
 
         MovementState aliceSpawn = default;
@@ -119,6 +119,10 @@ public class WorldIntegrationTests
 
         realm.Pump(clients, () => bob.World.TryGet(alice.LocalGuid, out _));
         Assert.Equal("Alice", bob.World.Entities.Single().Name);
+        // Each player has the model of their race, for themselves and for others (Alice is a Korrin).
+        Assert.Equal(2u, alice.LocalDisplayId);
+        Assert.Equal(2u, bob.World.Entities.Single().DisplayId);
+        Assert.Equal(1u, bob.LocalDisplayId);
 
         // Alice runs 3 m along +X after enough time has passed for that to be legal.
         realm.PumpFor(clients, 600);

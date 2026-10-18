@@ -558,6 +558,7 @@ public sealed class GameServer : IDisposable
         _welcome.ServerTimeMs = now;
         _welcome.MapId = map.MapId;
         _welcome.InstanceId = map.InstanceId;
+        _welcome.DisplayId = player.DisplayId;
         _welcome.Spawn = spawn;
         _welcome.Self.CopyFrom(player.Values);
         session.Send(_writer, _welcome, DeliveryMethod.ReliableOrdered);

@@ -47,8 +47,7 @@ namespace Madlands.Client
         {
             if (!_ready) return;
             var go = new GameObject("Entity " + entity.Name);
-            bool isBot = entity.Name.StartsWith("Bot", System.StringComparison.Ordinal);
-            var view = UnitView.Attach(go, entity.Guid, entity.DisplayId, isBot ? EntityVisuals.BotColor : EntityVisuals.PlayerColor, isLocal: false);
+            var view = UnitView.Attach(go, entity.Guid, entity.DisplayId, isLocal: false);
             entity.View = go;
             _units[entity.Guid] = view;
             _views.Add(entity);
@@ -80,10 +79,15 @@ namespace Madlands.Client
                 Place(entity, go.transform);
                 if (entity.Unit != null && _units.TryGetValue(entity.Guid, out var view)) Animate(view, entity.Unit, client);
             }
-            if (_network.LocalPlayer != null && _units.TryGetValue(client.LocalGuid, out var local)) Animate(local, client.Self, client);
+            if (_network.LocalPlayer != null && _units.TryGetValue(client.LocalGuid, out var local))
+            {
+                var own = _network.LocalPlayer.State;
+                local.SetMovement(own.Flags, own.Velocity);
+                Animate(local, client.Self, client);
+            }
         }
 
-        private static void Animate(UnitView view, UnitState unit, GameClient client)
+        private void Animate(UnitView view, UnitState unit, GameClient client)
         {
             view.SetDead(unit.Values.IsDead);
             view.SetEquipment(unit.Values.MainHandDisplay, unit.Values.OffHandDisplay);
@@ -101,6 +105,7 @@ namespace Madlands.Client
             // Grounded entities follow the local terrain exactly; airborne ones never sink into it.
             position.y = (state.Flags & MovementFlags.Airborne) != 0 ? Mathf.Max(position.y, ground) : ground;
             t.SetPositionAndRotation(position, Conversions.YawToRotation(state.Yaw));
+            if (_units.TryGetValue(entity.Guid, out var view)) view.SetMovement(state.Flags, state.Velocity);
         }
     }
 }

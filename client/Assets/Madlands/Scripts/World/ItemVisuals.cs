@@ -24,6 +24,9 @@ namespace Madlands.Client
         private static readonly Color DarkSteel = new Color(0.4f, 0.42f, 0.46f);
         private static readonly Color Gold = new Color(0.86f, 0.68f, 0.25f);
 
+        /// <summary>Held in both hands: swings with the two-handed attack.</summary>
+        public static bool IsTwoHanded(uint displayId) => displayId == Staff || displayId == CrystalRod || displayId == GreatAxe;
+
         public static void Create(Transform hand, uint displayId)
         {
             switch (displayId)

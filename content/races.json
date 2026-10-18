@@ -1,7 +1,7 @@
 {
   "$schema": "schemas/races.schema.json",
   "races": [
-    { "id": 1, "name": "Brightvale Human", "startMap": 1, "faction": 1, "stats": { "spirit": 2 } },
-    { "id": 2, "name": "Korrin", "startMap": 1, "faction": 1, "stats": { "stamina": 2, "agility": -1 } }
+    { "id": 1, "name": "Brightvale Human", "startMap": 1, "faction": 1, "displayId": 1, "stats": { "spirit": 2 } },
+    { "id": 2, "name": "Korrin", "startMap": 1, "faction": 1, "displayId": 2, "stats": { "stamina": 2, "agility": -1 } }
   ]
 }

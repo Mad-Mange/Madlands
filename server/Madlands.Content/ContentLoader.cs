@@ -195,6 +195,7 @@ public static class ContentLoader
             {
                 if (!mapIds.Contains(race.StartMap)) Error($"races.json: race {race.Id} '{race.Name}' starts on map {race.StartMap}, which does not exist");
                 if (!factionIds.Contains(race.Faction)) Error($"races.json: race {race.Id} '{race.Name}' has faction {race.Faction}, which does not exist");
+                if (race.DisplayId == 0) Error($"races.json: race {race.Id} '{race.Name}' needs a displayId");
             }
 
             foreach (var c in classes)

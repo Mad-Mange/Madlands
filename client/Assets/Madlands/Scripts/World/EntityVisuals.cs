@@ -14,12 +14,96 @@ namespace Madlands.Client
     }
 
     /// <summary>
-    /// Placeholder art, looked up by the server's displayId (the server never names assets). In
-    /// Phase 5 this becomes a table of Addressable character prefabs; the ids stay the same.
+    /// A display built from a Blender model (art/README.md): its animator and clips, the weapon grips
+    /// and the gear regions that can be recolored (body materials named Chest, Legs, ...).
+    /// </summary>
+    public sealed class DisplayModel
+    {
+        public Transform Root;
+        public Animator Animator;
+        public IReadOnlyDictionary<string, AnimationClip> Clips;
+        public bool Humanoid;
+        public Transform MainHandGrip;
+        public Transform OffHandGrip;
+        /// <summary>Weapon rotation relative to each grip: the weapon's +Y points forward in the rest pose.</summary>
+        public Quaternion MainHandOffset;
+        public Quaternion OffHandOffset;
+        /// <summary>Top of the model in the rest pose (meters above its feet).</summary>
+        public float Height;
+
+        private static readonly Dictionary<(Material, Color), Material> Tinted = new Dictionary<(Material, Color), Material>();
+        private Renderer _body;
+        private Material[] _baseMaterials;
+
+        public Renderer Body
+        {
+            get => _body;
+            set
+            {
+                _body = value;
+                _baseMaterials = value != null ? value.sharedMaterials : null;
+            }
+        }
+
+        /// <summary>Recolors one gear region (a material of the body) of this model only.</summary>
+        public void Tint(string region, Color color)
+        {
+            if (_body == null) return;
+            var materials = _body.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                var source = _baseMaterials[i];
+                if (source == null || source.name != region) continue;
+                if (!Tinted.TryGetValue((source, color), out var tinted))
+                {
+                    tinted = new Material(source) { name = region + " (tinted)" };
+                    tinted.SetColor("_BaseColor", color);
+                    Tinted.Add((source, color), tinted);
+                }
+                materials[i] = tinted;
+            }
+            _body.sharedMaterials = materials;
+        }
+
+        /// <summary>The bone transform with this name (null if the model has none).</summary>
+        public Transform Bone(string name) => Find(Root, name);
+
+        private static Transform Find(Transform t, string name)
+        {
+            if (t.name == name) return t;
+            for (int i = 0; i < t.childCount; i++)
+            {
+                var found = Find(t.GetChild(i), name);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Adds a primitive that follows a bone. Position, rotation and scale are in model space for the
+        /// rest pose (meters, +Z forward), so attachments are placed the way the model was made.
+        /// </summary>
+        public Transform Attach(string bone, PrimitiveType type, Vector3 position, Vector3 scale, Color color, Vector3 euler = default, bool glow = false)
+        {
+            var parent = Bone(bone) ?? Root;
+            // Placed in the space of the model's holder (the root itself is turned on import).
+            var space = Root.parent;
+            var part = glow ? EntityVisuals.Glow(space, position, scale, color, type) : EntityVisuals.Part(type, space, position, scale, color);
+            part.localRotation = Quaternion.Euler(euler);
+            part.SetParent(parent, true);
+            return part;
+        }
+    }
+
+    /// <summary>
+    /// Art by the server's displayId (the server never names assets): Blender models from the
+    /// <see cref="ArtCatalog"/>, recolored and dressed per display, and primitive placeholders for
+    /// displays without a model yet. Later this becomes data (Addressables); the ids stay the same.
     /// </summary>
     public static class EntityVisuals
     {
         public const uint PlayerDisplay = 1;
+        public const uint KorrinDisplay = 2;
         public const uint FrogDisplay = 101;
         public const uint WolfDisplay = 102;
         public const uint BanditDisplay = 103;
@@ -29,17 +113,152 @@ namespace Madlands.Client
         public const uint HerbalistDisplay = 111;
         public const uint QuartermasterDisplay = 112;
 
-        public static readonly Color LocalPlayerColor = new Color(0.25f, 0.55f, 1f);
-        public static readonly Color PlayerColor = new Color(0.3f, 0.85f, 0.4f);
-        public static readonly Color BotColor = new Color(1f, 0.6f, 0.2f);
+        /// <summary>The model file whose clips every humanoid race plays (retargeted by Unity).</summary>
+        public const string HumanoidClips = "HumanoidAnimations";
 
         private static readonly Dictionary<Color, Material> LitMaterials = new Dictionary<Color, Material>();
         private static readonly Dictionary<Color, Material> GlowMaterials = new Dictionary<Color, Material>();
         private static Material _litTemplate;
         private static Material _unlitTemplate;
 
-        /// <summary>Builds the visual for a display under <paramref name="parent"/> (no colliders).</summary>
-        public static DisplayShape Create(Transform parent, uint displayId, Color playerColor)
+        public static Color Hex(string hex) => ColorUtility.TryParseHtmlString(hex, out var c) ? c : Color.magenta;
+
+        /// <summary>
+        /// Builds the visual for a display under <paramref name="parent"/> (no colliders).
+        /// <paramref name="model"/> is set when the display is an animated model.
+        /// </summary>
+        public static DisplayShape Create(Transform parent, uint displayId, out DisplayModel model)
+        {
+            model = null;
+            DisplayShape shape;
+            switch (displayId)
+            {
+                case PlayerDisplay:
+                    return Humanoid(parent, "BrightvaleHuman", out model);
+                case KorrinDisplay:
+                    return Humanoid(parent, "Korrin", out model);
+                case BanditDisplay:
+                    // Red rags, a dark hood and a stolen shard glowing on the chest.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    model.Tint("Chest", Hex("#7a2c22"));
+                    model.Tint("Arms", Hex("#4a3a32"));
+                    model.Tint("Legs", Hex("#3b3230"));
+                    model.Tint("Hair", Hex("#2a2422"));
+                    model.Tint("Feet", Hex("#2e2622"));
+                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.74f, -0.03f), new Vector3(0.27f, 0.26f, 0.3f), Hex("#2f2a28"));
+                    model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.32f, 0.13f), new Vector3(0.07f, 0.12f, 0.04f), new Color(0.4f, 0.95f, 1f), new Vector3(0f, 0f, 45f), glow: true);
+                    return shape;
+                case ShardcasterDisplay:
+                {
+                    // A violet robe and a crystal turning over the head.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    model.Tint("Chest", Hex("#55357a"));
+                    model.Tint("Arms", Hex("#55357a"));
+                    model.Tint("Legs", Hex("#3e2a5a"));
+                    model.Tint("Waist", Hex("#c9a23e"));
+                    model.Tint("Hair", Hex("#d8d4cc"));
+                    var crystal = Glow(parent, new Vector3(0f, shape.Height + 0.45f, 0f), new Vector3(0.2f, 0.34f, 0.2f), new Color(0.45f, 1f, 1f));
+                    crystal.localRotation = Quaternion.Euler(0f, 45f, 0f);
+                    crystal.gameObject.AddComponent<Spinner>();
+                    shape.Height += 0.6f;
+                    return shape;
+                }
+                case CaptainDisplay:
+                {
+                    // Steel armor, a helmet and a blue cloak: the outpost's commander.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    var steel = Hex("#9aa3b2");
+                    model.Tint("Chest", steel);
+                    model.Tint("Arms", steel);
+                    model.Tint("Hands", Hex("#6d7480"));
+                    model.Tint("Legs", Hex("#2f3d66"));
+                    model.Tint("Feet", Hex("#4a4f58"));
+                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.76f, 0f), new Vector3(0.27f, 0.2f, 0.29f), steel);
+                    model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.69f, 0f), new Vector3(0.29f, 0.03f, 0.31f), Hex("#6d7480"));
+                    model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.0f, -0.15f), new Vector3(0.46f, 0.95f, 0.03f), Hex("#27428a"), new Vector3(-6f, 0f, 0f));
+                    foreach (var x in new[] { -0.22f, 0.22f })
+                        model.Attach("Chest", PrimitiveType.Sphere, new Vector3(x, 1.46f, 0f), new Vector3(0.2f, 0.12f, 0.22f), steel);
+                    return shape;
+                }
+                case HerbalistDisplay:
+                {
+                    // Gray hair, a purple robe and a tall wide-brimmed hat.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    model.Tint("Hair", Hex("#c8c4bc"));
+                    model.Tint("Chest", Hex("#5a4370"));
+                    model.Tint("Arms", Hex("#5a4370"));
+                    model.Tint("Legs", Hex("#4a3a5c"));
+                    var hat = Hex("#2c2433");
+                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.8f, 0f), new Vector3(0.6f, 0.015f, 0.6f), hat);
+                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.92f, 0f), new Vector3(0.27f, 0.12f, 0.27f), hat);
+                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0.03f, 2.08f, 0f), new Vector3(0.16f, 0.06f, 0.16f), hat, new Vector3(0f, 0f, -12f));
+                    shape.Height += 0.3f;
+                    return shape;
+                }
+                case QuartermasterDisplay:
+                    // A broad Korrin in brown with a leather apron.
+                    shape = Humanoid(parent, "Korrin", out model);
+                    if (model == null) return shape;
+                    model.Tint("Chest", Hex("#7a5636"));
+                    model.Tint("Arms", Hex("#7a5636"));
+                    model.Tint("Hair", Hex("#6b6158"));
+                    model.Attach("Spine", PrimitiveType.Cube, new Vector3(0f, 0.86f, 0.17f), new Vector3(0.4f, 0.55f, 0.03f), Hex("#a88a62"));
+                    return shape;
+                default:
+                    return Placeholder(parent, displayId);
+            }
+        }
+
+        /// <summary>A humanoid race with the shared humanoid clips (a placeholder if the art is missing).</summary>
+        private static DisplayShape Humanoid(Transform parent, string modelName, out DisplayModel model)
+        {
+            model = Instantiate(parent, modelName, HumanoidClips, humanoid: true);
+            if (model == null) return Placeholder(parent, PlayerDisplay);
+            return new DisplayShape { Height = model.Height, Radius = 0.45f, Hands = model.MainHandGrip != null };
+        }
+
+        private static DisplayModel Instantiate(Transform parent, string modelName, string clipSet, bool humanoid)
+        {
+            var catalog = ArtCatalog.Instance;
+            var prefab = catalog != null ? catalog.GetModel(modelName) : null;
+            if (prefab == null) return null;
+            var root = Object.Instantiate(prefab, parent, false).transform;
+            root.name = modelName;
+            var model = new DisplayModel
+            {
+                Root = root,
+                Animator = root.GetComponent<Animator>(),
+                Clips = catalog.GetClips(clipSet),
+                Humanoid = humanoid,
+                Body = root.GetComponentInChildren<SkinnedMeshRenderer>(),
+            };
+            if (model.Animator != null) model.Animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            foreach (var r in root.GetComponentsInChildren<Renderer>())
+                model.Height = Mathf.Max(model.Height, r.bounds.max.y - root.position.y);
+            if (model.Body is SkinnedMeshRenderer skinned)
+            {
+                // The bounds come from the rest pose; lying dead or swinging arms reach further.
+                var bounds = skinned.localBounds;
+                bounds.Expand(1f);
+                skinned.localBounds = bounds;
+            }
+            // Grips in the rest pose: a weapon's +Y points forward, its +X up (blade edge up).
+            model.MainHandGrip = model.Bone("MainHandGrip");
+            model.OffHandGrip = model.Bone("OffHandGrip");
+            var toModel = Quaternion.Inverse(parent.rotation);
+            if (model.MainHandGrip != null)
+                model.MainHandOffset = Quaternion.Inverse(toModel * model.MainHandGrip.rotation) * Quaternion.LookRotation(Vector3.right, Vector3.forward);
+            if (model.OffHandGrip != null)
+                model.OffHandOffset = Quaternion.Inverse(toModel * model.OffHandGrip.rotation) * Quaternion.LookRotation(Vector3.down, Vector3.forward);
+            return model;
+        }
+
+        /// <summary>Primitive art for displays without a model yet.</summary>
+        private static DisplayShape Placeholder(Transform parent, uint displayId)
         {
             switch (displayId)
             {
@@ -69,49 +288,6 @@ namespace Madlands.Client
                             Part(PrimitiveType.Cylinder, parent, new Vector3(x, 0.25f, z), new Vector3(0.12f, 0.25f, 0.12f), fur * 0.75f);
                     return new DisplayShape { Height = 1.3f, Radius = 0.8f };
                 }
-                case BanditDisplay:
-                {
-                    Humanoid(parent, new Color(0.52f, 0.2f, 0.16f));
-                    Part(PrimitiveType.Sphere, parent, new Vector3(0f, 1.78f, -0.05f), new Vector3(0.62f, 0.5f, 0.62f), new Color(0.18f, 0.14f, 0.12f));
-                    Glow(parent, new Vector3(0f, 1.15f, 0.38f), new Vector3(0.12f, 0.2f, 0.06f), new Color(0.4f, 0.95f, 1f));
-                    return new DisplayShape { Height = 2.1f, Radius = 0.5f, Hands = true };
-                }
-                case ShardcasterDisplay:
-                {
-                    Humanoid(parent, new Color(0.38f, 0.22f, 0.55f));
-                    var crystal = Glow(parent, new Vector3(0f, 2.45f, 0f), new Vector3(0.22f, 0.36f, 0.22f), new Color(0.45f, 1f, 1f));
-                    crystal.localRotation = Quaternion.Euler(0f, 45f, 0f);
-                    crystal.gameObject.AddComponent<Spinner>();
-                    return new DisplayShape { Height = 2.3f, Radius = 0.5f, Hands = true };
-                }
-                case CaptainDisplay:
-                {
-                    // Steel armor, a helmet and a blue cloak: the outpost's commander.
-                    Humanoid(parent, new Color(0.46f, 0.52f, 0.62f));
-                    Part(PrimitiveType.Sphere, parent, new Vector3(0f, 1.8f, 0f), new Vector3(0.62f, 0.42f, 0.62f), new Color(0.6f, 0.63f, 0.7f));
-                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 1.05f, -0.42f), new Vector3(0.72f, 1.35f, 0.06f), new Color(0.16f, 0.28f, 0.6f));
-                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 1.62f, 0f), new Vector3(0.95f, 0.14f, 0.5f), new Color(0.6f, 0.63f, 0.7f));
-                    return new DisplayShape { Height = 2.1f, Radius = 0.5f, Hands = true };
-                }
-                case HerbalistDisplay:
-                {
-                    // A purple robe and a tall wide-brimmed hat.
-                    Humanoid(parent, new Color(0.4f, 0.3f, 0.48f));
-                    var hat = new Color(0.22f, 0.18f, 0.26f);
-                    Part(PrimitiveType.Cylinder, parent, new Vector3(0f, 1.95f, 0f), new Vector3(0.95f, 0.025f, 0.95f), hat);
-                    Part(PrimitiveType.Cylinder, parent, new Vector3(0f, 2.15f, 0f), new Vector3(0.45f, 0.2f, 0.45f), hat);
-                    Part(PrimitiveType.Cylinder, parent, new Vector3(0.04f, 2.42f, 0f), new Vector3(0.26f, 0.1f, 0.26f), hat);
-                    Part(PrimitiveType.Sphere, parent, new Vector3(0.08f, 2.56f, 0f), Vector3.one * 0.14f, hat);
-                    return new DisplayShape { Height = 2.5f, Radius = 0.5f, Hands = true };
-                }
-                case QuartermasterDisplay:
-                {
-                    // Broad, in brown with a leather apron.
-                    Part(PrimitiveType.Capsule, parent, new Vector3(0f, 1f, 0f), new Vector3(1.05f, 1f, 0.9f), new Color(0.48f, 0.34f, 0.22f));
-                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 1.55f, 0.42f), new Vector3(0.25f, 0.15f, 0.3f), new Color(0.3f, 0.2f, 0.12f));
-                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 0.85f, 0.43f), new Vector3(0.7f, 0.95f, 0.05f), new Color(0.72f, 0.6f, 0.42f));
-                    return new DisplayShape { Height = 2.0f, Radius = 0.55f, Hands = true };
-                }
                 case DummyDisplay:
                 {
                     var wood = new Color(0.45f, 0.31f, 0.18f);
@@ -123,16 +299,11 @@ namespace Madlands.Client
                     return new DisplayShape { Height = 2.2f, Radius = 0.55f };
                 }
                 default:
-                    Humanoid(parent, displayId == PlayerDisplay ? playerColor : Color.gray);
+                    // The Phase 1 capsule with a "nose" that shows the facing.
+                    Part(PrimitiveType.Capsule, parent, new Vector3(0f, 1f, 0f), new Vector3(0.8f, 1f, 0.8f), Color.gray);
+                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 1.55f, 0.38f), new Vector3(0.25f, 0.15f, 0.3f), Color.gray * 0.5f);
                     return new DisplayShape { Height = 2.0f, Radius = 0.45f, Hands = true };
             }
-        }
-
-        /// <summary>The Phase 1 capsule with a "nose" that shows the facing.</summary>
-        private static void Humanoid(Transform parent, Color color)
-        {
-            Part(PrimitiveType.Capsule, parent, new Vector3(0f, 1f, 0f), new Vector3(0.8f, 1f, 0.8f), color);
-            Part(PrimitiveType.Cube, parent, new Vector3(0f, 1.55f, 0.38f), new Vector3(0.25f, 0.15f, 0.3f), color * 0.5f);
         }
 
         public static Transform Part(PrimitiveType type, Transform parent, Vector3 position, Vector3 scale, Color color)

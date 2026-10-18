@@ -742,8 +742,7 @@ namespace Madlands.Client
             _overlay.Show(anchor, text, css);
         }
 
-        private bool IsMeleeSpell(uint spellId) =>
-            Client.Data.TryGetSpell(spellId, out var s) && s.School == SpellSchool.Physical && s.MaxRange > 0 && s.MaxRange <= GameConstants.MeleeRange;
+        private bool IsMeleeSpell(uint spellId) => Client.Data.TryGetSpell(spellId, out var s) && SpellEffects.IsMelee(s);
 
         private void OnExperience(int amount, EntityGuid victim)
         {

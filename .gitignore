@@ -52,3 +52,7 @@ sysinfo.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---- Blender builds (art/README.md): generated scenes, the scripts are the source ----
+/art/blend/
+__pycache__/

@@ -59,6 +59,9 @@ namespace Madlands.Client
         private void OnLaunched(SpellGo go)
         {
             if (!Client.Data.TryGetSpell(go.SpellId, out var spell) || !World.TryGetView(go.Caster, out var caster)) return;
+            // Eating and drinking sit down; melee abilities swing when their damage lands (combat events).
+            if ((spell.Flags & SpellFlags.NotInCombat) != 0) caster.SitDown();
+            else if ((spell.Flags & SpellFlags.AutoAttack) == 0 && !IsMelee(spell)) caster.PlayCastRelease();
             var color = SchoolColors.Get(spell.School);
             if (spell.Target == SpellTarget.None)
             {
@@ -71,6 +74,9 @@ namespace Madlands.Client
             var body = EntityVisuals.Glow(null, caster.ChestPosition + caster.transform.forward * 0.5f, Vector3.one * 0.35f, color, PrimitiveType.Sphere);
             _projectiles.Add(new Projectile { Body = body, Target = go.Target, Goal = target.ChestPosition, Speed = spell.ProjectileSpeed, Color = color });
         }
+
+        public static bool IsMelee(SpellInfo spell) =>
+            spell.School == SpellSchool.Physical && spell.MaxRange > 0 && spell.MaxRange <= GameConstants.MeleeRange;
 
         private void OnCombatEvent(CombatEvent e)
         {

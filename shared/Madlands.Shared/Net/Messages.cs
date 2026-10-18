@@ -89,6 +89,8 @@ namespace Madlands.Shared.Net
         public long ServerTimeMs;
         public ushort MapId;
         public uint InstanceId;
+        /// <summary>The player's own model (from the race); others see it in the spawn message.</summary>
+        public uint DisplayId;
         public MovementState Spawn;
         public readonly UnitValues Self = new UnitValues();
 
@@ -101,6 +103,7 @@ namespace Madlands.Shared.Net
             w.WriteLong(ServerTimeMs);
             w.WriteUShort(MapId);
             w.WriteUInt(InstanceId);
+            w.WriteUInt(DisplayId);
             Spawn.Write(w);
             Self.Write(w, UnitFieldMask.All);
         }
@@ -112,6 +115,7 @@ namespace Madlands.Shared.Net
             ServerTimeMs = r.ReadLong();
             MapId = r.ReadUShort();
             InstanceId = r.ReadUInt();
+            DisplayId = r.ReadUInt();
             Spawn = MovementState.Read(ref r);
             Self.Read(ref r, UnitFieldMask.All);
         }

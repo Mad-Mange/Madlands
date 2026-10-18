@@ -10,12 +10,10 @@ namespace Madlands.Server.World;
 
 public sealed class Player : Unit
 {
-    public const uint DefaultDisplayId = 1;
-
     private readonly AuraModifiers _mods = new();
 
     public Player(long characterId, string name, ClientSession session, MovementValidator validator, ClassDefinition cls, RaceDefinition race)
-        : base(EntityGuid.Create(EntityType.Player, (ulong)characterId), name, DefaultDisplayId)
+        : base(EntityGuid.Create(EntityType.Player, (ulong)characterId), name, race.DisplayId)
     {
         CharacterId = characterId;
         Session = session;

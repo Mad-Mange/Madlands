@@ -98,11 +98,15 @@ Every phase ends in something playable and tested. Architectural decisions are i
 
 ## Phase 5 – Vertical slice: the first real zone (the "is it fun?" gate)
 
-- [ ] A coherent set of Synty-style asset packs, including a modular character system so gear is visible on the character
+- [ ] Low-poly art made in Blender ([ADR 0012](adr/0012-art-pipeline-blender.md), `art/`): models are Python scripts that
+  export FBX, kept very simple first and refined later. Done: the two races (Brightvale Human, Korrin) and the
+  humanoid NPCs, recolored per display. Next: creatures, weapons, props and buildings, then gear visible on characters
 - [ ] Localization (Unity Localization package, English first)
 - [x] Rebindable key bindings (two keys per action) and a settings window: mouse sensitivity and inversion, interface
   scale, window mode, resolution, vsync and quality (Esc > Settings, or on the login screen)
-- [ ] Animations retargeted to a shared humanoid rig
+- [x] Animations retargeted to a shared humanoid rig: 16 clips made once (idle, walk, run, backpedal, strafe, jump,
+  fall, sit, three attacks, casting, hit, death) and played on every race through a small Playables graph, with
+  attacks on the upper body only so the legs keep running. The player's model comes from the race (protocol v7)
 - [ ] 1–2 races and 3 classes (tank, DPS, healer)
 - [ ] A level 1–10 zone with a hub village, 20–30 quests, 10–15 creature types and a world boss
 - [x] Minimap (north up, zoom, players, NPCs and quest marks) and world map (M) with the places active quests send you

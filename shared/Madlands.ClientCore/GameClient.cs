@@ -127,6 +127,8 @@ namespace Madlands.ClientCore
         public ClientState State { get; private set; } = ClientState.Disconnected;
         public EntityGuid LocalGuid { get; private set; }
         public string LocalName { get; private set; }
+        /// <summary>The local player's model (from the Welcome).</summary>
+        public uint LocalDisplayId { get; private set; }
         public ushort MapId { get; private set; }
         public uint InstanceId { get; private set; }
         public ClientWorld World { get; } = new ClientWorld();
@@ -648,6 +650,7 @@ namespace Madlands.ClientCore
             LocalName = _welcome.Name;
             MapId = _welcome.MapId;
             InstanceId = _welcome.InstanceId;
+            LocalDisplayId = _welcome.DisplayId;
             ResetLocalState();
             Self.Values.CopyFrom(_welcome.Self);
             LocalMovement = _welcome.Spawn;

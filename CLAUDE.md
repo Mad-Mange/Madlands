@@ -18,6 +18,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 | `server/Madlands.Bots` | Headless bot players (register/login via the API, then hunt creatures or wander) for load/integration testing. |
 | `server/Madlands.Server.Tests` | xUnit: protocol roundtrips, world logic, client core, real HTTP+UDP realm tests (`TestRealm`), Postgres tests (`[PostgresFact]`, skipped if no DB). |
 | `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
+| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `build.py` exports FBX into `client/Assets/Madlands/Art/`. |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
 | `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, map.json: written by Unity, Madlands > Export Map). |
 
@@ -35,6 +36,9 @@ dotnet run --project server/Madlands.Server -- set-password <account> <password>
 dotnet run --project server/Madlands.Bots -- --count 200 --seconds 60   # fight creatures (--mode wander: just run); server needs --api-rate-limit 0
 dotnet run --project tools/Madlands.ContentTool -- validate
 
+$blender = "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
+& $blender -b --factory-startup -P art/blender/build.py -- [asset ...] [--preview <dir>]   # FBX into the Unity project (+ pictures)
+
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"
 # Each: & $unity -batchmode -projectPath client -logFile <log> -executeMethod <method>   (no -quit; methods call Exit)
 #   Madlands.Client.Editor.BuildTools.CompileCheck                 -> exit 0 if all scripts compile
@@ -43,6 +47,7 @@ $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"
 #   Madlands.Client.Editor.TestWorldBuilder.BuildFromCommandLine   -> regenerates World_0001 + exports map
 #   Madlands.Client.Editor.FrontEndBuilder.BuildFromCommandLine    -> regenerates FrontEnd scene + PanelSettings
 #   Madlands.Client.Editor.MapExporter.ExportFromCommandLine       -> content/maps/0001/{height.bin,map.json}
+#   Madlands.Client.Editor.ArtImporter.ReportFromCommandLine       -> logs every model: size, avatar, materials, clips
 # Unity cannot run batchmode while the user has the project open in the editor.
 
 # Visual end-to-end checks (server running). -autoconnect logs in as the lowercased -name with the dev
@@ -80,6 +85,14 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
 - Windows: a Git Credential Manager prompt cannot be shown from here; push with
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (or the user runs `gh auth setup-git`).
 
+- Unity keeps the orientation an FBX declares: changing Blender's export axes changes nothing. `ArtImporter`
+  turns every model root 180 degrees so Blender's front (-Y) faces Unity's +Z.
+- An animation-only FBX gets its humanoid avatar from the model it was made on (`ArtImporter.AnimationSkeletons`):
+  its own imported pose is a clip frame, not the T-pose, and retargeting goes wrong (weapons point sideways).
+- Unassigning a Blender action keeps its last pose: `lowpoly.export_fbx` resets the pose before exporting.
+- To check animated poses in batch mode use `AnimationMode.SampleAnimationClip`; `PlayableGraph.Evaluate` does
+  nothing there.
+
 ## Rules
 
 - **Shared/ClientCore must compile in Unity**: netstandard2.1, C# 9, block-scoped namespaces, no records/init/
@@ -93,6 +106,8 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   (`MovementValidator`, `SpellSystem.Check`) and corrects. Never trust client data; reject NaN; rate-limit every message type.
 - **Combat rules are data + one formula file.** New spell/aura behaviour = a new effect type with a handler, never a
   special case per spell id (ADR 0005). Balance numbers live in `content/` and `Combat/StatFormulas.cs`.
+- **Art comes from the `art/` scripts** (ADR 0012). `ArtImporter` owns the import settings of everything in
+  `Assets/Madlands/Art`; never set them by hand. Character material names are the gear regions the client recolors.
 - **Content ids are stable and never reused.** Content is data (`content/`), validated by `ContentLoader`
   (collect all errors, then fail). The server sends `displayId`s, never asset names.
 - Entities live in `(mapId, instanceId)`; map instances share no mutable state (future: one thread/process each).

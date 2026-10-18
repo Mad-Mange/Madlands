@@ -74,7 +74,7 @@ public class ContentLoaderTests
         {
             var bad = Directory.CreateDirectory(Path.Combine(root.FullName, "maps", "0002"));
             File.WriteAllText(Path.Combine(bad.FullName, "map.json"), """{ "id": 1, "name": "", "spawn": { "x": 0, "z": 0 } }""");
-            File.WriteAllText(Path.Combine(root.FullName, "races.json"), """{ "races": [ { "id": 1, "name": "Human", "startMap": 9 }, { "id": 1, "name": "Dupe", "startMap": 1, "faction": 7 } ] }""");
+            File.WriteAllText(Path.Combine(root.FullName, "races.json"), """{ "races": [ { "id": 1, "name": "Human", "startMap": 9 }, { "id": 1, "name": "Dupe", "startMap": 1, "faction": 7, "displayId": 0 } ] }""");
             File.Delete(Path.Combine(root.FullName, "classes.json"));
             File.WriteAllText(Path.Combine(root.FullName, "spells.json"), """
                 { "spells": [
@@ -95,6 +95,7 @@ public class ContentLoaderTests
             Assert.Contains(ex.Errors, e => e.Contains("map 9, which does not exist"));
             Assert.Contains(ex.Errors, e => e.Contains("id 1 is used twice"));
             Assert.Contains(ex.Errors, e => e.Contains("faction 7, which does not exist"));
+            Assert.Contains(ex.Errors, e => e.Contains("needs a displayId"));
             Assert.Contains(ex.Errors, e => e.Contains("classes.json"));
             Assert.Contains(ex.Errors, e => e.Contains("autoAttack spell targets an enemy"));
             Assert.Contains(ex.Errors, e => e.Contains("applyAura needs an aura"));
@@ -181,6 +182,8 @@ public class ContentLoaderTests
         var db = ContentLoader.Load(root!);
         Assert.True(db.Maps.ContainsKey(1));
         Assert.NotEmpty(db.Races);
+        // Every race has its own character model.
+        Assert.Equal(db.Races.Count, db.Races.Values.Select(r => r.DisplayId).Distinct().Count());
         Assert.Equal(3, db.Classes.Count);
         // Every class can fight from level 1: it knows the auto-attack and at least one ability.
         foreach (var cls in db.Classes.Values)

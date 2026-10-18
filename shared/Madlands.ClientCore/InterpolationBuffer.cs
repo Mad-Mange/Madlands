@@ -8,6 +8,8 @@ namespace Madlands.ClientCore
         public Vec3 Position;
         public float Yaw;
         public MovementFlags Flags;
+        /// <summary>Velocity of the sample in effect (for animations).</summary>
+        public Vec3 Velocity;
         /// <summary>True when the position was dead-reckoned past the newest sample.</summary>
         public bool Extrapolated;
     }
@@ -68,6 +70,7 @@ namespace Madlands.ClientCore
                 result.Position = first.Position;
                 result.Yaw = first.Yaw;
                 result.Flags = first.Flags;
+                result.Velocity = first.Velocity;
                 return result;
             }
 
@@ -84,6 +87,7 @@ namespace Madlands.ClientCore
                     result.Position = Vec3.Lerp(a.Position, b.Position, t);
                     result.Yaw = MathUtil.LerpAngle(a.Yaw, b.Yaw, t);
                     result.Flags = t < 0.5f ? a.Flags : b.Flags;
+                    result.Velocity = t < 0.5f ? a.Velocity : b.Velocity;
                     return result;
                 }
             }
@@ -95,6 +99,7 @@ namespace Madlands.ClientCore
             result.Position = newest.Extrapolate((float)(ahead / 1000.0));
             result.Yaw = newest.Yaw;
             result.Flags = newest.Flags;
+            result.Velocity = newest.Velocity;
             result.Extrapolated = true;
             return result;
         }

@@ -169,7 +169,7 @@ public class ProtocolTests
     public void Welcome_roundtrips()
     {
         var guid = EntityGuid.Create(EntityType.Player, 5);
-        var welcome = new Welcome { PlayerGuid = guid, Name = "Alice", ServerTimeMs = 99, MapId = 2, InstanceId = 3, Spawn = SampleState };
+        var welcome = new Welcome { PlayerGuid = guid, Name = "Alice", ServerTimeMs = 99, MapId = 2, InstanceId = 3, DisplayId = 7, Spawn = SampleState };
         welcome.Self.CopyFrom(CombatProtocolTests.SampleValues);
         var copy = Roundtrip(welcome);
         Assert.Equal(guid, copy.PlayerGuid);
@@ -178,6 +178,7 @@ public class ProtocolTests
         Assert.Equal(99, copy.ServerTimeMs);
         Assert.Equal(2, copy.MapId);
         Assert.Equal(3u, copy.InstanceId);
+        Assert.Equal(7u, copy.DisplayId);
         Assert.Equal(SampleState, copy.Spawn);
     }
 

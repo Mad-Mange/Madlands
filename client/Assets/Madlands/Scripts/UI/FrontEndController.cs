@@ -246,7 +246,7 @@ namespace Madlands.Client
             var existing = _list.Characters.FirstOrDefault(c => c.Name == wanted);
             if (existing.Id == 0 && wanted != null && _list.Races.Count > 0 && _list.Classes.Count > 0)
             {
-                var created = await _account.CreateCharacterAsync(wanted, _list.Races[0].Id, ClassForAutoConnect());
+                var created = await _account.CreateCharacterAsync(wanted, Pick(_list.Races, Settings.RaceName), Pick(_list.Classes, Settings.ClassName));
                 if (created.Ok)
                 {
                     existing = created.Character;
@@ -260,16 +260,15 @@ namespace Madlands.Client
             if (Settings.AutoEntersWorld && existing.Id != 0) EnterWorld();
         }
 
-        /// <summary>-class name (prefix) or id; the first class otherwise.</summary>
-        private byte ClassForAutoConnect()
+        /// <summary>-class / -race: a name (prefix) or id; the first option otherwise.</summary>
+        private static byte Pick(List<NamedOption> options, string wanted)
         {
-            var wanted = Settings.ClassName;
             if (!string.IsNullOrEmpty(wanted))
             {
-                foreach (var c in _list.Classes)
-                    if (c.Name.StartsWith(wanted, System.StringComparison.OrdinalIgnoreCase) || c.Id.ToString() == wanted) return c.Id;
+                foreach (var o in options)
+                    if (o.Name.StartsWith(wanted, System.StringComparison.OrdinalIgnoreCase) || o.Id.ToString() == wanted) return o.Id;
             }
-            return _list.Classes[0].Id;
+            return options[0].Id;
         }
 
         private async Task LogoutAsync()

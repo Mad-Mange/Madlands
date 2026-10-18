@@ -52,7 +52,7 @@ namespace Madlands.Client
             controller.slopeLimit = 50f;
             controller.skinWidth = 0.04f;
 
-            var view = UnitView.Attach(go, network.Client.LocalGuid, EntityVisuals.PlayerDisplay, EntityVisuals.LocalPlayerColor, isLocal: true);
+            var view = UnitView.Attach(go, network.Client.LocalGuid, network.Client.LocalDisplayId, isLocal: true);
 
             var player = go.AddComponent<PlayerController>();
             player.View = view;

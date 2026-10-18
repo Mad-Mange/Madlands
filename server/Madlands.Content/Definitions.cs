@@ -78,6 +78,8 @@ public sealed class RaceDefinition
     /// <summary>Map new characters of this race start on (at the map's spawn point).</summary>
     public int StartMap { get; set; } = 1;
     public int Faction { get; set; } = 1;
+    /// <summary>The race's character model (client art).</summary>
+    public uint DisplayId { get; set; } = 1;
     /// <summary>Added to the class's attributes.</summary>
     public StatBlock Stats { get; set; } = new();
 }

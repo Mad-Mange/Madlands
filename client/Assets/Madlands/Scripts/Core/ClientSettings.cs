@@ -47,6 +47,8 @@ namespace Madlands.Client
         public bool HideDebug;
         /// <summary>Class name or id for characters created by -autoconnect.</summary>
         public string ClassName;
+        /// <summary>Race name or id for characters created by -autoconnect.</summary>
+        public string RaceName;
         /// <summary>Chat lines (usually GM commands) to send after entering the world, ';'-separated.</summary>
         public string[] Exec = new string[0];
         public bool AutoFight;
@@ -134,6 +136,10 @@ namespace Madlands.Client
                         break;
                     case "-class" when next != null:
                         s.ClassName = next;
+                        i++;
+                        break;
+                    case "-race" when next != null:
+                        s.RaceName = next;
                         i++;
                         break;
                     case "-exec" when next != null:
