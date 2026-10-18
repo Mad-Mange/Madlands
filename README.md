@@ -277,7 +277,7 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | 1–0, -, = | Action bar (hover a button for its tooltip) |
 | Right click a buff | Cancel it |
 | Enter | Chat. Lines starting with `.` are GM commands; `.help` lists them |
-| Esc | Close chat, windows, clear the target, or open the menu |
+| Esc | Close chat, windows, clear the target, or open the menu (Settings: key bindings, mouse, interface scale, graphics) |
 | F3 | Toggle the debug overlay |
 
 **Where to go in the test world:** the Mirewatch Post at the spawn has quests (Old Tamsin, Captain Edda Brand) and a vendor (Quartermaster Holt); training dummies stand next to it. Frogs (neutral) live south-east, the wolf pack (hostile) north-west and the walled bandit camp north-east. `.level 5`, `.tele 70 50` (outside the camp), `.additem <id or name>`, `.money <copper>` and `.quest add|complete|reset <id>` are handy shortcuts.

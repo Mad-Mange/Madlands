@@ -101,7 +101,10 @@
             </ui:VisualElement>
             <ui:VisualElement class="footer" picking-mode="Ignore">
                 <ui:TextField name="login-server" label="Server" class="field small" />
-                <ui:Label name="version-label" class="version" />
+                <ui:VisualElement class="footer-right" picking-mode="Ignore">
+                    <ui:Button name="login-settings-button" text="Settings" class="button" />
+                    <ui:Label name="version-label" class="version" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
 
@@ -147,6 +150,7 @@
             <ui:VisualElement class="panel narrow">
                 <ui:Label text="Menu" class="heading" />
                 <ui:Button name="menu-resume-button" text="Resume" class="button primary" />
+                <ui:Button name="menu-settings-button" text="Settings" class="button" />
                 <ui:Button name="menu-logout-button" text="Log out" class="button" />
                 <ui:Button name="menu-quit-button" text="Exit game" class="button" />
             </ui:VisualElement>

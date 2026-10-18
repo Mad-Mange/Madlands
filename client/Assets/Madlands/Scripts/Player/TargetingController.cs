@@ -50,8 +50,7 @@ namespace Madlands.Client
 
             var mouse = Mouse.current;
             if (mouse != null) HandleMouse(mouse);
-            var keyboard = Keyboard.current;
-            if (keyboard != null && !InputGate.KeyboardBlocked && keyboard.tabKey.wasPressedThisFrame) CycleEnemies();
+            if (!InputGate.KeyboardBlocked && KeyBindings.WasPressed(GameAction.TargetNextEnemy)) CycleEnemies();
         }
 
         private void HandleMouse(Mouse mouse)

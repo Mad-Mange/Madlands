@@ -86,6 +86,8 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   `noEngineReferences: true`, so UnityEngine can never leak into shared code.
 - **Any wire or shared-rule change bumps `ProtocolVersion.Current`.** Never renumber opcodes. Every message
   gets a roundtrip test in `ProtocolTests.cs`.
+- **Client input goes through `KeyBindings`** (`IsHeld`/`WasPressed` of a `GameAction`), never `Keyboard.current[...]`
+  directly, so every key stays rebindable. Exceptions: Esc and text-field submit. Settings live in `Preferences`.
 - **Server is authoritative.** Clients only predict their own movement (and the global cooldown); the server validates
   (`MovementValidator`, `SpellSystem.Check`) and corrects. Never trust client data; reject NaN; rate-limit every message type.
 - **Combat rules are data + one formula file.** New spell/aura behaviour = a new effect type with a handler, never a

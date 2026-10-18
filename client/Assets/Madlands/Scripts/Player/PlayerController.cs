@@ -75,26 +75,27 @@ namespace Madlands.Client
             var self = _network.Client.Self.Values;
             bool stunned = self.IsDead || self.Has(UnitFlags.Stunned);
             bool rooted = stunned || self.Has(UnitFlags.Rooted);
-            var keyboard = InputGate.KeyboardBlocked || stunned ? null : Keyboard.current;
+            bool keys = !InputGate.KeyboardBlocked && !stunned;
             var mouse = InputGate.Blocked || stunned ? null : Mouse.current;
             // Mouse buttons count only when the press started in the world (the camera tracks that).
             bool rmb = mouse != null && _camera != null && _camera.RightHeld;
             bool lmb = mouse != null && _camera != null && _camera.LeftHeld;
-            bool Held(Key k) => keyboard != null && keyboard[k].isPressed;
+            bool Held(GameAction action) => keys && KeyBindings.IsHeld(action);
 
-            if (keyboard != null)
+            if (keys)
             {
-                if (keyboard.numLockKey.wasPressedThisFrame || keyboard.rKey.wasPressedThisFrame) _autorun = !_autorun;
-                else if (keyboard.wKey.wasPressedThisFrame || keyboard.sKey.wasPressedThisFrame) _autorun = false;
+                if (KeyBindings.WasPressed(GameAction.AutoRun)) _autorun = !_autorun;
+                else if (KeyBindings.WasPressed(GameAction.MoveForward) || KeyBindings.WasPressed(GameAction.MoveBackward)) _autorun = false;
             }
 
-            bool forward = Held(Key.W) || (rmb && lmb) || _autorun;
-            bool backward = Held(Key.S);
-            bool strafeLeft = Held(Key.Q) || (rmb && Held(Key.A));
-            bool strafeRight = Held(Key.E) || (rmb && Held(Key.D));
-            bool turnLeft = !rmb && Held(Key.A);
-            bool turnRight = !rmb && Held(Key.D);
-            bool jump = keyboard != null && keyboard.spaceKey.wasPressedThisFrame && !rooted;
+            // Turning keys strafe while the right mouse button steers, like in WoW.
+            bool forward = Held(GameAction.MoveForward) || (rmb && lmb) || _autorun;
+            bool backward = Held(GameAction.MoveBackward);
+            bool strafeLeft = Held(GameAction.StrafeLeft) || (rmb && Held(GameAction.TurnLeft));
+            bool strafeRight = Held(GameAction.StrafeRight) || (rmb && Held(GameAction.TurnRight));
+            bool turnLeft = !rmb && Held(GameAction.TurnLeft);
+            bool turnRight = !rmb && Held(GameAction.TurnRight);
+            bool jump = keys && KeyBindings.WasPressed(GameAction.Jump) && !rooted;
             if (rooted)
             {
                 forward = backward = strafeLeft = strafeRight = false;

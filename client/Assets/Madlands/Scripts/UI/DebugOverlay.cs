@@ -29,7 +29,7 @@ namespace Madlands.Client
 
         private void Update()
         {
-            if (Keyboard.current != null && Keyboard.current.f3Key.wasPressedThisFrame) _visible = !_visible;
+            if (!InputGate.KeyboardBlocked && KeyBindings.WasPressed(GameAction.ToggleDebug)) _visible = !_visible;
             _fps = Mathf.Lerp(_fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
 
             var settings = _network.Settings;

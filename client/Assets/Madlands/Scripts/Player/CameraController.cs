@@ -10,7 +10,6 @@ namespace Madlands.Client
     /// </summary>
     public sealed class CameraController : MonoBehaviour
     {
-        [SerializeField] private float sensitivity = 0.15f;
         [SerializeField] private float minDistance = 1.5f;
         [SerializeField] private float maxDistance = 30f;
         [SerializeField] private float pivotHeight = 1.7f;
@@ -74,8 +73,9 @@ namespace Madlands.Client
             if (dragging)
             {
                 var delta = mouse.delta.ReadValue();
+                float sensitivity = Preferences.MouseSensitivity;
                 _yaw += delta.x * sensitivity;
-                _pitch = Mathf.Clamp(_pitch - delta.y * sensitivity, -75f, 80f);
+                _pitch = Mathf.Clamp(_pitch - delta.y * sensitivity * (Preferences.InvertMouseY ? -1f : 1f), -75f, 80f);
             }
             else if (_target.IsMovingForward)
             {

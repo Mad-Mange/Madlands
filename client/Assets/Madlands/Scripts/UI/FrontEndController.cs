@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 namespace Madlands.Client
 {
     /// <summary>
-    /// Login, character select/create and the in-game Esc menu (UI Toolkit, FrontEnd.uxml).
+    /// Login, character select/create, the in-game Esc menu and the settings window (UI Toolkit, FrontEnd.uxml).
     /// Talks to the account API through <see cref="AccountClient"/> and hands the chosen character
     /// to <see cref="NetworkController"/>. Async calls resume on the Unity main thread.
     /// </summary>
@@ -38,6 +38,9 @@ namespace Madlands.Client
         private ScrollView _characterList;
         private DropdownField _raceDropdown, _classDropdown;
         private Button _quickLogin;
+        private SettingsUi _settings;
+        private PanelSettings _panelSettings;
+        private float _originalScale = 1f;
 
         private ClientSettings Settings => network.Settings;
 
@@ -45,6 +48,21 @@ namespace Madlands.Client
         {
             if (network == null) network = GetComponent<NetworkController>();
             if (hud == null) hud = GetComponent<HudController>();
+            Preferences.ApplyGraphics();
+        }
+
+        private void OnDestroy()
+        {
+            Preferences.Changed -= ApplyUiScale;
+#if UNITY_EDITOR
+            // The panel settings are an asset: in the editor a runtime change would stick to it.
+            if (_panelSettings != null) _panelSettings.scale = _originalScale;
+#endif
+        }
+
+        private void ApplyUiScale()
+        {
+            if (_panelSettings != null) _panelSettings.scale = _originalScale * Preferences.UiScale;
         }
 
         private void OnEnable()
@@ -52,6 +70,13 @@ namespace Madlands.Client
             var doc = GetComponent<UIDocument>();
             var r = doc.rootVisualElement;
             r.pickingMode = PickingMode.Ignore;
+            if (_panelSettings == null && doc.panelSettings != null)
+            {
+                _panelSettings = doc.panelSettings;
+                _originalScale = _panelSettings.scale;
+                Preferences.Changed += ApplyUiScale;
+                ApplyUiScale();
+            }
 
             _root = r.Q("root");
             _loginScreen = r.Q("login-screen");
@@ -88,6 +113,13 @@ namespace Madlands.Client
             r.Q<Button>("create-button").clicked += () => _ = CreateAsync();
             r.Q<Button>("create-cancel-button").clicked += () => Show(_charactersScreen);
             r.Q<Button>("menu-resume-button").clicked += () => SetMenuOpen(false);
+            // Settings sit above everything, the menu included.
+            var settingsLayer = new VisualElement { pickingMode = PickingMode.Ignore };
+            settingsLayer.AddToClassList("layer");
+            _root.Add(settingsLayer);
+            _settings = new SettingsUi(settingsLayer);
+            r.Q<Button>("menu-settings-button").clicked += _settings.Open;
+            r.Q<Button>("login-settings-button").clicked += _settings.Open;
             r.Q<Button>("menu-logout-button").clicked += () => { SetMenuOpen(false); network.LeaveWorld(); };
             r.Q<Button>("menu-quit-button").clicked += Application.Quit;
 
@@ -111,12 +143,25 @@ namespace Madlands.Client
             _username.value = Settings.User ?? PlayerPrefsGet(LastUserKey, "");
             UpdateQuickLogin();
             Show(_loginScreen);
+            if (System.Array.IndexOf(Settings.OpenWindows, "settings") >= 0) _settings.Open();
             if (Settings.AutoConnect) _ = AutoConnectAsync();
         }
 
         private void Update()
         {
             var keyboard = Keyboard.current;
+            if (_settings.IsOpen)
+            {
+                // The settings window takes the keyboard (rebinding); Esc only concerns it.
+                InputGate.MenuOpen = true;
+                _settings.Update();
+                if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+                {
+                    _settings.HandleEscape();
+                    if (!_settings.IsOpen) InputGate.MenuOpen = IsVisible(_gameMenu) || !network.InWorld;
+                }
+                return;
+            }
             // Esc closes the menu, else the chat line or the target (HUD), else opens the menu.
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && network.InWorld)
             {
@@ -413,6 +458,7 @@ namespace Madlands.Client
         private void SetMenuOpen(bool open)
         {
             _gameMenu.EnableInClassList("hidden", !open);
+            if (!open) _settings.Close();
             InputGate.MenuOpen = open || !network.InWorld;
         }
 

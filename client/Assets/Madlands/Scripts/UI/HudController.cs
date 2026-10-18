@@ -24,12 +24,6 @@ namespace Madlands.Client
         private const float ErrorSeconds = 2f;
         private const float NoticeSeconds = 3f;
 
-        private static readonly Key[] SlotKeys =
-        {
-            Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5, Key.Digit6,
-            Key.Digit7, Key.Digit8, Key.Digit9, Key.Digit0, Key.Minus, Key.Equals,
-        };
-        private static readonly string[] SlotLabels = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=" };
 
         private sealed class Slot
         {
@@ -37,6 +31,7 @@ namespace Madlands.Client
             public VisualElement Icon;
             public VisualElement Shade;
             public Label Cooldown;
+            public Label Key;
             public uint SpellId;
         }
 
@@ -141,6 +136,22 @@ namespace Madlands.Client
             _overlay = new WorldOverlay(r.Q("nameplates"), r.Q("combat-text"));
             BuildActionBar();
             BuildWindows();
+            KeyBindings.Changed += RelabelKeys;
+        }
+
+        /// <summary>Key labels on the action bar and the micro menu follow the bindings.</summary>
+        private void RelabelKeys()
+        {
+            for (int i = 0; i < SlotCount; i++) _slots[i].Key.text = KeyBindings.ShortcutText(KeyBindings.ActionButton(i));
+            _characterButton.text = MicroText("Char", GameAction.ToggleCharacter);
+            _bagsButton.text = MicroText("Bags", GameAction.ToggleBags);
+            _questsButton.text = MicroText("Quests", GameAction.ToggleQuestLog);
+        }
+
+        private static string MicroText(string name, GameAction action)
+        {
+            string key = KeyBindings.ShortcutText(action);
+            return key.Length > 0 ? name + "\n(" + key + ")" : name;
         }
 
         /// <summary>Windows and the tracker in their own layer; tooltips and the cursor item above them.</summary>
@@ -156,9 +167,9 @@ namespace Madlands.Client
 
             var menu = new VisualElement { pickingMode = PickingMode.Ignore };
             menu.AddToClassList("micro-menu");
-            _characterButton = MicroButton(menu, "Char\n(C)", () => _inventory.ToggleCharacter());
-            _bagsButton = MicroButton(menu, "Bags\n(B)", () => _inventory.ToggleBags());
-            _questsButton = MicroButton(menu, "Quests\n(L)", () => _quests.ToggleLog());
+            _characterButton = MicroButton(menu, MicroText("Char", GameAction.ToggleCharacter), () => _inventory.ToggleCharacter());
+            _bagsButton = MicroButton(menu, MicroText("Bags", GameAction.ToggleBags), () => _inventory.ToggleBags());
+            _questsButton = MicroButton(menu, MicroText("Quests", GameAction.ToggleQuestLog), () => _quests.ToggleLog());
             windows.Add(menu);
         }
 
@@ -245,6 +256,7 @@ namespace Madlands.Client
         private void OnDisable()
         {
             InputGate.Typing = false;
+            KeyBindings.Changed -= RelabelKeys;
         }
 
         // ------------------------------------------------------------------ per frame
@@ -300,23 +312,22 @@ namespace Madlands.Client
 
         private void HandleKeys()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard == null || InputGate.KeyboardBlocked) return;
-            if ((keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame) && !_chat.ClosedThisFrame)
+            if (InputGate.KeyboardBlocked) return;
+            if (KeyBindings.WasPressed(GameAction.OpenChat) && !_chat.ClosedThisFrame)
             {
                 _chat.Open();
                 return;
             }
-            if (keyboard.slashKey.wasPressedThisFrame)
+            if (KeyBindings.WasPressed(GameAction.ChatCommand))
             {
                 _chat.Open(".");
                 return;
             }
-            if (keyboard.bKey.wasPressedThisFrame) _inventory.ToggleBags();
-            if (keyboard.cKey.wasPressedThisFrame) _inventory.ToggleCharacter();
-            if (keyboard.lKey.wasPressedThisFrame) _quests.ToggleLog();
+            if (KeyBindings.WasPressed(GameAction.ToggleBags)) _inventory.ToggleBags();
+            if (KeyBindings.WasPressed(GameAction.ToggleCharacter)) _inventory.ToggleCharacter();
+            if (KeyBindings.WasPressed(GameAction.ToggleQuestLog)) _quests.ToggleLog();
             for (int i = 0; i < SlotCount; i++)
-                if (keyboard[SlotKeys[i]].wasPressedThisFrame) UseSpell(_slots[i].SpellId);
+                if (KeyBindings.WasPressed(KeyBindings.ActionButton(i))) UseSpell(_slots[i].SpellId);
         }
 
         /// <summary>Esc: closes the chat line or clears the target. False if nothing was there (the menu may open).</summary>
@@ -455,7 +466,7 @@ namespace Madlands.Client
                 shade.AddToClassList("cooldown-shade");
                 var cooldown = new Label { pickingMode = PickingMode.Ignore };
                 cooldown.AddToClassList("cooldown-text");
-                var key = new Label(SlotLabels[i]) { pickingMode = PickingMode.Ignore };
+                var key = new Label(KeyBindings.ShortcutText(KeyBindings.ActionButton(i))) { pickingMode = PickingMode.Ignore };
                 key.AddToClassList("action-key");
                 foreach (var ring in new[] { "glow-outer", "glow-inner" })
                 {
@@ -467,7 +478,7 @@ namespace Madlands.Client
                 root.Add(shade);
                 root.Add(cooldown);
                 root.Add(key);
-                var slot = new Slot { Root = root, Icon = icon, Shade = shade, Cooldown = cooldown };
+                var slot = new Slot { Root = root, Icon = icon, Shade = shade, Cooldown = cooldown, Key = key };
                 root.RegisterCallback<ClickEvent>(_ => UseSpell(slot.SpellId));
                 root.RegisterCallback<PointerEnterEvent>(_ => ShowTooltip(slot.SpellId, root, 0));
                 root.RegisterCallback<PointerLeaveEvent>(_ => HideTooltip());

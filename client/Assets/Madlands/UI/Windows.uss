@@ -632,3 +632,83 @@
 .chat-line.quest {
     color: rgb(255, 214, 90);
 }
+
+/* ---------------------------------------------------------------- settings */
+
+.window.settings {
+    left: 50%;
+    top: 70px;
+    width: 680px;
+    margin-left: -340px;
+}
+
+.settings-tabs {
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.window .button.settings-tab {
+    min-width: 180px;
+    margin-left: 0;
+}
+
+.button.settings-tab.active {
+    border-color: rgb(233, 196, 106);
+    background-color: rgba(122, 98, 48, 0.6);
+}
+
+.settings-page {
+    height: 600px;
+}
+
+.settings-field {
+    margin: 4px 0;
+}
+
+.settings-field .unity-label {
+    min-width: 200px;
+    font-size: 15px;
+    color: rgb(212, 218, 230);
+}
+
+.binding-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.binding-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 2px 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.binding-name {
+    flex-grow: 1;
+    font-size: 15px;
+    color: rgb(225, 228, 238);
+}
+
+.binding-key {
+    width: 150px;
+    height: 28px;
+    margin: 2px 4px;
+    font-size: 14px;
+    color: rgb(240, 236, 220);
+    background-color: rgb(40, 46, 64);
+    border-width: 1px;
+    border-color: rgb(88, 96, 122);
+    border-radius: 3px;
+}
+
+.binding-key:hover {
+    background-color: rgb(58, 66, 90);
+}
+
+.binding-key.capturing {
+    border-color: rgb(255, 214, 90);
+    color: rgb(255, 214, 90);
+}
