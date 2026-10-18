@@ -28,6 +28,8 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 | `blender/build.py` | The asset list (name, Unity folder, builder) and the build entry point. |
 | `blender/lowpoly.py` | Helpers: flat-colored materials, boxes, tubes, spheres, convex hulls, armatures, keyframed actions, FBX export. |
 | `blender/humanoid.py` | The humanoid races (proportions, body, colors) and all humanoid animations. |
+| `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, frog, training dummy. |
+| `blender/items.py` | Held items: origin at the grip, pointing along +Z, edge along X; shields face +X. |
 | `blender/preview.py` | The preview renders. |
 
 ## Conventions

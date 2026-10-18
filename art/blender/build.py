@@ -15,7 +15,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
+import creatures  # noqa: E402
 import humanoid  # noqa: E402
+import items  # noqa: E402
 import lowpoly as lp  # noqa: E402
 import preview  # noqa: E402
 
@@ -28,7 +30,11 @@ ASSETS = {
     "BrightvaleHuman": ("Characters", lambda: humanoid.build_race("BrightvaleHuman"), False),
     "Korrin": ("Characters", lambda: humanoid.build_race("Korrin"), False),
     "HumanoidAnimations": ("Characters", humanoid.build_animations, True),
+    "Wolf": ("Creatures", creatures.build_wolf, True),
+    "Frog": ("Creatures", creatures.build_frog, True),
+    "TrainingDummy": ("Creatures", creatures.build_training_dummy, True),
 }
+ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
 
 # Previews of mesh-less animation files put a body on the skeleton (after the export).
 PREVIEW_DRESS = {

@@ -335,7 +335,7 @@ def export_fbx(path, objects, animated):
         apply_scale_options="FBX_SCALE_ALL",
         axis_forward="-Z",
         axis_up="Y",
-        bake_space_transform=not animated,
+        bake_space_transform=False,  # Unity bakes the axis conversion (ArtImporter), the same for every model
         use_mesh_modifiers=True,
         mesh_smooth_type="OFF",
         use_triangles=True,

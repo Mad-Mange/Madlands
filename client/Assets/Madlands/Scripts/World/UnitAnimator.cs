@@ -29,7 +29,7 @@ namespace Madlands.Client
         private const float FadeSpeed = 1f / 0.15f;
 
         /// <summary>Ground speed in m/s at which each locomotion clip looks right at normal speed.</summary>
-        private static readonly float[] NominalSpeed = { 0f, 1.7f, 6.2f, 3.6f, 5.6f, 5.6f, 0f, 0f };
+        private readonly float[] _nominalSpeed = { 0f, 1.7f, 6.2f, 3.6f, 5.6f, 5.6f, 0f, 0f };
 
         private readonly PlayableGraph _graph;
         private readonly AnimationLayerMixerPlayable _layers;
@@ -56,9 +56,11 @@ namespace Madlands.Client
 
         public bool Humanoid { get; }
 
-        public UnitAnimator(Animator animator, IReadOnlyDictionary<string, AnimationClip> clips, bool humanoid)
+        public UnitAnimator(Animator animator, IReadOnlyDictionary<string, AnimationClip> clips, bool humanoid, float walkSpeed, float runSpeed)
         {
             Humanoid = humanoid;
+            _nominalSpeed[(int)Locomotion.Walk] = walkSpeed;
+            _nominalSpeed[(int)Locomotion.Run] = runSpeed;
             _graph = PlayableGraph.Create("Unit " + animator.name);
             _graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
             var output = AnimationPlayableOutput.Create(_graph, "Animation", animator);
@@ -132,7 +134,7 @@ namespace Madlands.Client
             if (_locoClips[(int)state].IsValid()) _current = state;
             else if (state == Locomotion.StrafeLeft || state == Locomotion.StrafeRight || state == Locomotion.RunBack) _current = Locomotion.Run;
             else _current = Locomotion.Idle;
-            float nominal = NominalSpeed[(int)_current];
+            float nominal = _nominalSpeed[(int)_current];
             _speedScale = nominal > 0f ? Mathf.Clamp(groundSpeed / nominal, 0.5f, 2f) : 1f;
         }
 

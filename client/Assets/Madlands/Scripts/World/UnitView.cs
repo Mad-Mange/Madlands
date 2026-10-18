@@ -53,7 +53,7 @@ namespace Madlands.Client
             view._visual.SetParent(go.transform, false);
             view.Shape = EntityVisuals.Create(view._visual, displayId, out view._model);
             if (view._model != null && view._model.Animator != null && view._model.Clips.Count > 0)
-                view._animator = new UnitAnimator(view._model.Animator, view._model.Clips, view._model.Humanoid);
+                view._animator = new UnitAnimator(view._model.Animator, view._model.Clips, view._model.Humanoid, view._model.WalkSpeed, view._model.RunSpeed);
 
             // Click target for selection. A trigger: never blocks movement or the camera.
             var collider = go.AddComponent<CapsuleCollider>();

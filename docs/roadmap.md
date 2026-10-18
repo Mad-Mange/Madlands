@@ -99,8 +99,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
 ## Phase 5 – Vertical slice: the first real zone (the "is it fun?" gate)
 
 - [ ] Low-poly art made in Blender ([ADR 0012](adr/0012-art-pipeline-blender.md), `art/`): models are Python scripts that
-  export FBX, kept very simple first and refined later. Done: the two races (Brightvale Human, Korrin) and the
-  humanoid NPCs, recolored per display. Next: creatures, weapons, props and buildings, then gear visible on characters
+  export FBX, kept very simple first and refined later. Done: the two races (Brightvale Human, Korrin), the humanoid
+  NPCs (recolored per display), the creatures (frog, wolf, training dummy, each with idle, walk, run, attack, hit and
+  death) and all nine weapons and shields. Next: props and buildings, then gear visible on characters
 - [ ] Localization (Unity Localization package, English first)
 - [x] Rebindable key bindings (two keys per action) and a settings window: mouse sensitivity and inversion, interface
   scale, window mode, resolution, vsync and quality (Esc > Settings, or on the login screen)

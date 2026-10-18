@@ -30,6 +30,9 @@ namespace Madlands.Client
         public Quaternion OffHandOffset;
         /// <summary>Top of the model in the rest pose (meters above its feet).</summary>
         public float Height;
+        /// <summary>Ground speeds (m/s) at which the Walk and Run clips play at normal speed.</summary>
+        public float WalkSpeed = 1.7f;
+        public float RunSpeed = 6.2f;
 
         private static readonly Dictionary<(Material, Color), Material> Tinted = new Dictionary<(Material, Color), Material>();
         private Renderer _body;
@@ -199,6 +202,12 @@ namespace Madlands.Client
                     shape.Height += 0.3f;
                     return shape;
                 }
+                case FrogDisplay:
+                    return Creature(parent, displayId, "Frog", 0.6f, walkSpeed: 1.2f, runSpeed: 3.5f, out model);
+                case WolfDisplay:
+                    return Creature(parent, displayId, "Wolf", 0.7f, walkSpeed: 1.3f, runSpeed: 4.2f, out model);
+                case DummyDisplay:
+                    return Creature(parent, displayId, "TrainingDummy", 0.55f, walkSpeed: 1f, runSpeed: 1f, out model);
                 case QuartermasterDisplay:
                     // A broad Korrin in brown with a leather apron.
                     shape = Humanoid(parent, "Korrin", out model);
@@ -219,6 +228,16 @@ namespace Madlands.Client
             model = Instantiate(parent, modelName, HumanoidClips, humanoid: true);
             if (model == null) return Placeholder(parent, PlayerDisplay);
             return new DisplayShape { Height = model.Height, Radius = 0.45f, Hands = model.MainHandGrip != null };
+        }
+
+        /// <summary>A creature model with its own clips (a placeholder if the art is missing).</summary>
+        private static DisplayShape Creature(Transform parent, uint displayId, string modelName, float radius, float walkSpeed, float runSpeed, out DisplayModel model)
+        {
+            model = Instantiate(parent, modelName, modelName, humanoid: false);
+            if (model == null) return Placeholder(parent, displayId);
+            model.WalkSpeed = walkSpeed;
+            model.RunSpeed = runSpeed;
+            return new DisplayShape { Height = model.Height, Radius = radius };
         }
 
         private static DisplayModel Instantiate(Transform parent, string modelName, string clipSet, bool humanoid)

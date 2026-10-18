@@ -3,8 +3,9 @@ using UnityEngine;
 namespace Madlands.Client
 {
     /// <summary>
-    /// Placeholder art for held items, looked up by the item's displayId (like units: the server never
-    /// names assets). Built under a hand anchor whose origin is the grip; +Y points along the weapon.
+    /// Art for held items by the item's displayId (like units: the server never names assets): the Blender
+    /// models, or primitives if a model is missing. Built under a hand anchor whose origin is the grip;
+    /// +Y points along the weapon.
     /// </summary>
     public static class ItemVisuals
     {
@@ -27,8 +28,22 @@ namespace Madlands.Client
         /// <summary>Held in both hands: swings with the two-handed attack.</summary>
         public static bool IsTwoHanded(uint displayId) => displayId == Staff || displayId == CrystalRod || displayId == GreatAxe;
 
+        /// <summary>The Blender model of each display (art/blender/items.py).</summary>
+        private static readonly System.Collections.Generic.Dictionary<uint, string> Models = new System.Collections.Generic.Dictionary<uint, string>
+        {
+            { Shortsword, "Shortsword" }, { Staff, "Staff" }, { Cudgel, "Cudgel" }, { Hatchet, "Hatchet" }, { Cutlass, "Cutlass" },
+            { Buckler, "Buckler" }, { CrystalRod, "CrystalRod" }, { OrnateMace, "OrnateMace" }, { GreatAxe, "GreatAxe" },
+        };
+
         public static void Create(Transform hand, uint displayId)
         {
+            var catalog = ArtCatalog.Instance;
+            var prefab = catalog != null && Models.TryGetValue(displayId, out var name) ? catalog.GetModel(name) : null;
+            if (prefab != null)
+            {
+                Object.Instantiate(prefab, hand, false);
+                return;
+            }
             switch (displayId)
             {
                 case Shortsword:

@@ -19,19 +19,40 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Name: Korrin
     Prefab: {fileID: 919132149155446097, guid: fdd01bc74c2bfe94a86127afb0f03224, type: 3}
+  - Name: Frog
+    Prefab: {fileID: 919132149155446097, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Name: TrainingDummy
+    Prefab: {fileID: 919132149155446097, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
+  - Name: Wolf
+    Prefab: {fileID: 919132149155446097, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
+  - Name: Buckler
+    Prefab: {fileID: 919132149155446097, guid: 30578add63835cf41b9ba1531ea6e9c3, type: 3}
+  - Name: CrystalRod
+    Prefab: {fileID: 919132149155446097, guid: 809ccbb9678a53946829bb1dccba6d85, type: 3}
+  - Name: Cudgel
+    Prefab: {fileID: 919132149155446097, guid: 6ad2e3f454eb009438197cc50b0664a8, type: 3}
+  - Name: Cutlass
+    Prefab: {fileID: 919132149155446097, guid: a105d6c8eb835724ca4d90096c0ff125, type: 3}
+  - Name: GreatAxe
+    Prefab: {fileID: 919132149155446097, guid: 7758fbf963a12af499535f555f967803, type: 3}
+  - Name: Hatchet
+    Prefab: {fileID: 919132149155446097, guid: 3e9360c8e4ebdbc42a9ed2a8ea60e09d, type: 3}
+  - Name: OrnateMace
+    Prefab: {fileID: 919132149155446097, guid: 652277df00d1c164db4976db1f254a82, type: 3}
+  - Name: Shortsword
+    Prefab: {fileID: 919132149155446097, guid: 4eb3cd8292808fe40b77aefacca1e004, type: 3}
+  - Name: Staff
+    Prefab: {fileID: 919132149155446097, guid: 980afc8d921a6a74ba9f1e08beb8d05b, type: 3}
   Clips:
+  - Set: HumanoidAnimations
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
     Name: Attack1H
     Clip: {fileID: 8394281637225282446, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
     Name: Attack2H
     Clip: {fileID: -8883204860901330040, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: AttackUnarmed
-    Clip: {fileID: -3425250077569541093, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: CastLoop
-    Clip: {fileID: -8265580086071612076, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
     Name: CastRelease
     Clip: {fileID: -1534196613224196608, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
@@ -66,5 +87,53 @@ MonoBehaviour:
     Name: StrafeRight
     Clip: {fileID: 8061675120238250040, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
+    Name: AttackUnarmed
+    Clip: {fileID: -3425250077569541093, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: CastLoop
+    Clip: {fileID: -8265580086071612076, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: Frog
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Set: Frog
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Set: Frog
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Set: Frog
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Set: Frog
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Set: Frog
     Name: Walk
-    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+    Clip: {fileID: 8349542763059015795, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Set: TrainingDummy
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
+  - Set: TrainingDummy
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
+  - Set: TrainingDummy
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
+  - Set: Wolf
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
+  - Set: Wolf
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
+  - Set: Wolf
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
+  - Set: Wolf
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
+  - Set: Wolf
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
+  - Set: Wolf
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
