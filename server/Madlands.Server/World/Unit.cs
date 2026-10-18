@@ -136,6 +136,14 @@ public abstract class Unit : Entity
         set { if (Values.OffHandDisplay != value) { Values.OffHandDisplay = value; Dirty |= UnitFieldMask.OffHandDisplay; } }
     }
 
+    /// <summary>Sets one visible armor slot (<see cref="VisibleGear"/> order).</summary>
+    public void SetGear(int index, uint display)
+    {
+        if (Values.Gear[index] == display) return;
+        Values.Gear[index] = display;
+        Dirty |= UnitFieldMask.Gear;
+    }
+
     public UnitFlags Flags => Values.Flags;
     public bool HasFlag(UnitFlags flag) => (Values.Flags & flag) != 0;
 

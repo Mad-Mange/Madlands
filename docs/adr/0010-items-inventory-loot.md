@@ -15,7 +15,7 @@
 - A character has 20 equipment slots (16 worn, 4 bag slots), a 16-slot backpack and up to four bags. An inventory position is `(container, slot)`: container 0 is the equipment, 1 the backpack, 2–5 the bags. A bag's size comes from the bag item in its bag slot.
 - One rules class (`Inventory`) does everything: moving, swapping, merging and splitting stacks, the equip rules (slot, class, level), two-handed weapons (they push the off-hand item into the bags), bags (only empty bags move, never into themselves). It is pure logic without networking, unit-tested on its own.
 - Clients only ask (`MoveItem`, `AutoEquip`, `UseItem`, `DestroyItem`). The server applies the rules to the real inventory and sends the changed slots back (`InventoryUpdate`). The client never changes its own copy.
-- Worn items add their stats as flat modifiers before aura percentages (ADR 0005). The main-hand weapon sets the swing damage and speed; without one a class fights unarmed. Weapons and shields are visible to others through two unit fields (`MainHandDisplay`, `OffHandDisplay`).
+- Worn items add their stats as flat modifiers before aura percentages (ADR 0005). The main-hand weapon sets the swing damage and speed; without one a class fights unarmed. Weapons and shields are visible to others through two unit fields (`MainHandDisplay`, `OffHandDisplay`); since protocol v8 the worn armor too (`Gear`: head, shoulders, back, chest, hands, waist, legs, feet, by the items' display ids).
 - Consumables cast their use spell like a known spell (instant spells only); the item is used up only if the cast happened. Food and drink are ordinary auras (`periodicHeal`, the new `periodicEnergize`) that break when combat starts.
 
 **Item instances**

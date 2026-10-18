@@ -194,6 +194,9 @@ public class ContentLoaderTests
             // ...and starts with a weapon in hand.
             Assert.Contains(cls.StartingItems, i => db.Items[i.Item].Slot is InventoryType.MainHand or InventoryType.TwoHand);
         }
+        // Armor others can see has a look.
+        foreach (var item in db.Items.Values.Where(i => VisibleGear.Slots.Any(slot => ItemRules.SlotsFor(i.Slot).Contains(slot))))
+            Assert.True(item.DisplayId != 0, $"{item.Name} is worn where others see it but has no displayId");
         // Every quest can be found: its giver stands somewhere in the world.
         var spawned = db.Maps.Values.SelectMany(m => m.Spawns).Select(s => s.Creature).ToHashSet();
         foreach (var quest in db.Quests.Values)

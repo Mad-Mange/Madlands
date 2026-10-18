@@ -216,5 +216,5 @@ See [adr/](adr/). Summary:
 - **Addressables and Localization are not installed yet.** The packages are added when first used (Phase 5).
 - **Players are not checked against walls**, only against the terrain (ADR 0009).
 - **No groups yet**: kill credit and loot go to the first player who damaged a creature.
-- **Items have no per-instance data** (durability, enchantments) and no per-instance ids yet (ADR 0010). Only weapons and shields are visible on characters.
+- **Items have no per-instance data** (durability, enchantments) and no per-instance ids yet (ADR 0010). Worn armor shows as recolored body regions plus simple shapes (helmets, hoods, pads, cloaks), not modeled pieces yet.
 - **No buyback, no dual wielding, no item use from the action bar.**

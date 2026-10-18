@@ -91,6 +91,7 @@ namespace Madlands.Client
         {
             view.SetDead(unit.Values.IsDead);
             view.SetEquipment(unit.Values.MainHandDisplay, unit.Values.OffHandDisplay);
+            view.SetGear(unit.Values.Gear);
             view.SetLootable(unit.Values.IsDead && client.IsLootable(view.Guid));
             SpellSchool? school = null;
             if (unit.Cast != null && client.Data.TryGetSpell(unit.Cast.SpellId, out var spell)) school = spell.School;

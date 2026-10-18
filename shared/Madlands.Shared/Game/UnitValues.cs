@@ -22,9 +22,23 @@ namespace Madlands.Shared.Game
         NpcFlags = 1 << 11,
         MainHandDisplay = 1 << 12,
         OffHandDisplay = 1 << 13,
+        /// <summary>All of <see cref="UnitValues.Gear"/> (it changes rarely, so it travels as one field).</summary>
+        Gear = 1 << 14,
 
         All = Level | Health | MaxHealth | PowerType | Power | MaxPower | Faction | Flags | Target | SpeedPercent | ClassId |
-              NpcFlags | MainHandDisplay | OffHandDisplay,
+              NpcFlags | MainHandDisplay | OffHandDisplay | Gear,
+    }
+
+    /// <summary>The armor slots other players can see, in the order of <see cref="UnitValues.Gear"/>.</summary>
+    public static class VisibleGear
+    {
+        public const int Count = 8;
+
+        public static readonly EquipSlot[] Slots =
+        {
+            EquipSlot.Head, EquipSlot.Shoulders, EquipSlot.Back, EquipSlot.Chest,
+            EquipSlot.Hands, EquipSlot.Waist, EquipSlot.Legs, EquipSlot.Feet,
+        };
     }
 
     /// <summary>
@@ -53,6 +67,8 @@ namespace Madlands.Shared.Game
         public uint MainHandDisplay;
         /// <summary>Display id of the shield or held item in the off hand.</summary>
         public uint OffHandDisplay;
+        /// <summary>Display ids of the worn armor others can see (<see cref="VisibleGear.Slots"/>; 0 = nothing).</summary>
+        public readonly uint[] Gear = new uint[VisibleGear.Count];
 
         public bool IsDead => (Flags & UnitFlags.Dead) != 0;
         public bool Has(UnitFlags flag) => (Flags & flag) != 0;
@@ -75,6 +91,7 @@ namespace Madlands.Shared.Game
             NpcFlags = other.NpcFlags;
             MainHandDisplay = other.MainHandDisplay;
             OffHandDisplay = other.OffHandDisplay;
+            Array.Copy(other.Gear, Gear, VisibleGear.Count);
         }
 
         /// <summary>Copies only the fields in <paramref name="mask"/> (applying a delta).</summary>
@@ -94,6 +111,7 @@ namespace Madlands.Shared.Game
             if ((mask & UnitFieldMask.NpcFlags) != 0) NpcFlags = other.NpcFlags;
             if ((mask & UnitFieldMask.MainHandDisplay) != 0) MainHandDisplay = other.MainHandDisplay;
             if ((mask & UnitFieldMask.OffHandDisplay) != 0) OffHandDisplay = other.OffHandDisplay;
+            if ((mask & UnitFieldMask.Gear) != 0) Array.Copy(other.Gear, Gear, VisibleGear.Count);
         }
 
         public void Write(PacketWriter w, UnitFieldMask mask)
@@ -112,6 +130,8 @@ namespace Madlands.Shared.Game
             if ((mask & UnitFieldMask.NpcFlags) != 0) w.WriteByte((byte)NpcFlags);
             if ((mask & UnitFieldMask.MainHandDisplay) != 0) w.WriteUInt(MainHandDisplay);
             if ((mask & UnitFieldMask.OffHandDisplay) != 0) w.WriteUInt(OffHandDisplay);
+            if ((mask & UnitFieldMask.Gear) != 0)
+                for (int i = 0; i < VisibleGear.Count; i++) w.WriteVarULong(Gear[i]);
         }
 
         public void Read(ref PacketReader r, UnitFieldMask mask)
@@ -131,12 +151,28 @@ namespace Madlands.Shared.Game
             if ((mask & UnitFieldMask.NpcFlags) != 0) NpcFlags = (NpcFlags)r.ReadByte();
             if ((mask & UnitFieldMask.MainHandDisplay) != 0) MainHandDisplay = r.ReadUInt();
             if ((mask & UnitFieldMask.OffHandDisplay) != 0) OffHandDisplay = r.ReadUInt();
+            if ((mask & UnitFieldMask.Gear) != 0)
+            {
+                for (int i = 0; i < VisibleGear.Count; i++)
+                {
+                    ulong display = r.ReadVarULong();
+                    if (display > uint.MaxValue) throw new PacketException("Gear display id out of range.");
+                    Gear[i] = (uint)display;
+                }
+            }
         }
 
         public bool ValueEquals(UnitValues o) =>
             Level == o.Level && Health == o.Health && MaxHealth == o.MaxHealth && PowerType == o.PowerType &&
             Power == o.Power && MaxPower == o.MaxPower && Faction == o.Faction && Flags == o.Flags &&
             Target == o.Target && SpeedPercent == o.SpeedPercent && ClassId == o.ClassId && NpcFlags == o.NpcFlags &&
-            MainHandDisplay == o.MainHandDisplay && OffHandDisplay == o.OffHandDisplay;
+            MainHandDisplay == o.MainHandDisplay && OffHandDisplay == o.OffHandDisplay && GearEquals(o);
+
+        private bool GearEquals(UnitValues o)
+        {
+            for (int i = 0; i < VisibleGear.Count; i++)
+                if (Gear[i] != o.Gear[i]) return false;
+            return true;
+        }
     }
 }

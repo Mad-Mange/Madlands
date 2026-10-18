@@ -75,6 +75,8 @@ public sealed class Player : Unit
         ApplyAuraModifiers(_mods);
         MainHandDisplay = Inventory.Equipped(EquipSlot.MainHand)?.Item.DisplayId ?? 0;
         OffHandDisplay = Inventory.Equipped(EquipSlot.OffHand)?.Item.DisplayId ?? 0;
+        for (int i = 0; i < VisibleGear.Count; i++)
+            SetGear(i, Inventory.Equipped(VisibleGear.Slots[i])?.Item.DisplayId ?? 0);
         if (GmSpeed != 1f) SpeedPercent = (ushort)Math.Clamp(SpeedPercent * GmSpeed, 10, 1000);
         StatsDirty = true;
     }

@@ -125,9 +125,15 @@ public class ItemIntegrationTests
         int armor = c.Stats.Stats[(int)StatType.Armor];
         int maxDamage = c.Stats.MeleeMaxDamage;
 
-        // Right-click the tunic: off it goes, into the backpack, and the armor with it.
+        // The tunic is visible to others (the chest is the fourth visible gear slot).
+        int chest = System.Array.IndexOf(VisibleGear.Slots, EquipSlot.Chest);
+        Assert.Equal(c.Data.GetItem(RecruitsTunic).DisplayId, c.Self.Values.Gear[chest]);
+        Assert.NotEqual(0u, c.Self.Values.Gear[chest]);
+
+        // Right-click the tunic: off it goes, into the backpack, and the armor and the look with it.
         c.AutoEquip(ItemPos.Equip(EquipSlot.Chest));
         s.Pump(() => c.Inventory.Equipped(EquipSlot.Chest).IsEmpty && c.Stats.Stats[(int)StatType.Armor] == armor - 10);
+        s.Pump(() => c.Self.Values.Gear[chest] == 0);
         Assert.Equal(1, s.Count(RecruitsTunic));
 
         // Drag the sword into the bags: fists again, and nothing in hand for others to see.

@@ -40,6 +40,8 @@ namespace Madlands.Client
         private float _speed;
         private bool _moving;
         private float _stepTimer;
+        private readonly uint[] _gear = new uint[VisibleGear.Count];
+        private readonly System.Collections.Generic.List<GameObject> _gearParts = new System.Collections.Generic.List<GameObject>();
 
         public EntityGuid Guid { get; private set; }
         public uint DisplayId { get; private set; }
@@ -181,6 +183,20 @@ namespace Madlands.Client
                 hand.localRotation = Quaternion.Euler(right ? 20f : 0f, 0f, 0f);
             }
             ItemVisuals.Create(hand, displayId);
+        }
+
+        /// <summary>Shows the worn armor others can see (humanoid models only).</summary>
+        public void SetGear(uint[] gear)
+        {
+            if (_model == null || !_model.Humanoid) return;
+            bool changed = false;
+            for (int i = 0; i < VisibleGear.Count; i++)
+            {
+                if (_gear[i] == gear[i]) continue;
+                _gear[i] = gear[i];
+                changed = true;
+            }
+            if (changed) GearVisuals.Apply(_model, _gear, _gearParts);
         }
 
         /// <summary>A slowly turning golden mote over a corpse the local player may loot.</summary>

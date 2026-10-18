@@ -48,6 +48,16 @@ namespace Madlands.Client
             }
         }
 
+        /// <summary>Back to the model's own color for a region (gear taken off).</summary>
+        public void ResetTint(string region)
+        {
+            if (_body == null) return;
+            var materials = _body.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+                if (_baseMaterials[i] != null && _baseMaterials[i].name == region) materials[i] = _baseMaterials[i];
+            _body.sharedMaterials = materials;
+        }
+
         /// <summary>Recolors one gear region (a material of the body) of this model only.</summary>
         public void Tint(string region, Color color)
         {
@@ -82,18 +92,33 @@ namespace Madlands.Client
             return null;
         }
 
+        /// <summary>Model space (the holder's space, +Z forward) to each bone's space, in the rest pose.</summary>
+        private readonly Dictionary<string, Matrix4x4> _restFromModel = new Dictionary<string, Matrix4x4>();
+
+        /// <summary>Remembers the rest pose; called before anything animates the model.</summary>
+        public void CaptureRestPose()
+        {
+            var holder = Root.parent;
+            foreach (var t in Root.GetComponentsInChildren<Transform>())
+                _restFromModel[t.name] = t.worldToLocalMatrix * holder.localToWorldMatrix;
+        }
+
+        /// <summary>Where a bone sits in model space in the rest pose (zero if there is no such bone).</summary>
+        public Vector3 RestPosition(string bone) =>
+            _restFromModel.TryGetValue(bone, out var m) ? m.inverse.MultiplyPoint3x4(Vector3.zero) : Vector3.zero;
+
         /// <summary>
         /// Adds a primitive that follows a bone. Position, rotation and scale are in model space for the
-        /// rest pose (meters, +Z forward), so attachments are placed the way the model was made.
+        /// rest pose (meters, +Z forward), so attachments are placed the way the model was made, whatever
+        /// pose the model is in now.
         /// </summary>
         public Transform Attach(string bone, PrimitiveType type, Vector3 position, Vector3 scale, Color color, Vector3 euler = default, bool glow = false)
         {
             var parent = Bone(bone) ?? Root;
-            // Placed in the space of the model's holder (the root itself is turned on import).
-            var space = Root.parent;
-            var part = glow ? EntityVisuals.Glow(space, position, scale, color, type) : EntityVisuals.Part(type, space, position, scale, color);
-            part.localRotation = Quaternion.Euler(euler);
-            part.SetParent(parent, true);
+            var part = glow ? EntityVisuals.Glow(parent, Vector3.zero, scale, color, type) : EntityVisuals.Part(type, parent, Vector3.zero, scale, color);
+            var m = _restFromModel.TryGetValue(parent.name, out var found) ? found : Matrix4x4.identity;
+            part.localPosition = m.MultiplyPoint3x4(position);
+            part.localRotation = m.rotation * Quaternion.Euler(euler);
             return part;
         }
     }
@@ -400,6 +425,7 @@ namespace Madlands.Client
                 Body = root.GetComponentInChildren<SkinnedMeshRenderer>(),
             };
             if (model.Animator != null) model.Animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            model.CaptureRestPose();
             foreach (var r in root.GetComponentsInChildren<Renderer>())
                 model.Height = Mathf.Max(model.Height, r.bounds.max.y - root.position.y);
             if (model.Body is SkinnedMeshRenderer skinned)

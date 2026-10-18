@@ -24,6 +24,7 @@ public class CombatProtocolTests
         NpcFlags = NpcFlags.QuestGiver | NpcFlags.Vendor,
         MainHandDisplay = 2004,
         OffHandDisplay = 2006,
+        Gear = { [0] = 3501, [3] = 3004, [7] = 70000 },
     };
 
     private static readonly EntityGuid Player = EntityGuid.Create(EntityType.Player, 5);
