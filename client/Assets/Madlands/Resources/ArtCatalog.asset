@@ -19,8 +19,20 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Name: Korrin
     Prefab: {fileID: 919132149155446097, guid: fdd01bc74c2bfe94a86127afb0f03224, type: 3}
+  - Name: Bear
+    Prefab: {fileID: 919132149155446097, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
+  - Name: Boar
+    Prefab: {fileID: 919132149155446097, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Name: Crocodile
+    Prefab: {fileID: 919132149155446097, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
   - Name: Frog
     Prefab: {fileID: 919132149155446097, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Name: Gloomjaw
+    Prefab: {fileID: 919132149155446097, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
+  - Name: Shardling
+    Prefab: {fileID: 919132149155446097, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Name: Spider
+    Prefab: {fileID: 919132149155446097, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Name: TrainingDummy
     Prefab: {fileID: 919132149155446097, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
   - Name: Wolf
@@ -43,6 +55,78 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 4eb3cd8292808fe40b77aefacca1e004, type: 3}
   - Name: Staff
     Prefab: {fileID: 919132149155446097, guid: 980afc8d921a6a74ba9f1e08beb8d05b, type: 3}
+  - Name: BannerPole
+    Prefab: {fileID: 919132149155446097, guid: da60cbabacc975742a94901644e7c3c7, type: 3}
+  - Name: Barrel
+    Prefab: {fileID: 919132149155446097, guid: 9dde7a9eeee57114f9267fc2924ac812, type: 3}
+  - Name: Boulder
+    Prefab: {fileID: 919132149155446097, guid: eca3c5cea5c383e4bb39a4df7dfaf895, type: 3}
+  - Name: Bridge
+    Prefab: {fileID: 919132149155446097, guid: 430d3a89d6838db4dafe6ef519735fc4, type: 3}
+  - Name: Bush1
+    Prefab: {fileID: 919132149155446097, guid: bcf81a2a1162b8049b8402b1f38b837f, type: 3}
+  - Name: Bush2
+    Prefab: {fileID: 919132149155446097, guid: 1a374cf669be97c48897aa04e26a352f, type: 3}
+  - Name: Campfire
+    Prefab: {fileID: 919132149155446097, guid: 8fb61ea30a0496a4cb03c148256094ce, type: 3}
+  - Name: Cauldron
+    Prefab: {fileID: 919132149155446097, guid: c40ed0c851f3933408c3c75481ebed00, type: 3}
+  - Name: Cottage
+    Prefab: {fileID: 919132149155446097, guid: c75c18fa992194b45ad546da300ae4c9, type: 3}
+  - Name: Crate
+    Prefab: {fileID: 919132149155446097, guid: 1329560982da4784bb825dd9b8101e9d, type: 3}
+  - Name: CrystalCluster
+    Prefab: {fileID: 919132149155446097, guid: 1fb082dac5aa96a44a495079a0cfb5c6, type: 3}
+  - Name: Dock
+    Prefab: {fileID: 919132149155446097, guid: ae0c3bc1cb18506478aadd6e1b295a79, type: 3}
+  - Name: Fence
+    Prefab: {fileID: 919132149155446097, guid: c19c7baaf892528428c41b3931e9efc1, type: 3}
+  - Name: Gate
+    Prefab: {fileID: 919132149155446097, guid: 0442017d8938c744e9ab1e6ba60a7ec9, type: 3}
+  - Name: LanternPost
+    Prefab: {fileID: 919132149155446097, guid: b5e9cabbafe17214ea1b9921880c6baa, type: 3}
+  - Name: Log
+    Prefab: {fileID: 919132149155446097, guid: 4240152a8f1db2d479e77348a4136e78, type: 3}
+  - Name: Longhouse
+    Prefab: {fileID: 919132149155446097, guid: 83ebe40b6d590a64886aaa0e74b7d791, type: 3}
+  - Name: MarketStall
+    Prefab: {fileID: 919132149155446097, guid: 1ad0b973813d82e41bc7ff263e3f7c8a, type: 3}
+  - Name: Mushrooms
+    Prefab: {fileID: 919132149155446097, guid: 3f0209c763b29ca458e8cdcb9a1e1179, type: 3}
+  - Name: Palisade
+    Prefab: {fileID: 919132149155446097, guid: ed97c20c581e0014ea66c5579a97d619, type: 3}
+  - Name: Reeds
+    Prefab: {fileID: 919132149155446097, guid: 096b18a3f527f654384c1064b4657170, type: 3}
+  - Name: Rock1
+    Prefab: {fileID: 919132149155446097, guid: e90ba9751c093134eabae7daf67fe9bc, type: 3}
+  - Name: Rock2
+    Prefab: {fileID: 919132149155446097, guid: 8d7e268279500af43a5bde5601853999, type: 3}
+  - Name: RuinPillar
+    Prefab: {fileID: 919132149155446097, guid: 4b31d2432f945a84c9ec813f8b502d6c, type: 3}
+  - Name: RuinWall
+    Prefab: {fileID: 919132149155446097, guid: edeaeea2ab3827846acd46ad9b52c061, type: 3}
+  - Name: Sacks
+    Prefab: {fileID: 919132149155446097, guid: e08acd6568a24894d9cd82a238801c35, type: 3}
+  - Name: Signpost
+    Prefab: {fileID: 919132149155446097, guid: 7f6074999d8fdfb4eaa9fb9c305b9b85, type: 3}
+  - Name: Stump
+    Prefab: {fileID: 919132149155446097, guid: a8a50c94f8a4ecd4e88c3a8159daf2de, type: 3}
+  - Name: Tent
+    Prefab: {fileID: 919132149155446097, guid: 3f35d4fa587fa2740a340eb0b60d05b2, type: 3}
+  - Name: TreeDead
+    Prefab: {fileID: 919132149155446097, guid: cf62132252d140141b4ece799d17f8b0, type: 3}
+  - Name: TreeOak1
+    Prefab: {fileID: 919132149155446097, guid: 836433f1401ef2642a4455b2a0df141f, type: 3}
+  - Name: TreeOak2
+    Prefab: {fileID: 919132149155446097, guid: b873757cea6369f44b79b7f333ac575d, type: 3}
+  - Name: TreePine1
+    Prefab: {fileID: 919132149155446097, guid: c1e7152b24a82714488c96d11d08119b, type: 3}
+  - Name: TreePine2
+    Prefab: {fileID: 919132149155446097, guid: 6d0cead8ef7e5f94f88b6c05fe9807c7, type: 3}
+  - Name: Watchtower
+    Prefab: {fileID: 919132149155446097, guid: 4a8cc7da2d1eafb4eb6fe6d7ee0444f2, type: 3}
+  - Name: Well
+    Prefab: {fileID: 919132149155446097, guid: 07c3e833ababa7d4bae8a8375afce81d, type: 3}
   Clips:
   - Set: HumanoidAnimations
     Name: Walk
@@ -92,6 +176,60 @@ MonoBehaviour:
   - Set: HumanoidAnimations
     Name: CastLoop
     Clip: {fileID: -8265580086071612076, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: Bear
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
+  - Set: Bear
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
+  - Set: Bear
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
+  - Set: Bear
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
+  - Set: Bear
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
+  - Set: Bear
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
+  - Set: Boar
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Set: Boar
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Set: Boar
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Set: Boar
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Set: Boar
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Set: Boar
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Set: Crocodile
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
+  - Set: Crocodile
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
+  - Set: Crocodile
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
+  - Set: Crocodile
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
+  - Set: Crocodile
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
+  - Set: Crocodile
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
   - Set: Frog
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
@@ -110,6 +248,60 @@ MonoBehaviour:
   - Set: Frog
     Name: Walk
     Clip: {fileID: 8349542763059015795, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
+  - Set: Gloomjaw
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
+  - Set: Gloomjaw
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
+  - Set: Gloomjaw
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
+  - Set: Gloomjaw
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
+  - Set: Gloomjaw
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
+  - Set: Gloomjaw
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
+  - Set: Shardling
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Spider
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
+  - Set: Spider
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
+  - Set: Spider
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
+  - Set: Spider
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
+  - Set: Spider
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
+  - Set: Spider
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Set: TrainingDummy
     Name: Death
     Clip: {fileID: -982115091633673366, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}

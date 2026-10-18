@@ -40,11 +40,11 @@ internal sealed class TestRealm : IAsyncDisposable
     private static readonly Lazy<ContentDatabase> RepositoryContent =
         new(() => ContentLoader.Load(ContentPaths.FindContentRoot(AppContext.BaseDirectory)!));
 
-    /// <summary>The repository's classes, spells and creatures on a flat 400 x 400 m map with the given creature spawns.</summary>
+    /// <summary>The repository's classes, spells and creatures on a flat 600 x 600 m map with the given creature spawns.</summary>
     public static ContentDatabase CombatContent(params SpawnDefinition[] spawns)
     {
         var map = new MapDefinition { Id = 1, Name = "Arena", Spawn = new SpawnPoint { X = 0, Z = 0 } };
-        return RepositoryContent.Value.WithMaps(new[] { new LoadedMap(map, HeightMap.CreateFlat(-200, -200, 4, 101, 101, 10f), null, spawns) });
+        return RepositoryContent.Value.WithMaps(new[] { new LoadedMap(map, HeightMap.CreateFlat(-300, -300, 4, 151, 151, 10f), null, spawns) });
     }
 
     public static async Task<TestRealm> StartAsync(IGameDatabase? database = null, ContentDatabase? content = null, bool gmAll = false,

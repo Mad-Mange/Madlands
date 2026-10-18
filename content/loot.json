@@ -26,6 +26,7 @@
         { "item": 2004, "chance": 0.3 },
         { "item": 2005, "chance": 0.2 },
         { "item": 3002, "chance": 0.55 },
+        { "item": 3007, "chance": 0.45 },
         { "item": 4001, "chance": 0.15, "min": 1, "max": 2 },
         { "item": 1010, "chance": 0.05 }
       ],
@@ -42,6 +43,17 @@
         { "item": 5003, "chance": 0.03 }
       ],
       "groups": [ { "chance": 0.12, "items": [1203, 1221, 1223, 1224, 1226] } ]
-    }
+    },
+
+    { "id": 6, "name": "Bristleback Boar", "money": { "min": 2, "max": 8 }, "items": [ { "item": 2006, "chance": 0.45 }, { "item": 3003, "chance": 0.6 } ], "groups": [ { "chance": 0.04, "items": [1201, 1202, 1203, 1222, 1225] } ] },
+    { "id": 7, "name": "Mireling", "money": { "min": 3, "max": 11 }, "items": [ { "item": 2007, "chance": 0.55 }, { "item": 3004, "chance": 0.55 }, { "item": 2010, "chance": 0.08 } ], "groups": [ { "chance": 0.05, "items": [1203, 1220, 1222, 1225, 1228] } ] },
+    { "id": 8, "name": "Mireling Oracle", "money": { "min": 5, "max": 14 }, "items": [ { "item": 2007, "chance": 0.4 }, { "item": 3005, "chance": 0.35 }, { "item": 4002, "chance": 0.2 } ], "groups": [ { "chance": 0.08, "items": [1203, 1223, 1226, 1228] } ] },
+    { "id": 9, "name": "Greywood Spider", "money": { "min": 4, "max": 13 }, "items": [ { "item": 2008, "chance": 0.5 }, { "item": 3006, "chance": 0.6 } ], "groups": [ { "chance": 0.06, "items": [1220, 1224, 1227, 1228] } ] },
+    { "id": 10, "name": "Greywood Bear", "money": { "min": 6, "max": 16 }, "items": [ { "item": 2009, "chance": 0.6 }, { "item": 2002, "chance": 0.25 } ], "groups": [ { "chance": 0.07, "items": [1224, 1226, 1227, 1228] } ] },
+    { "id": 11, "name": "Drowned Dead", "money": { "min": 12, "max": 30 }, "items": [ { "item": 2010, "chance": 0.35 }, { "item": 4003, "chance": 0.08 } ], "groups": [ { "chance": 0.09, "items": [1223, 1224, 1226, 1228, 5003] } ] },
+    { "id": 12, "name": "Shardling", "money": { "min": 0, "max": 0 }, "items": [ { "item": 2011, "chance": 0.6 }, { "item": 3008, "chance": 0.6 } ], "groups": [ { "chance": 0.08, "items": [1223, 1226, 1264] } ] },
+    { "id": 13, "name": "Lieutenant Vorn", "money": { "min": 60, "max": 120 }, "items": [ { "item": 4005, "chance": 0.5, "min": 1, "max": 3 } ], "groups": [ { "chance": 1.0, "items": [1220, 1221, 1223, 1224] } ] },
+    { "id": 14, "name": "Gloomjaw", "money": { "min": 300, "max": 500 }, "items": [ { "item": 2013, "chance": 1.0, "min": 1, "max": 3 } ], "groups": [ { "chance": 1.0, "items": [1280, 1281, 1282, 1283] } ] },
+    { "id": 15, "name": "Mire Snapper", "money": { "min": 6, "max": 18 }, "items": [ { "item": 2012, "chance": 0.5 }, { "item": 2010, "chance": 0.1 } ], "groups": [ { "chance": 0.06, "items": [1224, 1227, 1228] } ] }
   ]
 }

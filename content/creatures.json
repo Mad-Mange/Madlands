@@ -6,18 +6,18 @@
       "health": 0.8, "damage": 0.7, "runSpeed": 6, "respawnSeconds": 30, "corpseSeconds": 15, "loot": 1
     },
     {
-      "id": 2, "name": "Dusk Wolf", "displayId": 102, "minLevel": 2, "maxLevel": 3, "faction": 2,
+      "id": 2, "name": "Dusk Wolf", "displayId": 102, "minLevel": 3, "maxLevel": 5, "faction": 2,
       "aggroRadius": 14, "runSpeed": 7.5, "respawnSeconds": 45, "loot": 2,
       "spells": [ { "spell": 900, "chance": 0.3, "cooldownMs": 10000 } ]
     },
     {
-      "id": 3, "name": "Shard Bandit", "displayId": 103, "minLevel": 3, "maxLevel": 4, "faction": 2,
+      "id": 3, "name": "Shard Bandit", "displayId": 103, "minLevel": 5, "maxLevel": 7, "faction": 2,
       "aggroRadius": 13, "health": 1.1, "armor": 1.3, "respawnSeconds": 60, "loot": 3,
       "equipment": { "mainHand": 1010 },
       "spells": [ { "spell": 902, "chance": 0.25, "cooldownMs": 9000 } ]
     },
     {
-      "id": 4, "name": "Bandit Shardcaster", "displayId": 104, "minLevel": 4, "maxLevel": 4, "faction": 2,
+      "id": 4, "name": "Bandit Shardcaster", "displayId": 104, "minLevel": 6, "maxLevel": 7, "faction": 2,
       "ai": "caster", "aggroRadius": 16, "health": 0.85, "damage": 0.6, "mana": 1, "respawnSeconds": 60, "loot": 4,
       "equipment": { "mainHand": 1002 },
       "spells": [ { "spell": 901, "chance": 1, "cooldownMs": 0 } ]
@@ -31,7 +31,7 @@
       "id": 10, "name": "Captain Edda Brand", "displayId": 110, "minLevel": 12, "maxLevel": 12, "faction": 1,
       "health": 8, "damage": 2, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
       "equipment": { "mainHand": 1001, "offHand": 1030 },
-      "gossip": "Captain Edda Brand, Mirewatch Post. If you can swing a blade or throw a spell, I have work for you. If you can't, stay out from under my feet."
+      "gossip": "Captain Edda Brand, Mirewatch. If you can swing a blade or throw a spell, I have work for you. If you can't, stay out from under my feet."
     },
     {
       "id": 11, "name": "Old Tamsin", "displayId": 111, "minLevel": 8, "maxLevel": 8, "faction": 1,
@@ -42,7 +42,105 @@
     {
       "id": 12, "name": "Quartermaster Holt", "displayId": 112, "minLevel": 10, "maxLevel": 10, "faction": 1,
       "health": 6, "damage": 1.5, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
-      "vendor": [4001, 4002, 4005, 4003, 4004, 5001, 1011, 1030, 1301, 1302, 1303]
+      "vendor": [4001, 4002, 4005, 4003, 4004, 5001, 1301, 1302, 1303]
+    },
+
+    {
+      "id": 13, "name": "Marla Fenn", "displayId": 113, "minLevel": 10, "maxLevel": 10, "faction": 1,
+      "health": 5, "damage": 1, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "gossip": "Welcome to the Muddy Boot. Wipe your feet, love. The name was a warning, not a joke.",
+      "vendor": [4001, 4002, 4006, 4007, 4005]
+    },
+    {
+      "id": 14, "name": "Farmer Wil Tenney", "displayId": 114, "minLevel": 8, "maxLevel": 8, "faction": 1,
+      "health": 4, "damage": 1, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "equipment": { "mainHand": 1011 },
+      "gossip": "Westbrook was the best barley in the valley, once. Now it's the best-fed boars."
+    },
+    {
+      "id": 15, "name": "Brannoc Ironvein", "displayId": 115, "minLevel": 10, "maxLevel": 10, "faction": 1,
+      "health": 6, "damage": 1.5, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "equipment": { "mainHand": 1011 },
+      "gossip": "Ironvein Prospecting. We dig, we find, we get robbed. Two out of three, lately."
+    },
+    {
+      "id": 16, "name": "Scout Rennick", "displayId": 116, "minLevel": 10, "maxLevel": 10, "faction": 1,
+      "health": 5, "damage": 1.5, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "equipment": { "mainHand": 1001 },
+      "gossip": "Quiet. The Greywood listens. Everything in it is hungry, and most of it is patient."
+    },
+    {
+      "id": 17, "name": "Old Pell", "displayId": 117, "minLevel": 8, "maxLevel": 8, "faction": 1,
+      "health": 4, "damage": 1, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "gossip": "Forty years I've fished this mere. Never caught a thing that sang back, until this spring."
+    },
+    {
+      "id": 18, "name": "Brother Aldous", "displayId": 118, "minLevel": 10, "maxLevel": 10, "faction": 1,
+      "health": 5, "damage": 1, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "equipment": { "mainHand": 1022 },
+      "gossip": "The Shrine of the Still Water was built to keep the old town's dead asleep. It is not doing its job."
+    },
+    {
+      "id": 19, "name": "Gerta Hask", "displayId": 119, "minLevel": 10, "maxLevel": 10, "faction": 1,
+      "health": 6, "damage": 1.5, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "equipment": { "mainHand": 1011 },
+      "gossip": "Steel, wood, a bit of leather. If it's broken, bring it. If it's bent, that's extra.",
+      "vendor": [1001, 1002, 1003, 1011, 1030, 1035, 1036]
+    },
+
+    {
+      "id": 6, "name": "Bristleback Boar", "displayId": 126, "minLevel": 2, "maxLevel": 4, "faction": 3,
+      "health": 1.1, "runSpeed": 6.5, "respawnSeconds": 40, "loot": 6,
+      "spells": [ { "spell": 903, "chance": 0.3, "cooldownMs": 8000 } ]
+    },
+    {
+      "id": 7, "name": "Mireling", "displayId": 120, "minLevel": 3, "maxLevel": 5, "faction": 2,
+      "aggroRadius": 12, "respawnSeconds": 45, "loot": 7,
+      "equipment": { "mainHand": 1003 }
+    },
+    {
+      "id": 8, "name": "Mireling Oracle", "displayId": 121, "minLevel": 4, "maxLevel": 5, "faction": 2,
+      "ai": "caster", "aggroRadius": 15, "health": 0.85, "damage": 0.6, "mana": 1, "respawnSeconds": 50, "loot": 8,
+      "equipment": { "mainHand": 1002 },
+      "spells": [ { "spell": 906, "chance": 1, "cooldownMs": 0 } ]
+    },
+    {
+      "id": 9, "name": "Greywood Spider", "displayId": 127, "minLevel": 5, "maxLevel": 6, "faction": 2,
+      "aggroRadius": 12, "runSpeed": 7, "respawnSeconds": 45, "loot": 9,
+      "spells": [ { "spell": 904, "chance": 0.35, "cooldownMs": 12000 } ]
+    },
+    {
+      "id": 20, "name": "Greywood Bear", "displayId": 128, "minLevel": 6, "maxLevel": 7, "faction": 2,
+      "aggroRadius": 11, "health": 1.4, "damage": 1.2, "armor": 1.2, "attackSpeedMs": 2400, "respawnSeconds": 60, "loot": 10,
+      "spells": [ { "spell": 905, "chance": 0.3, "cooldownMs": 9000 } ]
+    },
+    {
+      "id": 21, "name": "Drowned Dead", "displayId": 122, "minLevel": 8, "maxLevel": 9, "faction": 2,
+      "aggroRadius": 13, "runSpeed": 6, "respawnSeconds": 50, "loot": 11,
+      "equipment": { "mainHand": 1001 },
+      "spells": [ { "spell": 908, "chance": 0.3, "cooldownMs": 10000 } ]
+    },
+    {
+      "id": 22, "name": "Shardling", "displayId": 129, "minLevel": 9, "maxLevel": 10, "faction": 2,
+      "aggroRadius": 14, "health": 1.2, "armor": 1.5, "respawnSeconds": 60, "loot": 12,
+      "spells": [ { "spell": 909, "chance": 0.25, "cooldownMs": 12000 } ]
+    },
+    {
+      "id": 23, "name": "Lieutenant Vorn", "displayId": 123, "minLevel": 8, "maxLevel": 8, "faction": 2,
+      "aggroRadius": 15, "health": 4, "damage": 1.6, "armor": 1.5, "respawnSeconds": 300, "xp": 3, "loot": 13,
+      "equipment": { "mainHand": 1020 },
+      "spells": [ { "spell": 902, "chance": 0.35, "cooldownMs": 7000 } ]
+    },
+    {
+      "id": 24, "name": "Gloomjaw", "displayId": 124, "minLevel": 12, "maxLevel": 12, "faction": 2,
+      "aggroRadius": 18, "health": 30, "damage": 2.5, "armor": 2, "attackSpeedMs": 2500, "runSpeed": 6,
+      "respawnSeconds": 900, "corpseSeconds": 120, "xp": 8, "callForHelpRadius": 0, "loot": 14,
+      "spells": [ { "spell": 910, "chance": 0.3, "cooldownMs": 9000 }, { "spell": 911, "chance": 0.4, "cooldownMs": 15000 } ]
+    },
+    {
+      "id": 25, "name": "Mire Snapper", "displayId": 125, "minLevel": 6, "maxLevel": 8, "faction": 2,
+      "aggroRadius": 11, "health": 1.3, "armor": 1.6, "runSpeed": 5.5, "respawnSeconds": 50, "loot": 15,
+      "spells": [ { "spell": 910, "chance": 0.25, "cooldownMs": 12000 } ]
     }
   ]
 }

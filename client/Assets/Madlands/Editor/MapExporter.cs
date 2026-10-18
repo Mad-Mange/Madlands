@@ -30,7 +30,7 @@ namespace Madlands.Client.Editor
             try
             {
                 if (UnityEngine.Object.FindAnyObjectByType<MapInfo>() == null)
-                    EditorSceneManager.OpenScene(TestWorldBuilder.ScenePath);
+                    EditorSceneManager.OpenScene(HollowmereBuilder.ScenePath);
                 ExportOpenScene();
                 EditorApplication.Exit(0);
             }

@@ -15,11 +15,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
+import beasts  # noqa: E402
 import creatures  # noqa: E402
 import humanoid  # noqa: E402
 import items  # noqa: E402
 import lowpoly as lp  # noqa: E402
 import preview  # noqa: E402
+import props  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 UNITY_ART = os.path.join(ROOT, "client", "Assets", "Madlands", "Art")
@@ -33,8 +35,15 @@ ASSETS = {
     "Wolf": ("Creatures", creatures.build_wolf, True),
     "Frog": ("Creatures", creatures.build_frog, True),
     "TrainingDummy": ("Creatures", creatures.build_training_dummy, True),
+    "Boar": ("Creatures", lambda: beasts.build_quad("Boar"), True),
+    "Bear": ("Creatures", lambda: beasts.build_quad("Bear"), True),
+    "Crocodile": ("Creatures", lambda: beasts.build_quad("Crocodile"), True),
+    "Gloomjaw": ("Creatures", lambda: beasts.build_quad("Gloomjaw"), True),
+    "Spider": ("Creatures", beasts.build_spider, True),
+    "Shardling": ("Creatures", beasts.build_shardling, True),
 }
 ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
+ASSETS.update({name: ("Props", builder, False) for name, builder in props.PROPS.items()})
 
 # Previews of mesh-less animation files put a body on the skeleton (after the export).
 PREVIEW_DRESS = {

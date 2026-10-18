@@ -20,6 +20,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 | `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
 | `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `build.py` exports FBX into `client/Assets/Madlands/Art/`. |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
+| `docs/zones/` | Zone design: map, story, NPCs, creatures and quest chains (`hollowmere.md`). |
 | `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, map.json: written by Unity, Madlands > Export Map). |
 
 ## Commands (PowerShell; dotnet may need PATH refresh in old shells)
@@ -44,7 +45,7 @@ $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"
 #   Madlands.Client.Editor.BuildTools.CompileCheck                 -> exit 0 if all scripts compile
 #   Madlands.Client.Editor.BuildTools.BuildWindowsFromCommandLine  -> builds/client/Madlands.exe
 #   Madlands.Client.Editor.BuildTools.CaptureWorldScreenshot       -> builds/screenshots/editor_*.png
-#   Madlands.Client.Editor.TestWorldBuilder.BuildFromCommandLine   -> regenerates World_0001 + exports map
+#   Madlands.Client.Editor.HollowmereBuilder.BuildFromCommandLine  -> regenerates World_0001 (Hollowmere) + exports map
 #   Madlands.Client.Editor.FrontEndBuilder.BuildFromCommandLine    -> regenerates FrontEnd scene + PanelSettings
 #   Madlands.Client.Editor.MapExporter.ExportFromCommandLine       -> content/maps/0001/{height.bin,map.json}
 #   Madlands.Client.Editor.ArtImporter.ReportFromCommandLine       -> logs every model: size, avatar, materials, clips
@@ -57,10 +58,10 @@ builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Tester -stopa
 builds/client/Madlands.exe -screen-fullscreen 0 -screenshot builds/screenshots/login.png -screenshotdelay 4 -quitafter 6
 # Combat (server with --gm-all): -class picks the class of a new character, -exec sends chat lines/GM commands
 # after entering the world, -autofight targets the nearest enemy and uses the action bar.
-builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 6;.tele -4 2" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
+builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 3;.tele -60 -62" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
 # Items and quests: -open bags,character,questlog opens windows, -talkto "Old Tamsin" (+ -quest 1) opens an NPC dialog,
 # -loot opens loot of corpses in reach, -tooltip <item id> shows a bag item's tooltip, -equip 1020,1210 equips from the bags.
-builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Shopper -exec ".money 5000;.tele 6 -1" -talkto "Quartermaster Holt" -screenshot builds/screenshots/vendor.png -screenshotdelay 9 -quitafter 13
+builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Shopper -exec ".money 5000;.tele 10 -142" -talkto "Quartermaster Holt" -screenshot builds/screenshots/vendor.png -screenshotdelay 9 -quitafter 13
 ```
 Then read the PNG to verify. Use `-logFile` for the player log. The server keeps characters between client runs:
 use a new `-name` per screenshot run, or `.additem` lines add up. From PowerShell `Start-Process`, quote arguments

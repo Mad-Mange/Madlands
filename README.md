@@ -280,11 +280,12 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | Esc | Close chat, windows, clear the target, or open the menu (Settings: key bindings, mouse, interface scale, graphics) |
 | F3 | Toggle the debug overlay |
 
-**Where to go in the test world:** the Mirewatch Post at the spawn has quests (Old Tamsin, Captain Edda Brand) and a vendor (Quartermaster Holt); training dummies stand next to it. Frogs (neutral) live south-east, the wolf pack (hostile) north-west and the walled bandit camp north-east. `.level 5`, `.tele 70 50` (outside the camp), `.additem <id or name>`, `.money <copper>` and `.quest add|complete|reset <id>` are handy shortcuts.
+**Where to go in Hollowmere** ([zone guide](docs/zones/hollowmere.md)): you start in the village of Mirewatch on the south shore of the mere, where Captain Edda Brand, Old Tamsin and Old Pell (at the dock) have work, and Holt, Marla and Gerta sell supplies. Farmer Tenney waits in Westbrook to the west, the mirelings in the Reedfen to the east, the Greywood across the mere to the north-west, the bandits of Shardscar to the north-east and the Drowned Ruins on the far north shore, where Gloomjaw sleeps in its lagoon. `.level 5`, `.tele <x> <z>`, `.additem <id or name>`, `.money <copper>` and `.quest add|complete|reset <id>` are handy shortcuts.
 
 ## 📁 Project structure
 
 ```
+art/                        Low-poly models as Python scripts for Blender (exported as FBX into the client)
 client/                     Unity 6 project (our code in Assets/Madlands)
 shared/Madlands.Shared      Protocol and game rules, shared by server and client
 shared/Madlands.ClientCore  Engine-free networking and unit state, used by the client and bots

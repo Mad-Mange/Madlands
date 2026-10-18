@@ -79,8 +79,13 @@ class MeshBuilder:
             self.groups.append(bone)
         return self.groups.index(bone)
 
-    def add(self, verts, faces, mat, bone=None, matrix=None):
-        """Adds raw geometry: `faces` index into `verts` (counter-clockwise seen from outside)."""
+    def add(self, verts, faces, mat, bone=None, matrix=None, closed=False, double_sided=False):
+        """
+        Adds raw geometry: `faces` index into `verts` (counter-clockwise seen from outside). `closed`
+        shapes get their normals pointed outward; `double_sided` adds a back side (cloth, roofs).
+        """
+        if double_sided:
+            self.add(verts, [tuple(reversed(f)) for f in faces], mat, bone, matrix)
         if matrix is not None:
             verts = [matrix @ Vector(v) for v in verts]
         bm_verts = [self.bm.verts.new(Vector(v)) for v in verts]
@@ -96,6 +101,8 @@ class MeshBuilder:
                 continue
             f.material_index = index
             f.smooth = False
+        if closed:
+            self._fix_normals(bm_verts)
         return bm_verts
 
     def box(self, center, size, mat, bone=None, top=(1.0, 1.0), rotation=None, bottom_offset=(0.0, 0.0)):

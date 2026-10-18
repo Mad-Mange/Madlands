@@ -200,6 +200,14 @@
       "school": "physical", "target": "enemy", "rangeMax": 5, "gcdMs": 0,
       "flags": ["hidden", "requiresFacing"],
       "effects": [ { "type": "weaponDamage", "percent": 150 } ]
-    }
+    },
+    { "id": 903, "name": "Gore", "icon": 903, "description": "Rams the target with its tusks.", "school": "physical", "target": "enemy", "rangeMax": 5, "gcdMs": 0, "flags": ["hidden", "requiresFacing"], "effects": [ { "type": "weaponDamage", "percent": 140 } ] },
+    { "id": 904, "name": "Venom Bite", "icon": 904, "description": "Poisons the target, dealing nature damage over 12 seconds.", "school": "nature", "target": "enemy", "rangeMax": 5, "gcdMs": 0, "flags": ["hidden", "harmfulAura"], "effects": [ { "type": "applyAura" } ], "aura": { "durationMs": 12000, "tickMs": 3000, "effects": [ { "type": "periodicDamage", "amount": 3, "perLevel": 1 } ] } },
+    { "id": 905, "name": "Maul", "icon": 905, "description": "A crushing swipe of the paw.", "school": "physical", "target": "enemy", "rangeMax": 5, "gcdMs": 0, "flags": ["hidden", "requiresFacing"], "effects": [ { "type": "weaponDamage", "percent": 160 } ] },
+    { "id": 906, "name": "Murk Bolt", "icon": 906, "description": "A bolt of singing water from the mere.", "school": "frost", "target": "enemy", "rangeMax": 30, "castTimeMs": 2000, "powerType": "mana", "cost": 20, "projectileSpeed": 20, "flags": ["hidden", "requiresFacing"], "effects": [ { "type": "schoolDamage", "min": 8, "max": 11, "perLevel": 2.5 } ] },
+    { "id": 908, "name": "Chill Touch", "icon": 908, "description": "The cold of the deep water: frost damage, and the target is slowed by 30% for 6 seconds.", "school": "frost", "target": "enemy", "rangeMax": 5, "gcdMs": 0, "flags": ["hidden", "harmfulAura"], "effects": [ { "type": "schoolDamage", "min": 6, "max": 8, "perLevel": 1.5 }, { "type": "applyAura" } ], "aura": { "durationMs": 6000, "effects": [ { "type": "modSpeed", "amount": -30 } ] } },
+    { "id": 909, "name": "Shard Pulse", "icon": 909, "description": "A wave of raw shard power that hits everyone within 8 meters.", "school": "arcane", "target": "none", "rangeMax": 0, "gcdMs": 0, "flags": ["hidden"], "effects": [ { "type": "schoolDamage", "targets": "enemiesNearCaster", "radius": 8, "min": 12, "max": 16, "perLevel": 2 } ] },
+    { "id": 910, "name": "Death Roll", "icon": 910, "description": "Clamps down and rolls.", "school": "physical", "target": "enemy", "rangeMax": 6, "gcdMs": 0, "flags": ["hidden", "requiresFacing"], "effects": [ { "type": "weaponDamage", "percent": 200 } ] },
+    { "id": 911, "name": "Tail Sweep", "icon": 911, "description": "Sweeps its tail through everyone within 10 meters, slowing them by 40% for 6 seconds.", "school": "physical", "target": "none", "rangeMax": 0, "gcdMs": 0, "flags": ["hidden", "harmfulAura"], "effects": [ { "type": "schoolDamage", "targets": "enemiesNearCaster", "radius": 10, "min": 30, "max": 40, "perLevel": 4 }, { "type": "applyAura", "targets": "enemiesNearCaster", "radius": 10 } ], "aura": { "durationMs": 6000, "effects": [ { "type": "modSpeed", "amount": -40 } ] } }
   ]
 }

@@ -4,7 +4,7 @@
     {
       "id": 1, "title": "Trouble in the Mire", "level": 1, "minLevel": 1, "giver": 11, "ender": 11,
       "details": "The frogs in the low ground have gone strange since the shard fell. Fat as dogs, they are, and twice as mean when you poke them. They have been fouling the only clean spring we have.\n\nThin them out for an old woman, would you? Six of them should teach the rest some manners.",
-      "summary": "Kill 6 Mire Frogs in the marsh south-east of Mirewatch Post.",
+      "summary": "Kill 6 Mire Frogs on the shore of the mere, north of Mirewatch.",
       "progress": "Still croaking out there, are they?",
       "completion": "Ha! I could hear the quiet from here. Take one of these, dear. They were my husband's, and he won't be needing them.",
       "objectives": [ { "type": "kill", "creature": 1, "count": 6 } ],
@@ -20,8 +20,8 @@
       "rewards": { "xp": 200, "money": 30, "items": [ { "item": 4001, "count": 5 } ] }
     },
     {
-      "id": 3, "title": "Wolves at Dusk", "level": 3, "minLevel": 2, "giver": 10, "ender": 10,
-      "details": "You there. You look like you can hold a blade the right way round.\n\nA pack of dusk wolves has taken the ridge to the north-west, and they have grown bold enough to circle the post at night. I can't spare a single guard from the palisade. Thin the pack: eight of them, and the rest will think twice.",
+      "id": 3, "title": "Wolves at Dusk", "level": 4, "minLevel": 3, "giver": 10, "ender": 10,
+      "details": "You there. You look like you can hold a blade the right way round.\n\nA pack of dusk wolves has come down out of the Greywood, west across the mere, and they have grown bold enough to circle the village at night. I can't spare a single guard from the palisade. Thin the pack: eight of them, and the rest will think twice.",
       "summary": "Kill 8 Dusk Wolves on the north-western ridge.",
       "progress": "The howling hasn't stopped. Neither should you.",
       "completion": "Good work. The night watch will sleep easier, and so will I. Take your pick from the stores; you've earned it.",
@@ -29,7 +29,7 @@
       "rewards": { "xp": 420, "money": 60, "choices": [ { "item": 1210 }, { "item": 1211 }, { "item": 1212 } ] }
     },
     {
-      "id": 4, "title": "Pelts for the Palisade", "level": 3, "minLevel": 2, "giver": 10, "ender": 10,
+      "id": 4, "title": "Pelts for the Palisade", "level": 4, "minLevel": 3, "giver": 10, "ender": 10,
       "details": "The wind cuts through the palisade like it isn't there. Thick wolf pelts stretched over the gaps would keep the worst of it out.\n\nBring me six Dusk Wolf Pelts and I'll have the tanner stitch you something useful from the scraps.",
       "summary": "Bring 6 Dusk Wolf Pelts to Captain Edda Brand.",
       "progress": "Six pelts. The wind won't wait.",
@@ -47,20 +47,20 @@
       "rewards": { "xp": 110, "items": [ { "item": 4003, "count": 2 } ] }
     },
     {
-      "id": 6, "title": "Eyes on the Camp", "level": 4, "minLevel": 3, "giver": 10, "ender": 10, "requires": [3],
+      "id": 6, "title": "Eyes on the Camp", "level": 5, "minLevel": 4, "giver": 10, "ender": 10, "requires": [3],
       "details": "Someone has been hauling moon shards past our walls at night. My scouts found tracks leading north-east, to a ring of stakes the bandits call a camp.\n\nI need to know how many of them there are before I send anyone in. Get close enough to see inside, and get back in one piece.",
       "summary": "Scout the bandit camp to the north-east, then report to Captain Edda Brand.",
       "progress": "Well? What did you see?",
       "completion": "Shardcasters, too? Then they aren't just thieves, they're feeding something. That changes things.",
-      "objectives": [ { "type": "explore", "map": 1, "x": 95, "z": 75, "radius": 22, "text": "Scout the bandit camp" } ],
+      "objectives": [ { "type": "explore", "map": 1, "x": 225, "z": 215, "radius": 25, "text": "Scout the bandit camp" } ],
       "rewards": { "xp": 300, "money": 50 }
     },
     {
-      "id": 7, "title": "Shards in the Wrong Hands", "level": 5, "minLevel": 4, "giver": 10, "ender": 10, "requires": [6],
+      "id": 7, "title": "Shards in the Wrong Hands", "level": 6, "minLevel": 5, "giver": 10, "ender": 10, "requires": [6],
       "details": "Raw moon shards in the hands of fools. Every one they crack open makes the land around here a little madder.\n\nGo into that camp. Put down the bandits and their shardcasters, and bring back the shards they stole before they can sell them, or worse, use them.",
       "summary": "Kill 6 Shard Bandits and 2 Bandit Shardcasters, and recover 4 Stolen Moonshards from the bandit camp.",
       "progress": "The camp still stands. The shards are still out there.",
-      "completion": "Four shards, and the camp's teeth pulled. You've done the post a great service. The armory has been keeping something back for a day like this. Take whatever suits your hand.",
+      "completion": "Four shards, and the camp's teeth pulled. You've done Mirewatch a great service. The armory has been keeping something back for a day like this. Take whatever suits your hand.",
       "objectives": [
         { "type": "kill", "creature": 3, "count": 6 },
         { "type": "kill", "creature": 4, "count": 2 },
@@ -69,11 +69,603 @@
       "rewards": { "xp": 900, "money": 150, "choices": [ { "item": 1020 }, { "item": 1021 }, { "item": 1022 } ] }
     },
     {
-      "id": 8, "title": "News for Tamsin", "level": 5, "minLevel": 4, "giver": 10, "ender": 11, "requires": [7],
+      "id": 8, "title": "News for Tamsin", "level": 6, "minLevel": 5, "giver": 10, "ender": 11, "requires": [7],
       "details": "Old Tamsin has been reading the mire since before the shard fell, and she'll want to know what we found in that camp.\n\nTake her the news, and listen to whatever she tells you. She's usually right, which is the annoying part.",
       "summary": "Bring the news to Old Tamsin.",
       "completion": "Shardcasters feeding the cracks... I feared as much. The water has been singing at night, and something under it is waking.\n\nKeep this close, dear. It won't stop the madness, but it'll keep your head clear a little longer.",
       "rewards": { "xp": 250, "choices": [ { "item": 1222 }, { "item": 1223 } ] }
+    },
+    {
+      "id": 9,
+      "title": "Boars in the Barley",
+      "level": 3,
+      "minLevel": 2,
+      "giver": 14,
+      "ender": 14,
+      "details": "You see that field? That was barley. Now it's a wallow.\n\nThe bristlebacks came down from the hills when the shard fell, and they've been eating my harvest one row at a time. I can't shoot them all, and the captain won't spare a guard for pigs. Eight of them, and the rest might learn some respect.",
+      "summary": "Kill 8 Bristleback Boars in the fields of Westbrook.",
+      "progress": "Still rooting around out there, are they?",
+      "completion": "That's quieter. Not quiet, mind, but quieter. Here, my old things. They kept my feet dry for twenty years.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 6,
+          "count": 8
+        }
+      ],
+      "rewards": {
+        "xp": 450,
+        "money": 40,
+        "choices": [
+          {
+            "item": 1230
+          },
+          {
+            "item": 1231
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "title": "Tough as Tusks",
+      "level": 3,
+      "minLevel": 2,
+      "giver": 14,
+      "ender": 14,
+      "details": "Those tusks are the hardest thing in this valley, short of Gerta's head. The fence posts keep snapping, and I've a mind to cap them with tusk.\n\nBring me six, and I'll make it worth the walk.",
+      "summary": "Bring 6 Bristleback Tusks to Farmer Wil Tenney.",
+      "progress": "No tusks? The boars still have them, then.",
+      "completion": "Six! Now that's a fence the boars will think twice about. Wear these; I won't be needing them till spring.",
+      "objectives": [
+        {
+          "type": "collect",
+          "item": 3003,
+          "count": 6
+        }
+      ],
+      "rewards": {
+        "xp": 450,
+        "money": 40,
+        "choices": [
+          {
+            "item": 1232
+          },
+          {
+            "item": 1233
+          }
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "title": "The Old Mill",
+      "level": 4,
+      "minLevel": 3,
+      "giver": 14,
+      "ender": 14,
+      "requires": [
+        9
+      ],
+      "details": "My father's mill stood by the stream to the north-west, before the flood took the wheel. Nobody goes out there now.\n\nExcept somebody does. I've seen a light out there at night, three nights running. Go have a look, would you? Quietly.",
+      "summary": "Search the old mill north-west of Westbrook, then return to Farmer Tenney.",
+      "progress": "Well? Was there anyone at the mill?",
+      "completion": "Crates marked with a shard sigil, and fresh boot prints heading north-east? Bandits, using my father's mill as a waystation. The captain needs to hear this. Take the old millstone shield; it was my father's idea of a joke, but it holds.",
+      "objectives": [
+        {
+          "type": "explore",
+          "map": 1,
+          "x": -390,
+          "z": -40,
+          "radius": 20,
+          "text": "Search the old mill"
+        }
+      ],
+      "rewards": {
+        "xp": 350,
+        "money": 30,
+        "items": [
+          {
+            "item": 1234
+          }
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "title": "Word from Westbrook",
+      "level": 3,
+      "minLevel": 2,
+      "giver": 10,
+      "ender": 14,
+      "requires": [
+        5
+      ],
+      "details": "Wil Tenney rode in again this morning, red in the face about pigs. Pigs! As if I don't have wolves and bandits on my doorstep.\n\nStill, a farm that can't feed us is a problem for everyone. Take the west road to Westbrook and see what he needs.",
+      "summary": "Speak with Farmer Wil Tenney in Westbrook, west of Mirewatch.",
+      "completion": "The captain sent you? Hah. She does listen, then. Well, I've work for willing hands.",
+      "rewards": {
+        "xp": 120
+      }
+    },
+    {
+      "id": 13,
+      "title": "Something in the Reeds",
+      "level": 4,
+      "minLevel": 3,
+      "giver": 17,
+      "ender": 17,
+      "details": "Mirelings. Fish-folk, from out east in the Reedfen. Shy, they were, for forty years. You'd see one, and it'd see you, and you'd both go about your business.\n\nNot any more. They've started singing at night, and then they come for the nets, and then they come for the fishermen. Drive them back. Ten of them should do.",
+      "summary": "Kill 10 Mirelings in the Reedfen, east of the mere.",
+      "progress": "They still singing out there?",
+      "completion": "You've a strong arm. They'll think twice before they come up the shore again. Pick something; I've no use for any of it at my age.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 7,
+          "count": 10
+        }
+      ],
+      "rewards": {
+        "xp": 520,
+        "money": 50,
+        "choices": [
+          {
+            "item": 1241
+          },
+          {
+            "item": 1242
+          }
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "title": "Nets and Nonsense",
+      "level": 4,
+      "minLevel": 3,
+      "giver": 17,
+      "ender": 17,
+      "details": "Every net I own, those fish-faced thieves have pulled from the water and dragged off to their huts. I can't fish with my hands, more's the pity.\n\nGet my nets back from the mirelings. Six will do. They're torn, but I can mend torn.",
+      "summary": "Recover 6 Torn Fishing Nets from the Mirelings of the Reedfen.",
+      "progress": "Any luck with the nets?",
+      "completion": "My nets! Smelling worse than ever, which I didn't think possible. Here, take my old creel. It's the best bag on the mere, if you can live with the smell.",
+      "objectives": [
+        {
+          "type": "collect",
+          "item": 3004,
+          "count": 6
+        }
+      ],
+      "rewards": {
+        "xp": 500,
+        "money": 30,
+        "items": [
+          {
+            "item": 5004
+          }
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "title": "The Singing Stone",
+      "level": 5,
+      "minLevel": 4,
+      "giver": 17,
+      "ender": 17,
+      "requires": [
+        13
+      ],
+      "details": "There's a stone out in the Reedfen. A big one, glittering like the shard that fell. The mireling oracles gather round it at night, and that's when the singing starts.\n\nI'm an old fool, but I'm not a stupid one. Whatever's singing, they're listening to it. Put a stop to their oracles, and bring me whatever they're carrying.",
+      "summary": "Kill 4 Mireling Oracles at the singing stone in the Reedfen and bring back a Singing Pearl.",
+      "progress": "Have you been to the stone?",
+      "completion": "That's it, isn't it? Listen. It's still humming. I don't like it, and I don't want it in my house. Take your pick of these and take that pearl to Old Tamsin.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 8,
+          "count": 4
+        },
+        {
+          "type": "collect",
+          "item": 3005,
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "xp": 700,
+        "money": 80,
+        "choices": [
+          {
+            "item": 1243
+          },
+          {
+            "item": 1244
+          },
+          {
+            "item": 1240
+          }
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "title": "A Pearl for Tamsin",
+      "level": 5,
+      "minLevel": 4,
+      "giver": 17,
+      "ender": 11,
+      "requires": [
+        15
+      ],
+      "details": "Tamsin reads the mire like I read the weather. If anyone knows what that pearl is singing about, it's her.\n\nYou'll find her in her garden by the square in Mirewatch. Mind the cauldron.",
+      "summary": "Bring the Singing Pearl to Old Tamsin in Mirewatch.",
+      "completion": "Oh, my dear. Listen to it. That is the shard's song, carried in the water... and it is a lullaby, sung backwards. Something under the mere is being woken, on purpose.",
+      "rewards": {
+        "xp": 200
+      }
+    },
+    {
+      "id": 17,
+      "title": "Rennick's Watch",
+      "level": 4,
+      "minLevel": 3,
+      "giver": 10,
+      "ender": 16,
+      "requires": [
+        3
+      ],
+      "details": "My best scout, Rennick, keeps a tower at the edge of the Greywood, on the west shore. If those wolves came from the wood, he'll know what drove them out.\n\nTake the road around the west of the mere. Tell him the captain sent you, and that he's late with his report.",
+      "summary": "Find Scout Rennick at his watchtower on the west shore of the mere.",
+      "completion": "Late? I've been busy staying alive. But you're welcome. The Greywood needs more blades than I've got.",
+      "rewards": {
+        "xp": 150
+      }
+    },
+    {
+      "id": 18,
+      "title": "Webs in the Greywood",
+      "level": 6,
+      "minLevel": 5,
+      "giver": 16,
+      "ender": 16,
+      "details": "The wolves didn't leave the Greywood because they wanted to. Spiders. Big as a cart, some of them, and they've strung the deep wood from trunk to trunk.\n\nThey've taken two of the trappers already. Cut them down to size: ten of them, from the heart of the wood.",
+      "summary": "Kill 10 Greywood Spiders in the Greywood, north-west of the mere.",
+      "progress": "Still webs between the trees?",
+      "completion": "Ten, and you're still in one piece. I'm impressed, and I'm not easily impressed. Take one of these.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 9,
+          "count": 10
+        }
+      ],
+      "rewards": {
+        "xp": 750,
+        "money": 70,
+        "choices": [
+          {
+            "item": 1252
+          },
+          {
+            "item": 1250
+          }
+        ]
+      }
+    },
+    {
+      "id": 19,
+      "title": "Venom for the Infirmary",
+      "level": 6,
+      "minLevel": 5,
+      "giver": 16,
+      "ender": 16,
+      "details": "Old Tamsin can brew an antidote from greywood venom, if she has enough of it, and half the trappers in the valley need one.\n\nThe sacs are behind the fangs. Don't puncture them. Don't ask how I know.",
+      "summary": "Collect 6 Greywood Venom Sacs from Greywood Spiders.",
+      "progress": "Careful with those sacs.",
+      "completion": "Six whole sacs. Tamsin will be pleased, and the trappers more so. Here, for your trouble.",
+      "objectives": [
+        {
+          "type": "collect",
+          "item": 3006,
+          "count": 6
+        }
+      ],
+      "rewards": {
+        "xp": 700,
+        "money": 60,
+        "choices": [
+          {
+            "item": 1251
+          },
+          {
+            "item": 1254
+          }
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "title": "The Old Bears",
+      "level": 7,
+      "minLevel": 6,
+      "giver": 16,
+      "ender": 16,
+      "requires": [
+        18
+      ],
+      "details": "The bears of the north-west hills used to keep to themselves. Now they're fat on spider and mean as winter, and they've started coming down to the road.\n\nSix of them. I'd come with you, but somebody has to watch the tower.",
+      "summary": "Kill 6 Greywood Bears in the north-west of the Greywood.",
+      "progress": "The bears?",
+      "completion": "You smell like bear. That's a compliment, out here. Take the mantle; the trappers made it from the last one that came for the tower.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 20,
+          "count": 6
+        }
+      ],
+      "rewards": {
+        "xp": 900,
+        "money": 90,
+        "items": [
+          {
+            "item": 1253
+          }
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "title": "Ironvein's Trouble",
+      "level": 6,
+      "minLevel": 5,
+      "giver": 10,
+      "ender": 15,
+      "requires": [
+        6
+      ],
+      "details": "A Korrin prospector named Brannoc Ironvein has been sending runners asking for help. His camp is on the quarry road, east of the mere, and the bandits we've been chasing have been raiding his diggings.\n\nGo and see what he needs. Korrin don't ask for help unless they're down to their last pickaxe.",
+      "summary": "Find Brannoc Ironvein at his camp on the quarry road, north-east of the mere.",
+      "completion": "Down to my last pickaxe? The captain's sense of humor is getting worse. But you're here, and that's something.",
+      "rewards": {
+        "xp": 150
+      }
+    },
+    {
+      "id": 22,
+      "title": "Pickaxes Back",
+      "level": 7,
+      "minLevel": 6,
+      "giver": 15,
+      "ender": 15,
+      "details": "Those bandits didn't just rob my diggings, they took my crew's tools. Every pick we own. Now they're using them in the Shardscar quarry to cut shards out of the rock, and laughing about it.\n\nA Korrin without a pick is just a short man with opinions. Bring me six of them back.",
+      "summary": "Recover 6 Korrin Pickaxes from the bandits of Shardscar.",
+      "progress": "Any picks?",
+      "completion": "That's my cousin's pick. And that one's my cousin's other pick. Good work. Take something from the trade crate.",
+      "objectives": [
+        {
+          "type": "collect",
+          "item": 3007,
+          "count": 6
+        }
+      ],
+      "rewards": {
+        "xp": 850,
+        "money": 80,
+        "choices": [
+          {
+            "item": 1260
+          },
+          {
+            "item": 1262
+          }
+        ]
+      }
+    },
+    {
+      "id": 23,
+      "title": "Lieutenant Vorn",
+      "level": 8,
+      "minLevel": 7,
+      "giver": 15,
+      "ender": 15,
+      "requires": [
+        22
+      ],
+      "details": "The one giving orders in the quarry is a brute called Vorn. Calls himself a lieutenant, though I've never seen who he answers to. He's the reason the bandits are digging, not just robbing.\n\nPut him down, and the rest will scatter. Be careful. He fights like a Korrin.",
+      "summary": "Kill Lieutenant Vorn in the Shardscar quarry.",
+      "progress": "Is Vorn still breathing?",
+      "completion": "Vorn, dead? Then the quarry is ours again. My crew will sing about you, badly. Take this, with the thanks of every Ironvein.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 23,
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "xp": 1100,
+        "money": 150,
+        "choices": [
+          {
+            "item": 1263
+          },
+          {
+            "item": 1264
+          },
+          {
+            "item": 1261
+          }
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "title": "Whispers Under the Water",
+      "level": 8,
+      "minLevel": 7,
+      "giver": 11,
+      "ender": 18,
+      "requires": [
+        8,
+        16
+      ],
+      "details": "The bandits feeding shards into the cracks, the oracles singing to the water... it is all for the same thing, dear, and it sleeps under the north shore, where the old town drowned.\n\nBrother Aldous keeps the Shrine of the Still Water above the ruins. He has been watching the water longer than I have. Go to him.",
+      "summary": "Find Brother Aldous at the Shrine of the Still Water, north of the mere.",
+      "completion": "Tamsin sent you? Then it's as bad as I feared. Sit a moment. You'll need your breath for what comes next.",
+      "rewards": {
+        "xp": 250
+      }
+    },
+    {
+      "id": 25,
+      "title": "Rest for the Drowned",
+      "level": 8,
+      "minLevel": 7,
+      "giver": 18,
+      "ender": 18,
+      "details": "The old town of Hollowmere sank the night the shard fell. Its people never woke, and never quite slept, either. The shrine kept them still for a hundred years.\n\nNow the water sings, and they walk. Give them rest: ten of them, in the ruins below.",
+      "summary": "Put 10 of the Drowned Dead in the Drowned Ruins to rest.",
+      "progress": "They still walk.",
+      "completion": "I felt each of them go still. Thank you. Take this, it was blessed in better days.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 21,
+          "count": 10
+        }
+      ],
+      "rewards": {
+        "xp": 1100,
+        "money": 120,
+        "choices": [
+          {
+            "item": 1270
+          },
+          {
+            "item": 1271
+          }
+        ]
+      }
+    },
+    {
+      "id": 26,
+      "title": "Shards That Walk",
+      "level": 9,
+      "minLevel": 8,
+      "giver": 18,
+      "ender": 18,
+      "requires": [
+        25
+      ],
+      "details": "Where the shard's light pooled in the ruins, the stones have woken up. Shardlings, the old books call them: shard and stone, with a hunger for more shard.\n\nBreak them, and bring me their cores. I want to know what is feeding them.",
+      "summary": "Kill 6 Shardlings in the Drowned Ruins and bring back 5 Humming Shard Cores.",
+      "progress": "The shardlings?",
+      "completion": "Listen to them hum, even now. The same song as Tamsin's pearl. It's all one song, and it's nearly finished.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 22,
+          "count": 6
+        },
+        {
+          "type": "collect",
+          "item": 3008,
+          "count": 5
+        }
+      ],
+      "rewards": {
+        "xp": 1300,
+        "money": 150,
+        "choices": [
+          {
+            "item": 1272
+          },
+          {
+            "item": 1273
+          },
+          {
+            "item": 1274
+          }
+        ]
+      }
+    },
+    {
+      "id": 27,
+      "title": "The Sunken Bell",
+      "level": 9,
+      "minLevel": 8,
+      "giver": 18,
+      "ender": 18,
+      "requires": [
+        25
+      ],
+      "details": "The old town's bell tower still stands, leaning over the water at the heart of the ruins. When the bell rang, the drowned slept. It has not rung in a year.\n\nGo to the tower and see what has become of it.",
+      "summary": "Reach the sunken bell tower in the Drowned Ruins.",
+      "progress": "The bell tower?",
+      "completion": "Cracked through, and shard grown into the crack? Then the bell will never ring again, and nothing stands between the lagoon and us. Take this. You will need every edge you can get.",
+      "objectives": [
+        {
+          "type": "explore",
+          "map": 1,
+          "x": 15,
+          "z": 352,
+          "radius": 15,
+          "text": "Reach the sunken bell tower"
+        }
+      ],
+      "rewards": {
+        "xp": 900,
+        "money": 100,
+        "items": [
+          {
+            "item": 1275
+          }
+        ]
+      }
+    },
+    {
+      "id": 28,
+      "title": "What Wakes Beneath",
+      "level": 10,
+      "minLevel": 9,
+      "giver": 18,
+      "ender": 10,
+      "requires": [
+        26,
+        27
+      ],
+      "details": "It's awake. Gloomjaw: a crocodile older than the town, that swallowed a piece of the shard the night it fell and has slept in the lagoon ever since, growing.\n\nThe songs have woken it, and it is hungry. Do not face it alone. Gather every blade and every spell in Mirewatch, go to the lagoon north-east of the ruins, and end this. Then tell the captain it's over.",
+      "summary": "Gather allies and slay Gloomjaw in its lagoon north-east of the Drowned Ruins, then report to Captain Edda Brand in Mirewatch.",
+      "progress": "Is it done?",
+      "completion": "Gloomjaw. Dead. I heard the water go quiet all the way from here, and I didn't believe it.\n\nHollowmere owes you more than I can pay, but the armory will try. Pick what suits you. And then, for once, get some sleep.",
+      "objectives": [
+        {
+          "type": "kill",
+          "creature": 24,
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "xp": 2600,
+        "money": 500,
+        "choices": [
+          {
+            "item": 1280
+          },
+          {
+            "item": 1281
+          },
+          {
+            "item": 1282
+          },
+          {
+            "item": 1283
+          }
+        ]
+      }
     }
   ]
 }

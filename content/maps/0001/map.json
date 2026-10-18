@@ -2,9 +2,9 @@
   "$schema": "../../schemas/map.schema.json",
   "_generated": "Written by Unity (Madlands > Export Map). Edit the scene, not this file.",
   "id": 1,
-  "name": "Testlands",
+  "name": "Hollowmere",
   "heightmap": "height.bin",
   "collision": "collision.bin",
   "spawns": "spawns.json",
-  "spawn": { "x": 0.00, "z": 0.00, "yawDegrees": 0.0 }
+  "spawn": { "x": 0.00, "z": -148.00, "yawDegrees": 0.0 }
 }

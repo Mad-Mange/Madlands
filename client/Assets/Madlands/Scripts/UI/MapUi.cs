@@ -42,6 +42,10 @@ namespace Madlands.Client
         private readonly List<Marker> _worldPool = new List<Marker>();
         private readonly Texture2D _arrowTexture;
         private MapInfo _map;
+        private string _area;
+
+        /// <summary>The player walked into a named place (also when entering the world in one).</summary>
+        public event System.Action<string> AreaEntered;
         private int _zoom = 2;
         private int _areasForQuestLogVersion = -1;
         private int _questLogVersion;
@@ -119,6 +123,7 @@ namespace Madlands.Client
             _worldImage.style.top = 0;
             _window.Title = map.mapName;
             _areasForQuestLogVersion = -1;
+            _area = null;
         }
 
         public void ToggleWorldMap()
@@ -145,7 +150,13 @@ namespace Madlands.Client
         {
             if (_map == null || _map.worldMap == null || _map.worldMapSize <= 0f) return;
             var me = _client.LocalMovement;
-            _caption.text = _map.mapName + "   " + Mathf.RoundToInt(me.Position.X).ToString(CultureInfo.InvariantCulture)
+            string area = _map.AreaAt(me.Position.X, me.Position.Z);
+            if (area != _area)
+            {
+                _area = area;
+                if (area != null) AreaEntered?.Invoke(area);
+            }
+            _caption.text = (area ?? _map.mapName) + "   " + Mathf.RoundToInt(me.Position.X).ToString(CultureInfo.InvariantCulture)
                             + ", " + Mathf.RoundToInt(me.Position.Z).ToString(CultureInfo.InvariantCulture);
             UpdateMinimap(me.Position, me.Yaw);
             if (_window.IsOpen) UpdateWorldMap(me.Position, me.Yaw);

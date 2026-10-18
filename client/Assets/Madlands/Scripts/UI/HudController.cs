@@ -161,6 +161,7 @@ namespace Madlands.Client
             var windows = Layer("windows");
             var overlay = Layer("window-overlay");
             _map = new MapUi(windows, Client);
+            _map.AreaEntered += area => ShowNotice(area, small: true);
             _itemTooltip = new ItemTooltip(overlay);
             _inventory = new InventoryUi(windows, overlay, Client, _itemTooltip, ShowError);
             _loot = new LootUi(windows, Client, _itemTooltip);

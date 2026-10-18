@@ -286,7 +286,7 @@ public class ItemIntegrationTests
 
         c.Interact(edda.Guid);
         s.Pump(() => s.Gossips == 1);
-        Assert.Contains("Mirewatch Post", c.Gossip.Text);
+        Assert.Contains("Mirewatch", c.Gossip.Text);
         Assert.DoesNotContain(c.Gossip.Quests, q => q.QuestId == ScoutQuest); // needs "Wolves at Dusk" first
         c.AcceptQuest(edda.Guid, TalkQuest);
         s.Pump(() => c.Quests.Find(TalkQuest) is not null);
@@ -298,7 +298,7 @@ public class ItemIntegrationTests
         // Explore: walk (teleport) into the bandit camp.
         s.Command(".quest add " + ScoutQuest);
         s.Pump(() => c.Quests.Find(ScoutQuest) is not null);
-        s.Command(".tele 95 75");
+        s.Command(".tele 225 215");
         s.Pump(() => c.Quests.Find(ScoutQuest)!.IsComplete);
         s.Command(".tele 0 1");
         c.TurnInQuest(edda.Guid, ScoutQuest);

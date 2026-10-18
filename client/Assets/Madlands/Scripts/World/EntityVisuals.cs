@@ -115,6 +115,23 @@ namespace Madlands.Client
         public const uint CaptainDisplay = 110;
         public const uint HerbalistDisplay = 111;
         public const uint QuartermasterDisplay = 112;
+        public const uint InnkeeperDisplay = 113;
+        public const uint FarmerDisplay = 114;
+        public const uint ProspectorDisplay = 115;
+        public const uint ScoutDisplay = 116;
+        public const uint FishermanDisplay = 117;
+        public const uint PriestDisplay = 118;
+        public const uint SmithDisplay = 119;
+        public const uint MirelingDisplay = 120;
+        public const uint MirelingOracleDisplay = 121;
+        public const uint DrownedDisplay = 122;
+        public const uint LieutenantDisplay = 123;
+        public const uint GloomjawDisplay = 124;
+        public const uint SnapperDisplay = 125;
+        public const uint BoarDisplay = 126;
+        public const uint SpiderDisplay = 127;
+        public const uint BearDisplay = 128;
+        public const uint ShardlingDisplay = 129;
 
         /// <summary>The model file whose clips every humanoid race plays (retargeted by Unity).</summary>
         public const string HumanoidClips = "HumanoidAnimations";
@@ -217,9 +234,136 @@ namespace Madlands.Client
                     model.Tint("Hair", Hex("#6b6158"));
                     model.Attach("Spine", PrimitiveType.Cube, new Vector3(0f, 0.86f, 0.17f), new Vector3(0.4f, 0.55f, 0.03f), Hex("#a88a62"));
                     return shape;
+                case InnkeeperDisplay:
+                    // Marla Fenn of the Muddy Boot: a wine-red dress and a white apron.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    Dress(model, chest: "#7a3242", arms: "#7a3242", legs: "#5a2a36", hair: "#a3602a");
+                    model.Attach("Spine", PrimitiveType.Cube, new Vector3(0f, 1.0f, 0.12f), new Vector3(0.3f, 0.6f, 0.02f), Hex("#e8e2d0"));
+                    return shape;
+                case FarmerDisplay:
+                    // Wil Tenney: work clothes and a straw hat.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    Dress(model, chest: "#6b7a48", arms: "#6b7a48", legs: "#5a4a35", hair: "#8a7d6c");
+                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.81f, 0f), new Vector3(0.52f, 0.012f, 0.52f), Hex("#d8bf6a"));
+                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.87f, 0f), new Vector3(0.25f, 0.07f, 0.25f), Hex("#d8bf6a"));
+                    return shape;
+                case ProspectorDisplay:
+                    // Brannoc Ironvein: mail, a miner's helmet with a lamp.
+                    shape = Humanoid(parent, "Korrin", out model);
+                    if (model == null) return shape;
+                    Dress(model, chest: "#5c616b", arms: "#5c616b", legs: "#4a3a2a", hair: "#3a2a1e");
+                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.42f, 0f), new Vector3(0.3f, 0.2f, 0.31f), Hex("#7d8490"));
+                    model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.44f, 0.15f), new Vector3(0.06f, 0.06f, 0.04f), Hex("#ffd27a"), glow: true);
+                    return shape;
+                case ScoutDisplay:
+                    // Rennick: forest greens and a hood.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    Dress(model, chest: "#3d5a35", arms: "#3d5a35", legs: "#3a3428", hair: "#2a2420");
+                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.74f, -0.03f), new Vector3(0.28f, 0.27f, 0.31f), Hex("#2f4a2a"));
+                    model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.05f, -0.14f), new Vector3(0.42f, 0.9f, 0.03f), Hex("#2f4a2a"), new Vector3(-6f, 0f, 0f));
+                    return shape;
+                case FishermanDisplay:
+                    // Old Pell: a Korrin in a blue jacket and an oilskin hat.
+                    shape = Humanoid(parent, "Korrin", out model);
+                    if (model == null) return shape;
+                    Dress(model, chest: "#4a6a8a", arms: "#4a6a8a", legs: "#4a4438", hair: "#d0ccc4");
+                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.47f, -0.02f), new Vector3(0.42f, 0.012f, 0.42f), Hex("#c9a640"));
+                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.49f, 0f), new Vector3(0.27f, 0.14f, 0.27f), Hex("#c9a640"));
+                    return shape;
+                case PriestDisplay:
+                    // Brother Aldous: a white robe with a gold sash.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    Dress(model, chest: "#ddd5bd", arms: "#ddd5bd", legs: "#cfc6ac", hair: "#7a6a5a", waist: "#c9a23e");
+                    return shape;
+                case SmithDisplay:
+                    // Gerta Hask: bare arms, a leather apron.
+                    shape = Humanoid(parent, "Korrin", out model);
+                    if (model == null) return shape;
+                    Dress(model, chest: "#6a4a3a", arms: "#d49a78", legs: "#4a3a2a", hair: "#c86a30");
+                    model.Attach("Spine", PrimitiveType.Cube, new Vector3(0f, 0.86f, 0.17f), new Vector3(0.42f, 0.6f, 0.03f), Hex("#5a3a22"));
+                    return shape;
+                case MirelingDisplay:
+                case MirelingOracleDisplay:
+                {
+                    // Fish-folk: a hunched Korrin body in teal scales, a fin crest and big glowing eyes.
+                    shape = Humanoid(parent, "Korrin", out model);
+                    if (model == null) return shape;
+                    var scales = displayId == MirelingOracleDisplay ? "#5a7a9a" : "#4f8a7a";
+                    Dress(model, chest: scales, arms: scales, legs: "#6a9a80", hair: "#2f5a4a", waist: displayId == MirelingOracleDisplay ? "#7a4a8a" : "#5a6a30",
+                        skin: scales, hands: scales, feet: "#3f6a5a");
+                    model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.48f, -0.02f), new Vector3(0.03f, 0.2f, 0.3f), Hex("#2f5a4a"));
+                    foreach (var x in new[] { -0.07f, 0.07f })
+                        model.Attach("Head", PrimitiveType.Sphere, new Vector3(x, 1.39f, 0.13f), Vector3.one * 0.07f, Hex("#f0e070"), glow: true);
+                    if (displayId == MirelingOracleDisplay)
+                        model.Attach("Chest", PrimitiveType.Sphere, new Vector3(0f, 1.0f, 0.17f), Vector3.one * 0.08f, Hex("#c8f0ff"), glow: true);
+                    return shape;
+                }
+                case DrownedDisplay:
+                    // The drowned dead of old Hollowmere: gray-green skin, rotten clothes, glowing eyes.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    Dress(model, chest: "#3a4038", arms: "#8a9a8a", legs: "#2f352f", hair: "#2a3a2a", skin: "#8a9a8a", hands: "#8a9a8a", feet: "#2a2a2a");
+                    foreach (var x in new[] { -0.045f, 0.045f })
+                        model.Attach("Head", PrimitiveType.Cube, new Vector3(x, 1.72f, 0.126f), new Vector3(0.035f, 0.018f, 0.01f), Hex("#7ff2ff"), glow: true);
+                    return shape;
+                case LieutenantDisplay:
+                {
+                    // Lieutenant Vorn: black and red, a dark helmet, a head taller than his bandits.
+                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    if (model == null) return shape;
+                    var dark = Hex("#2a2a2c");
+                    Dress(model, chest: "#5a1a1a", arms: "#2a2a2c", legs: "#2a2a2c", hair: "#1a1a1a", hands: "#2a2a2c");
+                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.77f, 0f), new Vector3(0.28f, 0.22f, 0.3f), Hex("#3a3c42"));
+                    foreach (var x in new[] { -0.23f, 0.23f })
+                        model.Attach("Chest", PrimitiveType.Sphere, new Vector3(x, 1.46f, 0f), new Vector3(0.22f, 0.14f, 0.24f), dark);
+                    return Scaled(shape, model, 1.15f);
+                }
+                case GloomjawDisplay:
+                    return Scaled(Creature(parent, displayId, "Gloomjaw", 1.2f, walkSpeed: 1f, runSpeed: 3f, out model), model, 3f);
+                case SnapperDisplay:
+                    return Scaled(Creature(parent, displayId, "Crocodile", 1.0f, walkSpeed: 1f, runSpeed: 3f, out model), model, 1.2f);
+                case BoarDisplay:
+                    return Creature(parent, displayId, "Boar", 0.7f, walkSpeed: 1.1f, runSpeed: 3.8f, out model);
+                case SpiderDisplay:
+                    return Scaled(Creature(parent, displayId, "Spider", 0.8f, walkSpeed: 1.2f, runSpeed: 3.5f, out model), model, 1.3f);
+                case BearDisplay:
+                    return Creature(parent, displayId, "Bear", 1.0f, walkSpeed: 1.4f, runSpeed: 4.5f, out model);
+                case ShardlingDisplay:
+                    return Creature(parent, displayId, "Shardling", 0.7f, walkSpeed: 1.5f, runSpeed: 4f, out model);
                 default:
                     return Placeholder(parent, displayId);
             }
+        }
+
+        /// <summary>Recolors the gear regions of a humanoid (null keeps the model's color).</summary>
+        private static void Dress(DisplayModel model, string chest = null, string arms = null, string legs = null, string hair = null,
+            string waist = null, string skin = null, string hands = null, string feet = null)
+        {
+            if (chest != null) model.Tint("Chest", Hex(chest));
+            if (arms != null) model.Tint("Arms", Hex(arms));
+            if (legs != null) model.Tint("Legs", Hex(legs));
+            if (hair != null) model.Tint("Hair", Hex(hair));
+            if (waist != null) model.Tint("Waist", Hex(waist));
+            if (skin != null) model.Tint("Skin", Hex(skin));
+            if (hands != null) model.Tint("Hands", Hex(hands));
+            if (feet != null) model.Tint("Feet", Hex(feet));
+        }
+
+        /// <summary>Scales a model (after its attachments are placed); bigger strides play slower.</summary>
+        private static DisplayShape Scaled(DisplayShape shape, DisplayModel model, float scale)
+        {
+            if (model == null) return shape;
+            model.Root.localScale *= scale;
+            model.Height *= scale;
+            model.WalkSpeed *= scale;
+            model.RunSpeed *= scale;
+            shape.Height *= scale;
+            shape.Radius *= scale;
+            return shape;
         }
 
         /// <summary>A humanoid race with the shared humanoid clips (a placeholder if the art is missing).</summary>

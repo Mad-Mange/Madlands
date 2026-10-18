@@ -47,17 +47,20 @@ namespace Madlands.Client.Editor
             return summary.result == BuildResult.Succeeded;
         }
 
-        /// <summary>Renders the test world from a vantage point to builds/screenshots/editor_world.png.</summary>
+        /// <summary>Renders Hollowmere from a few vantage points to builds/screenshots/editor_*.png.</summary>
         public static void CaptureWorldScreenshot()
         {
             try
             {
-                EditorSceneManager.OpenScene(TestWorldBuilder.ScenePath);
+                EditorSceneManager.OpenScene(HollowmereBuilder.ScenePath);
                 Directory.CreateDirectory(ScreenshotDir);
                 // Heights are relative to the ground so the shots stay valid when the terrain changes.
                 Vector3 OnGround(float x, float z, float above) => new Vector3(x, TerrainUtil.GroundHeight(new Vector3(x, 0f, z), 0f) + above, z);
-                Capture(OnGround(-40f, -90f, 30f), OnGround(0f, 0f, 2f), Path.Combine(ScreenshotDir, "editor_world.png"));
-                Capture(OnGround(4f, -12f, 4f), OnGround(0f, 12f, 3f), Path.Combine(ScreenshotDir, "editor_spawn.png"));
+                var village = HollowmereBuilder.Village;
+                Capture(OnGround(village.x - 60f, village.y - 70f, 45f), OnGround(village.x + 10f, village.y + 60f, 0f), Path.Combine(ScreenshotDir, "editor_world.png"));
+                Capture(OnGround(village.x + 6f, village.y - 22f, 4f), OnGround(village.x, village.y + 20f, 3f), Path.Combine(ScreenshotDir, "editor_spawn.png"));
+                Capture(OnGround(-120f, 90f, 25f), OnGround(-280f, 220f, 5f), Path.Combine(ScreenshotDir, "editor_greywood.png"));
+                Capture(OnGround(-60f, 250f, 20f), OnGround(20f, 340f, 2f), Path.Combine(ScreenshotDir, "editor_ruins.png"));
                 CaptureTopDown(Path.Combine(ScreenshotDir, "editor_topdown.png"));
                 EditorApplication.Exit(0);
             }
@@ -75,10 +78,15 @@ namespace Madlands.Client.Editor
             RenderSettings.fog = false;
             try
             {
-                Capture(new Vector3(0f, 400f, 0f), Vector3.zero, path, 1024, 1024, cam =>
+                // The whole terrain, whatever its size.
+                var terrain = Terrain.activeTerrain;
+                var size = terrain != null ? terrain.terrainData.size : new Vector3(512f, 0f, 512f);
+                var center = terrain != null ? terrain.GetPosition() + new Vector3(size.x / 2f, 0f, size.z / 2f) : Vector3.zero;
+                Capture(center + new Vector3(0f, 400f, 0f), center, path, 1024, 1024, cam =>
                 {
                     cam.orthographic = true;
-                    cam.orthographicSize = 256f;
+                    cam.orthographicSize = size.x / 2f;
+                    cam.farClipPlane = 1000f;
                     cam.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
                 });
             }
