@@ -41,6 +41,9 @@ public sealed class ChatHandler
         Add("cast", "<spell id>", "Casts any spell at your target, known or not.", Cast);
         Add("info", "", "Shows details about your target.", Info);
         Add("who", "", "Lists the players online.", Who);
+        Add("additem", "<item id or name> [count]", "Puts items into your bags.", AddItem);
+        Add("money", "<copper>", "Gives you money (negative takes it).", Money);
+        Add("quest", "add|complete|reset <quest id>", "Adds a quest to your log, completes its objectives, or forgets it.", Quest);
     }
 
     private void Add(string name, string usage, string help, Func<Player, string[], long, string?> run) =>
@@ -275,6 +278,65 @@ public sealed class ChatHandler
             if (c.Threat.Count > 0) sb.Append("\nThreat: " + string.Join(", ", c.Threat.Units.Select(u => $"{u.Name} {c.Threat.Get(u):0}")));
         }
         return sb.ToString();
+    }
+
+    private static string? AddItem(Player player, string[] args, long now)
+    {
+        if (args.Length is < 1 or > 2) throw new FormatException();
+        var map = player.Map!;
+        var items = map.Content.Items.Values;
+        var item = uint.TryParse(args[0], out uint id)
+            ? items.FirstOrDefault(i => i.Id == id)
+            : items.FirstOrDefault(i => i.Name.Contains(args[0], StringComparison.OrdinalIgnoreCase));
+        if (item is null) return $"No item '{args[0]}'.";
+        int count = args.Length == 2 ? Math.Clamp(ParseInt(args[1]), 1, 1000) : 1;
+        int added = map.Items.Give(player, item, count, ReceiveSource.Other);
+        map.Items.Flush(player);
+        return added == count ? $"Added {count} x {item.Name}." : $"Added {added} of {count} x {item.Name}: your bags are full.";
+    }
+
+    private static string? Money(Player player, string[] args, long now)
+    {
+        if (args.Length != 1) throw new FormatException();
+        long amount = long.Parse(args[0], NumberStyles.Integer, CultureInfo.InvariantCulture);
+        player.Map!.Items.GiveMoney(player, amount, ReceiveSource.Other);
+        return $"You have {Shared.Game.Money.Format(player.Inventory.Money)}.";
+    }
+
+    private static string? Quest(Player player, string[] args, long now)
+    {
+        if (args.Length != 2) throw new FormatException();
+        var map = player.Map!;
+        if (!map.Content.Quests.TryGetValue((uint)ParseInt(args[1]), out var quest)) return $"No quest {args[1]}.";
+        switch (args[0].ToLowerInvariant())
+        {
+            case "add":
+                if (player.Quests.Find(quest.Id) is not null) return $"{quest.Title} is already in your log.";
+                if (player.Quests.IsFull) return "Your quest log is full.";
+                player.Quests.Unreward(quest.Id);
+                player.Quests.Add(quest);
+                break;
+            case "complete":
+                if (player.Quests.Find(quest.Id) is not { } progress) return $"{quest.Title} is not in your log.";
+                for (int i = 0; i < quest.Objectives.Count; i++)
+                {
+                    var o = quest.Objectives[i];
+                    if (o.Type == ObjectiveType.Collect && map.Content.Items.TryGetValue(o.Item, out var item))
+                        map.Items.Give(player, item, Math.Max(0, o.Count - player.Inventory.Count(o.Item)), ReceiveSource.Other);
+                    else progress.Counts[i] = o.Count;
+                }
+                map.Items.Flush(player);
+                break;
+            case "reset":
+                player.Quests.Remove(quest.Id);
+                player.Quests.Unreward(quest.Id);
+                break;
+            default:
+                throw new FormatException();
+        }
+        map.Quests.SendLog(player);
+        map.Quests.RefreshStatuses(player);
+        return $"Quest {quest.Id} '{quest.Title}': {args[0].ToLowerInvariant()} done.";
     }
 
     private string? Who(Player player, string[] args, long now)

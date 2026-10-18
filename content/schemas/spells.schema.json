@@ -109,7 +109,8 @@
                 "ignoreLineOfSight",
                 "autoAttack",
                 "harmfulAura",
-                "hidden"
+                "hidden",
+                "notInCombat"
               ]
             }
           },
@@ -230,7 +231,8 @@
                         "modDamageDone",
                         "stun",
                         "root",
-                        "absorb"
+                        "absorb",
+                        "periodicEnergize"
                       ]
                     },
                     "amount": {
@@ -253,9 +255,22 @@
                     },
                     "percent": {
                       "type": "boolean"
+                    },
+                    "power": {
+                      "enum": [
+                        "none",
+                        "mana",
+                        "rage",
+                        "energy"
+                      ],
+                      "description": "periodicEnergize: which power."
                     }
                   }
                 }
+              },
+              "breakOnCombat": {
+                "type": "boolean",
+                "description": "Removed when the unit enters combat (eating, drinking)."
               }
             }
           }

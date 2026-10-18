@@ -118,6 +118,24 @@ public abstract class Unit : Entity
         set { if (Values.ClassId != value) { Values.ClassId = value; Dirty |= UnitFieldMask.ClassId; } }
     }
 
+    public NpcFlags NpcFlags
+    {
+        get => Values.NpcFlags;
+        set { if (Values.NpcFlags != value) { Values.NpcFlags = value; Dirty |= UnitFieldMask.NpcFlags; } }
+    }
+
+    public uint MainHandDisplay
+    {
+        get => Values.MainHandDisplay;
+        set { if (Values.MainHandDisplay != value) { Values.MainHandDisplay = value; Dirty |= UnitFieldMask.MainHandDisplay; } }
+    }
+
+    public uint OffHandDisplay
+    {
+        get => Values.OffHandDisplay;
+        set { if (Values.OffHandDisplay != value) { Values.OffHandDisplay = value; Dirty |= UnitFieldMask.OffHandDisplay; } }
+    }
+
     public UnitFlags Flags => Values.Flags;
     public bool HasFlag(UnitFlags flag) => (Values.Flags & flag) != 0;
 

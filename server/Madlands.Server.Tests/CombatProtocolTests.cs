@@ -21,6 +21,9 @@ public class CombatProtocolTests
         Target = EntityGuid.Create(EntityType.Creature, 9),
         SpeedPercent = 60,
         ClassId = 3,
+        NpcFlags = NpcFlags.QuestGiver | NpcFlags.Vendor,
+        MainHandDisplay = 2004,
+        OffHandDisplay = 2006,
     };
 
     private static readonly EntityGuid Player = EntityGuid.Create(EntityType.Player, 5);

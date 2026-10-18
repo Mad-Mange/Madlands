@@ -3,26 +3,46 @@
   "creatures": [
     {
       "id": 1, "name": "Mire Frog", "displayId": 101, "minLevel": 1, "maxLevel": 2, "faction": 3,
-      "health": 0.8, "damage": 0.7, "runSpeed": 6, "respawnSeconds": 30, "corpseSeconds": 15
+      "health": 0.8, "damage": 0.7, "runSpeed": 6, "respawnSeconds": 30, "corpseSeconds": 15, "loot": 1
     },
     {
       "id": 2, "name": "Dusk Wolf", "displayId": 102, "minLevel": 2, "maxLevel": 3, "faction": 2,
-      "aggroRadius": 14, "runSpeed": 7.5, "respawnSeconds": 45,
+      "aggroRadius": 14, "runSpeed": 7.5, "respawnSeconds": 45, "loot": 2,
       "spells": [ { "spell": 900, "chance": 0.3, "cooldownMs": 10000 } ]
     },
     {
       "id": 3, "name": "Shard Bandit", "displayId": 103, "minLevel": 3, "maxLevel": 4, "faction": 2,
-      "aggroRadius": 13, "health": 1.1, "armor": 1.3, "respawnSeconds": 60,
+      "aggroRadius": 13, "health": 1.1, "armor": 1.3, "respawnSeconds": 60, "loot": 3,
+      "equipment": { "mainHand": 1010 },
       "spells": [ { "spell": 902, "chance": 0.25, "cooldownMs": 9000 } ]
     },
     {
       "id": 4, "name": "Bandit Shardcaster", "displayId": 104, "minLevel": 4, "maxLevel": 4, "faction": 2,
-      "ai": "caster", "aggroRadius": 16, "health": 0.85, "damage": 0.6, "mana": 1, "respawnSeconds": 60,
+      "ai": "caster", "aggroRadius": 16, "health": 0.85, "damage": 0.6, "mana": 1, "respawnSeconds": 60, "loot": 4,
+      "equipment": { "mainHand": 1002 },
       "spells": [ { "spell": 901, "chance": 1, "cooldownMs": 0 } ]
     },
     {
       "id": 5, "name": "Training Dummy", "displayId": 105, "minLevel": 5, "maxLevel": 5, "faction": 3,
       "ai": "dummy", "health": 20, "armor": 0, "damage": 0, "xp": 0, "respawnSeconds": 10, "callForHelpRadius": 0
+    },
+
+    {
+      "id": 10, "name": "Captain Edda Brand", "displayId": 110, "minLevel": 12, "maxLevel": 12, "faction": 1,
+      "health": 8, "damage": 2, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "equipment": { "mainHand": 1001, "offHand": 1030 },
+      "gossip": "Captain Edda Brand, Mirewatch Post. If you can swing a blade or throw a spell, I have work for you. If you can't, stay out from under my feet."
+    },
+    {
+      "id": 11, "name": "Old Tamsin", "displayId": 111, "minLevel": 8, "maxLevel": 8, "faction": 1,
+      "health": 4, "damage": 1, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "equipment": { "mainHand": 1002 },
+      "gossip": "Sit, sit. The mire is talking tonight, and nobody listens to it but me."
+    },
+    {
+      "id": 12, "name": "Quartermaster Holt", "displayId": 112, "minLevel": 10, "maxLevel": 10, "faction": 1,
+      "health": 6, "damage": 1.5, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
+      "vendor": [4001, 4002, 4005, 4003, 4004, 5001, 1011, 1030, 1301, 1302, 1303]
     }
   ]
 }

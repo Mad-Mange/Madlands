@@ -1,4 +1,5 @@
 using Madlands.Content;
+using Madlands.Server.Items;
 using Madlands.Server.World;
 using Madlands.Shared.Game;
 
@@ -104,25 +105,51 @@ public static class StatFormulas
     public const int MaxRage = 100;
     public const int MaxEnergy = 100;
 
-    public static void ComputePlayer(UnitStats s, ClassDefinition cls, RaceDefinition race, int level, AuraModifiers mods)
+    /// <summary>
+    /// Base (class, race, level) plus the flat stats of worn items, then aura modifiers (flat, then percent).
+    /// The main-hand weapon sets the swing damage and speed; without one the class fights unarmed.
+    /// </summary>
+    public static void ComputePlayer(UnitStats s, ClassDefinition cls, RaceDefinition race, int level, AuraModifiers mods, Inventory? gear = null)
     {
         int levelsAbove1 = Math.Max(0, level - 1);
+        Span<float> items = stackalloc float[UnitStats.Count];
+        ItemWeaponDefinition? weapon = null;
+        if (gear is not null)
+        {
+            for (var slot = EquipSlot.Head; slot <= EquipSlot.OffHand; slot++)
+            {
+                if (gear.Equipped(slot) is not { } worn) continue;
+                for (int i = 0; i < UnitStats.Count; i++) items[i] += worn.Item.Stats[(StatType)i];
+                if (slot == EquipSlot.MainHand) weapon = worn.Item.Weapon;
+            }
+        }
+
         for (int i = 0; i <= (int)StatType.Spirit; i++)
         {
             var stat = (StatType)i;
-            float baseValue = cls.BaseStats[stat] + cls.StatsPerLevel[stat] * levelsAbove1 + race.Stats[stat];
+            float baseValue = cls.BaseStats[stat] + cls.StatsPerLevel[stat] * levelsAbove1 + race.Stats[stat] + items[i];
             s.Values[i] = MathF.Max(0f, mods.Apply(stat, baseValue));
         }
-        s.Values[(int)StatType.Armor] = MathF.Max(0f, mods.Apply(StatType.Armor, s.Agility * 2f));
-        s.Values[(int)StatType.AttackPower] = MathF.Max(0f, mods.Apply(StatType.AttackPower, MathF.Max(0f, s.Strength * 2f - 20f)));
-        s.Values[(int)StatType.SpellPower] = MathF.Max(0f, mods.Apply(StatType.SpellPower, 0f));
+        s.Values[(int)StatType.Armor] = MathF.Max(0f, mods.Apply(StatType.Armor, s.Agility * 2f + items[(int)StatType.Armor]));
+        s.Values[(int)StatType.AttackPower] = MathF.Max(0f, mods.Apply(StatType.AttackPower,
+            MathF.Max(0f, s.Strength * 2f - 20f) + items[(int)StatType.AttackPower]));
+        s.Values[(int)StatType.SpellPower] = MathF.Max(0f, mods.Apply(StatType.SpellPower, items[(int)StatType.SpellPower]));
         s.CritChance = 5f + s.Agility / 20f;
         s.SpellCritChance = 5f + s.Intellect / 30f;
         s.DodgeChance = 5f + s.Agility / 20f;
         s.ParryChance = 5f;
-        s.WeaponMin = cls.Weapon.MinDamage + cls.Weapon.DamagePerLevel * levelsAbove1;
-        s.WeaponMax = cls.Weapon.MaxDamage + cls.Weapon.DamagePerLevel * levelsAbove1;
-        s.AttackSpeedMs = cls.Weapon.SpeedMs;
+        if (weapon is not null)
+        {
+            s.WeaponMin = weapon.MinDamage;
+            s.WeaponMax = weapon.MaxDamage;
+            s.AttackSpeedMs = weapon.SpeedMs;
+        }
+        else
+        {
+            s.WeaponMin = cls.Unarmed.MinDamage + cls.Unarmed.DamagePerLevel * levelsAbove1;
+            s.WeaponMax = cls.Unarmed.MaxDamage + cls.Unarmed.DamagePerLevel * levelsAbove1;
+            s.AttackSpeedMs = cls.Unarmed.SpeedMs;
+        }
     }
 
     public static int PlayerMaxHealth(ClassDefinition cls, int level, UnitStats s) =>

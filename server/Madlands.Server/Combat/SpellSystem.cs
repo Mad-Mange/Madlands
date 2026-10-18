@@ -134,6 +134,7 @@ public sealed class SpellSystem
             if (spell.GcdMs > 0 && now < caster.GcdEndsMs) return CastResult.NotReady;
             if (caster.Cooldowns.TryGetValue(spell.Id, out long readyAt) && now < readyAt) return CastResult.OnCooldown;
             if (caster is Player && spell.CastTimeMs > 0 && caster.Movement.IsMoving) return CastResult.Moving;
+            if (spell.Has(SpellFlags.NotInCombat) && caster.IsInCombat) return CastResult.InCombat;
         }
         if (!god && spell.Cost > 0 && (caster.PowerType != spell.PowerType || caster.Power < spell.Cost)) return CastResult.NoPower;
 

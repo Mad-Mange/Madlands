@@ -9,15 +9,27 @@ namespace Madlands.ClientCore
     {
         private readonly Dictionary<uint, SpellInfo> _spells = new Dictionary<uint, SpellInfo>();
         private readonly Dictionary<byte, ClassInfo> _classes = new Dictionary<byte, ClassInfo>();
+        private readonly Dictionary<uint, ItemInfo> _items = new Dictionary<uint, ItemInfo>();
+        private readonly Dictionary<uint, QuestInfo> _quests = new Dictionary<uint, QuestInfo>();
         private readonly List<int> _xpToNext = new List<int>();
 
         public FactionTable Factions { get; private set; } = new FactionTable();
         public IEnumerable<SpellInfo> Spells => _spells.Values;
+        public IEnumerable<ItemInfo> Items => _items.Values;
+        public IEnumerable<QuestInfo> Quests => _quests.Values;
         public int MaxLevel => _xpToNext.Count + 1;
 
         public bool TryGetSpell(uint id, out SpellInfo spell) => _spells.TryGetValue(id, out spell);
 
         public SpellInfo GetSpell(uint id) => _spells.TryGetValue(id, out var s) ? s : null;
+
+        public bool TryGetItem(uint id, out ItemInfo item) => _items.TryGetValue(id, out item);
+
+        public ItemInfo GetItem(uint id) => _items.TryGetValue(id, out var i) ? i : null;
+
+        public bool TryGetQuest(uint id, out QuestInfo quest) => _quests.TryGetValue(id, out quest);
+
+        public QuestInfo GetQuest(uint id) => _quests.TryGetValue(id, out var q) ? q : null;
 
         public string ClassName(byte id) => _classes.TryGetValue(id, out var c) ? c.Name : "";
 
@@ -35,6 +47,10 @@ namespace Madlands.ClientCore
             Factions = new FactionTable(data.Factions);
             _xpToNext.Clear();
             _xpToNext.AddRange(data.XpToNextLevel);
+            _items.Clear();
+            foreach (var i in data.Items) _items[i.Id] = i;
+            _quests.Clear();
+            foreach (var q in data.Quests) _quests[q.Id] = q;
         }
     }
 }

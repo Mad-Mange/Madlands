@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/items.schema.json",
+  "title": "Items (content/items.json)",
+  "description": "Weapons, armor, bags, consumables, quest items and junk. Prices are in copper (100 copper = 1 silver, 100 silver = 1 gold).",
+  "type": "object",
+  "required": [
+    "items"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "class"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Stable id stored in inventories. Never reuse."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Tooltip text (flavor, or what using it does)."
+          },
+          "icon": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Client icon id."
+          },
+          "displayId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Client display id when equipped (weapons in hand)."
+          },
+          "quality": {
+            "enum": [
+              "poor",
+              "common",
+              "uncommon",
+              "rare",
+              "epic"
+            ],
+            "default": "common"
+          },
+          "class": {
+            "enum": [
+              "junk",
+              "weapon",
+              "armor",
+              "consumable",
+              "container",
+              "quest",
+              "tradeGoods"
+            ]
+          },
+          "slot": {
+            "enum": [
+              "none",
+              "head",
+              "neck",
+              "shoulders",
+              "back",
+              "chest",
+              "wrists",
+              "hands",
+              "waist",
+              "legs",
+              "feet",
+              "finger",
+              "trinket",
+              "mainHand",
+              "offHand",
+              "twoHand",
+              "bag"
+            ],
+            "default": "none",
+            "description": "Where it is equipped. mainHand and twoHand need a weapon section; offHand is a shield or held item; bag needs bagSlots."
+          },
+          "requiredLevel": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "classes": {
+            "type": "array",
+            "description": "Class ids that may use it; empty = everyone.",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "stackSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 1
+          },
+          "buyPrice": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Copper a vendor charges."
+          },
+          "sellPrice": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Copper a vendor pays; 0 = cannot be sold."
+          },
+          "stats": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Flat stats added while worn.",
+            "properties": {
+              "strength": {
+                "type": "integer"
+              },
+              "agility": {
+                "type": "integer"
+              },
+              "stamina": {
+                "type": "integer"
+              },
+              "intellect": {
+                "type": "integer"
+              },
+              "spirit": {
+                "type": "integer"
+              },
+              "armor": {
+                "type": "integer"
+              },
+              "attackPower": {
+                "type": "integer"
+              },
+              "spellPower": {
+                "type": "integer"
+              }
+            }
+          },
+          "weapon": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "minDamage",
+              "maxDamage"
+            ],
+            "properties": {
+              "minDamage": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxDamage": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "speedMs": {
+                "type": "integer",
+                "minimum": 1000,
+                "maximum": 5000,
+                "default": 2000
+              }
+            }
+          },
+          "useSpell": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Instant spell cast when used; one is taken from the stack."
+          },
+          "bagSlots": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 36
+          }
+        }
+      }
+    }
+  }
+}

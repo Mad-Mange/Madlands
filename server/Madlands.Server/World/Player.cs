@@ -1,6 +1,8 @@
 using Madlands.Content;
 using Madlands.Server.Combat;
+using Madlands.Server.Items;
 using Madlands.Server.Net;
+using Madlands.Server.Quests;
 using Madlands.Shared;
 using Madlands.Shared.Game;
 
@@ -37,6 +39,15 @@ public sealed class Player : Unit
     public ushort CorrectionId;
     public long NextSaveAtMs;
 
+    /// <summary>Equipment, bags and money.</summary>
+    public Inventory Inventory { get; } = new();
+    public QuestLog Quests { get; } = new();
+    /// <summary>The corpse whose loot window is open, if any.</summary>
+    public Creature? Looting;
+    /// <summary>The class's starting items were handed out (first login).</summary>
+    public bool StarterKitGiven;
+    public long NextExploreCheckMs;
+
     /// <summary>Entities this player's client currently has spawned (its area of interest).</summary>
     public Dictionary<EntityGuid, Entity> Known { get; } = new();
 
@@ -60,10 +71,12 @@ public sealed class Player : Unit
     public override void RecalculateStats()
     {
         _mods.Collect(Auras);
-        StatFormulas.ComputePlayer(Stats, Class, Race, Level, _mods);
+        StatFormulas.ComputePlayer(Stats, Class, Race, Level, _mods, Inventory);
         MaxHealth = StatFormulas.PlayerMaxHealth(Class, Level, Stats);
         MaxPower = StatFormulas.PlayerMaxPower(Class, Level, Stats);
         ApplyAuraModifiers(_mods);
+        MainHandDisplay = Inventory.Equipped(EquipSlot.MainHand)?.Item.DisplayId ?? 0;
+        OffHandDisplay = Inventory.Equipped(EquipSlot.OffHand)?.Item.DisplayId ?? 0;
         if (GmSpeed != 1f) SpeedPercent = (ushort)Math.Clamp(SpeedPercent * GmSpeed, 10, 1000);
         StatsDirty = true;
     }

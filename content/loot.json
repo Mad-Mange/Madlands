@@ -1,0 +1,47 @@
+{
+  "$schema": "schemas/loot.schema.json",
+  "lootTables": [
+    {
+      "id": 1, "name": "Mire Frog",
+      "money": { "min": 1, "max": 4 },
+      "items": [
+        { "item": 2001, "chance": 0.5 },
+        { "item": 3001, "chance": 0.65 }
+      ],
+      "groups": [ { "chance": 0.03, "items": [1201, 1202, 1203, 1222, 1225] } ]
+    },
+    {
+      "id": 2, "name": "Dusk Wolf",
+      "money": { "min": 2, "max": 9 },
+      "items": [
+        { "item": 2002, "chance": 0.35 },
+        { "item": 2003, "chance": 0.55 }
+      ],
+      "groups": [ { "chance": 0.05, "items": [1220, 1222, 1225, 1227, 1228] } ]
+    },
+    {
+      "id": 3, "name": "Shard Bandit",
+      "money": { "min": 8, "max": 22 },
+      "items": [
+        { "item": 2004, "chance": 0.3 },
+        { "item": 2005, "chance": 0.2 },
+        { "item": 3002, "chance": 0.55 },
+        { "item": 4001, "chance": 0.15, "min": 1, "max": 2 },
+        { "item": 1010, "chance": 0.05 }
+      ],
+      "groups": [ { "chance": 0.08, "items": [1220, 1221, 1223, 1224, 1226, 1228] } ]
+    },
+    {
+      "id": 4, "name": "Bandit Shardcaster",
+      "money": { "min": 10, "max": 28 },
+      "items": [
+        { "item": 2005, "chance": 0.35 },
+        { "item": 3002, "chance": 0.7 },
+        { "item": 4002, "chance": 0.2, "min": 1, "max": 2 },
+        { "item": 4004, "chance": 0.06 },
+        { "item": 5003, "chance": 0.03 }
+      ],
+      "groups": [ { "chance": 0.12, "items": [1203, 1221, 1223, 1224, 1226] } ]
+    }
+  ]
+}

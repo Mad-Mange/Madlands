@@ -77,12 +77,44 @@ internal static class AccountAdminChecks
         Assert.Equal("other-hash", (await db.FindAccountAsync("bystander"))!.PasswordHash);
         Assert.False(await db.SetPasswordAsync("nobody", "hash"));
     }
+
+    private static CharacterRecord Template(long accountId, string name) => new(0, accountId, name, 1, 1, 1, 1, 0, 0, 0, 0);
+
+    /// <summary>A save writes position, combat state, money, items and quests; the next save replaces them all.</summary>
+    public static async Task SaveCharacterState(IGameDatabase db)
+    {
+        long account = (await db.CreateAccountAsync("saver", "h"))!.Value;
+        var (_, c) = await db.CreateCharacterAsync(Template(account, "Saver"), 10);
+        Assert.Equal((0, (int?)null, (int?)null, 0L, false), (c!.Xp, c.Health, c.Power, c.Money, c.StarterKit));
+        Assert.Empty((await db.LoadCharacterDataAsync(c.Id)).Items);
+
+        var items = new[] { new ItemRecord(0, 14, 1001, 1), new ItemRecord(0, 16, 5001, 1), new ItemRecord(1, 3, 4001, 7), new ItemRecord(2, 5, 2003, 4) };
+        var quests = new[] { new QuestRecord(3, false, new[] { 5 }), new QuestRecord(7, false, new[] { 2, 0, 1 }), new QuestRecord(1, true, Array.Empty<int>()) };
+        await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12, 123_456, true, items, quests));
+        var loaded = await db.LoadCharacterAsync(account, c.Id);
+        Assert.Equal((-12.5f, 30.25f, 99f, 3.1f, (byte)7), (loaded!.X, loaded.Y, loaded.Z, loaded.Yaw, loaded.Level));
+        Assert.Equal((345, (int?)80, (int?)12, 123_456L, true), (loaded.Xp, loaded.Health, loaded.Power, loaded.Money, loaded.StarterKit));
+
+        var data = await db.LoadCharacterDataAsync(c.Id);
+        Assert.Equal(items.OrderBy(i => i.Container).ThenBy(i => i.Slot), data.Items.OrderBy(i => i.Container).ThenBy(i => i.Slot));
+        Assert.Equal(quests.Select(q => (q.QuestId, q.Rewarded, string.Join(",", q.Progress))).OrderBy(q => q.QuestId),
+            data.Quests.Select(q => (q.QuestId, q.Rewarded, string.Join(",", q.Progress))).OrderBy(q => q.QuestId));
+
+        await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, 0, 0, 0, 0, 7, 345, 80, 12, 5, true, new[] { new ItemRecord(1, 0, 1002, 1) }, Array.Empty<QuestRecord>()));
+        data = await db.LoadCharacterDataAsync(c.Id);
+        Assert.Equal(new[] { new ItemRecord(1, 0, 1002, 1) }, data.Items);
+        Assert.Empty(data.Quests);
+        Assert.Equal(5L, (await db.LoadCharacterAsync(account, c.Id))!.Money);
+    }
 }
 
 public class InMemoryDatabaseTests
 {
     [Fact]
     public Task Set_password_replaces_the_hash_and_ends_sessions() => AccountAdminChecks.SetPassword(new InMemoryGameDatabase());
+
+    [Fact]
+    public Task Save_and_load_character_state_items_and_quests() => AccountAdminChecks.SaveCharacterState(new InMemoryGameDatabase());
 }
 
 public class PostgresDatabaseTests : IAsyncLifetime
@@ -148,16 +180,7 @@ public class PostgresDatabaseTests : IAsyncLifetime
     }
 
     [PostgresFact]
-    public async Task Save_updates_position_level_and_combat_state()
-    {
-        long account = (await Db.CreateAccountAsync("saver", "h"))!.Value;
-        var (_, c) = await Db.CreateCharacterAsync(Template(account, "Saver"), 10);
-        Assert.Equal((0, (int?)null, (int?)null), (c!.Xp, c.Health, c.Power));
-        await Db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12));
-        var loaded = await Db.LoadCharacterAsync(account, c.Id);
-        Assert.Equal((-12.5f, 30.25f, 99f, 3.1f, (byte)7), (loaded!.X, loaded.Y, loaded.Z, loaded.Yaw, loaded.Level));
-        Assert.Equal((345, (int?)80, (int?)12), (loaded.Xp, loaded.Health, loaded.Power));
-    }
+    public Task Save_and_load_character_state_items_and_quests() => AccountAdminChecks.SaveCharacterState(Db);
 
     [PostgresFact]
     public Task Set_password_replaces_the_hash_and_ends_sessions() => AccountAdminChecks.SetPassword(Db);

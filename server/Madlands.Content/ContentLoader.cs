@@ -29,11 +29,17 @@ public static class ContentLoader
         var spells = LoadList<SpellFile, SpellDefinition>(Path.Combine(contentRoot, "spells.json"), f => f.Spells, errors);
         var creatures = LoadList<CreatureFile, CreatureDefinition>(Path.Combine(contentRoot, "creatures.json"), f => f.Creatures, errors);
         var levels = LoadFile<LevelTable>(Path.Combine(contentRoot, "levels.json"), errors) ?? new LevelTable();
+        var items = LoadList<ItemFile, ItemDefinition>(Path.Combine(contentRoot, "items.json"), f => f.Items, errors);
+        var loot = LoadList<LootFile, LootTableDefinition>(Path.Combine(contentRoot, "loot.json"), f => f.LootTables, errors);
+        var quests = LoadList<QuestFile, QuestDefinition>(Path.Combine(contentRoot, "quests.json"), f => f.Quests, errors);
 
         var content = new Validator(errors);
         content.Validate(maps, races, classes, factions, spells, creatures, levels);
+        content.ValidateItems(items, spells, classes, levels);
+        content.ValidateLoot(loot, items, creatures);
+        content.ValidateQuests(quests, creatures, items, classes, maps, levels, loot);
         if (errors.Count > 0) throw new ContentException(errors);
-        return new ContentDatabase(maps, races, classes, factions, spells, creatures, levels);
+        return new ContentDatabase(maps, races, classes, factions, spells, creatures, levels, items, loot, quests);
     }
 
     private sealed class RaceFile { public List<RaceDefinition> Races { get; set; } = new(); }
@@ -42,6 +48,9 @@ public static class ContentLoader
     private sealed class SpellFile { public List<SpellDefinition> Spells { get; set; } = new(); }
     private sealed class CreatureFile { public List<CreatureDefinition> Creatures { get; set; } = new(); }
     private sealed class SpawnFile { public List<SpawnDefinition> Spawns { get; set; } = new(); }
+    private sealed class ItemFile { public List<ItemDefinition> Items { get; set; } = new(); }
+    private sealed class LootFile { public List<LootTableDefinition> LootTables { get; set; } = new(); }
+    private sealed class QuestFile { public List<QuestDefinition> Quests { get; set; } = new(); }
 
     private static T? LoadFile<T>(string path, List<string> errors) where T : class
     {
@@ -193,8 +202,8 @@ public static class ContentLoader
                 string where = $"classes.json: class {c.Id} '{c.Name}'";
                 if (c.BaseHealth + c.BaseStats.Stamina <= 0) Error($"{where} would have no health");
                 if (c.PowerType == PowerType.Mana && c.BaseMana + c.BaseStats.Intellect <= 0) Error($"{where} uses mana but has none");
-                if (c.Weapon.MinDamage < 0 || c.Weapon.MaxDamage < c.Weapon.MinDamage || c.Weapon.SpeedMs < 500)
-                    Error($"{where}: weapon needs 0 <= minDamage <= maxDamage and speedMs >= 500");
+                if (c.Unarmed.MinDamage < 0 || c.Unarmed.MaxDamage < c.Unarmed.MinDamage || c.Unarmed.SpeedMs < 500)
+                    Error($"{where}: unarmed needs 0 <= minDamage <= maxDamage and speedMs >= 500");
                 foreach (var cs in c.Spells)
                 {
                     if (!spellsById.ContainsKey(cs.Spell)) Error($"{where} learns spell {cs.Spell}, which does not exist");
@@ -226,6 +235,191 @@ public static class ContentLoader
             foreach (var map in maps)
                 foreach (var spawn in map.Spawns.Where(s => !creatureIds.Contains(s.Creature)))
                     Error($"map {map.Id}: spawn refers to creature {spawn.Creature}, which does not exist");
+        }
+
+        public void ValidateItems(List<ItemDefinition> items, List<SpellDefinition> spells, List<ClassDefinition> classes, LevelTable levels)
+        {
+            ValidateIds("items.json", items.Select(i => ((long)i.Id, i.Name)), uint.MaxValue);
+            var spellsById = spells.GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
+            var classIds = classes.Select(c => c.Id).ToHashSet();
+            foreach (var item in items)
+            {
+                string where = $"items.json: item {item.Id} '{item.Name}'";
+                if (Bytes(item.Name) > SpellInfo.MaxNameBytes || Bytes(item.Description) > SpellInfo.MaxDescriptionBytes)
+                    Error($"{where}: name or description is too long");
+                if (item.StackSize < 1 || item.StackSize > 1000) Error($"{where}: stackSize must be in 1..1000");
+                if (item.StackSize > 1 && item.IsEquippable) Error($"{where}: equippable items do not stack");
+                if (item.BuyPrice < 0 || item.SellPrice < 0) Error($"{where}: prices must not be negative");
+                if (item.RequiredLevel < 0 || item.RequiredLevel > levels.MaxLevel) Error($"{where}: requiredLevel must be in 0..{levels.MaxLevel}");
+                foreach (var id in item.Classes.Where(id => !classIds.Contains(id))) Error($"{where} is limited to class {id}, which does not exist");
+                if (item.Class == ItemClass.Quest && item.SellPrice > 0) Error($"{where}: quest items cannot be sold (sellPrice 0)");
+
+                bool weaponSlot = item.Slot is InventoryType.MainHand or InventoryType.TwoHand;
+                if (weaponSlot && item.Weapon is null) Error($"{where}: a {item.Slot} item needs a weapon section");
+                if (!weaponSlot && item.Weapon is not null) Error($"{where}: only mainHand and twoHand items have a weapon section");
+                if (item.Weapon is { } w && (w.MinDamage < 0 || w.MaxDamage < w.MinDamage || w.SpeedMs < 1000 || w.SpeedMs > 5000))
+                    Error($"{where}: weapon needs 0 <= minDamage <= maxDamage and speedMs in 1000..5000");
+                if (item.IsBag != (item.Class == ItemClass.Container)) Error($"{where}: containers (class container) and bags (slot bag) go together");
+                if (item.IsBag && (item.BagSlots < 1 || item.BagSlots > Shared.GameConstants.MaxBagSize))
+                    Error($"{where}: bags need bagSlots in 1..{Shared.GameConstants.MaxBagSize}");
+                if (!item.IsBag && item.BagSlots != 0) Error($"{where}: only bags have bagSlots");
+                if (item.UseSpell != 0)
+                {
+                    if (!spellsById.TryGetValue(item.UseSpell, out var spell)) Error($"{where} uses spell {item.UseSpell}, which does not exist");
+                    else if (spell.CastTimeMs != 0) Error($"{where}: its use spell {item.UseSpell} must be instant");
+                    if (item.IsEquippable) Error($"{where}: equippable items cannot have a use spell (yet)");
+                }
+            }
+        }
+
+        public void ValidateLoot(List<LootTableDefinition> tables, List<ItemDefinition> items, List<CreatureDefinition> creatures)
+        {
+            ValidateIds("loot.json", tables.Select(t => ((long)t.Id, t.Name)), int.MaxValue);
+            var itemsById = items.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.First());
+            var tableIds = tables.Select(t => t.Id).ToHashSet();
+            foreach (var t in tables)
+            {
+                string where = $"loot.json: table {t.Id} '{t.Name}'";
+                if (t.Money is { } m && (m.Min < 0 || m.Max < m.Min)) Error($"{where}: money needs 0 <= min <= max");
+                if (t.Items.Count + t.Groups.Count > Shared.Net.LootWindow.MaxEntries) Error($"{where}: too many entries");
+                foreach (var e in t.Items)
+                {
+                    if (!itemsById.TryGetValue(e.Item, out var item)) Error($"{where} drops item {e.Item}, which does not exist");
+                    if (e.Chance <= 0 || e.Chance > 1) Error($"{where}: item {e.Item} chance must be in (0, 1]");
+                    if (e.Min < 1 || e.Max < e.Min || (item is not null && e.Max > item.StackSize)) Error($"{where}: item {e.Item} needs 1 <= min <= max <= its stack size");
+                }
+                foreach (var g in t.Groups)
+                {
+                    if (g.Chance <= 0 || g.Chance > 1) Error($"{where}: group chance must be in (0, 1]");
+                    if (g.Items.Count == 0) Error($"{where}: a group needs items");
+                    foreach (var id in g.Items)
+                    {
+                        if (!itemsById.TryGetValue(id, out var item)) Error($"{where}: group item {id} does not exist");
+                        else if (item.Class == ItemClass.Quest) Error($"{where}: quest item {id} cannot be in a group");
+                    }
+                }
+            }
+
+            foreach (var c in creatures)
+            {
+                string where = $"creatures.json: creature {c.Id} '{c.Name}'";
+                if (c.Loot != 0 && !tableIds.Contains(c.Loot)) Error($"{where} has loot table {c.Loot}, which does not exist");
+                foreach (var id in c.Vendor)
+                {
+                    if (!itemsById.TryGetValue(id, out var item)) Error($"{where} sells item {id}, which does not exist");
+                    else if (item.BuyPrice <= 0) Error($"{where} sells item {id}, which has no buyPrice");
+                }
+                if (c.Vendor.Count > Shared.Net.VendorInventory.MaxItems) Error($"{where} sells too many items");
+                if (Bytes(c.Gossip) > QuestInfo.MaxTextBytes || Bytes(c.Name) > SpellInfo.MaxNameBytes) Error($"{where}: name or gossip is too long");
+                CheckHeld(where, c.Equipment.MainHand, InventoryType.MainHand, InventoryType.TwoHand);
+                CheckHeld(where, c.Equipment.OffHand, InventoryType.OffHand, InventoryType.OffHand);
+            }
+
+            void CheckHeld(string where, uint id, InventoryType a, InventoryType b)
+            {
+                if (id == 0) return;
+                if (!itemsById.TryGetValue(id, out var item)) Error($"{where} holds item {id}, which does not exist");
+                else if (item.Slot != a && item.Slot != b) Error($"{where} holds item {id} in the wrong hand");
+            }
+        }
+
+        public void ValidateClassItems(List<ClassDefinition> classes, List<ItemDefinition> items)
+        {
+            var itemsById = items.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.First());
+            foreach (var c in classes)
+            {
+                foreach (var start in c.StartingItems)
+                {
+                    if (!itemsById.TryGetValue(start.Item, out var item)) Error($"classes.json: class {c.Id} '{c.Name}' starts with item {start.Item}, which does not exist");
+                    else if (start.Count < 1 || start.Count > item.StackSize) Error($"classes.json: class {c.Id} starting item {start.Item} count must be in 1..{item.StackSize}");
+                    else if (!item.AllowsClass(c.Id)) Error($"classes.json: class {c.Id} starts with item {start.Item}, which it cannot use");
+                }
+            }
+        }
+
+        public void ValidateQuests(List<QuestDefinition> quests, List<CreatureDefinition> creatures, List<ItemDefinition> items,
+            List<ClassDefinition> classes, List<LoadedMap> maps, LevelTable levels, List<LootTableDefinition> loot)
+        {
+            ValidateClassItems(classes, items);
+            ValidateIds("quests.json", quests.Select(q => ((long)q.Id, q.Title)), uint.MaxValue);
+            var questsById = quests.GroupBy(q => q.Id).ToDictionary(g => g.Key, g => g.First());
+            var creaturesById = creatures.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
+            var itemsById = items.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.First());
+            var mapsById = maps.GroupBy(m => (int)m.Id).ToDictionary(g => g.Key, g => g.First());
+            var classIds = classes.Select(c => c.Id).ToHashSet();
+            // Items a player can get somewhere (collect objectives must be possible).
+            var obtainable = loot.SelectMany(t => t.Items.Select(i => i.Item).Concat(t.Groups.SelectMany(g => g.Items)))
+                .Concat(creatures.SelectMany(c => c.Vendor)).ToHashSet();
+
+            foreach (var q in quests)
+            {
+                string where = $"quests.json: quest {q.Id} '{q.Title}'";
+                if (Bytes(q.Title) > QuestInfo.MaxTitleBytes) Error($"{where}: title is too long");
+                foreach (var text in new[] { q.Details, q.Summary, q.Progress, q.Completion })
+                    if (Bytes(text) > QuestInfo.MaxTextBytes) Error($"{where}: a text is longer than {QuestInfo.MaxTextBytes} bytes");
+                if (q.Details.Length == 0 || q.Summary.Length == 0 || q.Completion.Length == 0) Error($"{where} needs details, summary and completion texts");
+                if (q.Level < 1 || q.Level > levels.MaxLevel || q.MinLevel < 1 || q.MinLevel > q.Level) Error($"{where}: needs 1 <= minLevel <= level <= {levels.MaxLevel}");
+                if (!creaturesById.ContainsKey(q.Giver)) Error($"{where}: giver {q.Giver} does not exist");
+                if (!creaturesById.ContainsKey(q.Ender)) Error($"{where}: ender {q.Ender} does not exist");
+                foreach (var id in q.Requires)
+                    if (id == q.Id || !questsById.ContainsKey(id)) Error($"{where} requires quest {id}, which does not exist (or is itself)");
+                foreach (var id in q.Classes.Where(id => !classIds.Contains(id))) Error($"{where} is limited to class {id}, which does not exist");
+                if (q.Objectives.Count > QuestInfo.MaxObjectives) Error($"{where} has more than {QuestInfo.MaxObjectives} objectives");
+                if (q.Objectives.Count == 0 && q.Giver == q.Ender) Error($"{where} has no objectives: it must at least be delivered to another NPC");
+
+                foreach (var o in q.Objectives)
+                {
+                    if (o.Count < 1 || o.Count > 250) Error($"{where}: objective counts must be in 1..250");
+                    if (Bytes(o.Text) > QuestInfo.MaxTitleBytes) Error($"{where}: objective text is too long");
+                    switch (o.Type)
+                    {
+                        case ObjectiveType.Kill:
+                            if (!creaturesById.ContainsKey(o.Creature)) Error($"{where}: kill objective creature {o.Creature} does not exist");
+                            break;
+                        case ObjectiveType.Talk:
+                            if (!creaturesById.ContainsKey(o.Creature)) Error($"{where}: talk objective creature {o.Creature} does not exist");
+                            if (o.Count != 1) Error($"{where}: talk objectives have count 1");
+                            break;
+                        case ObjectiveType.Collect:
+                            if (!itemsById.TryGetValue(o.Item, out var item)) Error($"{where}: collect objective item {o.Item} does not exist");
+                            else if (!obtainable.Contains(o.Item)) Error($"{where}: item {o.Item} drops nowhere and is sold nowhere");
+                            break;
+                        case ObjectiveType.Explore:
+                            if (!mapsById.TryGetValue(o.Map, out var map)) Error($"{where}: explore objective map {o.Map} does not exist");
+                            else if (!map.HeightMap.Contains(o.X, o.Z)) Error($"{where}: explore objective ({o.X}, {o.Z}) is outside map {o.Map}");
+                            if (o.Radius < 1 || o.Radius > 200) Error($"{where}: explore radius must be in 1..200");
+                            if (o.Count != 1) Error($"{where}: explore objectives have count 1");
+                            if (o.Text.Length == 0) Error($"{where}: explore objectives need a text");
+                            break;
+                    }
+                }
+
+                var r = q.Rewards;
+                if (r.Xp < 0 || r.Money < 0) Error($"{where}: rewards must not be negative");
+                if (r.Items.Count > QuestInfo.MaxRewards || r.Choices.Count > QuestInfo.MaxRewards) Error($"{where}: at most {QuestInfo.MaxRewards} reward items and choices");
+                foreach (var reward in r.Items.Concat(r.Choices))
+                {
+                    if (!itemsById.TryGetValue(reward.Item, out var item)) Error($"{where}: reward item {reward.Item} does not exist");
+                    else if (reward.Count < 1 || reward.Count > item.StackSize) Error($"{where}: reward item {reward.Item} count must be in 1..{item.StackSize}");
+                }
+            }
+
+            // Prerequisite chains must not loop.
+            var state = new Dictionary<uint, int>();
+            foreach (var q in quests) Visit(q.Id);
+
+            void Visit(uint id)
+            {
+                if (state.TryGetValue(id, out int s))
+                {
+                    if (s == 1) Error($"quests.json: quest {id} requires itself through a chain of prerequisites");
+                    return;
+                }
+                state[id] = 1;
+                if (questsById.TryGetValue(id, out var q))
+                    foreach (var next in q.Requires.Where(questsById.ContainsKey)) Visit(next);
+                state[id] = 2;
+            }
         }
 
         private void ValidateSpell(SpellDefinition s)
@@ -269,18 +463,21 @@ public static class ContentLoader
                 if (aura.DurationMs <= 0) Error($"{where}: aura durationMs must be positive");
                 if (aura.MaxStacks < 1 || aura.MaxStacks > 255) Error($"{where}: aura maxStacks must be in 1..255");
                 if (aura.Effects.Count == 0) Error($"{where}: aura has no effects");
-                bool periodic = aura.Effects.Any(e => e.Type is AuraEffectType.PeriodicDamage or AuraEffectType.PeriodicHeal);
+                bool periodic = aura.Effects.Any(e => e.Type is AuraEffectType.PeriodicDamage or AuraEffectType.PeriodicHeal or AuraEffectType.PeriodicEnergize);
                 if (periodic && (aura.TickMs < 250 || aura.TickMs > aura.DurationMs)) Error($"{where}: periodic auras need 250 <= tickMs <= durationMs");
                 foreach (var e in aura.Effects)
                 {
                     if (e.Type == AuraEffectType.ModStat && e.Stat is null) Error($"{where}: modStat needs a stat");
                     if (e.Type == AuraEffectType.ModSpeed && (e.Amount <= -100 || e.Amount > 200)) Error($"{where}: modSpeed amount must be in (-100, 200]");
-                    if (e.Type is AuraEffectType.PeriodicDamage or AuraEffectType.PeriodicHeal or AuraEffectType.Absorb && e.Amount <= 0)
+                    if (e.Type is AuraEffectType.PeriodicDamage or AuraEffectType.PeriodicHeal or AuraEffectType.Absorb or AuraEffectType.PeriodicEnergize && e.Amount <= 0)
                         Error($"{where}: {e.Type} needs a positive amount");
+                    if (e.Type == AuraEffectType.PeriodicEnergize && e.Power == PowerType.None) Error($"{where}: periodicEnergize needs a power");
                 }
                 if (!s.Effects.Any(e => e.Type == SpellEffectType.ApplyAura)) Error($"{where}: has an aura but no applyAura effect");
             }
         }
+
+        private static int Bytes(string text) => System.Text.Encoding.UTF8.GetByteCount(text);
 
         /// <summary>Ids that end up on the wire or in the database: 1..max, unique, named.</summary>
         private void ValidateIds(string file, IEnumerable<(long Id, string Name)> entries, long max)

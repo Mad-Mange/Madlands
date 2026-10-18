@@ -1,0 +1,79 @@
+{
+  "$schema": "schemas/quests.schema.json",
+  "quests": [
+    {
+      "id": 1, "title": "Trouble in the Mire", "level": 1, "minLevel": 1, "giver": 11, "ender": 11,
+      "details": "The frogs in the low ground have gone strange since the shard fell. Fat as dogs, they are, and twice as mean when you poke them. They have been fouling the only clean spring we have.\n\nThin them out for an old woman, would you? Six of them should teach the rest some manners.",
+      "summary": "Kill 6 Mire Frogs in the marsh south-east of Mirewatch Post.",
+      "progress": "Still croaking out there, are they?",
+      "completion": "Ha! I could hear the quiet from here. Take one of these, dear. They were my husband's, and he won't be needing them.",
+      "objectives": [ { "type": "kill", "creature": 1, "count": 6 } ],
+      "rewards": { "xp": 160, "money": 25, "choices": [ { "item": 1201 }, { "item": 1202 }, { "item": 1203 } ] }
+    },
+    {
+      "id": 2, "title": "A Taste for Frog Legs", "level": 2, "minLevel": 1, "giver": 11, "ender": 11,
+      "details": "Don't make that face. Shard-fat frog legs make the best stew this side of the Calder, and the settlers will be hungry come nightfall.\n\nBring me five good legs from the mire and I will pack you a supper for the road.",
+      "summary": "Bring 5 Mire Frog Legs to Old Tamsin.",
+      "progress": "No legs, no stew.",
+      "completion": "Lovely and plump. Here, warm bread for the road. Eat it somewhere quiet; it does nobody any good gobbled in a fight.",
+      "objectives": [ { "type": "collect", "item": 3001, "count": 5 } ],
+      "rewards": { "xp": 200, "money": 30, "items": [ { "item": 4001, "count": 5 } ] }
+    },
+    {
+      "id": 3, "title": "Wolves at Dusk", "level": 3, "minLevel": 2, "giver": 10, "ender": 10,
+      "details": "You there. You look like you can hold a blade the right way round.\n\nA pack of dusk wolves has taken the ridge to the north-west, and they have grown bold enough to circle the post at night. I can't spare a single guard from the palisade. Thin the pack: eight of them, and the rest will think twice.",
+      "summary": "Kill 8 Dusk Wolves on the north-western ridge.",
+      "progress": "The howling hasn't stopped. Neither should you.",
+      "completion": "Good work. The night watch will sleep easier, and so will I. Take your pick from the stores; you've earned it.",
+      "objectives": [ { "type": "kill", "creature": 2, "count": 8 } ],
+      "rewards": { "xp": 420, "money": 60, "choices": [ { "item": 1210 }, { "item": 1211 }, { "item": 1212 } ] }
+    },
+    {
+      "id": 4, "title": "Pelts for the Palisade", "level": 3, "minLevel": 2, "giver": 10, "ender": 10,
+      "details": "The wind cuts through the palisade like it isn't there. Thick wolf pelts stretched over the gaps would keep the worst of it out.\n\nBring me six Dusk Wolf Pelts and I'll have the tanner stitch you something useful from the scraps.",
+      "summary": "Bring 6 Dusk Wolf Pelts to Captain Edda Brand.",
+      "progress": "Six pelts. The wind won't wait.",
+      "completion": "Fine pelts. The tanner had enough left over for this satchel. More room for whatever you drag home next.",
+      "objectives": [ { "type": "collect", "item": 2003, "count": 6 } ],
+      "rewards": { "xp": 350, "money": 40, "items": [ { "item": 5002 } ] }
+    },
+    {
+      "id": 5, "title": "Supplies and Sense", "level": 2, "minLevel": 1, "giver": 10, "ender": 10,
+      "details": "Before you go wandering off to get eaten, have a word with Quartermaster Holt by the supply tent. He sells food, water and draughts, and he'll buy whatever junk you pry off the local wildlife.\n\nThen come back to me.",
+      "summary": "Speak with Quartermaster Holt, then return to Captain Edda Brand.",
+      "progress": "Did you find Holt? Big man, bigger ledger.",
+      "completion": "Holt says you didn't haggle. Next time, haggle. Take these draughts; a fool who doesn't carry them only makes that mistake once.",
+      "objectives": [ { "type": "talk", "creature": 12, "text": "Speak with Quartermaster Holt" } ],
+      "rewards": { "xp": 110, "items": [ { "item": 4003, "count": 2 } ] }
+    },
+    {
+      "id": 6, "title": "Eyes on the Camp", "level": 4, "minLevel": 3, "giver": 10, "ender": 10, "requires": [3],
+      "details": "Someone has been hauling moon shards past our walls at night. My scouts found tracks leading north-east, to a ring of stakes the bandits call a camp.\n\nI need to know how many of them there are before I send anyone in. Get close enough to see inside, and get back in one piece.",
+      "summary": "Scout the bandit camp to the north-east, then report to Captain Edda Brand.",
+      "progress": "Well? What did you see?",
+      "completion": "Shardcasters, too? Then they aren't just thieves, they're feeding something. That changes things.",
+      "objectives": [ { "type": "explore", "map": 1, "x": 95, "z": 75, "radius": 22, "text": "Scout the bandit camp" } ],
+      "rewards": { "xp": 300, "money": 50 }
+    },
+    {
+      "id": 7, "title": "Shards in the Wrong Hands", "level": 5, "minLevel": 4, "giver": 10, "ender": 10, "requires": [6],
+      "details": "Raw moon shards in the hands of fools. Every one they crack open makes the land around here a little madder.\n\nGo into that camp. Put down the bandits and their shardcasters, and bring back the shards they stole before they can sell them, or worse, use them.",
+      "summary": "Kill 6 Shard Bandits and 2 Bandit Shardcasters, and recover 4 Stolen Moonshards from the bandit camp.",
+      "progress": "The camp still stands. The shards are still out there.",
+      "completion": "Four shards, and the camp's teeth pulled. You've done the post a great service. The armory has been keeping something back for a day like this. Take whatever suits your hand.",
+      "objectives": [
+        { "type": "kill", "creature": 3, "count": 6 },
+        { "type": "kill", "creature": 4, "count": 2 },
+        { "type": "collect", "item": 3002, "count": 4 }
+      ],
+      "rewards": { "xp": 900, "money": 150, "choices": [ { "item": 1020 }, { "item": 1021 }, { "item": 1022 } ] }
+    },
+    {
+      "id": 8, "title": "News for Tamsin", "level": 5, "minLevel": 4, "giver": 10, "ender": 11, "requires": [7],
+      "details": "Old Tamsin has been reading the mire since before the shard fell, and she'll want to know what we found in that camp.\n\nTake her the news, and listen to whatever she tells you. She's usually right, which is the annoying part.",
+      "summary": "Bring the news to Old Tamsin.",
+      "completion": "Shardcasters feeding the cracks... I feared as much. The water has been singing at night, and something under it is waking.\n\nKeep this close, dear. It won't stop the madness, but it'll keep your head clear a little longer.",
+      "rewards": { "xp": 250, "choices": [ { "item": 1222 }, { "item": 1223 } ] }
+    }
+  ]
+}

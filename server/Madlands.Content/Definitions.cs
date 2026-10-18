@@ -82,7 +82,7 @@ public sealed class RaceDefinition
     public StatBlock Stats { get; set; } = new();
 }
 
-/// <summary>Until items exist (Phase 4) every class fights with this built-in weapon.</summary>
+/// <summary>Bare-handed damage: used when nothing is equipped in the main hand.</summary>
 public sealed class WeaponDefinition
 {
     public float MinDamage { get; set; } = 1;
@@ -110,9 +110,18 @@ public sealed class ClassDefinition
     public float HealthPerLevel { get; set; } = 10;
     public float BaseMana { get; set; }
     public float ManaPerLevel { get; set; }
-    public WeaponDefinition Weapon { get; set; } = new();
+    /// <summary>Fists: the damage when no weapon is equipped.</summary>
+    public WeaponDefinition Unarmed { get; set; } = new();
     /// <summary>Spells learned automatically at a level.</summary>
     public List<ClassSpell> Spells { get; set; } = new();
+    /// <summary>Given once, on the character's first login: equipped where possible, the rest into the bags.</summary>
+    public List<ItemCount> StartingItems { get; set; } = new();
+}
+
+public sealed class ItemCount
+{
+    public uint Item { get; set; }
+    public int Count { get; set; } = 1;
 }
 
 /// <summary>content/factions.json entry. See <see cref="FactionTable"/> for the reaction rules.</summary>
@@ -183,6 +192,8 @@ public enum AuraEffectType
     Root,
     /// <summary>Absorbs amount (+perLevel) damage, then breaks.</summary>
     Absorb,
+    /// <summary>Amount (+perLevel) of a power every tick (drinking restores mana).</summary>
+    PeriodicEnergize,
 }
 
 public sealed class AuraEffectDefinition
@@ -192,6 +203,8 @@ public sealed class AuraEffectDefinition
     public float PerLevel { get; set; }
     public StatType? Stat { get; set; }
     public bool Percent { get; set; }
+    /// <summary>PeriodicEnergize: which power.</summary>
+    public PowerType Power { get; set; } = PowerType.None;
 }
 
 public sealed class AuraDefinition
@@ -200,6 +213,8 @@ public sealed class AuraDefinition
     /// <summary>Interval of periodic effects.</summary>
     public int TickMs { get; set; } = 3000;
     public int MaxStacks { get; set; } = 1;
+    /// <summary>Removed when the unit enters combat (eating and drinking).</summary>
+    public bool BreakOnCombat { get; set; }
     public List<AuraEffectDefinition> Effects { get; set; } = new();
 }
 
@@ -275,6 +290,177 @@ public sealed class CreatureDefinition
     public float Xp { get; set; } = 1f;
     /// <summary>Same-faction creatures within this radius join a fight.</summary>
     public float CallForHelpRadius { get; set; } = 6f;
+    /// <summary>Loot table id (content/loot.json); 0 = drops nothing.</summary>
+    public int Loot { get; set; }
+    /// <summary>What it says when spoken to; empty = nothing (quest givers and vendors still talk business).</summary>
+    public string Gossip { get; set; } = "";
+    /// <summary>Item ids it sells; empty = not a vendor.</summary>
+    public List<uint> Vendor { get; set; } = new();
+    /// <summary>Items it holds (only their looks matter): a weapon and a shield or held item.</summary>
+    public CreatureEquipment Equipment { get; set; } = new();
+}
+
+public sealed class CreatureEquipment
+{
+    public uint MainHand { get; set; }
+    public uint OffHand { get; set; }
+}
+
+/// <summary>Stats an item adds, flat (armor too).</summary>
+public sealed class ItemStatBlock
+{
+    public int Strength { get; set; }
+    public int Agility { get; set; }
+    public int Stamina { get; set; }
+    public int Intellect { get; set; }
+    public int Spirit { get; set; }
+    public int Armor { get; set; }
+    public int AttackPower { get; set; }
+    public int SpellPower { get; set; }
+
+    public int this[StatType stat] => stat switch
+    {
+        StatType.Strength => Strength,
+        StatType.Agility => Agility,
+        StatType.Stamina => Stamina,
+        StatType.Intellect => Intellect,
+        StatType.Spirit => Spirit,
+        StatType.Armor => Armor,
+        StatType.AttackPower => AttackPower,
+        StatType.SpellPower => SpellPower,
+        _ => 0,
+    };
+}
+
+public sealed class ItemWeaponDefinition
+{
+    public int MinDamage { get; set; }
+    public int MaxDamage { get; set; }
+    public int SpeedMs { get; set; } = 2000;
+}
+
+/// <summary>content/items.json entry (ADR 0010).</summary>
+public sealed class ItemDefinition
+{
+    public uint Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public uint Icon { get; set; }
+    /// <summary>How it looks equipped (weapons in hand); 0 = nothing to show.</summary>
+    public uint DisplayId { get; set; }
+    public ItemQuality Quality { get; set; } = ItemQuality.Common;
+    public ItemClass Class { get; set; } = ItemClass.Junk;
+    /// <summary>Where it is equipped; none = not equippable.</summary>
+    public InventoryType Slot { get; set; } = InventoryType.None;
+    public int RequiredLevel { get; set; }
+    /// <summary>Class ids that may equip or use it; empty = everyone.</summary>
+    public List<int> Classes { get; set; } = new();
+    public int StackSize { get; set; } = 1;
+    /// <summary>Copper a vendor charges.</summary>
+    public int BuyPrice { get; set; }
+    /// <summary>Copper a vendor pays; 0 = cannot be sold.</summary>
+    public int SellPrice { get; set; }
+    public ItemStatBlock Stats { get; set; } = new();
+    /// <summary>Weapons (mainHand and twoHand) only.</summary>
+    public ItemWeaponDefinition? Weapon { get; set; }
+    /// <summary>Spell cast when used (instant); 0 = not usable.</summary>
+    public uint UseSpell { get; set; }
+    /// <summary>Containers: how many slots.</summary>
+    public int BagSlots { get; set; }
+
+    public bool IsEquippable => Slot != InventoryType.None;
+    public bool IsBag => Slot == InventoryType.Bag;
+    public bool AllowsClass(int classId) => Classes.Count == 0 || Classes.Contains(classId);
+    public override string ToString() => $"{Name} ({Id})";
+}
+
+public sealed class LootMoney
+{
+    public int Min { get; set; }
+    public int Max { get; set; }
+}
+
+public sealed class LootItemDefinition
+{
+    public uint Item { get; set; }
+    /// <summary>0..1. Quest items only drop for players who still need them for a quest.</summary>
+    public float Chance { get; set; } = 1f;
+    public int Min { get; set; } = 1;
+    public int Max { get; set; } = 1;
+}
+
+/// <summary>Rolled once: with <see cref="Chance"/> exactly one of the items drops (each equally likely).</summary>
+public sealed class LootGroupDefinition
+{
+    public float Chance { get; set; }
+    public List<uint> Items { get; set; } = new();
+}
+
+/// <summary>content/loot.json entry: what a creature drops. Creatures refer to it by id.</summary>
+public sealed class LootTableDefinition
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    /// <summary>Copper, rolled uniformly in min..max.</summary>
+    public LootMoney? Money { get; set; }
+    public List<LootItemDefinition> Items { get; set; } = new();
+    public List<LootGroupDefinition> Groups { get; set; } = new();
+}
+
+public sealed class QuestObjectiveDefinition
+{
+    public ObjectiveType Type { get; set; }
+    /// <summary>Kill and talk: the creature id.</summary>
+    public int Creature { get; set; }
+    /// <summary>Collect: the item id.</summary>
+    public uint Item { get; set; }
+    public int Count { get; set; } = 1;
+    /// <summary>Explore: the place (map, center, radius in meters).</summary>
+    public int Map { get; set; }
+    public float X { get; set; }
+    public float Z { get; set; }
+    public float Radius { get; set; }
+    /// <summary>Quest log line; generated from the target's name when empty (explore needs one).</summary>
+    public string Text { get; set; } = "";
+}
+
+public sealed class QuestRewardDefinition
+{
+    public int Xp { get; set; }
+    /// <summary>Copper.</summary>
+    public int Money { get; set; }
+    public List<ItemCount> Items { get; set; } = new();
+    /// <summary>The player picks one.</summary>
+    public List<ItemCount> Choices { get; set; } = new();
+}
+
+/// <summary>content/quests.json entry (ADR 0011).</summary>
+public sealed class QuestDefinition
+{
+    public uint Id { get; set; }
+    public string Title { get; set; } = "";
+    /// <summary>The level it is meant for (experience falls off for players far above it).</summary>
+    public int Level { get; set; } = 1;
+    /// <summary>The lowest level that can take it.</summary>
+    public int MinLevel { get; set; } = 1;
+    /// <summary>Creature that offers it.</summary>
+    public int Giver { get; set; }
+    /// <summary>Creature that takes it back.</summary>
+    public int Ender { get; set; }
+    /// <summary>Quests that must be turned in first.</summary>
+    public List<uint> Requires { get; set; } = new();
+    /// <summary>Class ids that may take it; empty = everyone.</summary>
+    public List<int> Classes { get; set; } = new();
+    public string Details { get; set; } = "";
+    /// <summary>One-line summary of what to do.</summary>
+    public string Summary { get; set; } = "";
+    public string Progress { get; set; } = "";
+    public string Completion { get; set; } = "";
+    public List<QuestObjectiveDefinition> Objectives { get; set; } = new();
+    public QuestRewardDefinition Rewards { get; set; } = new();
+
+    public bool AllowsClass(int classId) => Classes.Count == 0 || Classes.Contains(classId);
+    public override string ToString() => $"{Title} ({Id})";
 }
 
 /// <summary>content/maps/&lt;id&gt;/spawns.json entry (written by Unity from CreatureSpawnPoint markers).</summary>

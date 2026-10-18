@@ -11,7 +11,7 @@ namespace Madlands.Server.Persistence;
 /// </summary>
 public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
 {
-    private const string CharacterColumns = "id, account_id, name, race, class, level, map_id, pos_x, pos_y, pos_z, yaw, xp, health, power";
+    private const string CharacterColumns = "id, account_id, name, race, class, level, map_id, pos_x, pos_y, pos_z, yaw, xp, health, power, money, starter_kit";
 
     private readonly NpgsqlDataSource _dataSource;
 
@@ -182,18 +182,57 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         return row?.ToRecord();
     }
 
+    public async Task<CharacterData> LoadCharacterDataAsync(long characterId, CancellationToken ct = default)
+    {
+        await using var conn = await _dataSource.OpenConnectionAsync(ct);
+        var items = await conn.QueryAsync<ItemRow>(new CommandDefinition(
+            "SELECT container, slot, item_id, count FROM character_items WHERE character_id = @characterId ORDER BY container, slot",
+            new { characterId }, cancellationToken: ct));
+        var quests = await conn.QueryAsync<QuestRow>(new CommandDefinition(
+            "SELECT quest_id, rewarded, progress FROM character_quests WHERE character_id = @characterId ORDER BY quest_id",
+            new { characterId }, cancellationToken: ct));
+        return new CharacterData(
+            items.Select(i => new ItemRecord((byte)i.Container, (byte)i.Slot, (uint)i.ItemId, i.Count)).ToList(),
+            quests.Select(q => new QuestRecord((uint)q.QuestId, q.Rewarded, q.Progress ?? Array.Empty<int>())).ToList());
+    }
+
     public async Task SaveCharacterAsync(CharacterSnapshot s, CancellationToken ct = default)
     {
         await using var conn = await _dataSource.OpenConnectionAsync(ct);
+        await using var tx = await conn.BeginTransactionAsync(ct);
         await conn.ExecuteAsync(new CommandDefinition(
             """
             UPDATE characters
             SET map_id = @MapId, pos_x = @X, pos_y = @Y, pos_z = @Z, yaw = @Yaw, level = @Level,
-                xp = @Xp, health = @Health, power = @Power, last_saved_at = now()
+                xp = @Xp, health = @Health, power = @Power, money = @Money, starter_kit = @StarterKit, last_saved_at = now()
             WHERE id = @CharacterId
             """,
-            new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level, s.Xp, s.Health, s.Power },
-            cancellationToken: ct));
+            new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level, s.Xp, s.Health, s.Power, s.Money, s.StarterKit },
+            tx, cancellationToken: ct));
+
+        // Items and quests are rewritten as a whole: one statement each, whatever their number.
+        await conn.ExecuteAsync(new CommandDefinition(
+            """
+            DELETE FROM character_items WHERE character_id = @CharacterId;
+            INSERT INTO character_items (character_id, container, slot, item_id, count)
+            SELECT @CharacterId, c, sl, i, n FROM unnest(@Containers, @Slots, @ItemIds, @Counts) AS t(c, sl, i, n);
+            DELETE FROM character_quests WHERE character_id = @CharacterId;
+            INSERT INTO character_quests (character_id, quest_id, rewarded, progress)
+            SELECT @CharacterId, q, r, string_to_array(p, ',')::integer[] FROM unnest(@QuestIds, @Rewarded, @Progress) AS t(q, r, p);
+            """,
+            new
+            {
+                s.CharacterId,
+                Containers = s.Items.Select(i => (short)i.Container).ToArray(),
+                Slots = s.Items.Select(i => (short)i.Slot).ToArray(),
+                ItemIds = s.Items.Select(i => (long)i.ItemId).ToArray(),
+                Counts = s.Items.Select(i => i.Count).ToArray(),
+                QuestIds = s.Quests.Select(q => (long)q.QuestId).ToArray(),
+                Rewarded = s.Quests.Select(q => q.Rewarded).ToArray(),
+                Progress = s.Quests.Select(q => string.Join(',', q.Progress)).ToArray(),
+            },
+            tx, cancellationToken: ct));
+        await tx.CommitAsync(ct);
     }
 
     private sealed class AccountRow
@@ -219,8 +258,25 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         public int Xp { get; set; }
         public int? Health { get; set; }
         public int? Power { get; set; }
+        public long Money { get; set; }
+        public bool StarterKit { get; set; }
 
         public CharacterRecord ToRecord() =>
-            new(Id, AccountId, Name, (byte)Race, (byte)Class, (byte)Level, (ushort)MapId, PosX, PosY, PosZ, Yaw, Xp, Health, Power);
+            new(Id, AccountId, Name, (byte)Race, (byte)Class, (byte)Level, (ushort)MapId, PosX, PosY, PosZ, Yaw, Xp, Health, Power, Money, StarterKit);
+    }
+
+    private sealed class ItemRow
+    {
+        public short Container { get; set; }
+        public short Slot { get; set; }
+        public long ItemId { get; set; }
+        public int Count { get; set; }
+    }
+
+    private sealed class QuestRow
+    {
+        public long QuestId { get; set; }
+        public bool Rewarded { get; set; }
+        public int[]? Progress { get; set; }
     }
 }

@@ -142,6 +142,14 @@ public static class Experience
         return Math.Max(0, (int)MathF.Round(xp * multiplier));
     }
 
+    /// <summary>A quest's experience, falling off for players more than five levels above the quest.</summary>
+    public static int ForQuest(int playerLevel, int questLevel, int xp)
+    {
+        int above = playerLevel - questLevel;
+        float factor = above <= 5 ? 1f : above switch { 6 => 0.8f, 7 => 0.6f, 8 => 0.4f, 9 => 0.2f, _ => 0.1f };
+        return Math.Max(0, (int)MathF.Round(xp * factor));
+    }
+
     /// <summary>Creatures at or below this level give no experience.</summary>
     public static int GrayLevel(int playerLevel) => playerLevel <= 5 ? 0 : playerLevel - 5 - playerLevel / 10;
 

@@ -31,5 +31,17 @@ namespace Madlands.Shared
         public const float SayRange = 40f;
         /// <summary>Half-angle of the "in front of" cone for facing checks (radians, 90 degrees = front half).</summary>
         public const float FacingHalfAngle = MathUtil.Pi / 2f;
+
+        // Items, loot and quests.
+        /// <summary>How close a player must be to talk to an NPC, trade with a vendor or loot a corpse.</summary>
+        public const float InteractRange = 6f;
+        public const int BackpackSlots = 16;
+        /// <summary>Equipment slots that hold bags (Bag1-Bag4).</summary>
+        public const int BagSlotCount = 4;
+        /// <summary>The largest bag.</summary>
+        public const int MaxBagSize = 36;
+        public const int MaxQuestLog = 20;
+        /// <summary>Money cap in copper (99,999 gold 99 silver 99 copper).</summary>
+        public const long MaxMoney = 999_999_999;
     }
 }

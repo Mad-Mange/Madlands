@@ -141,6 +141,45 @@
     },
 
     {
+      "id": 500, "name": "Food", "icon": 500,
+      "description": "Restores 15 health every 3 seconds while you eat. Ends if you enter combat.",
+      "school": "nature", "target": "self", "rangeMax": 0, "gcdMs": 1000,
+      "flags": ["hidden", "notInCombat"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 18000, "tickMs": 3000, "breakOnCombat": true, "effects": [ { "type": "periodicHeal", "amount": 15 } ] }
+    },
+    {
+      "id": 501, "name": "Drink", "icon": 501,
+      "description": "Restores 15 mana every 3 seconds while you drink. Ends if you enter combat.",
+      "school": "frost", "target": "self", "rangeMax": 0, "gcdMs": 1000,
+      "flags": ["hidden", "notInCombat"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 18000, "tickMs": 3000, "breakOnCombat": true, "effects": [ { "type": "periodicEnergize", "power": "mana", "amount": 15 } ] }
+    },
+    {
+      "id": 502, "name": "Healing Draught", "icon": 502,
+      "description": "Restores 70 to 90 health.",
+      "school": "holy", "target": "self", "rangeMax": 0, "gcdMs": 0, "cooldownMs": 60000,
+      "flags": ["hidden"],
+      "effects": [ { "type": "heal", "targets": "caster", "min": 70, "max": 90 } ]
+    },
+    {
+      "id": 503, "name": "Mana Draught", "icon": 503,
+      "description": "Restores 80 to 110 mana.",
+      "school": "arcane", "target": "self", "rangeMax": 0, "gcdMs": 0, "cooldownMs": 60000,
+      "flags": ["hidden"],
+      "effects": [ { "type": "energize", "targets": "caster", "power": "mana", "min": 80, "max": 110 } ]
+    },
+    {
+      "id": 504, "name": "Hearty Meal", "icon": 504,
+      "description": "Restores 40 health every 3 seconds while you eat. Ends if you enter combat.",
+      "school": "nature", "target": "self", "rangeMax": 0, "gcdMs": 1000,
+      "flags": ["hidden", "notInCombat"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 18000, "tickMs": 3000, "breakOnCombat": true, "effects": [ { "type": "periodicHeal", "amount": 40 } ] }
+    },
+
+    {
       "id": 900, "name": "Rend Flesh", "icon": 900,
       "description": "Tears into the target, causing it to bleed for 9 seconds.",
       "school": "physical", "target": "enemy", "rangeMax": 5, "gcdMs": 0,

@@ -93,19 +93,21 @@ namespace Madlands.Shared.Net
     // ---------------------------------------------------------------- Server -> Client
 
     /// <summary>
-    /// Display data for the client (spells, factions, classes, experience table), sent once before
+    /// Display data for the client (spells, factions, classes, experience table, items, quests), sent once before
     /// <see cref="Welcome"/>. Keeping it on the server means content changes need no client rebuild;
     /// the client localizes names by id later (ADR 0008).
     /// </summary>
     public sealed class GameData : IMessage
     {
-        public const int MaxEntries = 4096;
+        public const int MaxEntries = 16384;
 
         public readonly List<SpellInfo> Spells = new List<SpellInfo>();
         public readonly List<FactionInfo> Factions = new List<FactionInfo>();
         public readonly List<ClassInfo> Classes = new List<ClassInfo>();
         /// <summary>Experience needed to go from level i+1 to i+2; its length + 1 is the level cap.</summary>
         public readonly List<int> XpToNextLevel = new List<int>();
+        public readonly List<ItemInfo> Items = new List<ItemInfo>();
+        public readonly List<QuestInfo> Quests = new List<QuestInfo>();
 
         public Opcode Opcode => Opcode.GameData;
 
@@ -119,6 +121,10 @@ namespace Madlands.Shared.Net
             foreach (var c in Classes) c.Write(w);
             w.WriteUShort((ushort)XpToNextLevel.Count);
             foreach (var xp in XpToNextLevel) w.WriteInt(xp);
+            w.WriteUShort((ushort)Items.Count);
+            foreach (var i in Items) i.Write(w);
+            w.WriteUShort((ushort)Quests.Count);
+            foreach (var q in Quests) q.Write(w);
         }
 
         public void Read(ref PacketReader r)
@@ -127,6 +133,8 @@ namespace Madlands.Shared.Net
             Factions.Clear();
             Classes.Clear();
             XpToNextLevel.Clear();
+            Items.Clear();
+            Quests.Clear();
             int n = ReadCount(ref r);
             for (int i = 0; i < n; i++) Spells.Add(SpellInfo.Read(ref r));
             n = ReadCount(ref r);
@@ -135,6 +143,10 @@ namespace Madlands.Shared.Net
             for (int i = 0; i < n; i++) Classes.Add(ClassInfo.Read(ref r));
             n = ReadCount(ref r);
             for (int i = 0; i < n; i++) XpToNextLevel.Add(r.ReadInt());
+            n = ReadCount(ref r);
+            for (int i = 0; i < n; i++) Items.Add(ItemInfo.Read(ref r));
+            n = ReadCount(ref r);
+            for (int i = 0; i < n; i++) Quests.Add(QuestInfo.Read(ref r));
         }
 
         private static int ReadCount(ref PacketReader r)

@@ -6,7 +6,9 @@ using Madlands.Content;
 using Madlands.Server.Auth;
 using Madlands.Server.Commands;
 using Madlands.Server.Core;
+using Madlands.Server.Combat;
 using Madlands.Server.Diagnostics;
+using Madlands.Server.Items;
 using Madlands.Server.Net;
 using Madlands.Server.Persistence;
 using Madlands.Server.World;
@@ -54,6 +56,18 @@ public sealed class GameServer : IDisposable
     private readonly CastSpell _castSpell = new();
     private readonly ChatInput _chatInput = new();
     private readonly CancelAura _cancelAura = new();
+    private readonly MoveItem _moveItem = new();
+    private readonly UseItem _useItem = new();
+    private readonly DestroyItem _destroyItem = new();
+    private readonly AutoEquip _autoEquip = new();
+    private readonly Interact _interact = new();
+    private readonly LootOpen _lootOpen = new();
+    private readonly LootTake _lootTake = new();
+    private readonly VendorBuy _vendorBuy = new();
+    private readonly VendorSell _vendorSell = new();
+    private readonly QuestAccept _questAccept = new();
+    private readonly QuestTurnIn _questTurnIn = new();
+    private readonly QuestAbandon _questAbandon = new();
     private readonly ChatHandler _chat;
     /// <summary>Client display data, encoded once at startup and sent to everyone before Welcome.</summary>
     private readonly byte[] _gameData;
@@ -255,8 +269,11 @@ public sealed class GameServer : IDisposable
     private static CharacterSnapshot Snapshot(Player player)
     {
         var p = player.Movement.Position;
+        var items = player.Inventory.All().Select(e => new ItemRecord(e.Pos.Container, e.Pos.Slot, e.Stack.Item.Id, e.Stack.Count)).ToArray();
+        var quests = player.Quests.Active.Select(q => new QuestRecord(q.Quest.Id, false, q.Counts.ToArray()))
+            .Concat(player.Quests.Rewarded.Select(id => new QuestRecord(id, true, Array.Empty<int>()))).ToArray();
         return new CharacterSnapshot(player.CharacterId, player.Map?.MapId ?? 0, p.X, p.Y, p.Z, player.Movement.Yaw, player.Level,
-            player.Xp, player.Health, player.Power);
+            player.Xp, player.Health, player.Power, player.Inventory.Money, player.StarterKitGiven, items, quests);
     }
 
     // ------------------------------------------------------------------ messages
@@ -300,6 +317,9 @@ public sealed class GameServer : IDisposable
                     break;
 
                 case Opcode.SetTarget or Opcode.CastSpell or Opcode.CancelCast or Opcode.StopAttack or Opcode.ReleaseSpirit or Opcode.CancelAura
+                    or Opcode.MoveItem or Opcode.UseItem or Opcode.DestroyItem or Opcode.AutoEquip or Opcode.Interact
+                    or Opcode.LootOpen or Opcode.LootTake or Opcode.LootClose or Opcode.VendorBuy or Opcode.VendorSell
+                    or Opcode.QuestAccept or Opcode.QuestTurnIn or Opcode.QuestAbandon
                     when session.State == SessionState.InWorld:
                     if (!session.ActionLimiter.TryConsume(now))
                     {
@@ -310,14 +330,18 @@ public sealed class GameServer : IDisposable
                     break;
 
                 case Opcode.ChatInput when session.State == SessionState.InWorld:
-                    if (!session.ChatLimiter.TryConsume(now))
+                {
+                    _chatInput.Read(ref reader);
+                    // GM commands have their own, roomier budget (scripted test setups send many in a row).
+                    bool gmCommand = session.GmLevel > 0 && _chatInput.Text?.StartsWith('.') == true;
+                    if (!(gmCommand ? session.GmCommandLimiter : session.ChatLimiter).TryConsume(now))
                     {
                         AddViolation(session, "chat rate");
                         break;
                     }
-                    _chatInput.Read(ref reader);
                     _chat.Handle(session.Player!, _chatInput.Text, now);
                     break;
+                }
 
                 default:
                     AddViolation(session, $"unexpected {opcode} in state {session.State}");
@@ -367,6 +391,57 @@ public sealed class GameServer : IDisposable
                 _cancelAura.Read(ref reader);
                 if (map.Auras.Find(player, _cancelAura.SpellId) is { IsHarmful: false } aura) map.Auras.Remove(player, aura, now);
                 break;
+            case Opcode.MoveItem:
+                _moveItem.Read(ref reader);
+                map.Items.Move(player, _moveItem.From, _moveItem.To, _moveItem.Count);
+                break;
+            case Opcode.UseItem:
+                _useItem.Read(ref reader);
+                map.Items.Use(player, _useItem.Pos, _useItem.Target, _useItem.CastId, now);
+                break;
+            case Opcode.DestroyItem:
+                _destroyItem.Read(ref reader);
+                map.Items.Destroy(player, _destroyItem.Pos);
+                break;
+            case Opcode.AutoEquip:
+                _autoEquip.Read(ref reader);
+                map.Items.AutoEquip(player, _autoEquip.Pos);
+                break;
+            case Opcode.Interact:
+                _interact.Read(ref reader);
+                map.Quests.Interact(player, _interact.Npc, _interact.Option);
+                break;
+            case Opcode.LootOpen:
+                _lootOpen.Read(ref reader);
+                map.Loot.Open(player, _lootOpen.Corpse);
+                break;
+            case Opcode.LootTake:
+                _lootTake.Read(ref reader);
+                map.Loot.Take(player, _lootTake.Slot);
+                break;
+            case Opcode.LootClose:
+                map.Loot.Close(player, notify: false);
+                break;
+            case Opcode.VendorBuy:
+                _vendorBuy.Read(ref reader);
+                map.Items.Buy(player, _vendorBuy.Vendor, _vendorBuy.ItemId, _vendorBuy.Count);
+                break;
+            case Opcode.VendorSell:
+                _vendorSell.Read(ref reader);
+                map.Items.Sell(player, _vendorSell.Vendor, _vendorSell.Pos);
+                break;
+            case Opcode.QuestAccept:
+                _questAccept.Read(ref reader);
+                map.Quests.Accept(player, _questAccept.Npc, _questAccept.QuestId);
+                break;
+            case Opcode.QuestTurnIn:
+                _questTurnIn.Read(ref reader);
+                map.Quests.TurnIn(player, _questTurnIn.Npc, _questTurnIn.QuestId, _questTurnIn.Choice, now);
+                break;
+            case Opcode.QuestAbandon:
+                _questAbandon.Read(ref reader);
+                map.Quests.Abandon(player, _questAbandon.QuestId);
+                break;
         }
     }
 
@@ -403,9 +478,10 @@ public sealed class GameServer : IDisposable
                 {
                     var character = await _database.LoadCharacterAsync(accountId.Value, characterId);
                     int gmLevel = character is null ? 0 : await _database.GetGmLevelAsync(accountId.Value);
+                    var data = character is null ? null : await _database.LoadCharacterDataAsync(characterId);
                     result = character is null
                         ? LoginResult.Fail(RejectReason.CharacterNotFound, "That character does not exist.")
-                        : new LoginResult(accountId.Value, character, RejectReason.Unknown, "", gmLevel);
+                        : new LoginResult(accountId.Value, character, RejectReason.Unknown, "", gmLevel, data);
                 }
             }
             catch (Exception ex)
@@ -417,7 +493,8 @@ public sealed class GameServer : IDisposable
         });
     }
 
-    private sealed record LoginResult(long AccountId, CharacterRecord? Character, RejectReason Reason, string Message, int GmLevel = 0)
+    private sealed record LoginResult(long AccountId, CharacterRecord? Character, RejectReason Reason, string Message, int GmLevel = 0,
+        CharacterData? Data = null)
     {
         public static LoginResult Fail(RejectReason reason, string message) => new(0, null, reason, message);
     }
@@ -459,7 +536,11 @@ public sealed class GameServer : IDisposable
             Xp = Math.Max(0, character.Xp),
             NextSaveAtMs = now + SaveIntervalMs,
             GmLevel = _options.GmAll ? Math.Max(1, result.GmLevel) : result.GmLevel,
+            StarterKitGiven = character.StarterKit,
         };
+        RestoreItemsAndQuests(player, content, character, result.Data ?? CharacterData.Empty);
+        if (!player.StarterKitGiven) map.Items.GiveStartingItems(player);
+        player.Inventory.ClearChanges();
         player.RecalculateStats();
         player.UpdateKnownSpells();
         player.Health = wasDead ? player.MaxHealth / 2 : character.Health ?? player.MaxHealth;
@@ -485,10 +566,54 @@ public sealed class GameServer : IDisposable
         map.AddPlayer(player, now);
         map.Spells.SendSpellbook(player);
         map.SendPlayerStats(player);
+        map.Items.SendAll(player);
+        map.Quests.SendLog(player);
         Log.Information("{Player} entered map {MapId} from {Address}", player, map.MapId, session.Peer);
     }
 
-    /// <summary>Spell, faction, class and experience data for the client (see <see cref="GameData"/>).</summary>
+    /// <summary>
+    /// Puts saved items back where they were (equipment first: it sizes the bags) and rebuilds the quest log.
+    /// Items whose slot no longer exists move to a free slot; content that no longer exists is dropped.
+    /// </summary>
+    private static void RestoreItemsAndQuests(Player player, ContentDatabase content, CharacterRecord character, CharacterData data)
+    {
+        var inventory = player.Inventory;
+        inventory.AddMoney(character.Money);
+        var homeless = new List<(ItemDefinition Item, int Count)>();
+        foreach (var record in data.Items.OrderBy(i => i.Container).ThenBy(i => i.Slot))
+        {
+            if (!content.Items.TryGetValue(record.ItemId, out var item) || record.Count <= 0)
+            {
+                Log.Warning("{Player}: dropped unknown item {ItemId} x{Count}", player, record.ItemId, record.Count);
+                continue;
+            }
+            var pos = new ItemPos(record.Container, record.Slot);
+            int count = Math.Min(record.Count, item.StackSize);
+            bool fits = !pos.IsEquipment || ItemRules.Fits(item.Slot, (EquipSlot)pos.Slot);
+            if (!fits || !inventory.Restore(pos, new ItemStack(item, count))) count = 0;
+            if (record.Count > count) homeless.Add((item, record.Count - count));
+        }
+        foreach (var (item, count) in homeless)
+        {
+            int added = inventory.Add(item, count);
+            if (added < count) Log.Warning("{Player}: no room for {Count} x {Item}", player, count - added, item);
+        }
+
+        foreach (var record in data.Quests)
+        {
+            if (!content.Quests.TryGetValue(record.QuestId, out var quest)) continue;
+            if (record.Rewarded)
+            {
+                player.Quests.MarkRewarded(quest.Id);
+                continue;
+            }
+            var progress = player.Quests.Add(quest);
+            for (int i = 0; i < progress.Counts.Length && i < record.Progress.Length; i++)
+                progress.Counts[i] = Math.Clamp(record.Progress[i], 0, quest.Objectives[i].Count);
+        }
+    }
+
+    /// <summary>Spell, faction, class, experience, item and quest data for the client (see <see cref="GameData"/>).</summary>
     private static byte[] BuildGameData(ContentDatabase content)
     {
         var learnLevels = new Dictionary<uint, int>();
@@ -525,9 +650,80 @@ public sealed class GameServer : IDisposable
             msg.Classes.Add(new ClassInfo { Id = (byte)c.Id, Name = c.Name, PowerType = c.PowerType });
         msg.XpToNextLevel.AddRange(content.Levels.XpToNextLevel);
 
+        foreach (var i in content.Items.Values.OrderBy(i => i.Id))
+        {
+            var info = new ItemInfo
+            {
+                Id = i.Id,
+                Name = i.Name,
+                Description = i.Description,
+                Icon = i.Icon,
+                DisplayId = i.DisplayId,
+                Quality = i.Quality,
+                Class = i.Class,
+                InventoryType = i.Slot,
+                RequiredLevel = (byte)Math.Clamp(i.RequiredLevel, 0, 255),
+                AllowedClasses = i.Classes.Select(c => (byte)c).ToArray(),
+                StackSize = (ushort)i.StackSize,
+                BuyPrice = (uint)i.BuyPrice,
+                SellPrice = (uint)i.SellPrice,
+                MinDamage = i.Weapon?.MinDamage ?? 0,
+                MaxDamage = i.Weapon?.MaxDamage ?? 0,
+                SpeedMs = i.Weapon?.SpeedMs ?? 0,
+                UseSpell = i.UseSpell,
+                BagSlots = (byte)i.BagSlots,
+            };
+            for (int s = 0; s < UnitStats.Count; s++)
+                if (i.Stats[(StatType)s] != 0) info.Stats.Add(new ItemStat { Stat = (StatType)s, Value = i.Stats[(StatType)s] });
+            msg.Items.Add(info);
+        }
+
+        foreach (var q in content.Quests.Values.OrderBy(q => q.Id))
+        {
+            var info = new QuestInfo
+            {
+                Id = q.Id,
+                Title = q.Title,
+                Level = (byte)q.Level,
+                Details = q.Details,
+                Objectives = q.Summary,
+                Progress = q.Progress,
+                Completion = q.Completion,
+                EnderName = content.Creatures.GetValueOrDefault(q.Ender)?.Name ?? "",
+                RewardXp = q.Rewards.Xp,
+                RewardMoney = (uint)q.Rewards.Money,
+            };
+            foreach (var o in q.Objectives)
+            {
+                info.ObjectiveList.Add(new QuestObjectiveInfo
+                {
+                    Type = o.Type,
+                    Target = o.Type == ObjectiveType.Collect ? o.Item : (uint)Math.Max(0, o.Creature),
+                    Count = (ushort)o.Count,
+                    Text = ObjectiveText(content, o),
+                });
+            }
+            info.RewardItems.AddRange(q.Rewards.Items.Select(r => new QuestItemReward { Item = r.Item, Count = (ushort)r.Count }));
+            info.RewardChoices.AddRange(q.Rewards.Choices.Select(r => new QuestItemReward { Item = r.Item, Count = (ushort)r.Count }));
+            msg.Quests.Add(info);
+        }
+
         var writer = new PacketWriter(4096);
         Packet.Encode(writer, msg);
         return writer.ToArray();
+    }
+
+    /// <summary>The quest log line of an objective: its own text, or one made from the target's name.</summary>
+    public static string ObjectiveText(ContentDatabase content, QuestObjectiveDefinition o)
+    {
+        if (o.Text.Length > 0) return o.Text;
+        return o.Type switch
+        {
+            ObjectiveType.Kill => (content.Creatures.GetValueOrDefault(o.Creature)?.Name ?? "Creature") + " slain",
+            ObjectiveType.Collect => content.Items.GetValueOrDefault(o.Item)?.Name ?? "Item",
+            ObjectiveType.Talk => "Speak with " + (content.Creatures.GetValueOrDefault(o.Creature)?.Name ?? "someone"),
+            _ => "Explore",
+        };
     }
 
     /// <summary>The saved position if it is still valid on this map, otherwise the map's spawn point.</summary>

@@ -1,6 +1,7 @@
 using Madlands.Content;
 using Madlands.Server.AI;
 using Madlands.Server.Combat;
+using Madlands.Server.Items;
 using Madlands.Shared;
 using Madlands.Shared.Game;
 using Madlands.Shared.Movement;
@@ -42,10 +43,15 @@ public sealed class Creature : Unit
     public ThreatList Threat { get; } = new();
     public CreatureMover Mover { get; }
     public CreatureAI Ai { get; }
-    /// <summary>The first player to damage it; gets the kill credit.</summary>
+    /// <summary>The first player to damage it; gets the kill credit and the loot.</summary>
     public EntityGuid Tapper;
     /// <summary>When the corpse disappears (dead creatures only).</summary>
     public long DespawnAtMs;
+    public long DiedAtMs;
+    /// <summary>What the corpse still holds for <see cref="Tapper"/>; null = nothing (or not dead).</summary>
+    public Loot? Loot;
+    /// <summary>The player with this corpse's loot window open.</summary>
+    public Player? Looter;
 
     public bool IsDummy => Template.Ai == CreatureAi.Dummy;
 

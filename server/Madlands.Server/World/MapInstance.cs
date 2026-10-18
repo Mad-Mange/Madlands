@@ -2,6 +2,8 @@ using LiteNetLib;
 using Madlands.Content;
 using Madlands.Navigation;
 using Madlands.Server.Combat;
+using Madlands.Server.Items;
+using Madlands.Server.Quests;
 using Madlands.Shared;
 using Madlands.Shared.Game;
 using Madlands.Shared.Movement;
@@ -15,7 +17,8 @@ namespace Madlands.Server.World;
 /// One running copy of a map: the open world (instance 1), and later dungeon instances or
 /// overflow "layers" of the same map. An instance owns its entities and shares no mutable state
 /// with other instances, so instances can later run on their own threads or processes.
-/// Game rules live in its systems: <see cref="Combat"/>, <see cref="Spells"/> and <see cref="Auras"/>.
+/// Game rules live in its systems: <see cref="Combat"/>, <see cref="Spells"/>, <see cref="Auras"/>,
+/// <see cref="Items"/>, <see cref="Loot"/> and <see cref="Quests"/>.
 /// </summary>
 public sealed class MapInstance
 {
@@ -25,6 +28,8 @@ public sealed class MapInstance
     public const long RecentChangeWindowMs = 1000;
     /// <summary>Visibility and movement broadcasts run every N ticks (20 Hz / 2 = 10 Hz).</summary>
     public const int BroadcastEveryTicks = 2;
+    /// <summary>Slack on <see cref="GameConstants.InteractRange"/> for a target that moved while the request was in flight.</summary>
+    public const float InteractLeeway = 1f;
 
     private static readonly ILogger Log = Serilog.Log.ForContext<MapInstance>();
 
@@ -60,6 +65,9 @@ public sealed class MapInstance
         Combat = new CombatSystem(this);
         Spells = new SpellSystem(this);
         Auras = new AuraSystem(this);
+        Items = new ItemSystem(this);
+        Loot = new LootSystem(this);
+        Quests = new QuestSystem(this);
         foreach (var spawn in map.Spawns) SpawnFromDefinition(spawn, 0);
     }
 
@@ -74,6 +82,9 @@ public sealed class MapInstance
     public CombatSystem Combat { get; }
     public SpellSystem Spells { get; }
     public AuraSystem Auras { get; }
+    public ItemSystem Items { get; }
+    public LootSystem Loot { get; }
+    public QuestSystem Quests { get; }
     /// <summary>Server time of the current (or last) tick.</summary>
     public long NowMs { get; private set; }
 
@@ -107,6 +118,9 @@ public sealed class MapInstance
             Map = this,
             MovementTimeMs = nowMs,
             LastChangeMs = nowMs,
+            NpcFlags = Content.NpcFlagsOf(template),
+            MainHandDisplay = Content.Items.GetValueOrDefault(template.Equipment.MainHand)?.DisplayId ?? 0,
+            OffHandDisplay = Content.Items.GetValueOrDefault(template.Equipment.OffHand)?.DisplayId ?? 0,
         };
         _entities.Add(creature.Guid, creature);
         _creatures.Add(creature);
@@ -119,8 +133,10 @@ public sealed class MapInstance
         if (!_entities.Remove(entity.Guid)) return;
         _grid.Remove(entity);
         if (entity is Unit unit) Combat.OnUnitRemoved(unit);
+        if (entity is Creature lootable) Loot.OnCreatureRemoved(lootable);
         if (entity is Player player)
         {
+            Loot.Close(player, notify: false);
             _players.Remove(player);
             foreach (var known in player.Known.Values) known.Observers.Remove(player);
             player.Known.Clear();
@@ -159,6 +175,27 @@ public sealed class MapInstance
     public bool HasLineOfSight(Unit a, Unit b) => Collision.HasLineOfSight(a.EyePosition, b.EyePosition);
 
     public float GroundHeight(float x, float z) => HeightMap.GetHeight(x, z);
+
+    /// <summary>
+    /// The creature a player wants to talk to (alive, not hostile) or loot (<paramref name="corpse"/>: dead),
+    /// if it is within reach. Otherwise null and why.
+    /// </summary>
+    public Creature? FindInteractable(Player player, EntityGuid guid, out ActionError error, bool corpse = false)
+    {
+        error = ActionError.None;
+        if (Find(guid) is not Creature creature || player.IsDead || creature.IsDead != corpse ||
+            (!corpse && GetReaction(player, creature) == Reaction.Hostile))
+        {
+            error = ActionError.CantInteract;
+            return null;
+        }
+        if (Vec3.Distance(player.Position, creature.Position) > GameConstants.InteractRange + InteractLeeway)
+        {
+            error = ActionError.TooFarAway;
+            return null;
+        }
+        return creature;
+    }
 
     // ------------------------------------------------------------------ movement
 
@@ -217,7 +254,11 @@ public sealed class MapInstance
         float dt = _lastTickMs < 0 ? 0f : Math.Clamp((nowMs - _lastTickMs) / 1000f, 0f, 0.25f);
         _lastTickMs = nowMs;
 
-        for (int i = 0; i < _players.Count; i++) Combat.UpdateUnit(_players[i], nowMs);
+        for (int i = 0; i < _players.Count; i++)
+        {
+            Combat.UpdateUnit(_players[i], nowMs);
+            Quests.UpdateExplore(_players[i], nowMs);
+        }
         for (int i = 0; i < _creatures.Count; i++)
         {
             var creature = _creatures[i];
@@ -229,6 +270,7 @@ public sealed class MapInstance
         UpdateDespawnsAndRespawns(nowMs);
 
         if (tick % BroadcastEveryTicks != 0) return;
+        Loot.Update();
         foreach (var player in _players)
         {
             UpdateVisibility(player, nowMs);
@@ -459,6 +501,11 @@ public sealed class MapInstance
         if (entity is not Unit u) return;
 
         SendAllAuras(observer, u, nowMs);
+        if (u is Creature creature)
+        {
+            if ((creature.NpcFlags & NpcFlags.QuestGiver) != 0) Quests.SendStatus(observer, creature);
+            if (creature.IsDead) Loot.OnCorpseSeen(observer, creature);
+        }
         if (u.Casting is { } cast)
         {
             _spellStartMsg.Caster = u.Guid;

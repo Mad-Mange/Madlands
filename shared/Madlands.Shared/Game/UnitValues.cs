@@ -19,8 +19,12 @@ namespace Madlands.Shared.Game
         Target = 1 << 8,
         SpeedPercent = 1 << 9,
         ClassId = 1 << 10,
+        NpcFlags = 1 << 11,
+        MainHandDisplay = 1 << 12,
+        OffHandDisplay = 1 << 13,
 
-        All = Level | Health | MaxHealth | PowerType | Power | MaxPower | Faction | Flags | Target | SpeedPercent | ClassId,
+        All = Level | Health | MaxHealth | PowerType | Power | MaxPower | Faction | Flags | Target | SpeedPercent | ClassId |
+              NpcFlags | MainHandDisplay | OffHandDisplay,
     }
 
     /// <summary>
@@ -43,6 +47,12 @@ namespace Madlands.Shared.Game
         public ushort SpeedPercent = 100;
         /// <summary>Player class id (content/classes.json), 0 for creatures.</summary>
         public byte ClassId;
+        /// <summary>What talking to this NPC offers (quests, a vendor); None for players and most creatures.</summary>
+        public NpcFlags NpcFlags;
+        /// <summary>Display id of the weapon in the main hand (0 = empty hands).</summary>
+        public uint MainHandDisplay;
+        /// <summary>Display id of the shield or held item in the off hand.</summary>
+        public uint OffHandDisplay;
 
         public bool IsDead => (Flags & UnitFlags.Dead) != 0;
         public bool Has(UnitFlags flag) => (Flags & flag) != 0;
@@ -62,6 +72,9 @@ namespace Madlands.Shared.Game
             Target = other.Target;
             SpeedPercent = other.SpeedPercent;
             ClassId = other.ClassId;
+            NpcFlags = other.NpcFlags;
+            MainHandDisplay = other.MainHandDisplay;
+            OffHandDisplay = other.OffHandDisplay;
         }
 
         /// <summary>Copies only the fields in <paramref name="mask"/> (applying a delta).</summary>
@@ -78,6 +91,9 @@ namespace Madlands.Shared.Game
             if ((mask & UnitFieldMask.Target) != 0) Target = other.Target;
             if ((mask & UnitFieldMask.SpeedPercent) != 0) SpeedPercent = other.SpeedPercent;
             if ((mask & UnitFieldMask.ClassId) != 0) ClassId = other.ClassId;
+            if ((mask & UnitFieldMask.NpcFlags) != 0) NpcFlags = other.NpcFlags;
+            if ((mask & UnitFieldMask.MainHandDisplay) != 0) MainHandDisplay = other.MainHandDisplay;
+            if ((mask & UnitFieldMask.OffHandDisplay) != 0) OffHandDisplay = other.OffHandDisplay;
         }
 
         public void Write(PacketWriter w, UnitFieldMask mask)
@@ -93,6 +109,9 @@ namespace Madlands.Shared.Game
             if ((mask & UnitFieldMask.Target) != 0) w.WriteGuid(Target);
             if ((mask & UnitFieldMask.SpeedPercent) != 0) w.WriteUShort(SpeedPercent);
             if ((mask & UnitFieldMask.ClassId) != 0) w.WriteByte(ClassId);
+            if ((mask & UnitFieldMask.NpcFlags) != 0) w.WriteByte((byte)NpcFlags);
+            if ((mask & UnitFieldMask.MainHandDisplay) != 0) w.WriteUInt(MainHandDisplay);
+            if ((mask & UnitFieldMask.OffHandDisplay) != 0) w.WriteUInt(OffHandDisplay);
         }
 
         public void Read(ref PacketReader r, UnitFieldMask mask)
@@ -109,11 +128,15 @@ namespace Madlands.Shared.Game
             if ((mask & UnitFieldMask.Target) != 0) Target = r.ReadGuid();
             if ((mask & UnitFieldMask.SpeedPercent) != 0) SpeedPercent = r.ReadUShort();
             if ((mask & UnitFieldMask.ClassId) != 0) ClassId = r.ReadByte();
+            if ((mask & UnitFieldMask.NpcFlags) != 0) NpcFlags = (NpcFlags)r.ReadByte();
+            if ((mask & UnitFieldMask.MainHandDisplay) != 0) MainHandDisplay = r.ReadUInt();
+            if ((mask & UnitFieldMask.OffHandDisplay) != 0) OffHandDisplay = r.ReadUInt();
         }
 
         public bool ValueEquals(UnitValues o) =>
             Level == o.Level && Health == o.Health && MaxHealth == o.MaxHealth && PowerType == o.PowerType &&
             Power == o.Power && MaxPower == o.MaxPower && Faction == o.Faction && Flags == o.Flags &&
-            Target == o.Target && SpeedPercent == o.SpeedPercent && ClassId == o.ClassId;
+            Target == o.Target && SpeedPercent == o.SpeedPercent && ClassId == o.ClassId && NpcFlags == o.NpcFlags &&
+            MainHandDisplay == o.MainHandDisplay && OffHandDisplay == o.OffHandDisplay;
     }
 }

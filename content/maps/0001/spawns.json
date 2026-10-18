@@ -23,6 +23,9 @@
     { "creature": 4, "x": 96.00, "z": 83.00, "yawDegrees": 210, "wanderRadius": 0, "respawnSeconds": 0 },
     { "creature": 5, "x": -15.00, "z": 13.00, "yawDegrees": 135, "wanderRadius": 0, "respawnSeconds": 0 },
     { "creature": 5, "x": -12.00, "z": 10.00, "yawDegrees": 130, "wanderRadius": 0, "respawnSeconds": 0 },
-    { "creature": 5, "x": -9.00, "z": 7.00, "yawDegrees": 125, "wanderRadius": 0, "respawnSeconds": 0 }
+    { "creature": 5, "x": -9.00, "z": 7.00, "yawDegrees": 125, "wanderRadius": 0, "respawnSeconds": 0 },
+    { "creature": 10, "x": 4.00, "z": 9.00, "yawDegrees": 204, "wanderRadius": 0, "respawnSeconds": 0 },
+    { "creature": 11, "x": -6.00, "z": -8.00, "yawDegrees": 37, "wanderRadius": 0, "respawnSeconds": 0 },
+    { "creature": 12, "x": 9.00, "z": -3.00, "yawDegrees": 288, "wanderRadius": 0, "respawnSeconds": 0 }
   ]
 }

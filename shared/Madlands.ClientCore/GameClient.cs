@@ -63,6 +63,33 @@ namespace Madlands.ClientCore
         private readonly CastSpell _castSpell = new CastSpell();
         private readonly ChatInput _chatInput = new ChatInput();
         private readonly CancelAura _cancelAura = new CancelAura();
+        private readonly InventoryUpdate _inventoryUpdate = new InventoryUpdate();
+        private readonly MoneyUpdate _moneyUpdate = new MoneyUpdate();
+        private readonly ItemReceived _itemReceived = new ItemReceived();
+        private readonly ActionFailed _actionFailed = new ActionFailed();
+        private readonly LootWindow _lootWindow = new LootWindow();
+        private readonly LootableUpdate _lootableMsg = new LootableUpdate();
+        private readonly GossipMenu _gossip = new GossipMenu();
+        private readonly VendorInventory _vendor = new VendorInventory();
+        private readonly QuestLogUpdate _questLog = new QuestLogUpdate();
+        private readonly QuestGiverStatusUpdate _questStatus = new QuestGiverStatusUpdate();
+        private readonly QuestCompleted _questCompleted = new QuestCompleted();
+        private readonly MoveItem _moveItem = new MoveItem();
+        private readonly UseItem _useItem = new UseItem();
+        private readonly DestroyItem _destroyItem = new DestroyItem();
+        private readonly AutoEquip _autoEquip = new AutoEquip();
+        private readonly Interact _interact = new Interact();
+        private readonly LootOpen _lootOpen = new LootOpen();
+        private readonly LootTake _lootTake = new LootTake();
+        private readonly VendorBuy _vendorBuy = new VendorBuy();
+        private readonly VendorSell _vendorSell = new VendorSell();
+        private readonly QuestAccept _questAccept = new QuestAccept();
+        private readonly QuestTurnIn _questTurnIn = new QuestTurnIn();
+        private readonly QuestAbandon _questAbandon = new QuestAbandon();
+        private readonly HashSet<EntityGuid> _lootableCorpses = new HashSet<EntityGuid>();
+        private readonly Dictionary<EntityGuid, QuestGiverStatus> _questGivers = new Dictionary<EntityGuid, QuestGiverStatus>();
+        private readonly List<(uint Quest, int Objective, int Count)> _progressScratch = new List<(uint, int, int)>();
+        private readonly List<(uint Quest, QuestLogState State)> _questStateScratch = new List<(uint, QuestLogState)>();
 
         private readonly List<uint> _knownSpells = new List<uint>();
         private readonly Dictionary<uint, (double ReadyAt, double Duration)> _cooldowns = new Dictionary<uint, (double, double)>();
@@ -86,6 +113,7 @@ namespace Madlands.ClientCore
         {
             _manualMode = manualMode;
             _log = log;
+            Inventory = new ClientInventory(Data);
             _net = new NetManager(_listener)
             {
                 AutoRecycle = true,
@@ -110,6 +138,15 @@ namespace Madlands.ClientCore
         /// <summary>The local player's latest private numbers (experience, attributes).</summary>
         public PlayerStats Stats => _stats;
         public IReadOnlyList<uint> KnownSpells => _knownSpells;
+        /// <summary>Equipment, bags and money (Phase 4).</summary>
+        public ClientInventory Inventory { get; }
+        public ClientQuestLog Quests { get; } = new ClientQuestLog();
+        /// <summary>The open loot window (Corpse is Empty when closed).</summary>
+        public ClientLoot Loot { get; } = new ClientLoot();
+        /// <summary>The last NPC dialog the server sent (shown until the player walks away or closes it).</summary>
+        public GossipMenu Gossip => _gossip;
+        /// <summary>The last vendor's wares.</summary>
+        public VendorInventory Vendor => _vendor;
         public EntityGuid Target { get; private set; }
         /// <summary>The local player's latest movement (set by <see cref="SendMovement"/> or <see cref="SetLocalMovement"/>).</summary>
         public MovementState LocalMovement { get; private set; }
@@ -144,6 +181,25 @@ namespace Madlands.ClientCore
         public event Action SpellbookChanged;
         public event Action StatsChanged;
         public event Action<EntityGuid> TargetChanged;
+        public event Action InventoryChanged;
+        /// <summary>Change and where it came from (0 at login).</summary>
+        public event Action<long, ReceiveSource> MoneyChanged;
+        public event Action<ItemReceived> ItemReceived;
+        /// <summary>An item, loot, vendor or quest request was refused (error and its detail value).</summary>
+        public event Action<ActionError, int> ActionFailed;
+        public event Action LootChanged;
+        /// <summary>A corpse became lootable or stopped being lootable for us.</summary>
+        public event Action<EntityGuid> LootableChanged;
+        public event Action<GossipMenu> GossipOpened;
+        public event Action<VendorInventory> VendorOpened;
+        public event Action QuestLogChanged;
+        /// <summary>Quest id, objective index and the new count (chat: "Mire Frog slain: 3/6").</summary>
+        public event Action<uint, int, int> QuestProgressed;
+        /// <summary>A quest was taken (Active), finished its objectives (Complete), or left the log (Removed).</summary>
+        public event Action<uint, QuestLogState> QuestStateChanged;
+        public event Action<QuestCompleted> QuestCompleted;
+        /// <summary>The "!"/"?" mark of an NPC changed.</summary>
+        public event Action<EntityGuid> QuestGiverStatusChanged;
 
         /// <summary>Enters the world with a session token from <see cref="AccountClient"/> and a character id.</summary>
         public void Connect(string host, int port, string sessionToken, ulong characterId)
@@ -225,20 +281,30 @@ namespace Madlands.ClientCore
         /// <summary>Asks to cast a spell; returns the cast id that replies will carry.</summary>
         public byte CastSpell(uint spellId, EntityGuid target)
         {
-            if (++_lastCastId == 0) _lastCastId = 1;
-            if (Data.TryGetSpell(spellId, out var spell) && spell.GcdMs > 0 && !spell.IsAutoAttack)
-            {
-                _gcdBeforeRequest = _gcdEndsAt;
-                _gcdEndsAt = Math.Max(_gcdEndsAt, LocalTimeMs + spell.GcdMs);
-                _gcdDuration = spell.GcdMs;
-                _gcdCastId = _lastCastId;
-                _gcdConfirmed = false;
-            }
+            byte castId = NextCastId();
+            if (Data.TryGetSpell(spellId, out var spell)) PredictGcd(spell, castId);
             _castSpell.SpellId = spellId;
             _castSpell.Target = target;
-            _castSpell.CastId = _lastCastId;
+            _castSpell.CastId = castId;
             Send(_castSpell, DeliveryMethod.ReliableOrdered);
+            return castId;
+        }
+
+        private byte NextCastId()
+        {
+            if (++_lastCastId == 0) _lastCastId = 1;
             return _lastCastId;
+        }
+
+        /// <summary>Starts the global cooldown right away; undone if the server refuses the cast.</summary>
+        private void PredictGcd(SpellInfo spell, byte castId)
+        {
+            if (spell.GcdMs <= 0 || spell.IsAutoAttack) return;
+            _gcdBeforeRequest = _gcdEndsAt;
+            _gcdEndsAt = Math.Max(_gcdEndsAt, LocalTimeMs + spell.GcdMs);
+            _gcdDuration = spell.GcdMs;
+            _gcdCastId = castId;
+            _gcdConfirmed = false;
         }
 
         public void CancelCast() => Send(new CancelCast(), DeliveryMethod.ReliableOrdered);
@@ -262,6 +328,113 @@ namespace Madlands.ClientCore
             _cancelAura.SpellId = spellId;
             Send(_cancelAura, DeliveryMethod.ReliableOrdered);
         }
+
+        // ------------------------------------------------------------------ item, loot, vendor and quest requests
+
+        /// <summary>Moves, swaps, stacks or (with <paramref name="count"/>) splits; into or out of equipment equips or unequips.</summary>
+        public void MoveItem(ItemPos from, ItemPos to, int count = 0)
+        {
+            _moveItem.From = from;
+            _moveItem.To = to;
+            _moveItem.Count = (ushort)Math.Max(0, Math.Min(count, ushort.MaxValue));
+            Send(_moveItem, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Uses a consumable; the replies are those of a cast with the returned id.</summary>
+        public byte UseItem(ItemPos pos, EntityGuid target)
+        {
+            byte castId = NextCastId();
+            var item = Data.GetItem(Inventory.Get(pos).ItemId);
+            if (item != null && Data.TryGetSpell(item.UseSpell, out var spell)) PredictGcd(spell, castId);
+            _useItem.Pos = pos;
+            _useItem.Target = target;
+            _useItem.CastId = castId;
+            Send(_useItem, DeliveryMethod.ReliableOrdered);
+            return castId;
+        }
+
+        public void DestroyItem(ItemPos pos)
+        {
+            _destroyItem.Pos = pos;
+            Send(_destroyItem, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Equips a bag item where it fits, or puts an equipped item into the bags.</summary>
+        public void AutoEquip(ItemPos pos)
+        {
+            _autoEquip.Pos = pos;
+            Send(_autoEquip, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Talks to an NPC (or asks for its wares).</summary>
+        public void Interact(EntityGuid npc, InteractOption option = InteractOption.Talk)
+        {
+            _interact.Npc = npc;
+            _interact.Option = option;
+            Send(_interact, DeliveryMethod.ReliableOrdered);
+        }
+
+        public void OpenLoot(EntityGuid corpse)
+        {
+            _lootOpen.Corpse = corpse;
+            Send(_lootOpen, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Takes a loot slot, the money (<see cref="Shared.Net.LootTake.MoneySlot"/>) or everything (<see cref="Shared.Net.LootTake.AllSlots"/>).</summary>
+        public void TakeLoot(byte slot)
+        {
+            _lootTake.Slot = slot;
+            Send(_lootTake, DeliveryMethod.ReliableOrdered);
+        }
+
+        public void CloseLoot()
+        {
+            if (!Loot.IsOpen) return;
+            ResetLoot();
+            Send(new LootClose(), DeliveryMethod.ReliableOrdered);
+            LootChanged?.Invoke();
+        }
+
+        public void BuyItem(EntityGuid vendor, uint itemId, int count = 1)
+        {
+            _vendorBuy.Vendor = vendor;
+            _vendorBuy.ItemId = itemId;
+            _vendorBuy.Count = (ushort)Math.Max(1, Math.Min(count, ushort.MaxValue));
+            Send(_vendorBuy, DeliveryMethod.ReliableOrdered);
+        }
+
+        public void SellItem(EntityGuid vendor, ItemPos pos)
+        {
+            _vendorSell.Vendor = vendor;
+            _vendorSell.Pos = pos;
+            Send(_vendorSell, DeliveryMethod.ReliableOrdered);
+        }
+
+        public void AcceptQuest(EntityGuid npc, uint questId)
+        {
+            _questAccept.Npc = npc;
+            _questAccept.QuestId = questId;
+            Send(_questAccept, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Turns in a finished quest; <paramref name="choice"/> indexes its reward choices (255 = none).</summary>
+        public void TurnInQuest(EntityGuid npc, uint questId, byte choice = QuestTurnIn.NoChoice)
+        {
+            _questTurnIn.Npc = npc;
+            _questTurnIn.QuestId = questId;
+            _questTurnIn.Choice = choice;
+            Send(_questTurnIn, DeliveryMethod.ReliableOrdered);
+        }
+
+        public void AbandonQuest(uint questId)
+        {
+            _questAbandon.QuestId = questId;
+            Send(_questAbandon, DeliveryMethod.ReliableOrdered);
+        }
+
+        public bool IsLootable(EntityGuid corpse) => _lootableCorpses.Contains(corpse);
+
+        public QuestGiverStatus GetQuestGiverStatus(EntityGuid npc) => _questGivers.TryGetValue(npc, out var s) ? s : QuestGiverStatus.None;
 
         // ------------------------------------------------------------------ queries
 
@@ -404,6 +577,20 @@ namespace Madlands.ClientCore
             _knownSpells.Clear();
             _gcdEndsAt = 0;
             Target = EntityGuid.Empty;
+            Inventory.Clear();
+            Quests.Clear();
+            ResetLoot();
+            _lootableCorpses.Clear();
+            _questGivers.Clear();
+            _gossip.Npc = EntityGuid.Empty;
+            _vendor.Vendor = EntityGuid.Empty;
+        }
+
+        private void ResetLoot()
+        {
+            Loot.Corpse = EntityGuid.Empty;
+            Loot.Money = 0;
+            Loot.Items.Clear();
         }
 
         private void OnNetworkReceive(NetPeer peer, NetPacketReader packet, byte channel, DeliveryMethod method)
@@ -434,6 +621,17 @@ namespace Madlands.ClientCore
                     case Opcode.Spellbook: HandleSpellbook(ref r); break;
                     case Opcode.ChatMessage: HandleChat(ref r); break;
                     case Opcode.ExperienceGained: HandleExperience(ref r); break;
+                    case Opcode.InventoryUpdate: HandleInventory(ref r); break;
+                    case Opcode.MoneyUpdate: HandleMoney(ref r); break;
+                    case Opcode.ItemReceived: HandleItemReceived(ref r); break;
+                    case Opcode.ActionFailed: HandleActionFailed(ref r); break;
+                    case Opcode.LootWindow: HandleLootWindow(ref r); break;
+                    case Opcode.LootableUpdate: HandleLootable(ref r); break;
+                    case Opcode.GossipMenu: HandleGossip(ref r); break;
+                    case Opcode.VendorInventory: HandleVendor(ref r); break;
+                    case Opcode.QuestLogUpdate: HandleQuestLog(ref r); break;
+                    case Opcode.QuestGiverStatusUpdate: HandleQuestStatus(ref r); break;
+                    case Opcode.QuestCompleted: HandleQuestCompleted(ref r); break;
                     default: _log?.Invoke("Unknown opcode from server: " + opcode); break;
                 }
             }
@@ -490,6 +688,9 @@ namespace Madlands.ClientCore
         private void HandleDespawn(ref PacketReader r)
         {
             _despawn.Read(ref r);
+            // Out of sight: its marks are resent when it comes back into view.
+            _lootableCorpses.Remove(_despawn.Guid);
+            _questGivers.Remove(_despawn.Guid);
             var entity = World.Remove(_despawn.Guid);
             if (entity != null) EntityDespawned?.Invoke(entity);
             // A target that left our view (or vanished, e.g. a corpse) is no longer selectable.
@@ -640,6 +841,93 @@ namespace Madlands.ClientCore
         {
             _xp.Read(ref r);
             ExperienceReceived?.Invoke(_xp.Amount, _xp.Victim);
+        }
+
+        private void HandleInventory(ref PacketReader r)
+        {
+            _inventoryUpdate.Read(ref r);
+            Inventory.Apply(_inventoryUpdate);
+            InventoryChanged?.Invoke();
+        }
+
+        private void HandleMoney(ref PacketReader r)
+        {
+            _moneyUpdate.Read(ref r);
+            Inventory.Money = _moneyUpdate.Money;
+            MoneyChanged?.Invoke(_moneyUpdate.Delta, _moneyUpdate.Source);
+        }
+
+        private void HandleItemReceived(ref PacketReader r)
+        {
+            _itemReceived.Read(ref r);
+            ItemReceived?.Invoke(_itemReceived);
+        }
+
+        private void HandleActionFailed(ref PacketReader r)
+        {
+            _actionFailed.Read(ref r);
+            ActionFailed?.Invoke(_actionFailed.Error, _actionFailed.Value);
+        }
+
+        private void HandleLootWindow(ref PacketReader r)
+        {
+            _lootWindow.Read(ref r);
+            ResetLoot();
+            if (_lootWindow.Open)
+            {
+                Loot.Corpse = _lootWindow.Corpse;
+                Loot.Money = _lootWindow.Money;
+                Loot.Items.AddRange(_lootWindow.Entries);
+            }
+            LootChanged?.Invoke();
+        }
+
+        private void HandleLootable(ref PacketReader r)
+        {
+            _lootableMsg.Read(ref r);
+            if (_lootableMsg.Lootable) _lootableCorpses.Add(_lootableMsg.Corpse);
+            else _lootableCorpses.Remove(_lootableMsg.Corpse);
+            LootableChanged?.Invoke(_lootableMsg.Corpse);
+        }
+
+        private void HandleGossip(ref PacketReader r)
+        {
+            _gossip.Read(ref r);
+            GossipOpened?.Invoke(_gossip);
+        }
+
+        private void HandleVendor(ref PacketReader r)
+        {
+            _vendor.Read(ref r);
+            VendorOpened?.Invoke(_vendor);
+        }
+
+        private void HandleQuestLog(ref PacketReader r)
+        {
+            _questLog.Read(ref r);
+            _progressScratch.Clear();
+            _questStateScratch.Clear();
+            Quests.Apply(_questLog, _progressScratch, _questStateScratch);
+            QuestLogChanged?.Invoke();
+            foreach (var (quest, objective, count) in _progressScratch) QuestProgressed?.Invoke(quest, objective, count);
+            foreach (var (quest, state) in _questStateScratch) QuestStateChanged?.Invoke(quest, state);
+        }
+
+        private void HandleQuestStatus(ref PacketReader r)
+        {
+            _questStatus.Read(ref r);
+            foreach (var e in _questStatus.Entries)
+            {
+                _questGivers[e.Npc] = e.Status;
+                QuestGiverStatusChanged?.Invoke(e.Npc);
+            }
+        }
+
+        private void HandleQuestCompleted(ref PacketReader r)
+        {
+            _questCompleted.Read(ref r);
+            Quests.MarkCompleted(_questCompleted.QuestId);
+            QuestCompleted?.Invoke(_questCompleted);
         }
     }
 }

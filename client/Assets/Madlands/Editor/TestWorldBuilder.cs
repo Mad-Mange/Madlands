@@ -11,7 +11,8 @@ namespace Madlands.Client.Editor
     /// <summary>
     /// Generates the test map (World_0001) entirely from code: rolling hills with a flat clearing at
     /// the spawn, a rim of hills at the edge, painted terrain layers, primitive trees and rocks, a
-    /// walled bandit camp, creature spawn markers, sun + fog, and the Map object.
+    /// walled bandit camp, the Mirewatch Post outpost (quest givers and a vendor), creature spawn
+    /// markers, sun + fog, and the Map object.
     /// Deterministic: same code, same world.
     /// Real zones (Phase 5) are built by hand in the editor instead.
     ///   Batch: -executeMethod Madlands.Client.Editor.TestWorldBuilder.BuildFromCommandLine
@@ -71,6 +72,7 @@ namespace Madlands.Client.Editor
             SetupLightingAndFog();
             CreateProps(terrain);
             CreateCamp();
+            CreateOutpost();
             CreateSpawns();
             CreateMapInfo();
 
@@ -317,9 +319,51 @@ namespace Madlands.Client.Editor
                 GameObjectUtility.SetStaticEditorFlags(child.gameObject, StaticEditorFlags.BatchingStatic);
         }
 
+        // ------------------------------------------------------------------ Mirewatch Post
+
+        /// <summary>The settlers' outpost around the spawn: a supply tent for the quartermaster, Tamsin's hut and cauldron, a banner.</summary>
+        private static void CreateOutpost()
+        {
+            var wood = AssetDatabase.LoadAssetAtPath<Material>(MaterialDir + "/TreeTrunk.mat");
+            var canvas = AssetDatabase.LoadAssetAtPath<Material>(MaterialDir + "/Canvas.mat");
+            var stone = AssetDatabase.LoadAssetAtPath<Material>(MaterialDir + "/Stone.mat");
+            var banner = CreateMaterial(MaterialDir + "/Banner.mat", new Color(0.18f, 0.32f, 0.62f));
+            var parent = new GameObject("MirewatchPost").transform;
+            Vector3 Ground(float x, float z) => new Vector3(x, HeightAt(x, z), z);
+
+            // Quartermaster Holt's supply tent and crates, east of the spawn.
+            var tent = AddPrimitive(PrimitiveType.Cube, parent, Ground(13f, -3.5f) + Vector3.up * 1.2f, new Vector3(3.2f, 2.4f, 4f), canvas, keepCollider: true);
+            tent.name = "SupplyTent";
+            tent.transform.rotation = Quaternion.Euler(0f, 10f, 0f);
+            foreach (var (x, z, size) in new[] { (10.5f, -6.5f, 1.0f), (11.6f, -7.2f, 0.8f), (10.8f, 0.2f, 0.9f) })
+            {
+                var crate = AddPrimitive(PrimitiveType.Cube, parent, Ground(x, z) + Vector3.up * size * 0.5f, Vector3.one * size, wood, keepCollider: true);
+                crate.name = "Crate";
+                crate.transform.rotation = Quaternion.Euler(0f, x * 37f % 90f, 0f);
+            }
+
+            // Old Tamsin's hut and cauldron, south-west.
+            var hut = AddPrimitive(PrimitiveType.Cube, parent, Ground(-10f, -11f) + Vector3.up * 1.3f, new Vector3(3.5f, 2.6f, 3f), wood, keepCollider: true);
+            hut.name = "Hut";
+            hut.transform.rotation = Quaternion.Euler(0f, 37f, 0f);
+            var roof = AddPrimitive(PrimitiveType.Cube, parent, Ground(-10f, -11f) + Vector3.up * 2.8f, new Vector3(4.1f, 0.5f, 3.6f), canvas, keepCollider: false);
+            roof.name = "HutRoof";
+            roof.transform.rotation = Quaternion.Euler(0f, 37f, 0f);
+            var cauldron = AddPrimitive(PrimitiveType.Cylinder, parent, Ground(-4.2f, -9.4f) + Vector3.up * 0.4f, new Vector3(1.1f, 0.4f, 1.1f), stone, keepCollider: true);
+            cauldron.name = "Cauldron";
+
+            // The captain's banner, north-east of the spawn.
+            AddPrimitive(PrimitiveType.Cylinder, parent, Ground(6.5f, 11f) + Vector3.up * 2.5f, new Vector3(0.18f, 2.5f, 0.18f), wood, keepCollider: true).name = "BannerPole";
+            AddPrimitive(PrimitiveType.Cube, parent, Ground(6.5f, 11f) + new Vector3(0.6f, 4.1f, 0f), new Vector3(1.1f, 1.4f, 0.05f), banner, keepCollider: false).name = "Banner";
+
+            foreach (Transform child in parent.GetComponentsInChildren<Transform>())
+                GameObjectUtility.SetStaticEditorFlags(child.gameObject, StaticEditorFlags.BatchingStatic);
+        }
+
         // ------------------------------------------------------------------ creature spawns
 
         private const int MireFrog = 1, DuskWolf = 2, ShardBandit = 3, BanditShardcaster = 4, TrainingDummy = 5;
+        private const int CaptainEdda = 10, OldTamsin = 11, QuartermasterHolt = 12;
 
         /// <summary>Spawn markers (exported to spawns.json). EditorOnly: they are not part of player builds.</summary>
         private static void CreateSpawns()
@@ -334,6 +378,11 @@ namespace Madlands.Client.Editor
                 marker.creatureId = creature;
                 marker.wanderRadius = wander;
             }
+
+            // Mirewatch Post: quest givers and a vendor around the spawn, facing it.
+            Spawn(CaptainEdda, 4f, 9f, 204f, 0f);
+            Spawn(OldTamsin, -6f, -8f, 37f, 0f);
+            Spawn(QuartermasterHolt, 9f, -3f, 288f, 0f);
 
             // Practice targets next to the spawn, facing it.
             Spawn(TrainingDummy, -9f, 7f, 125f, 0f);

@@ -9,7 +9,8 @@
       "statsPerLevel": { "strength": 2, "agility": 1, "stamina": 2, "intellect": 0, "spirit": 0.5 },
       "baseHealth": 30,
       "healthPerLevel": 14,
-      "weapon": { "minDamage": 3, "maxDamage": 6, "damagePerLevel": 1, "speedMs": 2000 },
+      "startingItems": [ { "item": 1001 }, { "item": 1101 }, { "item": 4001, "count": 4 } ],
+      "unarmed": { "minDamage": 1, "maxDamage": 2, "damagePerLevel": 0.5, "speedMs": 2000 },
       "spells": [
         { "spell": 1, "level": 1 },
         { "spell": 100, "level": 1 },
@@ -29,7 +30,8 @@
       "healthPerLevel": 10,
       "baseMana": 40,
       "manaPerLevel": 15,
-      "weapon": { "minDamage": 1, "maxDamage": 3, "damagePerLevel": 0.5, "speedMs": 2400 },
+      "startingItems": [ { "item": 1002 }, { "item": 1102 }, { "item": 4002, "count": 4 } ],
+      "unarmed": { "minDamage": 1, "maxDamage": 2, "damagePerLevel": 0.5, "speedMs": 2000 },
       "spells": [
         { "spell": 1, "level": 1 },
         { "spell": 200, "level": 1 },
@@ -49,7 +51,8 @@
       "healthPerLevel": 12,
       "baseMana": 50,
       "manaPerLevel": 14,
-      "weapon": { "minDamage": 2, "maxDamage": 4, "damagePerLevel": 0.7, "speedMs": 2200 },
+      "startingItems": [ { "item": 1003 }, { "item": 1103 }, { "item": 4002, "count": 4 } ],
+      "unarmed": { "minDamage": 1, "maxDamage": 2, "damagePerLevel": 0.5, "speedMs": 2000 },
       "spells": [
         { "spell": 1, "level": 1 },
         { "spell": 300, "level": 1 },

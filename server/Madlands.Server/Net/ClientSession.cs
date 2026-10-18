@@ -33,6 +33,8 @@ public sealed class ClientSession
     /// <summary>Targeting, casting, cancelling: a fast player presses a lot of keys, but not this many.</summary>
     public RateLimiter ActionLimiter { get; } = new(ratePerSecond: 25, burst: 50);
     public RateLimiter ChatLimiter { get; } = new(ratePerSecond: 2, burst: 8);
+    /// <summary>GM commands of GM accounts.</summary>
+    public RateLimiter GmCommandLimiter { get; } = new(ratePerSecond: 20, burst: 40);
     /// <summary>0 = player; GM commands need more.</summary>
     public int GmLevel { get; set; }
     public int Violations { get; set; }

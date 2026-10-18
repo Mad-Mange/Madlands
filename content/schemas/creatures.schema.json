@@ -136,6 +136,38 @@
           "callForHelpRadius": {
             "type": "number",
             "minimum": 0
+          },
+          "loot": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Loot table id (content/loot.json); 0 = drops nothing."
+          },
+          "gossip": {
+            "type": "string",
+            "description": "What it says when spoken to."
+          },
+          "vendor": {
+            "type": "array",
+            "description": "Item ids it sells.",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "equipment": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Items it holds (for looks only).",
+            "properties": {
+              "mainHand": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "offHand": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
           }
         }
       }

@@ -17,6 +17,7 @@ public sealed class AuraSystem
     private readonly List<Aura> _updateScratch = new();
     private readonly List<Aura> _removeAllScratch = new();
     private readonly List<Aura> _spentScratch = new();
+    private readonly List<Aura> _breakScratch = new();
 
     public AuraSystem(MapInstance map)
     {
@@ -84,6 +85,16 @@ public sealed class AuraSystem
         _map.SendAuraUpdate(unit, aura, removed: true, now);
     }
 
+    /// <summary>Removes the auras that end when the unit enters combat (eating, drinking).</summary>
+    public void BreakOnCombat(Unit unit, long now)
+    {
+        if (unit.Auras.Count == 0) return;
+        _breakScratch.Clear();
+        foreach (var aura in unit.Auras)
+            if (aura.Definition.BreakOnCombat) _breakScratch.Add(aura);
+        foreach (var aura in _breakScratch) Remove(unit, aura, now);
+    }
+
     public void RemoveAll(Unit unit, long now)
     {
         if (unit.Auras.Count == 0) return;
@@ -125,6 +136,9 @@ public sealed class AuraSystem
                     break;
                 case AuraEffectType.PeriodicHeal:
                     _map.Combat.Heal(caster, unit, amount, aura.Spell.Id, aura.Spell.School, CombatFlags.Periodic, now);
+                    break;
+                case AuraEffectType.PeriodicEnergize:
+                    if (unit.PowerType == effects[i].Power) unit.Power += amount;
                     break;
             }
             if (unit.IsDead) return;

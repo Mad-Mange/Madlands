@@ -27,6 +27,7 @@ switch (command)
             }
             Console.WriteLine($"  {db.Races.Count} races, {db.Classes.Count} classes, {db.Factions.Count} factions, " +
                               $"{db.Spells.Count} spells, {db.Creatures.Count} creatures, level cap {db.Levels.MaxLevel}");
+            Console.WriteLine($"  {db.Items.Count} items, {db.LootTables.Count} loot tables, {db.Quests.Count} quests");
             return 0;
         }
         catch (ContentException ex)

@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/quests.schema.json",
+  "title": "Quests (content/quests.json)",
+  "description": "Quests are offered by one creature (giver) and turned in at another or the same (ender). Chains use requires.",
+  "type": "object",
+  "required": [
+    "quests"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "quests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "giver",
+          "ender",
+          "details",
+          "summary",
+          "completion"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Stable id stored on characters. Never reuse."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "The level it is meant for."
+          },
+          "minLevel": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "The lowest level that can take it."
+          },
+          "giver": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Creature id that offers it."
+          },
+          "ender": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Creature id that takes it back."
+          },
+          "requires": {
+            "type": "array",
+            "description": "Quests that must be turned in first.",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "classes": {
+            "type": "array",
+            "description": "Class ids that may take it; empty = everyone.",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "details": {
+            "type": "string",
+            "description": "The story told when it is offered."
+          },
+          "summary": {
+            "type": "string",
+            "description": "One line: what to do."
+          },
+          "progress": {
+            "type": "string",
+            "description": "What the ender says while it is unfinished."
+          },
+          "completion": {
+            "type": "string",
+            "description": "What the ender says when it is turned in."
+          },
+          "objectives": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "enum": [
+                    "kill",
+                    "collect",
+                    "talk",
+                    "explore"
+                  ]
+                },
+                "creature": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "kill and talk: the creature id."
+                },
+                "item": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "collect: the item id (counted in the bags, taken at turn-in)."
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 250,
+                  "default": 1
+                },
+                "map": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "explore: the map."
+                },
+                "x": {
+                  "type": "number"
+                },
+                "z": {
+                  "type": "number"
+                },
+                "radius": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 200
+                },
+                "text": {
+                  "type": "string",
+                  "description": "Quest log line; made from the target name when empty (explore needs one)."
+                }
+              }
+            }
+          },
+          "rewards": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "xp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "money": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Copper."
+              },
+              "items": {
+                "type": "array",
+                "maxItems": 6,
+                "description": "Always given.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "item"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "item": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "count": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "default": 1
+                    }
+                  }
+                }
+              },
+              "choices": {
+                "type": "array",
+                "maxItems": 6,
+                "description": "The player picks one.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "item"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "item": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "count": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "default": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@ namespace Madlands.Shared.Net
         /// Bump on ANY wire-format or shared-rule change. Checked in the handshake; a mismatching
         /// client is rejected with <see cref="RejectReason.ProtocolMismatch"/> ("please update").
         /// </summary>
-        public const ushort Current = 3;
+        public const ushort Current = 4;
 
         /// <summary>LiteNetLib connection key; filters out stray traffic before the handshake.</summary>
         public const string ConnectionKey = "Madlands";
@@ -35,6 +35,19 @@ namespace Madlands.Shared.Net
         ChatInput = 0x0108,
         ReleaseSpirit = 0x0109,
         CancelAura = 0x010A,
+        MoveItem = 0x010B,
+        UseItem = 0x010C,
+        DestroyItem = 0x010D,
+        AutoEquip = 0x010E,
+        Interact = 0x010F,
+        LootOpen = 0x0110,
+        LootTake = 0x0111,
+        LootClose = 0x0112,
+        VendorBuy = 0x0113,
+        VendorSell = 0x0114,
+        QuestAccept = 0x0115,
+        QuestTurnIn = 0x0116,
+        QuestAbandon = 0x0117,
 
         // Client -> Server (account API)
         RegisterRequest = 0x0201,
@@ -64,6 +77,17 @@ namespace Madlands.Shared.Net
         Spellbook = 0x8011,
         ChatMessage = 0x8012,
         ExperienceGained = 0x8013,
+        InventoryUpdate = 0x8014,
+        MoneyUpdate = 0x8015,
+        ItemReceived = 0x8016,
+        ActionFailed = 0x8017,
+        LootWindow = 0x8018,
+        LootableUpdate = 0x8019,
+        GossipMenu = 0x801A,
+        VendorInventory = 0x801B,
+        QuestLogUpdate = 0x801C,
+        QuestGiverStatusUpdate = 0x801D,
+        QuestCompleted = 0x801E,
 
         // Server -> Client (account API)
         AuthResponse = 0x8101,

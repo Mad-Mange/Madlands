@@ -1,0 +1,119 @@
+{
+  "$schema": "schemas/items.schema.json",
+  "items": [
+    {
+      "id": 1001, "name": "Worn Shortsword", "icon": 1001, "displayId": 2001, "quality": "common",
+      "class": "weapon", "slot": "mainHand", "buyPrice": 45, "sellPrice": 11,
+      "weapon": { "minDamage": 3, "maxDamage": 6, "speedMs": 2000 }
+    },
+    {
+      "id": 1002, "name": "Apprentice's Staff", "icon": 1002, "displayId": 2002, "quality": "common",
+      "class": "weapon", "slot": "twoHand", "buyPrice": 50, "sellPrice": 12,
+      "weapon": { "minDamage": 3, "maxDamage": 6, "speedMs": 2600 }
+    },
+    {
+      "id": 1003, "name": "Warden's Cudgel", "icon": 1003, "displayId": 2003, "quality": "common",
+      "class": "weapon", "slot": "mainHand", "buyPrice": 45, "sellPrice": 11,
+      "weapon": { "minDamage": 2, "maxDamage": 5, "speedMs": 2200 }
+    },
+    {
+      "id": 1010, "name": "Bandit's Cutlass", "icon": 1010, "displayId": 2005, "quality": "common",
+      "class": "weapon", "slot": "mainHand", "requiredLevel": 3, "sellPrice": 35,
+      "description": "Nicked, but sharp where it counts.",
+      "weapon": { "minDamage": 5, "maxDamage": 9, "speedMs": 2200 }
+    },
+    {
+      "id": 1011, "name": "Settler's Hatchet", "icon": 1011, "displayId": 2004, "quality": "common",
+      "class": "weapon", "slot": "mainHand", "requiredLevel": 2, "buyPrice": 120, "sellPrice": 30,
+      "weapon": { "minDamage": 4, "maxDamage": 8, "speedMs": 2300 }
+    },
+    {
+      "id": 1020, "name": "Palisade Breaker", "icon": 1020, "displayId": 2009, "quality": "uncommon",
+      "class": "weapon", "slot": "twoHand", "requiredLevel": 5, "sellPrice": 110,
+      "description": "Taken from the bandit camp's gate, and somewhat improved.",
+      "weapon": { "minDamage": 13, "maxDamage": 20, "speedMs": 3200 },
+      "stats": { "strength": 3, "stamina": 2 }
+    },
+    {
+      "id": 1021, "name": "Shardglass Rod", "icon": 1021, "displayId": 2007, "quality": "uncommon",
+      "class": "weapon", "slot": "twoHand", "requiredLevel": 5, "sellPrice": 110,
+      "description": "A sliver of recovered moonshard, safely caged in silver.",
+      "weapon": { "minDamage": 8, "maxDamage": 13, "speedMs": 2800 },
+      "stats": { "intellect": 4, "spirit": 2, "spellPower": 4 }
+    },
+    {
+      "id": 1022, "name": "Oathkeeper Mace", "icon": 1022, "displayId": 2008, "quality": "uncommon",
+      "class": "weapon", "slot": "mainHand", "requiredLevel": 5, "sellPrice": 100,
+      "weapon": { "minDamage": 7, "maxDamage": 12, "speedMs": 2400 },
+      "stats": { "stamina": 1, "intellect": 2, "spirit": 3 }
+    },
+    {
+      "id": 1030, "name": "Settler's Buckler", "icon": 1030, "displayId": 2006, "quality": "common",
+      "class": "armor", "slot": "offHand", "requiredLevel": 2, "buyPrice": 100, "sellPrice": 25,
+      "stats": { "armor": 20 }
+    },
+
+    { "id": 1101, "name": "Recruit's Tunic", "icon": 1101, "quality": "common", "class": "armor", "slot": "chest", "sellPrice": 5, "stats": { "armor": 10 } },
+    { "id": 1102, "name": "Apprentice's Robe", "icon": 1102, "quality": "common", "class": "armor", "slot": "chest", "sellPrice": 5, "stats": { "armor": 4 } },
+    { "id": 1103, "name": "Initiate's Vestments", "icon": 1103, "quality": "common", "class": "armor", "slot": "chest", "sellPrice": 5, "stats": { "armor": 7 } },
+
+    { "id": 1201, "name": "Mirefen Gloves", "icon": 1201, "quality": "uncommon", "class": "armor", "slot": "hands", "sellPrice": 20, "stats": { "armor": 9, "agility": 1, "stamina": 1 } },
+    { "id": 1202, "name": "Frogskin Boots", "icon": 1202, "quality": "uncommon", "class": "armor", "slot": "feet", "sellPrice": 20, "stats": { "armor": 10, "stamina": 2 } },
+    { "id": 1203, "name": "Reedwoven Bracers", "icon": 1203, "quality": "uncommon", "class": "armor", "slot": "wrists", "sellPrice": 18, "stats": { "armor": 4, "intellect": 2 } },
+    { "id": 1210, "name": "Wolfhide Jerkin", "icon": 1210, "quality": "uncommon", "class": "armor", "slot": "chest", "requiredLevel": 3, "sellPrice": 45, "stats": { "armor": 32, "strength": 2, "stamina": 2 } },
+    { "id": 1211, "name": "Duskweave Robe", "icon": 1211, "quality": "uncommon", "class": "armor", "slot": "chest", "requiredLevel": 3, "sellPrice": 45, "stats": { "armor": 10, "intellect": 3, "spirit": 2 } },
+    { "id": 1212, "name": "Pack-Runner's Mantle", "icon": 1212, "quality": "uncommon", "class": "armor", "slot": "shoulders", "requiredLevel": 3, "sellPrice": 40, "stats": { "armor": 16, "stamina": 1, "intellect": 1, "spirit": 2 } },
+    { "id": 1220, "name": "Bandit's Leather Belt", "icon": 1220, "quality": "uncommon", "class": "armor", "slot": "waist", "requiredLevel": 3, "sellPrice": 35, "stats": { "armor": 9, "agility": 2, "stamina": 1 } },
+    { "id": 1221, "name": "Smuggler's Hood", "icon": 1221, "quality": "uncommon", "class": "armor", "slot": "head", "requiredLevel": 3, "sellPrice": 35, "stats": { "armor": 12, "stamina": 2, "intellect": 1 } },
+    { "id": 1222, "name": "Tarnished Signet", "icon": 1222, "quality": "uncommon", "class": "armor", "slot": "finger", "requiredLevel": 2, "sellPrice": 40, "stats": { "stamina": 1, "spirit": 2 } },
+    { "id": 1223, "name": "Shard-Etched Pendant", "icon": 1223, "quality": "uncommon", "class": "armor", "slot": "neck", "requiredLevel": 4, "sellPrice": 45, "stats": { "intellect": 2, "spellPower": 2 } },
+    { "id": 1224, "name": "Ridgewalker Leggings", "icon": 1224, "quality": "uncommon", "class": "armor", "slot": "legs", "requiredLevel": 4, "sellPrice": 45, "stats": { "armor": 18, "strength": 2, "stamina": 2 } },
+    { "id": 1225, "name": "Mossy Cloak", "icon": 1225, "quality": "uncommon", "class": "armor", "slot": "back", "requiredLevel": 2, "sellPrice": 30, "stats": { "armor": 7, "stamina": 1, "spirit": 2 } },
+    { "id": 1226, "name": "Glinting Moonshard", "icon": 1226, "quality": "uncommon", "class": "armor", "slot": "trinket", "requiredLevel": 5, "sellPrice": 60, "stats": { "spellPower": 4 }, "description": "It hums when you are not looking at it." },
+    { "id": 1227, "name": "Wolf-Tooth Charm", "icon": 1227, "quality": "uncommon", "class": "armor", "slot": "trinket", "requiredLevel": 5, "sellPrice": 60, "stats": { "attackPower": 8 } },
+    { "id": 1228, "name": "Hollow Thorn Band", "icon": 1228, "quality": "uncommon", "class": "armor", "slot": "finger", "requiredLevel": 4, "sellPrice": 40, "stats": { "strength": 1, "agility": 2 } },
+
+    { "id": 1301, "name": "Settler's Trousers", "icon": 1301, "quality": "common", "class": "armor", "slot": "legs", "buyPrice": 60, "sellPrice": 15, "stats": { "armor": 8 } },
+    { "id": 1302, "name": "Settler's Boots", "icon": 1302, "quality": "common", "class": "armor", "slot": "feet", "buyPrice": 45, "sellPrice": 11, "stats": { "armor": 6 } },
+    { "id": 1303, "name": "Linen Gloves", "icon": 1303, "quality": "common", "class": "armor", "slot": "hands", "buyPrice": 30, "sellPrice": 7, "stats": { "armor": 3 } },
+
+    { "id": 2001, "name": "Slimy Frog Skin", "icon": 2001, "quality": "poor", "class": "junk", "stackSize": 10, "sellPrice": 4 },
+    { "id": 2002, "name": "Broken Wolf Fang", "icon": 2002, "quality": "poor", "class": "junk", "stackSize": 10, "sellPrice": 7 },
+    { "id": 2003, "name": "Dusk Wolf Pelt", "icon": 2003, "quality": "common", "class": "tradeGoods", "stackSize": 10, "sellPrice": 12, "description": "Thick, grey and smelling strongly of wolf." },
+    { "id": 2004, "name": "Bandit's Lucky Coin", "icon": 2004, "quality": "poor", "class": "junk", "stackSize": 5, "sellPrice": 24, "description": "It did not work." },
+    { "id": 2005, "name": "Cracked Shard Fragment", "icon": 2005, "quality": "poor", "class": "junk", "stackSize": 10, "sellPrice": 15, "description": "Whatever power it held has leaked away." },
+
+    { "id": 3001, "name": "Mire Frog Leg", "icon": 3001, "quality": "common", "class": "quest", "stackSize": 10 },
+    { "id": 3002, "name": "Stolen Moonshard", "icon": 3002, "quality": "common", "class": "quest", "stackSize": 10, "description": "Cold to the touch, and faintly whispering." },
+
+    {
+      "id": 4001, "name": "Hearthbread", "icon": 4001, "quality": "common", "class": "consumable", "stackSize": 20,
+      "buyPrice": 25, "sellPrice": 1, "useSpell": 500,
+      "description": "Use: Restores 90 health over 18 sec. Must remain out of combat."
+    },
+    {
+      "id": 4002, "name": "Spring Water", "icon": 4002, "quality": "common", "class": "consumable", "stackSize": 20,
+      "buyPrice": 25, "sellPrice": 1, "useSpell": 501,
+      "description": "Use: Restores 90 mana over 18 sec. Must remain out of combat."
+    },
+    {
+      "id": 4003, "name": "Minor Healing Draught", "icon": 4003, "quality": "common", "class": "consumable", "stackSize": 5,
+      "buyPrice": 60, "sellPrice": 15, "useSpell": 502,
+      "description": "Use: Restores 70 to 90 health."
+    },
+    {
+      "id": 4004, "name": "Minor Mana Draught", "icon": 4004, "quality": "common", "class": "consumable", "stackSize": 5,
+      "buyPrice": 60, "sellPrice": 15, "useSpell": 503,
+      "description": "Use: Restores 80 to 110 mana."
+    },
+    {
+      "id": 4005, "name": "Hearty Stew", "icon": 4005, "quality": "common", "class": "consumable", "stackSize": 20,
+      "requiredLevel": 5, "buyPrice": 100, "sellPrice": 6, "useSpell": 504,
+      "description": "Use: Restores 240 health over 18 sec. Must remain out of combat."
+    },
+
+    { "id": 5001, "name": "Small Linen Pouch", "icon": 5001, "quality": "common", "class": "container", "slot": "bag", "bagSlots": 6, "buyPrice": 250, "sellPrice": 62 },
+    { "id": 5002, "name": "Wolfhide Satchel", "icon": 5002, "quality": "common", "class": "container", "slot": "bag", "bagSlots": 8, "sellPrice": 70 },
+    { "id": 5003, "name": "Smuggler's Rucksack", "icon": 5003, "quality": "uncommon", "class": "container", "slot": "bag", "bagSlots": 10, "sellPrice": 100, "description": "Plenty of hidden pockets." }
+  ]
+}

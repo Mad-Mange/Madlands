@@ -50,6 +50,8 @@ namespace Madlands.Shared.Game
         HarmfulAura = 1 << 3,
         /// <summary>Not shown in the spellbook (creature abilities, internal spells).</summary>
         Hidden = 1 << 4,
+        /// <summary>Cannot be cast while in combat (eating, drinking).</summary>
+        NotInCombat = 1 << 5,
     }
 
     /// <summary>Why a cast did not happen (or ended early). Shown to the player as an error text.</summary>
@@ -73,6 +75,7 @@ namespace Madlands.Shared.Game
         AlreadyCasting = 15,
         TargetDead = 16,
         Cancelled = 17,
+        InCombat = 18,
     }
 
     public enum Reaction : byte

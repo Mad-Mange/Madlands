@@ -96,10 +96,10 @@
           "manaPerLevel": {
             "type": "number"
           },
-          "weapon": {
+          "unarmed": {
             "type": "object",
             "additionalProperties": false,
-            "description": "Built-in weapon until items exist.",
+            "description": "Bare-handed damage, used when no weapon is equipped in the main hand.",
             "properties": {
               "minDamage": {
                 "type": "number"
@@ -113,6 +113,28 @@
               "speedMs": {
                 "type": "integer",
                 "minimum": 500
+              }
+            }
+          },
+          "startingItems": {
+            "type": "array",
+            "description": "Handed out once, on the first login: worn where they fit, the rest into the bags.",
+            "items": {
+              "type": "object",
+              "required": [
+                "item"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "item": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 1
+                }
               }
             }
           },

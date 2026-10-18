@@ -4,13 +4,29 @@ public sealed record AccountRecord(long Id, string Username, string PasswordHash
 
 /// <param name="Health">Current health; null = full (a new character).</param>
 /// <param name="Power">Current mana/rage; null = the class default.</param>
+/// <param name="Money">Copper.</param>
+/// <param name="StarterKit">The class's starting items were handed out.</param>
 public sealed record CharacterRecord(
     long Id, long AccountId, string Name, byte Race, byte Class, byte Level,
-    ushort MapId, float X, float Y, float Z, float Yaw, int Xp = 0, int? Health = null, int? Power = null);
+    ushort MapId, float X, float Y, float Z, float Yaw, int Xp = 0, int? Health = null, int? Power = null,
+    long Money = 0, bool StarterKit = false);
 
-/// <summary>What the write-behind saver persists for an online character.</summary>
+/// <summary>A stack in a slot (see ItemPos).</summary>
+public readonly record struct ItemRecord(byte Container, byte Slot, uint ItemId, int Count);
+
+/// <summary>A quest in the log (<paramref name="Rewarded"/> false, with objective counts) or one turned in.</summary>
+public readonly record struct QuestRecord(uint QuestId, bool Rewarded, int[] Progress);
+
+/// <summary>A character's items and quests, loaded when it enters the world.</summary>
+public sealed record CharacterData(IReadOnlyList<ItemRecord> Items, IReadOnlyList<QuestRecord> Quests)
+{
+    public static readonly CharacterData Empty = new(Array.Empty<ItemRecord>(), Array.Empty<QuestRecord>());
+}
+
+/// <summary>What the write-behind saver persists for an online character. The arrays are copies owned by the snapshot.</summary>
 public readonly record struct CharacterSnapshot(
-    long CharacterId, ushort MapId, float X, float Y, float Z, float Yaw, byte Level, int Xp, int Health, int Power);
+    long CharacterId, ushort MapId, float X, float Y, float Z, float Yaw, byte Level, int Xp, int Health, int Power,
+    long Money, bool StarterKit, ItemRecord[] Items, QuestRecord[] Quests);
 
 public enum CreateCharacterOutcome
 {
@@ -49,5 +65,8 @@ public interface IGameDatabase
     Task<bool> DeleteCharacterAsync(long accountId, long characterId, CancellationToken ct = default);
     /// <summary>Null if the character does not exist, is deleted, or belongs to another account.</summary>
     Task<CharacterRecord?> LoadCharacterAsync(long accountId, long characterId, CancellationToken ct = default);
+    /// <summary>Items and quests of a character (call after <see cref="LoadCharacterAsync"/> checked ownership).</summary>
+    Task<CharacterData> LoadCharacterDataAsync(long characterId, CancellationToken ct = default);
+    /// <summary>Writes the character row, its items and its quests in one transaction.</summary>
     Task SaveCharacterAsync(CharacterSnapshot snapshot, CancellationToken ct = default);
 }

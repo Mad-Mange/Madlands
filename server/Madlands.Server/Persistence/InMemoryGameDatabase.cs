@@ -18,6 +18,7 @@ public sealed class InMemoryGameDatabase : IGameDatabase
     private readonly Dictionary<long, CharacterRecord> _characters = new();
     private readonly HashSet<long> _deleted = new();
     private readonly Dictionary<long, int> _gmLevels = new();
+    private readonly Dictionary<long, CharacterData> _data = new();
     private long _nextAccountId = 1;
     private long _nextCharacterId = 1;
 
@@ -136,15 +137,24 @@ public sealed class InMemoryGameDatabase : IGameDatabase
         }
     }
 
+    public Task<CharacterData> LoadCharacterDataAsync(long characterId, CancellationToken ct = default)
+    {
+        lock (_lock) return Task.FromResult(_data.GetValueOrDefault(characterId) ?? CharacterData.Empty);
+    }
+
     public Task SaveCharacterAsync(CharacterSnapshot s, CancellationToken ct = default)
     {
         lock (_lock)
         {
             if (_characters.TryGetValue(s.CharacterId, out var c))
+            {
                 _characters[s.CharacterId] = c with
                 {
                     MapId = s.MapId, X = s.X, Y = s.Y, Z = s.Z, Yaw = s.Yaw, Level = s.Level, Xp = s.Xp, Health = s.Health, Power = s.Power,
+                    Money = s.Money, StarterKit = s.StarterKit,
                 };
+                _data[s.CharacterId] = new CharacterData(s.Items.ToArray(), s.Quests.Select(q => q with { Progress = q.Progress.ToArray() }).ToArray());
+            }
         }
         return Task.CompletedTask;
     }

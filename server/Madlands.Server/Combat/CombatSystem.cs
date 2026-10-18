@@ -254,9 +254,11 @@ public sealed class CombatSystem
         creature.Ai.OnAttacked(attacker, now);
     }
 
-    /// <summary>Both sides are now fighting.</summary>
+    /// <summary>Both sides are now fighting (eating and drinking stop).</summary>
     public void EnterCombat(Unit a, Unit b, long now)
     {
+        _map.Auras.BreakOnCombat(a, now);
+        _map.Auras.BreakOnCombat(b, now);
         a.CombatUntilMs = Math.Max(a.CombatUntilMs, now + CombatTimeoutMs);
         b.CombatUntilMs = Math.Max(b.CombatUntilMs, now + CombatTimeoutMs);
         a.SetFlag(UnitFlags.InCombat, true);
@@ -303,12 +305,18 @@ public sealed class CombatSystem
         switch (victim)
         {
             case Creature creature:
-                if (_map.Find(creature.Tapper) is Player tapper && Vec3.Distance(tapper.Position, creature.Position) <= XpRange)
+                creature.DiedAtMs = now;
+                creature.DespawnAtMs = now + creature.Template.CorpseSeconds * 1000L;
+                var tapper = _map.Find(creature.Tapper) as Player;
+                if (tapper is not null && Vec3.Distance(tapper.Position, creature.Position) <= XpRange)
+                {
                     GiveXp(tapper, Experience.ForKill(tapper.Level, creature.Level, creature.Template.Xp), creature.Guid, now);
+                    _map.Quests.OnKill(tapper, creature);
+                }
+                _map.Loot.OnCreatureKilled(creature, tapper, now);
                 ClearThreat(creature);
                 creature.Mover.Stop(now);
                 creature.Ai.OnDeath(now);
-                creature.DespawnAtMs = now + creature.Template.CorpseSeconds * 1000L;
                 break;
             case Player player:
                 DropFromThreatLists(player);
@@ -423,5 +431,6 @@ public sealed class CombatSystem
         }
         if (player.UpdateKnownSpells()) _map.Spells.SendSpellbook(player);
         if (up) _map.SendSystemMessage(player, $"You have reached level {level}!");
+        _map.Quests.RefreshStatuses(player);
     }
 }
