@@ -47,6 +47,29 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
   `Attack1H`, `Attack2H`, `AttackUnarmed`, `CastLoop`, `CastRelease`, `Hit`, `Death` (creatures: `Attack`).
   Looping ones are listed in `ArtImporter.LoopingClips`.
 
+## Sound and music
+
+The music, the ambience loops, the spell sounds, swings, splashes and jingles are synthesized by
+`art/audio/*.py` (numpy, run inside Blender for its OGG encoder). Footsteps, impacts, coins, cloth, books and
+interface clicks are CC0 sounds from Kenney ([CREDITS.md](../CREDITS.md)).
+
+```powershell
+& $blender -b --factory-startup -P art/audio/build.py                          # everything (about 25 s)
+& $blender -b --factory-startup -P art/audio/build.py -- music_mirewatch cast_fire  # some
+python art/audio/kenney.py                                                      # re-import the Kenney sounds
+```
+
+| File | What |
+|---|---|
+| `audio/synth.py` | The synthesizer: envelopes, noise shaped in the frequency domain, convolution reverb, instruments (pluck, pad, bell, flute, drone). |
+| `audio/sounds.py` | Effects, jingles and ambience loops (`SOUNDS`: clip name -> folder, builder). |
+| `audio/music.py` | The three music loops as data: key, tempo, chords, parts; melodies from a seeded random walk. |
+| `audio/kenney.py` | Which Kenney sounds we use and the names they get. |
+
+Clips land in `client/Assets/Madlands/Audio/{Sfx,Ambience,Music,Kenney}` as OGG (Git LFS). The client plays
+them by name (`SoundSystem`); numbered variants (`step_grass_1` .. `_5`) are picked at random by their base
+name. Music and ambience per area are set on the map (`MapArea.music` / `ambience`, from `HollowmereBuilder`).
+
 ## Editing a model by hand
 
 The scripts are the source until someone refines a model in Blender. Then move its `.blend` to `art/source/`

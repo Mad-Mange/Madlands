@@ -131,9 +131,14 @@ namespace Madlands.Client
         public readonly VisualElement Body;
         public readonly VisualElement Footer;
         private readonly Label _title;
+        private readonly string _kind;
+
+        /// <summary>Any window opened (true) or closed (false), by its kind (the css class): for sounds.</summary>
+        public static event Action<string, bool> Toggled;
 
         public GameWindow(VisualElement parent, string title, string cssClass)
         {
+            _kind = cssClass;
             Root = new VisualElement { pickingMode = PickingMode.Position };
             Root.AddToClassList("window");
             Root.AddToClassList(cssClass);
@@ -164,8 +169,10 @@ namespace Madlands.Client
 
         public void Open()
         {
+            bool was = IsOpen;
             Root.RemoveFromClassList("hidden");
             Root.BringToFront();
+            if (!was) Toggled?.Invoke(_kind, true);
         }
 
         public void Close()
@@ -173,6 +180,7 @@ namespace Madlands.Client
             if (!IsOpen) return;
             Root.AddToClassList("hidden");
             Closed?.Invoke();
+            Toggled?.Invoke(_kind, false);
         }
 
         public void Toggle()

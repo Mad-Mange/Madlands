@@ -34,6 +34,7 @@ namespace Madlands.Client.Editor
         public static bool BuildWindows()
         {
             ArtImporter.RefreshCatalog();
+            SoundImporter.RefreshCatalog();
             var options = new BuildPlayerOptions
             {
                 scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(),

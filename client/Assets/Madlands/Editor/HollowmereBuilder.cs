@@ -858,6 +858,9 @@ namespace Madlands.Client.Editor
             var info = map.AddComponent<MapInfo>();
             info.mapId = 1;
             info.mapName = "Hollowmere";
+            info.waterLevel = WaterLevel;
+            info.music = "music_hollowmere";
+            info.ambience = "amb_wilds";
             var spawn = new GameObject("SpawnPoint").transform;
             spawn.SetParent(map.transform);
             spawn.position = new Vector3(Village.x, GroundAt(Village.x, Village.y - 8f), Village.y - 8f);
@@ -865,18 +868,18 @@ namespace Madlands.Client.Editor
             // Named places, for the minimap and "entering" messages. The first match wins.
             info.areas = new[]
             {
-                new MapArea { name = "Mirewatch", center = Village, radius = VillageRadius + 8f },
+                new MapArea { name = "Mirewatch", center = Village, radius = VillageRadius + 8f, music = "music_mirewatch", ambience = "amb_village" },
                 new MapArea { name = "Westbrook", center = Farm, radius = 110f },
                 new MapArea { name = "The Old Mill", center = OldMill, radius = 30f },
-                new MapArea { name = "Reedfen", center = Reedfen, radius = 160f },
-                new MapArea { name = "Rennick's Watch", center = RennickTower, radius = 25f },
-                new MapArea { name = "The Greywood", center = Greywood, radius = 240f },
+                new MapArea { name = "Reedfen", center = Reedfen, radius = 160f, ambience = "amb_marsh" },
+                new MapArea { name = "Rennick's Watch", center = RennickTower, radius = 25f, ambience = "amb_forest" },
+                new MapArea { name = "The Greywood", center = Greywood, radius = 240f, ambience = "amb_forest" },
                 new MapArea { name = "Ironvein Camp", center = BrannocCamp, radius = 25f },
                 new MapArea { name = "Shardscar", center = Shardscar, radius = 200f },
-                new MapArea { name = "Gloomjaw's Lagoon", center = Lagoon, radius = 55f },
-                new MapArea { name = "The Drowned Ruins", center = Ruins, radius = 85f },
-                new MapArea { name = "Shrine of the Still Water", center = Shrine, radius = 28f },
-                new MapArea { name = "The Mere", center = LakeCenter, radius = 150f },
+                new MapArea { name = "Gloomjaw's Lagoon", center = Lagoon, radius = 55f, music = "music_drowned", ambience = "amb_ruins" },
+                new MapArea { name = "The Drowned Ruins", center = Ruins, radius = 85f, music = "music_drowned", ambience = "amb_ruins" },
+                new MapArea { name = "Shrine of the Still Water", center = Shrine, radius = 28f, music = "music_drowned", ambience = "amb_ruins" },
+                new MapArea { name = "The Mere", center = LakeCenter, radius = 150f, ambience = "amb_marsh" },
             };
         }
 

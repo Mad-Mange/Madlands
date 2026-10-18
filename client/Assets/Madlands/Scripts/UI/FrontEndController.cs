@@ -144,6 +144,7 @@ namespace Madlands.Client
             UpdateQuickLogin();
             Show(_loginScreen);
             if (System.Array.IndexOf(Settings.OpenWindows, "settings") >= 0) _settings.Open();
+            if (System.Array.IndexOf(Settings.OpenWindows, "sound") >= 0) _settings.OpenSound();
             if (Settings.AutoConnect) _ = AutoConnectAsync();
         }
 
@@ -450,6 +451,12 @@ namespace Madlands.Client
                 s.EnableInClassList("hidden", s != screen);
             // In the world the root is transparent; on the front-end screens it hides the empty scene.
             _root.EnableInClassList("frontend", screen != null);
+            // The login and character screens play the valley's theme; in the world the area decides.
+            if (screen != null)
+            {
+                SoundSystem.Instance.SetMusic("music_hollowmere");
+                SoundSystem.Instance.SetAmbience(null);
+            }
             InputGate.MenuOpen = screen != null || IsVisible(_gameMenu);
             if (screen == _loginScreen) (_username.value.Length > 0 ? _password : _username).Focus();
         }

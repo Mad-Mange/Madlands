@@ -9,16 +9,18 @@ using UnityEngine.UIElements;
 namespace Madlands.Client
 {
     /// <summary>
-    /// The settings window (Esc menu or login screen): key bindings, mouse, interface scale and
-    /// graphics. Rebinding: click a key button, then press the new key (Esc cancels, Backspace clears).
+    /// The settings window (Esc menu or login screen): key bindings, mouse, interface scale,
+    /// graphics and sound volumes. Rebinding: click a key button, then press the new key (Esc cancels, Backspace clears).
     /// </summary>
     public sealed class SettingsUi
     {
         private readonly GameWindow _window;
         private readonly VisualElement _controlsTab;
         private readonly VisualElement _videoTab;
+        private readonly VisualElement _soundTab;
         private readonly Button _controlsButton;
         private readonly Button _videoButton;
+        private readonly Button _soundButton;
         private readonly Dictionary<(GameAction, int), Button> _keyButtons = new Dictionary<(GameAction, int), Button>();
         private readonly List<Resolution> _resolutions = new List<Resolution>();
         private (GameAction Action, int Slot)? _capturing;
@@ -29,8 +31,9 @@ namespace Madlands.Client
             _window = new GameWindow(layer, "Settings", "settings");
             var tabs = new VisualElement { pickingMode = PickingMode.Ignore };
             tabs.AddToClassList("settings-tabs");
-            _controlsButton = TabButton(tabs, "Key bindings", () => ShowTab(controls: true));
-            _videoButton = TabButton(tabs, "Graphics & interface", () => ShowTab(controls: false));
+            _controlsButton = TabButton(tabs, "Key bindings", () => ShowTab(0));
+            _videoButton = TabButton(tabs, "Graphics & interface", () => ShowTab(1));
+            _soundButton = TabButton(tabs, "Sound", () => ShowTab(2));
             _window.Body.Add(tabs);
 
             _controlsTab = new ScrollView { pickingMode = PickingMode.Position };
@@ -43,9 +46,14 @@ namespace Madlands.Client
             BuildVideo(_videoTab);
             _window.Body.Add(_videoTab);
 
+            _soundTab = new VisualElement { pickingMode = PickingMode.Position };
+            _soundTab.AddToClassList("settings-page");
+            BuildSound(_soundTab);
+            _window.Body.Add(_soundTab);
+
             _window.AddFooterButton("Done", Close, "primary");
             _window.Closed += () => _capturing = null;
-            ShowTab(controls: true);
+            ShowTab(0);
             KeyBindings.Changed += RefreshKeys;
         }
 
@@ -55,6 +63,13 @@ namespace Madlands.Client
         {
             RefreshKeys();
             _window.Open();
+        }
+
+        /// <summary>Opens on the sound page (the -open sound flag).</summary>
+        public void OpenSound()
+        {
+            Open();
+            ShowTab(2);
         }
 
         public void Close() => _window.Close();
@@ -191,6 +206,30 @@ namespace Madlands.Client
             page.Insert(page.IndexOf(scaleLabel), scale);
         }
 
+        // ------------------------------------------------------------------ sound
+
+        private static void BuildSound(VisualElement page)
+        {
+            GameWindow.Text(page, "Volume", "section-title");
+            Volume(page, "Master", Preferences.MasterVolume, Preferences.SetMasterVolume);
+            Volume(page, "Music", Preferences.MusicVolume, Preferences.SetMusicVolume);
+            Volume(page, "Effects", Preferences.EffectsVolume, Preferences.SetEffectsVolume);
+            Volume(page, "Ambience", Preferences.AmbienceVolume, Preferences.SetAmbienceVolume);
+        }
+
+        private static void Volume(VisualElement page, string label, float value, Action<float> set)
+        {
+            var slider = new Slider(label, 0f, 1f) { value = value };
+            slider.AddToClassList("settings-field");
+            var percent = GameWindow.Text(page, Percent(value), "window-hint");
+            slider.RegisterValueChangedCallback(e =>
+            {
+                percent.text = Percent(e.newValue);
+                set(e.newValue);
+            });
+            page.Insert(page.IndexOf(percent), slider);
+        }
+
         private static string Percent(float scale) => (scale * 100f).ToString("0", CultureInfo.InvariantCulture) + "%";
 
         // ------------------------------------------------------------------ tabs
@@ -204,13 +243,15 @@ namespace Madlands.Client
             return button;
         }
 
-        private void ShowTab(bool controls)
+        private void ShowTab(int tab)
         {
             _capturing = null;
-            _controlsTab.style.display = controls ? DisplayStyle.Flex : DisplayStyle.None;
-            _videoTab.style.display = controls ? DisplayStyle.None : DisplayStyle.Flex;
-            _controlsButton.EnableInClassList("active", controls);
-            _videoButton.EnableInClassList("active", !controls);
+            _controlsTab.style.display = tab == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            _videoTab.style.display = tab == 1 ? DisplayStyle.Flex : DisplayStyle.None;
+            _soundTab.style.display = tab == 2 ? DisplayStyle.Flex : DisplayStyle.None;
+            _controlsButton.EnableInClassList("active", tab == 0);
+            _videoButton.EnableInClassList("active", tab == 1);
+            _soundButton.EnableInClassList("active", tab == 2);
             RefreshKeys();
         }
     }

@@ -285,7 +285,7 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 ## 📁 Project structure
 
 ```
-art/                        Low-poly models as Python scripts for Blender (exported as FBX into the client)
+art/                        Low-poly models (Blender scripts) and synthesized music and sounds, exported into the client
 client/                     Unity 6 project (our code in Assets/Madlands)
 shared/Madlands.Shared      Protocol and game rules, shared by server and client
 shared/Madlands.ClientCore  Engine-free networking and unit state, used by the client and bots

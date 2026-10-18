@@ -18,7 +18,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 | `server/Madlands.Bots` | Headless bot players (register/login via the API, then hunt creatures or wander) for load/integration testing. |
 | `server/Madlands.Server.Tests` | xUnit: protocol roundtrips, world logic, client core, real HTTP+UDP realm tests (`TestRealm`), Postgres tests (`[PostgresFact]`, skipped if no DB). |
 | `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
-| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `build.py` exports FBX into `client/Assets/Madlands/Art/`. |
+| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; `audio/` synthesizes the music and sounds (OGG into `Audio/`). |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
 | `docs/zones/` | Zone design: map, story, NPCs, creatures and quest chains (`hollowmere.md`). |
 | `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, map.json: written by Unity, Madlands > Export Map). |
@@ -39,6 +39,8 @@ dotnet run --project tools/Madlands.ContentTool -- validate
 
 $blender = "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 & $blender -b --factory-startup -P art/blender/build.py -- [asset ...] [--preview <dir>]   # FBX into the Unity project (+ pictures)
+& $blender -b --factory-startup -P art/audio/build.py -- [sound ...]                       # synthesized music/sounds as OGG
+python art/audio/kenney.py                                                                  # re-import the CC0 Kenney sounds
 
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"
 # Each: & $unity -batchmode -projectPath client -logFile <log> -executeMethod <method>   (no -quit; methods call Exit)
@@ -93,6 +95,8 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
 - Unassigning a Blender action keeps its last pose: `lowpoly.export_fbx` resets the pose before exporting.
 - To check animated poses in batch mode use `AnimationMode.SampleAnimationClip`; `PlayableGraph.Evaluate` does
   nothing there.
+- A MonoBehaviour method named `Start` (or another Unity message) with parameters logs "Script error ... can not take
+  parameters" in player builds: name helpers differently.
 
 ## Rules
 
@@ -109,6 +113,8 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   special case per spell id (ADR 0005). Balance numbers live in `content/` and `Combat/StatFormulas.cs`.
 - **Art comes from the `art/` scripts** (ADR 0012). `ArtImporter` owns the import settings of everything in
   `Assets/Madlands/Art`; never set them by hand. Character material names are the gear regions the client recolors.
+- **Sounds are played by name** through `SoundSystem` (`Play`, `PlayAt`, `SetMusic`, `SetAmbience`); game events map
+  to sounds in `GameSounds`. Only CC0 or self-made audio goes in the repo; list third-party sources in `CREDITS.md`.
 - **Content ids are stable and never reused.** Content is data (`content/`), validated by `ContentLoader`
   (collect all errors, then fail). The server sends `displayId`s, never asset names.
 - Entities live in `(mapId, instanceId)`; map instances share no mutable state (future: one thread/process each).

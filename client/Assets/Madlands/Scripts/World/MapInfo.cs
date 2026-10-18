@@ -10,6 +10,9 @@ namespace Madlands.Client
         public string name;
         public Vector2 center;
         public float radius;
+        [Tooltip("Music and ambience clips while inside (empty: the map's).")]
+        public string music;
+        public string ambience;
     }
 
     /// <summary>
@@ -27,6 +30,21 @@ namespace Madlands.Client
         public Transform spawnPoint;
         [Tooltip("Named places; the first one containing a position names it.")]
         public MapArea[] areas = new MapArea[0];
+        [Tooltip("Height of the water surface (footsteps splash below it); -1000 for none.")]
+        public float waterLevel = -1000f;
+        [Tooltip("Music and ambience clips outside every area.")]
+        public string music;
+        public string ambience;
+
+        /// <summary>The map scene that is loaded now (null on the login screen).</summary>
+        public static MapInfo Current { get; private set; }
+
+        private void OnEnable() => Current = this;
+
+        private void OnDisable()
+        {
+            if (Current == this) Current = null;
+        }
 
         [Header("Written by Export Map")]
         [Tooltip("The map seen from above (north = +Z at the top).")]
@@ -37,14 +55,19 @@ namespace Madlands.Client
         public float worldMapSize;
 
         /// <summary>The name of the place at a world position, or null outside every area.</summary>
-        public string AreaAt(float x, float z)
+        public string AreaAt(float x, float z) => FindArea(x, z, out var area) ? area.name : null;
+
+        public bool FindArea(float x, float z, out MapArea found)
         {
             foreach (var area in areas)
             {
                 float dx = x - area.center.x, dz = z - area.center.y;
-                if (dx * dx + dz * dz <= area.radius * area.radius) return area.name;
+                if (dx * dx + dz * dz > area.radius * area.radius) continue;
+                found = area;
+                return true;
             }
-            return null;
+            found = default;
+            return false;
         }
 
         /// <summary>0..1 image coordinates (origin bottom-left) of a world position.</summary>

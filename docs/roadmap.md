@@ -117,7 +117,10 @@ Every phase ends in something playable and tested. Architectural decisions are i
   world boss Gloomjaw in its lagoon. Area names on the minimap and when you enter them
 - [x] Minimap (north up, zoom, players, NPCs and quest marks) and world map (M) with the places active quests send you
   to. Export Map renders the map image from above
-- [ ] Sound and music
+- [x] Sound and music: three synthesized music loops (Mirewatch, the valley, the drowned ruins) and five ambience
+  loops that cross-fade with the area you are in; footsteps (grass, wood, splashing through water), swings, hits,
+  spells by school, loot, coins, windows, quest and level jingles; volume sliders (Settings > Sound). Effects from
+  Kenney's CC0 packs, everything else made by `art/audio/` ([CREDITS.md](../CREDITS.md))
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)
 

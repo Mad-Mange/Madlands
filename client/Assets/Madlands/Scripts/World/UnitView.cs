@@ -37,8 +37,12 @@ namespace Madlands.Client
         private bool _sitting;
         private float _turn;
         private float _turnTarget;
+        private float _speed;
+        private bool _moving;
+        private float _stepTimer;
 
         public EntityGuid Guid { get; private set; }
+        public uint DisplayId { get; private set; }
         public DisplayShape Shape { get; private set; }
         public bool IsLocal { get; private set; }
         public Vector3 HeadPosition => transform.position + Vector3.up * (Shape.Height + 0.35f);
@@ -48,6 +52,7 @@ namespace Madlands.Client
         {
             var view = go.AddComponent<UnitView>();
             view.Guid = guid;
+            view.DisplayId = displayId;
             view.IsLocal = isLocal;
             view._visual = new GameObject("Visual").transform;
             view._visual.SetParent(go.transform, false);
@@ -125,6 +130,8 @@ namespace Madlands.Client
             bool walking = (flags & MovementFlags.Walking) != 0;
             float speed = new Vector2(velocity.X, velocity.Z).magnitude;
             if (forward || backward || left || right) _sitting = false;
+            _moving = !airborne && (forward || backward || left || right) && speed > 0.5f;
+            _speed = speed;
 
             Locomotion loco;
             _turnTarget = 0f;
@@ -212,6 +219,21 @@ namespace Madlands.Client
             _castGlow = EntityVisuals.Glow(transform, Vector3.up * (Shape.Height + 0.15f), Vector3.one * 0.3f, SchoolColors.Get(school.Value), PrimitiveType.Sphere);
         }
 
+        /// <summary>A step every stride: grass, wood (docks, floors) or a splash in water.</summary>
+        private void Footsteps()
+        {
+            _stepTimer -= Time.deltaTime;
+            if (_stepTimer > 0f) return;
+            _stepTimer = Mathf.Clamp(1.2f * Mathf.Max(Shape.Height, 1f) / 1.9f / Mathf.Max(_speed, 0.1f), 0.22f, 0.8f);
+            var p = transform.position;
+            var map = MapInfo.Current;
+            string sound = map != null && p.y < map.waterLevel + 0.15f ? "splash"
+                : p.y > TerrainUtil.GroundHeight(p, p.y - 2f) + 0.2f ? "step_wood"
+                : "step_grass";
+            float volume = (IsLocal ? 0.45f : 0.3f) * Mathf.Clamp(Shape.Height / 1.9f, 0.5f, 1.6f);
+            SoundSystem.Instance.PlayAt(sound, p, volume, 0.08f);
+        }
+
         private void LateUpdate()
         {
             if (_castGlow != null)
@@ -219,6 +241,8 @@ namespace Madlands.Client
                 float pulse = 0.25f + Mathf.Sin(Time.time * 10f) * 0.06f;
                 _castGlow.localScale = Vector3.one * pulse;
             }
+
+            if (_moving && !_dead) Footsteps();
 
             if (_animator != null)
             {

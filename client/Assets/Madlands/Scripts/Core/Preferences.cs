@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Madlands.Client
 {
     /// <summary>
-    /// The player's settings (mouse, interface scale, graphics), saved in PlayerPrefs. Window mode and
+    /// The player's settings (mouse, interface scale, graphics, sound volumes), saved in PlayerPrefs. Window mode and
     /// resolution are applied when changed and then remembered by Unity itself; quality and vsync are
     /// applied at startup.
     /// </summary>
@@ -24,6 +24,10 @@ namespace Madlands.Client
             UiScale = Mathf.Clamp(GetFloat("uiScale", 1f), MinUiScale, MaxUiScale);
             VSync = GetInt("vsync", 1) != 0;
             QualityLevel = Mathf.Clamp(GetInt("quality", QualitySettings.GetQualityLevel()), 0, QualitySettings.names.Length - 1);
+            MasterVolume = Mathf.Clamp01(GetFloat("volume.master", 0.8f));
+            MusicVolume = Mathf.Clamp01(GetFloat("volume.music", 0.6f));
+            EffectsVolume = Mathf.Clamp01(GetFloat("volume.effects", 0.9f));
+            AmbienceVolume = Mathf.Clamp01(GetFloat("volume.ambience", 0.7f));
         }
 
         public static float MouseSensitivity { get; private set; }
@@ -31,6 +35,10 @@ namespace Madlands.Client
         public static float UiScale { get; private set; }
         public static bool VSync { get; private set; }
         public static int QualityLevel { get; private set; }
+        public static float MasterVolume { get; private set; }
+        public static float MusicVolume { get; private set; }
+        public static float EffectsVolume { get; private set; }
+        public static float AmbienceVolume { get; private set; }
 
         /// <summary>Raised after a setting changed.</summary>
         public static event Action Changed;
@@ -73,6 +81,14 @@ namespace Madlands.Client
             SetInt("quality", QualityLevel);
             ApplyGraphics();
         }
+
+        public static void SetMasterVolume(float value) => SetFloat("volume.master", MasterVolume = Mathf.Clamp01(value));
+
+        public static void SetMusicVolume(float value) => SetFloat("volume.music", MusicVolume = Mathf.Clamp01(value));
+
+        public static void SetEffectsVolume(float value) => SetFloat("volume.effects", EffectsVolume = Mathf.Clamp01(value));
+
+        public static void SetAmbienceVolume(float value) => SetFloat("volume.ambience", AmbienceVolume = Mathf.Clamp01(value));
 
         private static float GetFloat(string key, float fallback)
         {

@@ -59,6 +59,7 @@ namespace Madlands.Client
         private VendorUi _vendor;
         private QuestUi _quests;
         private MapUi _map;
+        private GameSounds _sounds;
         private Button _characterButton, _bagsButton, _questsButton;
         private readonly Slot[] _slots = new Slot[SlotCount];
         private readonly List<AuraIcon> _playerAuraIcons = new List<AuraIcon>();
@@ -231,6 +232,7 @@ namespace Madlands.Client
             };
             c.UnitChanged += OnUnitChanged;
             network.EnteredWorld += () => _map.SetMap(FindAnyObjectByType<MapInfo>());
+            _sounds = new GameSounds(Client, network.WorldView);
             c.EnteredWorld += _ =>
             {
                 _lastLevel = 0;
@@ -293,6 +295,7 @@ namespace Madlands.Client
             _deathPanel.EnableInClassList("hidden", !Client.Self.Values.IsDead);
             _inventory.Update(_hud.panel);
             _map.Update();
+            _sounds.Update();
             _inventory.PlaceCharacter(_vendor.IsOpen || _loot.IsOpen || _quests.DialogOpen);
             _vendor.Update();
             _quests.Update();
@@ -864,6 +867,7 @@ namespace Madlands.Client
 
         public void ShowError(string text)
         {
+            _sounds?.Error();
             _errorText.text = text;
             _errorUntil = Time.time + ErrorSeconds;
         }
