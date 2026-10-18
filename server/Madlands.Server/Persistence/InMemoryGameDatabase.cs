@@ -95,6 +95,16 @@ public sealed class InMemoryGameDatabase : IGameDatabase
         return Task.CompletedTask;
     }
 
+    public Task<int> DeleteExpiredSessionsAsync(DateTime nowUtc, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            var expired = _sessions.Where(s => s.Value.ExpiresUtc <= nowUtc).Select(s => s.Key).ToList();
+            foreach (var key in expired) _sessions.Remove(key);
+            return Task.FromResult(expired.Count);
+        }
+    }
+
     public Task<IReadOnlyList<CharacterRecord>> ListCharactersAsync(long accountId, CancellationToken ct = default)
     {
         lock (_lock)

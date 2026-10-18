@@ -108,7 +108,8 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] Minimap (north up, zoom, players, NPCs and quest marks) and world map (M) with the places active quests send you
   to. Export Map renders the map image from above
 - [ ] Sound and music
-- [ ] First deployment to a VPS and playtests with friends
+- [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
+  SIGTERM saves everyone, production database password)
 
 ## Phase 6 – Social
 
@@ -172,8 +173,10 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - **IMGUI is still used for the debug overlay (F3).** Everything else is UI Toolkit.
 - **LiteNetLib reports 0 RTT in threaded mode.** The overlay uses our own Ping/Pong measurement instead.
 - **Addressables and Localization** get installed when first used.
-- **TLS for the account API:** dev uses plain HTTP on loopback. Before the first public deployment (Phase 5), put
-  the API behind a TLS reverse proxy (e.g. Caddy) and refuse non-loopback plain HTTP.
-- **Session cleanup:** expired rows in `sessions` are never deleted yet. Add a periodic cleanup job.
+- ~~**TLS for the account API**~~ (done 2026-10-18): `deploy/Caddyfile` and [deployment.md](deployment.md); the API binds to
+  loopback behind the proxy (`--api-bind`, `--trust-proxy`), and a public realm refuses to start with plain-HTTP passwords.
+- ~~**Session cleanup**~~ (done 2026-10-18): expired sessions are deleted at startup and every hour.
+- **The game connection (UDP) is not encrypted:** the session token travels in the first UDP message. Exchange a key over
+  HTTPS for the handshake before a wider public test (fine for playtests with friends).
 - **Quick-login button** on the login screen (playtest shortcut: one account, the public dev password, local-network
   servers only). Remove it before any public test.

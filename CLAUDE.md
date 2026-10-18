@@ -31,6 +31,7 @@ dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --gm-all        
 dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --db memory        # no Docker; data lost on exit
 dotnet run --project server/Madlands.Server -- set-gm <account> 3                  # permanent GM level for one account
 dotnet run --project server/Madlands.Server -- set-password <account> <password>   # new password (ends the account's sessions)
+# Public realm (docs/deployment.md): --bind 0.0.0.0 --api-bind 127.0.0.1 --trust-proxy --public-host <domain>, Caddy in front
 dotnet run --project server/Madlands.Bots -- --count 200 --seconds 60   # fight creatures (--mode wander: just run); server needs --api-rate-limit 0
 dotnet run --project tools/Madlands.ContentTool -- validate
 

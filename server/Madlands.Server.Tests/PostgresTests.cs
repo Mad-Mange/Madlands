@@ -186,6 +186,9 @@ public class PostgresDatabaseTests : IAsyncLifetime
     public Task Set_password_replaces_the_hash_and_ends_sessions() => AccountAdminChecks.SetPassword(Db);
 
     [PostgresFact]
+    public Task Expired_sessions_are_deleted() => SessionCleanupChecks.Run(Db);
+
+    [PostgresFact]
     public async Task Gm_level_defaults_to_zero()
     {
         long account = (await Db.CreateAccountAsync("plainuser", "h"))!.Value;

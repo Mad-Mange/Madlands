@@ -118,6 +118,13 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
             "DELETE FROM sessions WHERE token_hash = @tokenHash", new { tokenHash }, cancellationToken: ct));
     }
 
+    public async Task<int> DeleteExpiredSessionsAsync(DateTime nowUtc, CancellationToken ct = default)
+    {
+        await using var conn = await _dataSource.OpenConnectionAsync(ct);
+        return await conn.ExecuteAsync(new CommandDefinition(
+            "DELETE FROM sessions WHERE expires_at <= @nowUtc", new { nowUtc }, cancellationToken: ct));
+    }
+
     // ------------------------------------------------------------------ characters
 
     public async Task<IReadOnlyList<CharacterRecord>> ListCharactersAsync(long accountId, CancellationToken ct = default)

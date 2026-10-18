@@ -1,0 +1,16 @@
+# TLS in front of the account API (see docs/deployment.md). Caddy gets and renews the certificate
+# from Let's Encrypt by itself; the domain must point at this machine and ports 80/443 must be open.
+#   MADLANDS_DOMAIN=realm.example.com caddy run --config deploy/Caddyfile
+# The realm server runs with --api-bind 127.0.0.1 --trust-proxy, so the API is only reachable through Caddy.
+
+{$MADLANDS_DOMAIN} {
+	encode zstd gzip
+
+	# Only the account API is served; everything else is 404.
+	handle /api/* {
+		reverse_proxy 127.0.0.1:{$MADLANDS_API_PORT:7780}
+	}
+	handle {
+		respond 404
+	}
+}

@@ -75,6 +75,13 @@ try
         e.Cancel = true;
         cts.Cancel();
     };
+    // systemd and Docker stop with SIGTERM: shut down the same way (everyone is saved).
+    using var sigterm = System.Runtime.InteropServices.PosixSignalRegistration.Create(
+        System.Runtime.InteropServices.PosixSignal.SIGTERM, context =>
+        {
+            context.Cancel = true;
+            cts.Cancel();
+        });
 
     // Windows sleeps in ~15.6 ms steps by default, far too coarse for a 50 ms tick.
     if (OperatingSystem.IsWindows()) WinMM.timeBeginPeriod(1);

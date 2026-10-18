@@ -8,7 +8,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: madlands
-      POSTGRES_PASSWORD: madlands_dev
+      # Development default; set MADLANDS_PG_PASSWORD on a real server (docs/deployment.md).
+      POSTGRES_PASSWORD: ${MADLANDS_PG_PASSWORD:-madlands_dev}
       POSTGRES_DB: madlands
     ports:
       - "127.0.0.1:5432:5432"

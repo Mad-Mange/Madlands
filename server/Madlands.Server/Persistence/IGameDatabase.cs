@@ -57,6 +57,8 @@ public interface IGameDatabase
     /// <summary>Account id for a valid, unexpired session; null otherwise.</summary>
     Task<long?> FindSessionAccountAsync(byte[] tokenHash, DateTime nowUtc, CancellationToken ct = default);
     Task DeleteSessionAsync(byte[] tokenHash, CancellationToken ct = default);
+    /// <summary>Deletes sessions that expired before <paramref name="nowUtc"/>; returns how many.</summary>
+    Task<int> DeleteExpiredSessionsAsync(DateTime nowUtc, CancellationToken ct = default);
 
     Task<IReadOnlyList<CharacterRecord>> ListCharactersAsync(long accountId, CancellationToken ct = default);
     /// <summary>Atomically enforces the per-account limit and realm-wide unique names. Id of <paramref name="template"/> is ignored.</summary>

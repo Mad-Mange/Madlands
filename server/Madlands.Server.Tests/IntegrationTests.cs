@@ -47,9 +47,11 @@ internal sealed class TestRealm : IAsyncDisposable
         return RepositoryContent.Value.WithMaps(new[] { new LoadedMap(map, HeightMap.CreateFlat(-200, -200, 4, 101, 101, 10f), null, spawns) });
     }
 
-    public static async Task<TestRealm> StartAsync(IGameDatabase? database = null, ContentDatabase? content = null, bool gmAll = false)
+    public static async Task<TestRealm> StartAsync(IGameDatabase? database = null, ContentDatabase? content = null, bool gmAll = false,
+        Action<ServerOptions>? configure = null)
     {
         var options = new ServerOptions { Port = 0, HttpPort = 0, Bind = "127.0.0.1", ApiRateLimitPerMinute = 0, GmAll = gmAll, RandomSeed = 1234 };
+        configure?.Invoke(options);
         var host = new ServerHost(options, content ?? Content(), database ?? new InMemoryGameDatabase(), FastHasher);
         await host.StartAsync();
         return new TestRealm(host);

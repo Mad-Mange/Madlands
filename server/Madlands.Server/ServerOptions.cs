@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace Madlands.Server;
 
 public sealed class ServerOptions
@@ -12,6 +14,12 @@ public sealed class ServerOptions
     public string? Bind { get; set; }
     /// <summary>Address clients should connect to for the game, sent in the login response. Defaults to Bind or 127.0.0.1.</summary>
     public string? PublicHost { get; set; }
+    /// <summary>Where the HTTP account API listens; null = like <see cref="Bind"/>. Behind a TLS proxy: 127.0.0.1.</summary>
+    public string? ApiBind { get; set; }
+    /// <summary>The API sits behind a reverse proxy on this machine: client addresses come from X-Forwarded-For.</summary>
+    public bool TrustProxy { get; set; }
+    /// <summary>Allow the account API on plain HTTP even for an internet-facing realm (passwords unencrypted).</summary>
+    public bool AllowPlainHttp { get; set; }
     public string RealmName { get; set; } = "Madlands (dev)";
     public string? ContentPath { get; set; }
     /// <summary>"postgres" (default) or "memory" (no persistence across restarts; no Docker needed).</summary>
@@ -30,6 +38,7 @@ public sealed class ServerOptions
 
     public const string Usage =
         "Madlands.Server [--port 7777] [--http-port 7780] [--bind 127.0.0.1] [--public-host <host>] [--content <path>]\n" +
+        "                [--api-bind 127.0.0.1] [--trust-proxy] [--allow-plain-http]\n" +
         "                [--db postgres|memory] [--connection-string <npgsql>] [--api-rate-limit 120]\n" +
         "                [--map 1] [--max-connections 1000] [--stats-interval 10] [--gm-all] [--seed <n>] [--verbose]";
 
@@ -45,6 +54,9 @@ public sealed class ServerOptions
                 case "--http-port": o.HttpPort = int.Parse(Next()); break;
                 case "--bind": o.Bind = Next(); break;
                 case "--public-host": o.PublicHost = Next(); break;
+                case "--api-bind": o.ApiBind = Next(); break;
+                case "--trust-proxy": o.TrustProxy = true; break;
+                case "--allow-plain-http": o.AllowPlainHttp = true; break;
                 case "--realm-name": o.RealmName = Next(); break;
                 case "--content": o.ContentPath = Next(); break;
                 case "--db": o.Database = Next().ToLowerInvariant(); break;
@@ -65,6 +77,33 @@ public sealed class ServerOptions
             }
         }
         if (o.Database is not ("postgres" or "memory")) throw new ArgumentException("--db must be 'postgres' or 'memory'.");
+        if (o.PlainHttpProblem() is { } problem) throw new ArgumentException(problem);
         return o;
+    }
+
+    /// <summary>The address the account API listens on (null = all interfaces).</summary>
+    public string? ApiAddress => ApiBind ?? Bind;
+
+    /// <summary>
+    /// Why the server must not start: an internet-facing realm (a public <see cref="PublicHost"/>) whose
+    /// account API would take passwords over plain HTTP from outside this machine or network. Null if fine.
+    /// </summary>
+    public string? PlainHttpProblem()
+    {
+        if (AllowPlainHttp || PublicHost is null || IsPrivateHost(PublicHost)) return null;
+        if (ApiAddress is { } address && IsPrivateHost(address)) return null;
+        return "This realm is public (--public-host " + PublicHost + ") but its account API would accept passwords over plain " +
+               "HTTP from the internet. Run it behind a TLS reverse proxy (see docs/deployment.md): --api-bind 127.0.0.1 " +
+               "--trust-proxy. Or pass --allow-plain-http if you really mean it.";
+    }
+
+    /// <summary>Loopback, a private network address (10/8, 172.16/12, 192.168/16) or localhost.</summary>
+    public static bool IsPrivateHost(string host)
+    {
+        if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase)) return true;
+        if (!IPAddress.TryParse(host, out var ip)) return false;
+        if (IPAddress.IsLoopback(ip)) return true;
+        var b = ip.GetAddressBytes();
+        return b.Length == 4 && (b[0] == 10 || (b[0] == 172 && b[1] >= 16 && b[1] <= 31) || (b[0] == 192 && b[1] == 168));
     }
 }

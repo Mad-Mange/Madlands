@@ -301,6 +301,7 @@ docs/                       Architecture, decision log (ADR), roadmap, game desi
 ## 📚 Documentation
 
 - [Roadmap & status](docs/roadmap.md)
+- [Deploying a realm](docs/deployment.md) (VPS, TLS with Caddy, systemd)
 - [Architecture](docs/architecture.md) and [decision log (ADR)](docs/adr/)
 - [Game design & lore (draft)](docs/gdd.md)
 
