@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Madlands.Bots;
 using Madlands.ClientCore;
 using Madlands.Content;
+using Madlands.Shared.Game;
 
 // Headless load/integration test clients. Each bot logs in through the account API (registering
 // account "botNNN" and character "BotXXX" on first run), then enters the world and hunts
@@ -84,7 +85,8 @@ while (!cts.IsCancellationRequested)
         int corrections = bots.Sum(b => b.Corrections);
         var errors = bots.Where(b => b.LastError is not null).Select(b => b.LastError).Distinct().Take(3).ToList();
         string combat = fight
-            ? $" | kills {bots.Sum(b => b.Kills)}, deaths {bots.Sum(b => b.Deaths)}, xp {bots.Sum(b => b.XpGained)}, damage {bots.Sum(b => b.DamageDone)}"
+            ? $" | kills {bots.Sum(b => b.Kills)}, deaths {bots.Sum(b => b.Deaths)}, xp {bots.Sum(b => b.XpGained)}, damage {bots.Sum(b => b.DamageDone)}" +
+              $", looted {bots.Sum(b => b.ItemsLooted)} items and {Money.Format(bots.Sum(b => b.MoneyLooted))}"
             : "";
         Console.WriteLine($"[{now,6:0}s] in world {inWorld.Count}/{count} (logging in {loggingIn}) | ping avg {avgRtt:0} ms | sees avg {avgSeen:0.0} entities | corrections {corrections}"
             + combat + (errors.Count > 0 ? " | errors: " + string.Join("; ", errors) : ""));

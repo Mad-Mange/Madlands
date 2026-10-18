@@ -9,8 +9,9 @@ using UnityEngine.UIElements;
 namespace Madlands.Client
 {
     /// <summary>
-    /// WoW-style targeting: left-click a unit to select it, right-click to select and attack, Tab
-    /// cycles through enemies in front of you. A click is a short press without dragging (dragging
+    /// WoW-style targeting: left-click a unit to select it, right-click to select and attack (or talk
+    /// to a friendly NPC, or loot a corpse; shift-right-click takes everything), Tab cycles through
+    /// enemies in front of you. A click is a short press without dragging (dragging
     /// turns the camera). The camera locks the cursor at the screen center while a button is held,
     /// so the click is judged by how far the mouse moved and picked where the press started.
     /// A ring under the target shows its reaction color.
@@ -79,7 +80,23 @@ namespace Madlands.Client
             var unit = PickUnit(_pressPosition);
             if (unit == null) return;
             Client.SetTarget(unit.Guid);
-            if (rightUp && Client.CanAttack(unit.Guid)) Attack(unit.Guid);
+            if (rightUp) Use(unit.Guid);
+        }
+
+        /// <summary>Right-click on a unit: loot a corpse, attack an enemy, or talk to an NPC.</summary>
+        private void Use(EntityGuid guid)
+        {
+            if (!Client.TryGetUnit(guid, out var unit) || guid == Client.LocalGuid) return;
+            if (unit.Values.IsDead)
+            {
+                if (!Client.IsLootable(guid)) return;
+                Client.OpenLoot(guid);
+                var keyboard = Keyboard.current;
+                if (keyboard != null && keyboard.shiftKey.isPressed) Client.TakeLoot(Shared.Net.LootTake.AllSlots);
+                return;
+            }
+            if (Client.CanAttack(guid)) Attack(guid);
+            else if (unit.Values.NpcFlags != NpcFlags.None) Client.Interact(guid);
         }
 
         /// <summary>Starts auto-attack on <paramref name="guid"/> (the Attack spell).</summary>

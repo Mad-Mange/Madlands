@@ -10,23 +10,23 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 
 | Path | What |
 |---|---|
-| `shared/Madlands.Shared` | Protocol, movement rules, ids, `UnitValues`, `FactionTable`, `SpellInfo`, height map + collision mesh formats. Compiled by dotnet AND Unity (local UPM package). |
-| `shared/Madlands.ClientCore` | Engine-free client logic (GameClient with unit state/auras/casts/cooldowns, ClientGameData, ClockSync, InterpolationBuffer, MovementSender). Used by Unity client and bots. |
-| `server/Madlands.Server` | One realm process (`ServerHost`): UDP game server (20 Hz loop, map instances, AoI, movement validation), combat (`Combat/`: CombatSystem, SpellSystem, AuraSystem, StatFormulas), creature AI (`AI/`), chat + GM commands (`Commands/`), HTTP account API (`Api/`), persistence (`Persistence/`: Postgres + in-memory, DbUp migrations, write-behind `CharacterSaver`), Argon2id auth (`Auth/`). |
+| `shared/Madlands.Shared` | Protocol, movement rules, ids, `UnitValues`, `FactionTable`, `SpellInfo`, `ItemInfo`/`ItemRules`/`ItemPos`/`Money`, `QuestInfo`, height map + collision mesh formats. Compiled by dotnet AND Unity (local UPM package). |
+| `shared/Madlands.ClientCore` | Engine-free client logic (GameClient with unit state/auras/casts/cooldowns, inventory, quest log, loot and NPC dialog state, ClientGameData, ClockSync, InterpolationBuffer, MovementSender). Used by Unity client and bots. |
+| `server/Madlands.Server` | One realm process (`ServerHost`): UDP game server (20 Hz loop, map instances, AoI, movement validation), combat (`Combat/`: CombatSystem, SpellSystem, AuraSystem, StatFormulas), items (`Items/`: `Inventory` rules, ItemSystem, LootSystem), quests (`Quests/`: QuestSystem, QuestLog), creature AI (`AI/`), chat + GM commands (`Commands/`), HTTP account API (`Api/`), persistence (`Persistence/`: Postgres + in-memory, DbUp migrations, write-behind `CharacterSaver`), Argon2id auth (`Auth/`). |
 | `server/Madlands.Navigation` | DotRecast navmesh (built at server startup from height map + `collision.bin`) and line-of-sight ray casts. |
 | `server/Madlands.Content` | Loads + validates `content/` (JSON + binary), cross-checks references. Server/tools only. |
 | `server/Madlands.Bots` | Headless bot players (register/login via the API, then hunt creatures or wander) for load/integration testing. |
 | `server/Madlands.Server.Tests` | xUnit: protocol roundtrips, world logic, client core, real HTTP+UDP realm tests (`TestRealm`), Postgres tests (`[PostgresFact]`, skipped if no DB). |
 | `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
-| `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. |
-| `content/` | Game data: races, classes, factions, spells, creatures, levels (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, map.json: written by Unity, Madlands > Export Map). |
+| `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
+| `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, map.json: written by Unity, Madlands > Export Map). |
 
 ## Commands (PowerShell; dotnet may need PATH refresh in old shells)
 
 ```powershell
 docker compose -f deploy/docker-compose.yml up -d   # PostgreSQL (+ Seq) for the server and the Postgres tests
 dotnet build Madlands.slnx                      # all .NET projects (output in /artifacts)
-dotnet test Madlands.slnx                       # 98+ tests incl. real HTTP+UDP realm, combat end to end, Postgres
+dotnet test Madlands.slnx                       # 130+ tests incl. real HTTP+UDP realm, combat/loot/quests end to end, Postgres
 dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --gm-all           # UDP 7777 + HTTP 7780, PostgreSQL, GM commands for all
 dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --db memory        # no Docker; data lost on exit
 dotnet run --project server/Madlands.Server -- set-gm <account> 3                  # permanent GM level for one account
@@ -52,8 +52,13 @@ builds/client/Madlands.exe -screen-fullscreen 0 -screenshot builds/screenshots/l
 # Combat (server with --gm-all): -class picks the class of a new character, -exec sends chat lines/GM commands
 # after entering the world, -autofight targets the nearest enemy and uses the action bar.
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 6;.tele -4 2" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
+# Items and quests: -open bags,character,questlog opens windows, -talkto "Old Tamsin" (+ -quest 1) opens an NPC dialog,
+# -loot opens loot of corpses in reach, -tooltip <item id> shows a bag item's tooltip, -equip 1020,1210 equips from the bags.
+builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Shopper -exec ".money 5000;.tele 6 -1" -talkto "Quartermaster Holt" -screenshot builds/screenshots/vendor.png -screenshotdelay 9 -quitafter 13
 ```
-Then read the PNG to verify. Use `-logFile` for the player log. A running Release server locks
+Then read the PNG to verify. Use `-logFile` for the player log. The server keeps characters between client runs:
+use a new `-name` per screenshot run, or `.additem` lines add up. From PowerShell `Start-Process`, quote arguments
+that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unquoted. A running Release server locks
 `artifacts/bin/*/release`; build and test with `-c Debug` meanwhile (or run a second realm on other ports:
 `--port 7787 --http-port 7790`, client `-httpport 7790`).
 
@@ -64,8 +69,11 @@ Then read the PNG to verify. Use `-logFile` for the player log. A running Releas
 - Unity has its own `UnityEngine.CharacterInfo`; avoid type names that clash with UnityEngine in Shared.
 - `ScreenCapture.CaptureScreenshot` does include UI Toolkit; if UI is missing, the UI is really not rendering.
 - Content enums are camelCase strings in JSON (`"powerType": "rage"`); spell flags are a string list.
-- `GameData` (spells, factions, classes, XP table) is built from content at server startup and sent at login
-  (ADR 0008): content changes need a server restart, not a client rebuild.
+- `GameData` (spells, factions, classes, XP table, items, quests) is built from content at server startup and sent
+  at login (ADR 0008): content changes need a server restart, not a client rebuild.
+- URP uses linear color space: UI Toolkit backgrounds with even 5% transparency let bright text behind them show
+  through. Windows and tooltips use opaque backgrounds.
+- GM commands of GM accounts have their own rate limit (`GmCommandLimiter`); normal chat is 2 lines/s.
 - Pushing changes to `.github/workflows/` needs a GitHub token with the `workflow` scope
   (`gh auth refresh -h github.com -s workflow`, run by the user: it opens a browser).
 - Windows: a Git Credential Manager prompt cannot be shown from here; push with

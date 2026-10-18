@@ -8,7 +8,9 @@ namespace Madlands.Client
     /// <summary>
     /// Scripted play for automated verification runs: sends the -exec chat lines (usually GM
     /// commands) after entering the world, and with -autofight targets the nearest enemy, faces it
-    /// and fights with the action bar's spells. Does nothing in normal play.
+    /// and fights with the action bar's spells. -open opens windows, -talkto talks to an NPC (and
+    /// -quest picks one of its quests), -loot opens the loot of corpses in reach. Does nothing in
+    /// normal play.
     /// </summary>
     public sealed class AutoPlay : MonoBehaviour
     {
@@ -23,6 +25,11 @@ namespace Madlands.Client
         private float _nextExecAt;
         private float _nextFightAt;
         private int _spellCursor;
+        private bool _windowsOpened;
+        private int _equipped;
+        private bool _talked;
+        private float _nextTalkAt;
+        private EntityGuid _lootedCorpse;
 
         private GameClient Client => network.Client;
 
@@ -36,10 +43,14 @@ namespace Madlands.Client
         private void Update()
         {
             var settings = network.Settings;
-            if (settings == null || (settings.Exec.Length == 0 && !settings.AutoFight)) return;
+            if (settings == null || (settings.Exec.Length == 0 && !settings.AutoFight && settings.OpenWindows.Length == 0
+                                     && settings.TalkTo == null && !settings.AutoLoot && settings.TooltipItem == 0
+                                     && settings.Equip.Length == 0)) return;
             if (!network.InWorld)
             {
                 _enteredAt = -1f;
+                _windowsOpened = _talked = false;
+                _equipped = 0;
                 return;
             }
             if (_enteredAt < 0f)
@@ -58,10 +69,70 @@ namespace Madlands.Client
                 return;
             }
 
+            if (_equipped < settings.Equip.Length) EquipNext(settings.Equip[_equipped]);
+            if (!_windowsOpened && Time.time > _enteredAt + 1.5f)
+            {
+                _windowsOpened = true;
+                foreach (var window in settings.OpenWindows) hud.OpenWindow(window);
+            }
+            if (settings.TalkTo != null && !_talked && Time.time >= _nextTalkAt) TalkTo(settings);
+            if (settings.TooltipItem != 0 && _windowsOpened && Time.time > _enteredAt + 3f) hud.ShowItemTooltip(settings.TooltipItem);
+            if (settings.AutoLoot) LootNearby();
+
             if (settings.AutoFight && Time.time >= _nextFightAt)
             {
                 _nextFightAt = Time.time + 0.35f;
                 Fight();
+            }
+        }
+
+        /// <summary>Equips one -equip item once it is in the bags (the -exec lines usually put it there).</summary>
+        private void EquipNext(uint itemId)
+        {
+            foreach (var (pos, item) in Client.Inventory.All)
+            {
+                if (item.ItemId != itemId) continue;
+                if (!pos.IsEquipment) Client.AutoEquip(pos);
+                _equipped++;
+                return;
+            }
+        }
+
+        /// <summary>Talks to the named NPC (retrying until its dialog opens), then opens the -quest page.</summary>
+        private void TalkTo(ClientSettings settings)
+        {
+            _nextTalkAt = Time.time + 1f;
+            if (hud.Quests.DialogOpen)
+            {
+                _talked = true;
+                return;
+            }
+            foreach (var entity in Client.World.Entities)
+            {
+                if (entity.Name != settings.TalkTo) continue;
+                Client.SetTarget(entity.Guid);
+                if (settings.QuestId != 0) Client.GossipOpened += OpenQuestOnce;
+                Client.Interact(entity.Guid);
+                return;
+            }
+        }
+
+        private void OpenQuestOnce(Shared.Net.GossipMenu menu)
+        {
+            Client.GossipOpened -= OpenQuestOnce;
+            hud.Quests.ShowQuest(network.Settings.QuestId);
+        }
+
+        private void LootNearby()
+        {
+            if (Client.Loot.IsOpen || network.LocalPlayer == null) return;
+            foreach (var entity in Client.World.Entities)
+            {
+                if (entity.Guid == _lootedCorpse || !Client.IsLootable(entity.Guid) || !(entity.View is GameObject go)) continue;
+                if (Vector3.Distance(go.transform.position, network.LocalPlayer.transform.position) > GameConstants.InteractRange) continue;
+                _lootedCorpse = entity.Guid;
+                Client.OpenLoot(entity.Guid);
+                return;
             }
         }
 

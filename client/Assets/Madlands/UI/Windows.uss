@@ -1,0 +1,634 @@
+/* In-game windows (Phase 4): bags, character, loot, vendor, NPC dialogs, quest log, quest tracker,
+   item slots and item tooltips. Same palette as the HUD: night blue panels, shard gold borders.
+   Sizes are in reference pixels (1920x1080). */
+
+/* ---------------------------------------------------------------- windows */
+
+.window {
+    position: absolute;
+    padding: 0 0 10px 0;
+    /* Opaque: with linear color space even 5% transparency lets bright text behind show through. */
+    background-color: rgb(16, 20, 32);
+    border-width: 1px;
+    border-color: rgb(122, 98, 48);
+    border-radius: 6px;
+}
+
+.window-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: 34px;
+    padding: 0 6px 0 12px;
+    margin-bottom: 8px;
+    background-color: rgba(122, 98, 48, 0.25);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(122, 98, 48);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.window-title {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(233, 196, 106);
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+    padding: 0;
+    margin: 0;
+}
+
+.window-close {
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(230, 220, 200);
+    background-color: rgba(120, 40, 36, 0.8);
+    border-width: 1px;
+    border-color: rgb(170, 80, 70);
+    border-radius: 3px;
+}
+
+.window-close:hover {
+    background-color: rgb(160, 52, 46);
+}
+
+.window-body {
+    padding: 0 12px;
+}
+
+.window-footer {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 8px 12px 0 12px;
+}
+
+.window .button {
+    height: 32px;
+    min-width: 96px;
+    font-size: 14px;
+}
+
+.section-title {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(233, 196, 106);
+    margin: 6px 0 4px 0;
+}
+
+.window-text {
+    font-size: 15px;
+    color: rgb(235, 228, 210);
+    white-space: normal;
+    margin-bottom: 8px;
+}
+
+.window-hint {
+    font-size: 13px;
+    color: rgb(150, 162, 186);
+    white-space: normal;
+    margin-top: 6px;
+}
+
+/* Fixed spots: dialogs on the left, the character sheet next to them, bags bottom right. */
+.window.dialog {
+    left: 18px;
+    top: 120px;
+    width: 460px;
+}
+
+.window.character {
+    left: 18px;
+    top: 120px;
+    width: 470px;
+}
+
+.window.bags {
+    right: 18px;
+    bottom: 128px;
+    width: 420px;
+}
+
+.window.loot {
+    left: 18px;
+    top: 120px;
+    width: 300px;
+}
+
+.window.questlog {
+    left: 50%;
+    top: 110px;
+    width: 820px;
+    margin-left: -410px;
+}
+
+.window.confirm {
+    left: 50%;
+    top: 360px;
+    width: 400px;
+    margin-left: -200px;
+}
+
+/* ---------------------------------------------------------------- item slots and icons */
+
+.item-slot {
+    width: 44px;
+    height: 44px;
+    margin: 2px;
+    background-color: rgba(0, 0, 0, 0.55);
+    border-width: 2px;
+    border-color: rgb(60, 66, 84);
+    border-radius: 4px;
+}
+
+.item-slot:hover {
+    border-color: rgb(255, 230, 160);
+}
+
+.item-slot.large {
+    width: 50px;
+    height: 50px;
+}
+
+.item-slot.small {
+    width: 36px;
+    height: 36px;
+}
+
+.item-slot.held .icon {
+    opacity: 0.3;
+}
+
+.item-slot.target {
+    border-color: rgb(120, 235, 140);
+}
+
+.item-slot .icon {
+    border-radius: 2px;
+    justify-content: flex-start;
+    padding-top: 4px;
+}
+
+.item-slot .icon-letters {
+    font-size: 13px;
+}
+
+.cursor-item .icon {
+    border-width: 2px;
+    border-color: rgb(255, 230, 160);
+}
+
+.item-slot.small .icon-letters {
+    font-size: 11px;
+}
+
+.item-slot.coin-icon {
+    background-color: rgb(150, 112, 36);
+    border-color: rgb(255, 210, 60);
+}
+
+.item-slot.coin-icon .slot-placeholder {
+    color: rgb(255, 240, 200);
+    font-size: 9px;
+}
+
+.slot-placeholder {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    font-size: 9px;
+    color: rgba(170, 176, 196, 0.55);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.item-count {
+    position: absolute;
+    right: 2px;
+    bottom: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+.item-shade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0;
+    background-color: rgba(10, 10, 14, 0.7);
+}
+
+.q-poor {
+    border-color: rgb(110, 110, 110);
+}
+
+.q-common {
+    border-color: rgb(170, 170, 176);
+}
+
+.q-uncommon {
+    border-color: rgb(30, 220, 0);
+}
+
+.q-rare {
+    border-color: rgb(0, 112, 221);
+}
+
+.q-epic {
+    border-color: rgb(163, 53, 238);
+}
+
+.qt-poor {
+    color: rgb(157, 157, 157);
+}
+
+.qt-common {
+    color: rgb(255, 255, 255);
+}
+
+.qt-uncommon {
+    color: rgb(30, 255, 0);
+}
+
+.qt-rare {
+    color: rgb(40, 140, 255);
+}
+
+.qt-epic {
+    color: rgb(190, 90, 255);
+}
+
+.item-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+/* The item on the mouse cursor while moving it. */
+.cursor-item {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    opacity: 0.9;
+}
+
+/* ---------------------------------------------------------------- bags and money */
+
+.bag-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.bag-slots {
+    flex-direction: row;
+}
+
+.money {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.coin {
+    font-size: 15px;
+    -unity-font-style: bold;
+    margin-left: 6px;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+.coin.gold {
+    color: rgb(255, 210, 60);
+}
+
+.coin.silver {
+    color: rgb(210, 214, 222);
+}
+
+.coin.copper {
+    color: rgb(220, 130, 70);
+}
+
+/* ---------------------------------------------------------------- character sheet */
+
+.paperdoll {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.paperdoll-column {
+    width: 54px;
+}
+
+.paperdoll-middle {
+    flex-grow: 1;
+    padding: 0 12px;
+}
+
+.weapon-row {
+    flex-direction: row;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+.stat-line {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 2px 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.stat-name {
+    font-size: 14px;
+    color: rgb(190, 196, 214);
+}
+
+.stat-value {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+}
+
+.stat-value.bonus {
+    color: rgb(90, 240, 100);
+}
+
+/* ---------------------------------------------------------------- lists (loot, vendor, quests) */
+
+.list-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 3px 4px;
+    margin-bottom: 2px;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.list-row:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.list-row.selected {
+    background-color: rgba(233, 196, 106, 0.18);
+}
+
+.list-name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 8px;
+    font-size: 15px;
+    white-space: normal;
+}
+
+.list-price {
+    flex-direction: row;
+    margin-left: 6px;
+}
+
+.vendor-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.vendor-grid .list-row {
+    width: 49%;
+}
+
+.vendor-grid .list-name {
+    font-size: 13px;
+}
+
+/* ---------------------------------------------------------------- NPC dialogs and quests */
+
+.quest-option {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px;
+    margin-bottom: 2px;
+    border-radius: 3px;
+}
+
+.quest-option:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.quest-mark {
+    width: 22px;
+    font-size: 20px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(255, 214, 40);
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(60, 36, 0);
+}
+
+.quest-mark.incomplete {
+    color: rgb(170, 170, 170);
+}
+
+.quest-option-name {
+    font-size: 16px;
+    color: rgb(255, 230, 150);
+    margin-left: 6px;
+}
+
+.objective-line {
+    font-size: 14px;
+    color: rgb(225, 225, 232);
+    margin-left: 8px;
+}
+
+.objective-line.done {
+    color: rgb(140, 150, 140);
+}
+
+.reward-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.reward-row .list-row {
+    width: 49%;
+    margin-right: 1%;
+}
+
+.questlog-body {
+    flex-direction: row;
+    height: 520px;
+}
+
+.questlog-list {
+    width: 280px;
+    margin-right: 12px;
+    border-right-width: 1px;
+    border-right-color: rgba(122, 98, 48, 0.6);
+}
+
+.questlog-details {
+    flex-grow: 1;
+}
+
+.quest-title {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(255, 230, 150);
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+/* ---------------------------------------------------------------- quest tracker */
+
+.quest-tracker {
+    position: absolute;
+    right: 18px;
+    top: 250px;
+    width: 310px;
+    padding: 2px 10px 8px 10px;
+    background-color: rgba(6, 8, 14, 0.72);
+    border-radius: 5px;
+}
+
+.tracker-title {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(255, 214, 90);
+    white-space: normal;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+    margin-top: 8px;
+}
+
+.tracker-line {
+    font-size: 15px;
+    color: rgb(250, 250, 252);
+    white-space: normal;
+    margin-left: 10px;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+.tracker-line.done {
+    color: rgb(140, 255, 140);
+}
+
+/* ---------------------------------------------------------------- micro menu */
+
+.micro-menu {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    flex-direction: row;
+}
+
+.micro-button {
+    width: 54px;
+    height: 44px;
+    margin-left: 6px;
+    padding: 0;
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(240, 230, 210);
+    background-color: rgba(30, 36, 52, 0.9);
+    border-width: 1px;
+    border-color: rgb(122, 98, 48);
+    border-radius: 4px;
+}
+
+.micro-button:hover {
+    background-color: rgb(60, 66, 90);
+}
+
+.micro-button.active {
+    border-color: rgb(255, 214, 90);
+    background-color: rgba(122, 98, 48, 0.6);
+}
+
+/* ---------------------------------------------------------------- item tooltip */
+
+.item-tooltip {
+    position: absolute;
+    width: 300px;
+    padding: 8px 10px;
+    background-color: rgb(10, 12, 22);
+    border-width: 1px;
+    border-color: rgb(122, 98, 48);
+    border-radius: 5px;
+}
+
+.tip-title {
+    font-size: 16px;
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.tip-line {
+    font-size: 13px;
+    color: rgb(255, 255, 255);
+    white-space: normal;
+}
+
+.tip-row {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.tip-line.dim {
+    color: rgb(190, 196, 214);
+}
+
+.tip-line.stat {
+    color: rgb(255, 255, 255);
+}
+
+.tip-line.red {
+    color: rgb(255, 80, 70);
+}
+
+.tip-line.use {
+    color: rgb(30, 255, 0);
+}
+
+.tip-line.flavor {
+    color: rgb(255, 210, 90);
+    -unity-font-style: italic;
+}
+
+/* ---------------------------------------------------------------- world: quest marks */
+
+.nameplate .quest-mark {
+    width: 40px;
+    font-size: 38px;
+    margin-bottom: -4px;
+    -unity-text-outline-width: 2px;
+}
+
+.nameplate.npc .nameplate-name {
+    color: rgb(120, 230, 120);
+}
+
+/* ---------------------------------------------------------------- HUD additions */
+
+.notice-text.small {
+    font-size: 26px;
+}
+
+.chat-line.loot {
+    color: rgb(120, 230, 120);
+}
+
+.chat-line.quest {
+    color: rgb(255, 214, 90);
+}

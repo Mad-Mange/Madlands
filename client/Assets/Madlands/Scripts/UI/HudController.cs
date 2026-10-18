@@ -13,8 +13,9 @@ namespace Madlands.Client
     /// <summary>
     /// The in-game HUD (UI Toolkit, the "hud" part of FrontEnd.uxml): player and target frames,
     /// auras, cast bars, the action bar (keys 1-0, -, =), experience bar, error texts, chat,
-    /// nameplates and floating combat text. Everything shown comes from ClientCore state; actions
-    /// only ask the server (which checks everything again).
+    /// nameplates and floating combat text, and the item and quest windows (bags B, character C,
+    /// quest log L, loot, vendors, NPC dialogs, quest tracker). Everything shown comes from
+    /// ClientCore state; actions only ask the server (which checks everything again).
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class HudController : MonoBehaviour
@@ -57,6 +58,12 @@ namespace Madlands.Client
         private Label _targetPowerText, _playerCastText, _targetCastText, _xpText, _errorText, _noticeText, _tooltipTitle, _tooltipMeta, _tooltipBody;
         private ChatPanel _chat;
         private WorldOverlay _overlay;
+        private ItemTooltip _itemTooltip;
+        private InventoryUi _inventory;
+        private LootUi _loot;
+        private VendorUi _vendor;
+        private QuestUi _quests;
+        private Button _characterButton, _bagsButton, _questsButton;
         private readonly Slot[] _slots = new Slot[SlotCount];
         private readonly List<AuraIcon> _playerAuraIcons = new List<AuraIcon>();
         private readonly List<AuraIcon> _targetAuraIcons = new List<AuraIcon>();
@@ -71,6 +78,7 @@ namespace Madlands.Client
 
         private GameClient Client => network.Client;
         public ChatPanel Chat => _chat;
+        public QuestUi Quests => _quests;
 
         private void Awake()
         {
@@ -132,6 +140,62 @@ namespace Madlands.Client
             _chat = new ChatPanel(r.Q("chat-log"), chatInput, text => Client.SendChat(text));
             _overlay = new WorldOverlay(r.Q("nameplates"), r.Q("combat-text"));
             BuildActionBar();
+            BuildWindows();
+        }
+
+        /// <summary>Windows and the tracker in their own layer; tooltips and the cursor item above them.</summary>
+        private void BuildWindows()
+        {
+            var windows = Layer("windows");
+            var overlay = Layer("window-overlay");
+            _itemTooltip = new ItemTooltip(overlay);
+            _inventory = new InventoryUi(windows, overlay, Client, _itemTooltip, ShowError);
+            _loot = new LootUi(windows, Client, _itemTooltip);
+            _vendor = new VendorUi(windows, Client, _itemTooltip, _inventory);
+            _quests = new QuestUi(windows, Client, _itemTooltip);
+
+            var menu = new VisualElement { pickingMode = PickingMode.Ignore };
+            menu.AddToClassList("micro-menu");
+            _characterButton = MicroButton(menu, "Char\n(C)", () => _inventory.ToggleCharacter());
+            _bagsButton = MicroButton(menu, "Bags\n(B)", () => _inventory.ToggleBags());
+            _questsButton = MicroButton(menu, "Quests\n(L)", () => _quests.ToggleLog());
+            windows.Add(menu);
+        }
+
+        private VisualElement Layer(string name)
+        {
+            var layer = new VisualElement { name = name, pickingMode = PickingMode.Ignore };
+            layer.AddToClassList("layer");
+            _hud.Add(layer);
+            return layer;
+        }
+
+        private static Button MicroButton(VisualElement menu, string text, System.Action onClick)
+        {
+            var button = new Button(onClick) { text = text };
+            button.AddToClassList("micro-button");
+            menu.Add(button);
+            return button;
+        }
+
+        /// <summary>Shows the tooltip of an item in the open bags (scripted screenshot runs).</summary>
+        public void ShowItemTooltip(uint itemId) => _inventory.ShowTooltipFor(itemId);
+
+        /// <summary>Opens a window by name (bags, character, questlog): used by scripted screenshot runs.</summary>
+        public void OpenWindow(string name)
+        {
+            switch (name.Trim().ToLowerInvariant())
+            {
+                case "bags":
+                    if (!_inventory.BagsOpen) _inventory.ToggleBags();
+                    break;
+                case "character":
+                    if (!_inventory.CharacterOpen) _inventory.ToggleCharacter();
+                    break;
+                case "questlog":
+                    if (!_quests.LogOpen) _quests.ToggleLog();
+                    break;
+            }
         }
 
         private void Start()
@@ -153,7 +217,28 @@ namespace Madlands.Client
             {
                 _lastLevel = 0;
                 _selfAurasDirty = _targetAurasDirty = true;
+                CloseWindows();
             };
+            c.InventoryChanged += () => _inventory.Refresh();
+            c.StatsChanged += () => _inventory.Refresh();
+            c.MoneyChanged += OnMoneyChanged;
+            c.ItemReceived += OnItemReceived;
+            c.ActionFailed += (error, value) => ShowError(ActionErrorText(error, value));
+            c.LootChanged += () => _loot.Refresh();
+            c.GossipOpened += menu =>
+            {
+                _vendor.Close();
+                _quests.ShowGossip(menu);
+            };
+            c.VendorOpened += wares =>
+            {
+                _quests.CloseDialog();
+                _vendor.Open(wares);
+            };
+            c.QuestLogChanged += () => _quests.RefreshLog();
+            c.QuestProgressed += OnQuestProgressed;
+            c.QuestStateChanged += OnQuestStateChanged;
+            c.QuestCompleted += OnQuestCompleted;
             _subscribed = true;
         }
 
@@ -173,6 +258,7 @@ namespace Madlands.Client
             {
                 if (_chat.IsOpen) _chat.Close();
                 _overlay.Clear();
+                CloseWindows();
                 return;
             }
 
@@ -186,7 +272,24 @@ namespace Madlands.Client
             UpdateTexts();
             _chat.Update();
             _deathPanel.EnableInClassList("hidden", !Client.Self.Values.IsDead);
+            _inventory.Update(_hud.panel);
+            _inventory.PlaceCharacter(_vendor.IsOpen || _loot.IsOpen || _quests.DialogOpen);
+            _vendor.Update();
+            _quests.Update();
+            _characterButton.EnableInClassList("active", _inventory.CharacterOpen);
+            _bagsButton.EnableInClassList("active", _inventory.BagsOpen);
+            _questsButton.EnableInClassList("active", _quests.LogOpen);
             HandleKeys();
+        }
+
+        private void CloseWindows()
+        {
+            _inventory.CloseAll();
+            _loot.Close();
+            _vendor.Close();
+            _quests.CloseDialog();
+            if (_quests.LogOpen) _quests.ToggleLog();
+            _itemTooltip.Hide();
         }
 
         private void LateUpdate()
@@ -209,6 +312,9 @@ namespace Madlands.Client
                 _chat.Open(".");
                 return;
             }
+            if (keyboard.bKey.wasPressedThisFrame) _inventory.ToggleBags();
+            if (keyboard.cKey.wasPressedThisFrame) _inventory.ToggleCharacter();
+            if (keyboard.lKey.wasPressedThisFrame) _quests.ToggleLog();
             for (int i = 0; i < SlotCount; i++)
                 if (keyboard[SlotKeys[i]].wasPressedThisFrame) UseSpell(_slots[i].SpellId);
         }
@@ -221,6 +327,18 @@ namespace Madlands.Client
                 _chat.Close();
                 return true;
             }
+            if (_inventory.IsHolding) return _inventory.HandleEscape();
+            if (_loot.IsOpen)
+            {
+                _loot.Close();
+                return true;
+            }
+            if (_vendor.IsOpen)
+            {
+                _vendor.Close();
+                return true;
+            }
+            if (_quests.HandleEscape() || _inventory.HandleEscape()) return true;
             if (!Client.Target.IsEmpty)
             {
                 Client.SetTarget(EntityGuid.Empty);
@@ -614,6 +732,92 @@ namespace Madlands.Client
             _chat.AddLine($"You gain {amount} experience{from}.", "combat");
         }
 
+        // ------------------------------------------------------------------ items and quests
+
+        private void OnMoneyChanged(long delta, ReceiveSource source)
+        {
+            _inventory.Refresh();
+            if (delta <= 0 || source == ReceiveSource.Quest) return;
+            string money = Money.Format(delta);
+            _chat.AddLine(source == ReceiveSource.Loot ? "You loot " + money + "." : "You receive " + money + ".", "loot");
+        }
+
+        private void OnItemReceived(ItemReceived received)
+        {
+            string item = ItemTooltip.Describe(Client.Data, received.ItemId, received.Count);
+            switch (received.Source)
+            {
+                case ReceiveSource.Loot: _chat.AddLine("You receive loot: " + item + ".", "loot"); break;
+                case ReceiveSource.Vendor: _chat.AddLine("You purchase " + item + ".", "loot"); break;
+                default: _chat.AddLine("You receive item: " + item + ".", "loot"); break;
+            }
+        }
+
+        private void OnQuestProgressed(uint questId, int objective, int count)
+        {
+            var quest = Client.Data.GetQuest(questId);
+            if (quest == null || objective >= quest.ObjectiveList.Count) return;
+            var text = QuestUi.ObjectiveLine(quest.ObjectiveList[objective], count);
+            _chat.AddLine(text, "quest");
+            ShowNotice(text, small: true);
+        }
+
+        private void OnQuestStateChanged(uint questId, QuestLogState state)
+        {
+            var quest = Client.Data.GetQuest(questId);
+            if (quest == null) return;
+            switch (state)
+            {
+                case QuestLogState.Active:
+                    if (Client.Quests.Find(questId) != null) _chat.AddLine("Quest accepted: " + quest.Title, "quest");
+                    break;
+                case QuestLogState.Complete:
+                    _chat.AddLine(quest.Title + " (Complete)", "quest");
+                    ShowNotice(quest.Title + " (Complete)", small: true);
+                    break;
+                case QuestLogState.Removed:
+                    if (!Client.Quests.IsCompleted(questId)) _chat.AddLine("Quest abandoned: " + quest.Title, "quest");
+                    break;
+            }
+        }
+
+        private void OnQuestCompleted(QuestCompleted completed)
+        {
+            var quest = Client.Data.GetQuest(completed.QuestId);
+            _chat.AddLine((quest != null ? quest.Title : "Quest") + " completed.", "quest");
+            if (completed.Xp > 0) _chat.AddLine("Experience gained: " + completed.Xp + ".", "quest");
+            if (completed.Money > 0) _chat.AddLine("Received " + Money.Format(completed.Money) + ".", "quest");
+        }
+
+        private static string ActionErrorText(ActionError error, int value)
+        {
+            switch (error)
+            {
+                case ActionError.InventoryFull: return "Inventory is full.";
+                case ActionError.ItemNotFound: return "Item not found.";
+                case ActionError.CantEquipThere: return "That item does not go in that slot.";
+                case ActionError.LevelTooLow: return "You must reach level " + value + " to use that item.";
+                case ActionError.WrongClass: return "Your class can not use that item.";
+                case ActionError.BagNotEmpty: return "You can only move or destroy empty bags.";
+                case ActionError.BagInItself: return "You can not put a bag inside itself.";
+                case ActionError.NotABag: return "Only bags go in bag slots.";
+                case ActionError.NotEnoughMoney: return "You don't have enough money.";
+                case ActionError.CantSellItem: return "The merchant does not want that item.";
+                case ActionError.TooFarAway: return "You are too far away.";
+                case ActionError.NotUsable: return "That item can not be used.";
+                case ActionError.TwoHandEquipped: return "You can not equip that with a two-handed weapon.";
+                case ActionError.LootNotYours: return "You can not loot that.";
+                case ActionError.QuestLogFull: return "Your quest log is full.";
+                case ActionError.QuestNotAvailable: return "You can not take that quest.";
+                case ActionError.QuestNotComplete: return "You have not finished that quest.";
+                case ActionError.ChooseReward: return "Choose a reward first.";
+                case ActionError.CantInteract: return "You can not interact with that.";
+                case ActionError.NoRoomForReward: return "Make room in your bags for the reward.";
+                case ActionError.CantDestroyItem: return "You can not destroy that.";
+                default: return "You can not do that now.";
+            }
+        }
+
         private void OnChat(ChatMessage message)
         {
             switch (message.Channel)
@@ -644,9 +848,10 @@ namespace Madlands.Client
             _errorUntil = Time.time + ErrorSeconds;
         }
 
-        private void ShowNotice(string text)
+        private void ShowNotice(string text, bool small = false)
         {
             _noticeText.text = text;
+            _noticeText.EnableInClassList("small", small);
             _noticeUntil = Time.time + NoticeSeconds;
         }
 
@@ -679,6 +884,7 @@ namespace Madlands.Client
                 case CastResult.Stunned: return "Can not do that while stunned.";
                 case CastResult.AlreadyCasting: return "Another action is in progress.";
                 case CastResult.TargetDead: return "Your target is dead.";
+                case CastResult.InCombat: return "You can not do that while in combat.";
                 default: return null;
             }
         }

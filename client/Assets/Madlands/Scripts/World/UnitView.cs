@@ -16,6 +16,11 @@ namespace Madlands.Client
 
         private Transform _visual;
         private Transform _castGlow;
+        private Transform _mainHand;
+        private Transform _offHand;
+        private Transform _sparkle;
+        private uint _mainDisplay;
+        private uint _offDisplay;
         private float _hitAt = -10f;
         private float _lungeAt = -10f;
         private bool _dead;
@@ -50,6 +55,42 @@ namespace Madlands.Client
         public void PlayLunge() => _lungeAt = Time.time;
 
         public void SetDead(bool dead) => _dead = dead;
+
+        /// <summary>Shows the held weapon and shield (display ids from the unit's values).</summary>
+        public void SetEquipment(uint mainHand, uint offHand)
+        {
+            if (!Shape.Hands) return;
+            if (mainHand != _mainDisplay) Hold(ref _mainHand, _mainDisplay = mainHand, right: true);
+            if (offHand != _offDisplay) Hold(ref _offHand, _offDisplay = offHand, right: false);
+        }
+
+        private void Hold(ref Transform hand, uint displayId, bool right)
+        {
+            if (hand != null) Destroy(hand.gameObject);
+            hand = null;
+            if (displayId == 0) return;
+            // Inside the visual, so the weapon falls over with the body.
+            hand = new GameObject(right ? "MainHand" : "OffHand").transform;
+            hand.SetParent(_visual, false);
+            hand.localPosition = new Vector3(right ? Shape.Radius + 0.08f : -(Shape.Radius + 0.08f), 0.95f, 0.12f);
+            hand.localRotation = Quaternion.Euler(right ? 20f : 0f, 0f, 0f);
+            ItemVisuals.Create(hand, displayId);
+        }
+
+        /// <summary>A slowly turning golden mote over a corpse the local player may loot.</summary>
+        public void SetLootable(bool lootable)
+        {
+            if (lootable == (_sparkle != null)) return;
+            if (!lootable)
+            {
+                Destroy(_sparkle.gameObject);
+                _sparkle = null;
+                return;
+            }
+            _sparkle = EntityVisuals.Glow(transform, Vector3.up * (Shape.Height * 0.45f + 0.3f), Vector3.one * 0.22f, new Color(1f, 0.85f, 0.3f));
+            _sparkle.localRotation = Quaternion.Euler(45f, 0f, 45f);
+            _sparkle.gameObject.AddComponent<Spinner>();
+        }
 
         /// <summary>Shows (school given) or hides a glow above the unit while it casts.</summary>
         public void SetCasting(SpellSchool? school)

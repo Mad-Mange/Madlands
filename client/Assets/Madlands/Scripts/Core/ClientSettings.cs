@@ -14,6 +14,10 @@ namespace Madlands.Client
     ///   Framing for screenshots: -campitch 30 -camdistance 25 -camyaw 40 -hidedebug
     ///   Combat checks: -class shardmage (new characters), -exec ".level 5;.spawn 2" (chat lines
     ///   sent after entering the world), -autofight (targets the nearest enemy and fights it)
+    ///   Item and quest checks: -open bags,character,questlog (windows), -talkto "Old Tamsin" (opens
+    ///   that NPC's dialog), -quest 1 (with -talkto: shows that quest's page), -loot (opens the loot
+    ///   of nearby corpses), -tooltip 1224 (shows the tooltip of that item in the open bags),
+    ///   -equip 1020,1210 (equips those items from the bags)
     /// </summary>
     public sealed class ClientSettings
     {
@@ -46,6 +50,18 @@ namespace Madlands.Client
         /// <summary>Chat lines (usually GM commands) to send after entering the world, ';'-separated.</summary>
         public string[] Exec = new string[0];
         public bool AutoFight;
+        /// <summary>Windows to open after entering the world (bags, character, questlog).</summary>
+        public string[] OpenWindows = new string[0];
+        /// <summary>Name of an NPC to talk to once the -exec lines ran.</summary>
+        public string TalkTo;
+        /// <summary>With TalkTo: a quest id to click in the dialog.</summary>
+        public uint QuestId;
+        /// <summary>Open the loot window of lootable corpses in reach.</summary>
+        public bool AutoLoot;
+        /// <summary>An item id whose tooltip is shown once the bags are open.</summary>
+        public uint TooltipItem;
+        /// <summary>Item ids to equip from the bags once the -exec lines ran.</summary>
+        public uint[] Equip = new uint[0];
 
         public string AccountApiUrl => "http://" + Server + ":" + HttpPort;
 
@@ -126,6 +142,30 @@ namespace Madlands.Client
                         break;
                     case "-autofight":
                         s.AutoFight = true;
+                        break;
+                    case "-open" when next != null:
+                        s.OpenWindows = next.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        i++;
+                        break;
+                    case "-talkto" when next != null:
+                        s.TalkTo = next;
+                        i++;
+                        break;
+                    case "-quest" when next != null:
+                        uint.TryParse(next, NumberStyles.Integer, CultureInfo.InvariantCulture, out s.QuestId);
+                        i++;
+                        break;
+                    case "-loot":
+                        s.AutoLoot = true;
+                        break;
+                    case "-equip" when next != null:
+                        s.Equip = Array.ConvertAll(next.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                            id => uint.Parse(id, NumberStyles.Integer, CultureInfo.InvariantCulture));
+                        i++;
+                        break;
+                    case "-tooltip" when next != null:
+                        uint.TryParse(next, NumberStyles.Integer, CultureInfo.InvariantCulture, out s.TooltipItem);
+                        i++;
                         break;
                 }
             }

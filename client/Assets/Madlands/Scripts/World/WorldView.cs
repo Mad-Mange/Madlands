@@ -86,6 +86,8 @@ namespace Madlands.Client
         private static void Animate(UnitView view, UnitState unit, GameClient client)
         {
             view.SetDead(unit.Values.IsDead);
+            view.SetEquipment(unit.Values.MainHandDisplay, unit.Values.OffHandDisplay);
+            view.SetLootable(unit.Values.IsDead && client.IsLootable(view.Guid));
             SpellSchool? school = null;
             if (unit.Cast != null && client.Data.TryGetSpell(unit.Cast.SpellId, out var spell)) school = spell.School;
             view.SetCasting(school);

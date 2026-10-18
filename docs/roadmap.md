@@ -73,13 +73,28 @@ Every phase ends in something playable and tested. Architectural decisions are i
 
 **Open:** playtest the feel of combat (numbers, pacing, controls). All numbers are in `content/` and `StatFormulas.cs`.
 
-## Phase 4 – Items, loot, economy, quests
+## ✅ Phase 4 – Items, loot, economy, quests (done 2026-10-18)
 
-- [ ] Bags and inventory
-- [ ] Equipment slots that affect stats, with a `displayId` for visuals
-- [ ] Loot tables and loot window, vendors and gold
-- [ ] A data-driven quest system: givers, prerequisites, objectives (kill, collect, talk, explore), rewards and chains
-- [ ] Quest log, quest tracker and NPC dialogue
+- [x] Items as content (`content/items.json`, ADR 0010): quality, equip slot, stats, weapon damage and speed, stacks, prices, use
+  spells and bags. 45 items, schemas for all new content files
+- [x] Bags and inventory: 20 equipment slots, a 16-slot backpack and four bag slots. Move, swap, stack, split and destroy;
+  two-handed weapons push the shield into the bags; only empty bags move. All rules in one tested class (`Inventory`)
+- [x] Equipment that affects stats and the weapon swing; weapons and shields are visible in hand (`displayId`)
+- [x] Loot tables (`content/loot.json`) rolled for the tapper; quest items only drop while a quest needs them; loot window,
+  sparkling corpses, shift-right-click takes everything
+- [x] Vendors and money (copper, silver, gold): buy, sell, sell all junk
+- [x] Consumables: food and drink (break on combat, new `periodicEnergize` aura effect), healing and mana draughts
+- [x] A data-driven quest system (`content/quests.json`, ADR 0011): givers and enders, prerequisites and chains, kill, collect,
+  talk and explore objectives, rewards with a choice, experience falling off for high levels
+- [x] Quest log (L), quest tracker, NPC dialogs, "!" and "?" over NPCs computed per player by the server
+- [x] The Mirewatch Post at the spawn: Captain Edda Brand, Old Tamsin and Quartermaster Holt with 8 quests and a vendor
+- [x] UI: bags (B), character sheet (C), item tooltips, loot, vendor and quest windows, drag and drop, a micro menu
+- [x] Persistence: money, items and quests saved in one transaction (migration 0003); class starting kit on first login
+- [x] GM commands `.additem`, `.money`, `.quest add|complete|reset`
+- [x] Bots loot (and throw away junk when full). Measured: 200 bots, 0.9–1.5 ms average tick, p99 2–7.6 ms, 0 corrections
+- [x] 132 tests, including loot, vendors, all four objective types, consumables and relogging on a real realm
+
+**Open:** playtest the item and quest loop: drop rates, prices, quest experience and the reward choices. All numbers are in `content/`.
 
 ## Phase 5 – Vertical slice: the first real zone (the "is it fun?" gate)
 
@@ -136,7 +151,13 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - **Combat balance is a first guess.** Tune with real playtests; the formulas are in `StatFormulas.cs`.
 - **Action bar layout is automatic** (spells in learn order). Let players drag spells around and save the layout on the server.
 - **No spell queueing:** pressing a key just before the global cooldown ends does nothing (WoW queues it).
-- **Kill credit goes to one player.** Groups (Phase 6) need shared credit and tapping rules.
+- **Kill credit and loot go to one player.** Groups (Phase 6) need shared credit, tapping rules and loot rules.
+- **Items have no per-instance ids or properties** (durability, enchantments). Trade and mail (Phase 6) need instance ids
+  and transactional transfers (ADR 0010).
+- **No buyback at vendors:** a mis-sold item is gone.
+- **Consumables cannot go on the action bar** (comes with player-arranged action bars).
+- **Quests:** no quest-starting items, escort, timed, repeatable or daily quests yet (ADR 0011).
+- **Only weapons and shields are visible on characters.** Armor visuals come with the modular characters of Phase 5.
 - **Tree crowns have no colliders**, so they block neither line of sight nor the camera.
 
 - **Bandwidth:** `EntityMoves` sends uncompressed floats. That adds up to about 15 MB/s out when 200 players see each other.

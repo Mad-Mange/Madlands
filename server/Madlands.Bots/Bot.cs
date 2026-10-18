@@ -37,6 +37,10 @@ public sealed class Bot
     private EntityGuid _enemy;
     private long _nextCastAttemptMs;
     private long _diedAtMs = -1;
+    private EntityGuid _corpse;
+    private long _nextLootMs;
+    private int _lootAttempts;
+    private readonly HashSet<EntityGuid> _skippedCorpses = new();
 
     public Bot(int index, HeightMap heightMap, float wanderRadius, bool fight = false)
     {
@@ -53,6 +57,9 @@ public sealed class Bot
         _client.Disconnected += reason => { _inWorld = false; LastError = reason; };
         _client.CombatEventReceived += OnCombatEvent;
         _client.ExperienceReceived += (amount, _) => XpGained += amount;
+        _client.ItemReceived += item => { if (item.Source == ReceiveSource.Loot) ItemsLooted += item.Count; };
+        _client.MoneyChanged += (delta, source) => { if (source == ReceiveSource.Loot) MoneyLooted += delta; };
+        _client.ActionFailed += (error, _) => { if (error == ActionError.InventoryFull) DestroyJunk(); };
     }
 
     /// <summary>Character name; letters only (name rules), "Bot" prefix so clients can tint bots.</summary>
@@ -66,6 +73,8 @@ public sealed class Bot
     public int Deaths { get; private set; }
     public int XpGained { get; private set; }
     public int DamageDone { get; private set; }
+    public int ItemsLooted { get; private set; }
+    public long MoneyLooted { get; private set; }
 
     /// <summary>Logs in (registering the bot's account and character on first run), then enters the world.</summary>
     public void Start(AccountClient account) => _login = LoginAsync(account);
@@ -175,6 +184,7 @@ public sealed class Bot
     {
         var self = _client.Self.Values;
         if (!IsValidEnemy(_enemy)) _enemy = FindEnemy();
+        if (Loot(dt, now)) return;
         if (_enemy.IsEmpty || !_client.TryGetPosition(_enemy, out var enemyPos))
         {
             if (!_client.Target.IsEmpty) _client.SetTarget(EntityGuid.Empty);
@@ -208,6 +218,63 @@ public sealed class Bot
         if (self.HealthFraction < 0.5f && TryCast(SpellTarget.Friend, _client.LocalGuid)) return;
         TryCast(SpellTarget.Enemy, _enemy);
         TryCast(SpellTarget.None, _client.LocalGuid);
+    }
+
+    /// <summary>Between fights: walks to the nearest corpse it may loot and takes everything. True while busy with it.</summary>
+    private bool Loot(float dt, long now)
+    {
+        if (!_enemy.IsEmpty || _client.Self.Values.Has(UnitFlags.InCombat)) return false;
+        if (_corpse.IsEmpty || !_client.IsLootable(_corpse) || _skippedCorpses.Contains(_corpse))
+        {
+            _corpse = FindLootableCorpse();
+            _lootAttempts = 0;
+        }
+        if (_corpse.IsEmpty || !_client.TryGetPosition(_corpse, out var p)) return false;
+
+        var to = (p - _state.Position).Horizontal;
+        if (to.HorizontalLength > GameConstants.InteractRange - 1f)
+        {
+            _state.Yaw = MathUtil.DirectionToYaw(to.X, to.Z);
+            MoveGrounded(to.Normalized * GameConstants.RunSpeed * _client.Self.Values.SpeedPercent / 100f, dt);
+            return true;
+        }
+        StandStill();
+        if (now < _nextLootMs) return true;
+        _nextLootMs = now + 1000;
+        // Full bags (or a lost race with the corpse) must not keep the bot here forever.
+        if (++_lootAttempts > 3)
+        {
+            _skippedCorpses.Add(_corpse);
+            _corpse = EntityGuid.Empty;
+            return false;
+        }
+        _client.OpenLoot(_corpse);
+        _client.TakeLoot(Madlands.Shared.Net.LootTake.AllSlots);
+        return true;
+    }
+
+    private EntityGuid FindLootableCorpse()
+    {
+        EntityGuid best = EntityGuid.Empty;
+        float bestDistance = HuntRadius;
+        foreach (var e in _client.World.Entities)
+        {
+            if (!_client.IsLootable(e.Guid) || _skippedCorpses.Contains(e.Guid)) continue;
+            float d = Vec3.HorizontalDistance(e.Movement.Sample(_client.RenderTimeMs).Position, _state.Position);
+            if (d < bestDistance)
+            {
+                bestDistance = d;
+                best = e.Guid;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>Bags full: throws away the gray junk (bots never visit vendors).</summary>
+    private void DestroyJunk()
+    {
+        foreach (var (pos, item) in _client.Inventory.All.ToList())
+            if (_client.Data.TryGetItem(item.ItemId, out var info) && info.Quality == ItemQuality.Poor) _client.DestroyItem(pos);
     }
 
     private bool TryCast(SpellTarget kind, EntityGuid target)

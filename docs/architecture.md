@@ -11,18 +11,22 @@
  │ HudController (UI Tk)  │                      │     └ MapInstance (mapId, instanceId)        │
  │ TargetingController    │                      │        ├ AoiGrid (64 m cells)                │
  │ SpellEffects           │                      │        ├ CombatSystem · SpellSystem ·        │
- └──────────┬─────────────┘                      │        │  AuraSystem                         │
+ │ Inventory/Quest/Loot/  │                      │        │  AuraSystem                         │
+ │  VendorUi (windows)    │                      │        ├ ItemSystem · LootSystem ·           │
+ └──────────┬─────────────┘                      │        │  QuestSystem                        │
             │ same code as the bots              │        ├ Players (MovementValidator each)    │
  ┌──────────┴─────────────┐                      │        ├ Creatures (CreatureAI + Mover)      │
  │ Madlands.ClientCore    │                      │        └ NavQuery · CollisionWorld (LOS)     │
  │ GameClient, ClientWorld│                      └───────────────┬──────────────────────────────┘
  │ ClientGameData, Clock, │                      Madlands.Content (loads + validates content/)
- │ Interpolation, Sender  │                      Madlands.Navigation (DotRecast navmesh, LOS)
- └──────────┬─────────────┘                        ▲ content/*.json, maps/<id>/{height,collision}.bin,
- ┌──────────┴─────────────────────────────────────┐   spawns.json (written by Unity: Export Map)
+ │ Interpolation, Sender, │                      Madlands.Navigation (DotRecast navmesh, LOS)
+ │ ClientInventory/Quests │                        ▲ content/*.json, maps/<id>/{height,collision}.bin,
+ └──────────┬─────────────┘                          spawns.json (written by Unity: Export Map)
+ ┌──────────┴─────────────────────────────────────┐
  │ Madlands.Shared: protocol (opcodes, messages,  │
  │ PacketWriter/Reader), UnitValues, FactionTable,│
- │ SpellInfo, MovementState, EntityGuid, Vec3,    │
+ │ SpellInfo, ItemInfo, QuestInfo, ItemRules,     │
+ │ MovementState, EntityGuid, Vec3,               │
  │ GameConstants, HeightMap, CollisionMesh        │
  └────────────────────────────────────────────────┘
 ```
@@ -46,11 +50,11 @@ All three share one `IGameDatabase`: PostgreSQL in production, or in-memory for 
    │ POST /characters/list|create ─► Bearer token ──────────────────────────────────────────► characters
    │
    │ UDP connect + Hello(token, characterId) ─────────────────────► Authenticating:
-   │                                                                 token, character, GM level loaded off-thread
+   │                                                                 token, character, GM level, items and quests loaded off-thread
    │                                                                 result → MainThreadQueue → loop thread
-   │ ◄──────────────────────────────────────────── GameData (spells, factions, classes, XP table; ADR 0008)
+   │ ◄──────────────────────────────────────────── GameData (spells, factions, classes, XP table, items, quests; ADR 0008)
    │ ◄──────────────────────────────────────────── Welcome(guid, name, map, position, own UnitValues)
-   │ ◄──────────────────────────────────────────── Spellbook, PlayerStats
+   │ ◄──────────────────────────────────────────── Spellbook, PlayerStats, InventoryUpdate, MoneyUpdate, QuestLogUpdate
    │ load scene World_<mapId> additively, spawn local player, show HUD
 ```
 
@@ -62,8 +66,8 @@ All three share one `IGameDatabase`: PostgreSQL in production, or in-memory for 
   - Unknown accounts are checked against a dummy hash, so timing does not reveal which account names exist.
 - **One character per account in the world:** a new login drops the older connection (`LoggedInElsewhere`).
 - **Saving:**
-  - Position, level, experience, health and power are saved on logout, every 60 s, and for everyone on shutdown.
-  - The loop thread enqueues a snapshot; `CharacterSaver` writes the newest snapshot per character on a background task.
+  - Position, level, experience, health, power, money, items and quests are saved on logout, every 60 s, and for everyone on shutdown.
+  - The loop thread enqueues a snapshot; `CharacterSaver` writes the newest snapshot per character on a background task, in one transaction per character (ADR 0010).
   - The game tick never waits for the database.
 - **GM commands** need `accounts.gm_level > 0` (set with `Madlands.Server set-gm <account> <level>`), or `--gm-all` in development.
 
@@ -115,6 +119,29 @@ All three share one `IGameDatabase`: PostgreSQL in production, or in-memory for 
 - **Death:** creatures leave a corpse, give experience to the first player who damaged them, and respawn from their spawn point. Players release to the map's spawn point with half health.
 - **Reactions** come from `factions.json` via `FactionTable` (shared): the same code colors nameplates on the client and decides who may attack whom on the server.
 
+## Data flow: items, loot, vendors and quests
+
+```
+ Client                                    Server (map instance thread)
+   │ MoveItem / AutoEquip / DestroyItem ──► ItemSystem → Inventory rules (slot, class, level, stacks, bags, two-hand)
+   │ ◄──────── InventoryUpdate (changed slots) · ActionFailed(error) · UnitUpdates (weapon looks) · PlayerStats
+   │ UseItem(pos, target, castId) ────────► the item's use spell via SpellSystem; one taken from the stack if cast
+   │                                        creature dies → LootSystem rolls its loot table for the tapper
+   │ ◄──────── LootableUpdate (private: the corpse sparkles for its owner only)
+   │ LootOpen / LootTake / LootClose ─────► in reach? owner? room in the bags?
+   │ ◄──────── LootWindow · ItemReceived · MoneyUpdate
+   │ Interact(npc) ───────────────────────► QuestSystem: talk objectives; GossipMenu, or the vendor's wares
+   │ ◄──────── GossipMenu(greeting, quests with status) · VendorInventory
+   │ VendorBuy / VendorSell ──────────────► ItemSystem: in reach, price, room
+   │ QuestAccept / QuestTurnIn / QuestAbandon ► QuestSystem: giver/ender, prerequisites, objectives, rewards fit
+   │ ◄──────── QuestLogUpdate (progress) · QuestCompleted · QuestGiverStatusUpdate ("!" and "?" per NPC)
+```
+
+- **Items** (ADR 0010): equipment, backpack and bags live in `Player.Inventory`, a pure rules class. Worn items feed the stat formulas; the main-hand weapon sets the swing.
+- **Loot** belongs to the player who tapped the creature; quest items only drop while a quest still needs them.
+- **Quests** (ADR 0011): kill, collect, talk and explore objectives; prerequisites make chains; collect objectives mirror the bags. NPC quest marks are computed per player by the server.
+- All of these are requests: the client shows the server's answer and never changes its own inventory or quest log.
+
 ## Threading model
 
 All game logic runs on the server's loop thread. At the start of each tick, two things are dispatched:
@@ -130,6 +157,7 @@ Map instances share no mutable state and own their own `PacketWriter`, random ge
 
 - **`FrontEnd`** (build index 0) is always loaded. It holds the camera, networking (`NetworkController`), the world view, targeting, spell effects and one UI Toolkit document: login, character select and create, the Esc menu and the in-game HUD.
 - **The HUD** (`HudController`): player and target frames, auras, cast bars, the action bar (keys 1-0, -, =), the experience bar, tooltips, error texts, chat (Enter; lines starting with `.` are GM commands), nameplates and floating combat text. It only shows ClientCore state and asks the server for actions.
+- **Windows** (Phase 4, plain C# classes owned by the HUD): bags (B), character sheet (C), quest log (L), loot, vendor and NPC dialogs, the quest tracker and item tooltips (`InventoryUi`, `LootUi`, `VendorUi`, `QuestUi`, `ItemWidgets`). Items move WoW-style: click to pick up, click to put down (or drag); dropping outside the windows asks to destroy. Right-click on a unit attacks, talks or loots.
 - **Map scenes** (`World_0001`, …) contain only the world: terrain, props, colliders, light and fog, creature spawn markers (editor only) and a `MapInfo` component.
   - They are loaded additively when the server's `Welcome` names the map, and unloaded on logout.
   - The map scene is set active so its lighting and fog apply.
@@ -149,6 +177,11 @@ Map instances share no mutable state and own their own `PacketWriter`, random ge
 - Outgoing traffic 8–16 MB/s with most bots seeing each other (still uncompressed; on the roadmap).
 - The navmesh of the 512 × 512 m map with 49 000 obstacle triangles builds in about 0.5 s at startup.
 
+**Phase 4** (2026-10-18, Release build): 200 bots fighting and looting (`Madlands.Bots`, they also pick up loot and throw away junk when their bags are full).
+
+- Server tick 0.9–1.5 ms average, p99 2–7.6 ms, 0 movement corrections over 75 s.
+- 200 periodic saves with items and quests, none failed.
+
 ## Decisions that are expensive to change
 
 See [adr/](adr/). Summary:
@@ -164,6 +197,8 @@ See [adr/](adr/). Summary:
 | 0007 | PostgreSQL; write-behind; value transfers in transactions – implemented in Phase 2 |
 | 0008 | The server sends the client its display data (spells, factions, levels) at login |
 | 0009 | World geometry: colliders exported from Unity, navmesh built at server startup |
+| 0010 | Items, inventory, loot and money: items as content, one inventory rules class, loot for the tapper, saves in one transaction |
+| 0011 | Quests and NPC dialogs: quests as content (kill, collect, talk, explore), server-computed quest marks |
 
 ## Known simplifications (deliberate)
 
@@ -175,4 +210,6 @@ See [adr/](adr/). Summary:
 - **Keys are read directly from the keyboard.** Rebindable controls come in Phase 5.
 - **Only one terrain tile, no streaming.**
 - **Players are not checked against walls**, only against the terrain (ADR 0009).
-- **No groups yet**: kill credit goes to the first player who damaged a creature.
+- **No groups yet**: kill credit and loot go to the first player who damaged a creature.
+- **Items have no per-instance data** (durability, enchantments) and no per-instance ids yet (ADR 0010). Only weapons and shields are visible on characters.
+- **No buyback, no dual wielding, no item use from the action bar.**

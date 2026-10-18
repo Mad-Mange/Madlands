@@ -20,6 +20,7 @@ namespace Madlands.Client
         private sealed class Nameplate
         {
             public VisualElement Root;
+            public Label Mark;
             public Label Name;
             public VisualElement Fill;
             public VisualElement Cast;
@@ -103,6 +104,11 @@ namespace Madlands.Client
                 plate.Root.EnableInClassList("player", isPlayer && reaction == Reaction.Friendly);
                 plate.Root.EnableInClassList("targeted", entity.Guid == client.Target);
                 plate.Root.EnableInClassList("dead", values.IsDead);
+                plate.Root.EnableInClassList("npc", values.NpcFlags != NpcFlags.None && reaction == Reaction.Friendly);
+                var status = values.IsDead ? QuestGiverStatus.None : client.GetQuestGiverStatus(entity.Guid);
+                plate.Mark.text = status == QuestGiverStatus.Available ? "!" : status == QuestGiverStatus.None ? "" : "?";
+                plate.Mark.EnableInClassList("incomplete", status == QuestGiverStatus.Incomplete);
+                plate.Mark.style.display = status == QuestGiverStatus.None ? DisplayStyle.None : DisplayStyle.Flex;
                 plate.Name.text = values.Level > 0 && !isPlayer ? entity.Name + "  " + values.Level : entity.Name;
                 plate.Fill.style.width = Length.Percent(values.HealthFraction * 100f);
 
@@ -112,7 +118,7 @@ namespace Madlands.Client
 
                 var p = RuntimePanelUtils.CameraTransformWorldToPanel(panel, head, cam);
                 plate.Root.style.left = p.x;
-                plate.Root.style.top = p.y - 30f;
+                plate.Root.style.top = p.y - (status == QuestGiverStatus.None ? 30f : 72f);
                 plate.Root.style.display = DisplayStyle.Flex;
             }
 
@@ -134,6 +140,10 @@ namespace Madlands.Client
         {
             var root = new VisualElement { pickingMode = PickingMode.Ignore };
             root.AddToClassList("nameplate");
+            var mark = new Label { pickingMode = PickingMode.Ignore };
+            mark.AddToClassList("quest-mark");
+            mark.style.display = DisplayStyle.None;
+            root.Add(mark);
             var label = new Label(name) { pickingMode = PickingMode.Ignore };
             label.AddToClassList("nameplate-name");
             var bar = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -150,7 +160,7 @@ namespace Madlands.Client
             root.Add(bar);
             root.Add(cast);
             _nameplateLayer.Add(root);
-            return new Nameplate { Root = root, Name = label, Fill = fill, Cast = cast, CastFill = castFill };
+            return new Nameplate { Root = root, Mark = mark, Name = label, Fill = fill, Cast = cast, CastFill = castFill };
         }
 
         private void UpdateTexts(WorldView world, Camera cam, IPanel panel)

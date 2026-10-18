@@ -9,6 +9,8 @@ namespace Madlands.Client
     {
         public float Height;
         public float Radius;
+        /// <summary>Has hands: shows the weapon and shield its unit holds.</summary>
+        public bool Hands;
     }
 
     /// <summary>
@@ -23,6 +25,9 @@ namespace Madlands.Client
         public const uint BanditDisplay = 103;
         public const uint ShardcasterDisplay = 104;
         public const uint DummyDisplay = 105;
+        public const uint CaptainDisplay = 110;
+        public const uint HerbalistDisplay = 111;
+        public const uint QuartermasterDisplay = 112;
 
         public static readonly Color LocalPlayerColor = new Color(0.25f, 0.55f, 1f);
         public static readonly Color PlayerColor = new Color(0.3f, 0.85f, 0.4f);
@@ -69,7 +74,7 @@ namespace Madlands.Client
                     Humanoid(parent, new Color(0.52f, 0.2f, 0.16f));
                     Part(PrimitiveType.Sphere, parent, new Vector3(0f, 1.78f, -0.05f), new Vector3(0.62f, 0.5f, 0.62f), new Color(0.18f, 0.14f, 0.12f));
                     Glow(parent, new Vector3(0f, 1.15f, 0.38f), new Vector3(0.12f, 0.2f, 0.06f), new Color(0.4f, 0.95f, 1f));
-                    return new DisplayShape { Height = 2.1f, Radius = 0.5f };
+                    return new DisplayShape { Height = 2.1f, Radius = 0.5f, Hands = true };
                 }
                 case ShardcasterDisplay:
                 {
@@ -77,7 +82,35 @@ namespace Madlands.Client
                     var crystal = Glow(parent, new Vector3(0f, 2.45f, 0f), new Vector3(0.22f, 0.36f, 0.22f), new Color(0.45f, 1f, 1f));
                     crystal.localRotation = Quaternion.Euler(0f, 45f, 0f);
                     crystal.gameObject.AddComponent<Spinner>();
-                    return new DisplayShape { Height = 2.3f, Radius = 0.5f };
+                    return new DisplayShape { Height = 2.3f, Radius = 0.5f, Hands = true };
+                }
+                case CaptainDisplay:
+                {
+                    // Steel armor, a helmet and a blue cloak: the outpost's commander.
+                    Humanoid(parent, new Color(0.46f, 0.52f, 0.62f));
+                    Part(PrimitiveType.Sphere, parent, new Vector3(0f, 1.8f, 0f), new Vector3(0.62f, 0.42f, 0.62f), new Color(0.6f, 0.63f, 0.7f));
+                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 1.05f, -0.42f), new Vector3(0.72f, 1.35f, 0.06f), new Color(0.16f, 0.28f, 0.6f));
+                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 1.62f, 0f), new Vector3(0.95f, 0.14f, 0.5f), new Color(0.6f, 0.63f, 0.7f));
+                    return new DisplayShape { Height = 2.1f, Radius = 0.5f, Hands = true };
+                }
+                case HerbalistDisplay:
+                {
+                    // A purple robe and a tall wide-brimmed hat.
+                    Humanoid(parent, new Color(0.4f, 0.3f, 0.48f));
+                    var hat = new Color(0.22f, 0.18f, 0.26f);
+                    Part(PrimitiveType.Cylinder, parent, new Vector3(0f, 1.95f, 0f), new Vector3(0.95f, 0.025f, 0.95f), hat);
+                    Part(PrimitiveType.Cylinder, parent, new Vector3(0f, 2.15f, 0f), new Vector3(0.45f, 0.2f, 0.45f), hat);
+                    Part(PrimitiveType.Cylinder, parent, new Vector3(0.04f, 2.42f, 0f), new Vector3(0.26f, 0.1f, 0.26f), hat);
+                    Part(PrimitiveType.Sphere, parent, new Vector3(0.08f, 2.56f, 0f), Vector3.one * 0.14f, hat);
+                    return new DisplayShape { Height = 2.5f, Radius = 0.5f, Hands = true };
+                }
+                case QuartermasterDisplay:
+                {
+                    // Broad, in brown with a leather apron.
+                    Part(PrimitiveType.Capsule, parent, new Vector3(0f, 1f, 0f), new Vector3(1.05f, 1f, 0.9f), new Color(0.48f, 0.34f, 0.22f));
+                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 1.55f, 0.42f), new Vector3(0.25f, 0.15f, 0.3f), new Color(0.3f, 0.2f, 0.12f));
+                    Part(PrimitiveType.Cube, parent, new Vector3(0f, 0.85f, 0.43f), new Vector3(0.7f, 0.95f, 0.05f), new Color(0.72f, 0.6f, 0.42f));
+                    return new DisplayShape { Height = 2.0f, Radius = 0.55f, Hands = true };
                 }
                 case DummyDisplay:
                 {
@@ -91,7 +124,7 @@ namespace Madlands.Client
                 }
                 default:
                     Humanoid(parent, displayId == PlayerDisplay ? playerColor : Color.gray);
-                    return new DisplayShape { Height = 2.0f, Radius = 0.45f };
+                    return new DisplayShape { Height = 2.0f, Radius = 0.45f, Hands = true };
             }
         }
 

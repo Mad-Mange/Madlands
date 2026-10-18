@@ -1,6 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="Madlands.uss" />
     <Style src="Hud.uss" />
+    <Style src="Windows.uss" />
     <ui:VisualElement name="root" class="root frontend" picking-mode="Ignore">
 
         <!-- In-game HUD (HudController). Lowest layer: menus and overlays draw on top of it. -->
