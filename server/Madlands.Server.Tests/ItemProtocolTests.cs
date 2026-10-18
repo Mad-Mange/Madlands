@@ -136,7 +136,7 @@ public class ItemProtocolTests
             Completion = "Thanks.", EnderName = "Captain Edda Brand", RewardXp = 900, RewardMoney = 150,
         };
         quest.ObjectiveList.Add(new QuestObjectiveInfo { Type = ObjectiveType.Kill, Target = 3, Count = 6, Text = "Shard Bandit slain" });
-        quest.ObjectiveList.Add(new QuestObjectiveInfo { Type = ObjectiveType.Explore, Target = 0, Count = 1, Text = "Scout the camp" });
+        quest.ObjectiveList.Add(new QuestObjectiveInfo { Type = ObjectiveType.Explore, Target = 0, Count = 1, Text = "Scout the camp", Map = 1, X = 95, Z = 75, Radius = 22 });
         quest.RewardItems.Add(new QuestItemReward { Item = 4003, Count = 2 });
         quest.RewardChoices.Add(new QuestItemReward { Item = 1020, Count = 1 });
         quest.RewardChoices.Add(new QuestItemReward { Item = 1021, Count = 1 });

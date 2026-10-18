@@ -14,6 +14,8 @@ namespace Madlands.Client.Editor
     /// Writes content/maps/&lt;id&gt;/ from the open scene: height.bin (terrain), collision.bin (static
     /// colliders: navmesh obstacles and line of sight), spawns.json (CreatureSpawnPoint markers) and
     /// map.json. Uses Madlands.Shared's writers, so each file format has a single implementation.
+    /// It also renders the map from above (Assets/Madlands/Maps/World_NNNN_map.png) for the client's
+    /// minimap and world map, and stores it with its bounds on the scene's MapInfo.
     ///   Batch: Unity -batchmode -projectPath client -executeMethod Madlands.Client.Editor.MapExporter.ExportFromCommandLine
     /// </summary>
     public static class MapExporter
@@ -69,6 +71,7 @@ namespace Madlands.Client.Editor
             var collision = CollisionExporter.Build(out int colliders);
             collision.Save(Path.Combine(dir, "collision.bin"));
             int spawnCount = WriteSpawns(Path.Combine(dir, "spawns.json"));
+            RenderWorldMap(info, minX, minZ, Mathf.Max(maxX - minX, maxZ - minZ));
 
             var spawn = info.spawnPoint != null ? info.spawnPoint : info.transform;
             File.WriteAllText(Path.Combine(dir, "map.json"), string.Format(CultureInfo.InvariantCulture,
@@ -88,6 +91,68 @@ namespace Madlands.Client.Editor
                              $"{collision.TriangleCount} obstacle triangles from {colliders} colliders, {spawnCount} creature spawns -> {dir}";
             Debug.Log("[MapExporter] " + summary);
             return summary;
+        }
+
+        public const int WorldMapPixels = 1024;
+
+        /// <summary>
+        /// Renders the square from (minX, minZ) of <paramref name="size"/> meters straight down (fog off)
+        /// into a texture asset, and stores it with its bounds on <paramref name="info"/> (scene saved).
+        /// </summary>
+        private static void RenderWorldMap(MapInfo info, float minX, float minZ, float size)
+        {
+            string assetPath = $"Assets/Madlands/Maps/World_{info.mapId:0000}_map.png";
+            Directory.CreateDirectory(Path.Combine(Application.dataPath, "Madlands", "Maps"));
+            bool fog = RenderSettings.fog;
+            RenderSettings.fog = false;
+            var go = new GameObject("MapCamera");
+            try
+            {
+                var cam = go.AddComponent<Camera>();
+                cam.orthographic = true;
+                cam.orthographicSize = size * 0.5f;
+                cam.nearClipPlane = 1f;
+                cam.farClipPlane = 2000f;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = Color.black;
+                go.transform.SetPositionAndRotation(new Vector3(minX + size * 0.5f, 1000f, minZ + size * 0.5f), Quaternion.Euler(90f, 0f, 0f));
+                var rt = new RenderTexture(WorldMapPixels, WorldMapPixels, 24, RenderTextureFormat.ARGB32);
+                cam.targetTexture = rt;
+                cam.Render(); // warm-up: the first batch-mode render can miss material data
+                cam.Render();
+                var previous = RenderTexture.active;
+                RenderTexture.active = rt;
+                var tex = new Texture2D(WorldMapPixels, WorldMapPixels, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, WorldMapPixels, WorldMapPixels), 0, 0);
+                tex.Apply();
+                RenderTexture.active = previous;
+                File.WriteAllBytes(Path.Combine(RepoRoot, "client", assetPath), tex.EncodeToPNG());
+                cam.targetTexture = null;
+                UnityEngine.Object.DestroyImmediate(rt);
+                UnityEngine.Object.DestroyImmediate(tex);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+                RenderSettings.fog = fog;
+            }
+
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            if (AssetImporter.GetAtPath(assetPath) is TextureImporter importer)
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.mipmapEnabled = true;
+                importer.maxTextureSize = WorldMapPixels;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                importer.SaveAndReimport();
+            }
+            info.worldMap = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            info.worldMapMin = new Vector2(minX, minZ);
+            info.worldMapSize = size;
+            EditorUtility.SetDirty(info);
+            EditorSceneManager.MarkSceneDirty(info.gameObject.scene);
+            EditorSceneManager.SaveScene(info.gameObject.scene);
         }
 
         /// <summary>All CreatureSpawnPoint markers, sorted so the file only changes when the markers do.</summary>

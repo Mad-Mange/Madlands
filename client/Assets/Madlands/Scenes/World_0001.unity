@@ -3895,6 +3895,9 @@ MonoBehaviour:
   mapName: Testlands
   heightSampleSpacing: 1
   spawnPoint: {fileID: 1499341684}
+  worldMap: {fileID: 2800000, guid: 36eacbeb1767990499e0d1efd0fd0776, type: 3}
+  worldMapMin: {x: -256, y: -256}
+  worldMapSize: 512
 --- !u!4 &84572939
 Transform:
   m_ObjectHideFlags: 0
@@ -68451,6 +68454,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1455268274}
   - component: {fileID: 1455268273}
+  - component: {fileID: 1455268275}
   m_Layer: 0
   m_Name: Sun
   m_TagString: Untagged
@@ -68538,6 +68542,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!114 &1455268275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1455268272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &1455296810
 GameObject:
   m_ObjectHideFlags: 0

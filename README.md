@@ -270,7 +270,7 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | Num Lock / R | Autorun |
 | Left click a unit | Target it |
 | Right click a unit | Attack an enemy, talk to a friendly NPC, or loot a sparkling corpse (shift: take everything) |
-| B / C / L | Bags / character sheet / quest log |
+| B / C / L / M | Bags / character sheet / quest log / world map (the minimap zooms with the mouse wheel) |
 | Click an item | Pick it up; click a slot to put it down (or drag). Drop it outside the windows to destroy it |
 | Right click an item | Use, equip or unequip it; sell it while a vendor is open |
 | Tab | Cycle through enemies in front of you |

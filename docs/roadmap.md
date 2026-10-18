@@ -105,7 +105,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [ ] Animations retargeted to a shared humanoid rig
 - [ ] 1–2 races and 3 classes (tank, DPS, healer)
 - [ ] A level 1–10 zone with a hub village, 20–30 quests, 10–15 creature types and a world boss
-- [ ] Minimap, world map, sound and music
+- [x] Minimap (north up, zoom, players, NPCs and quest marks) and world map (M) with the places active quests send you
+  to. Export Map renders the map image from above
+- [ ] Sound and music
 - [ ] First deployment to a VPS and playtests with friends
 
 ## Phase 6 – Social

@@ -58,6 +58,7 @@ namespace Madlands.Client
         private LootUi _loot;
         private VendorUi _vendor;
         private QuestUi _quests;
+        private MapUi _map;
         private Button _characterButton, _bagsButton, _questsButton;
         private readonly Slot[] _slots = new Slot[SlotCount];
         private readonly List<AuraIcon> _playerAuraIcons = new List<AuraIcon>();
@@ -159,6 +160,7 @@ namespace Madlands.Client
         {
             var windows = Layer("windows");
             var overlay = Layer("window-overlay");
+            _map = new MapUi(windows, Client);
             _itemTooltip = new ItemTooltip(overlay);
             _inventory = new InventoryUi(windows, overlay, Client, _itemTooltip, ShowError);
             _loot = new LootUi(windows, Client, _itemTooltip);
@@ -206,6 +208,9 @@ namespace Madlands.Client
                 case "questlog":
                     if (!_quests.LogOpen) _quests.ToggleLog();
                     break;
+                case "map":
+                    if (!_map.WorldMapOpen) _map.ToggleWorldMap();
+                    break;
             }
         }
 
@@ -224,6 +229,7 @@ namespace Madlands.Client
                 if (guid == c.Target) _targetAurasDirty = true;
             };
             c.UnitChanged += OnUnitChanged;
+            network.EnteredWorld += () => _map.SetMap(FindAnyObjectByType<MapInfo>());
             c.EnteredWorld += _ =>
             {
                 _lastLevel = 0;
@@ -285,6 +291,7 @@ namespace Madlands.Client
             _chat.Update();
             _deathPanel.EnableInClassList("hidden", !Client.Self.Values.IsDead);
             _inventory.Update(_hud.panel);
+            _map.Update();
             _inventory.PlaceCharacter(_vendor.IsOpen || _loot.IsOpen || _quests.DialogOpen);
             _vendor.Update();
             _quests.Update();
@@ -301,6 +308,7 @@ namespace Madlands.Client
             _vendor.Close();
             _quests.CloseDialog();
             if (_quests.LogOpen) _quests.ToggleLog();
+            _map.Close();
             _itemTooltip.Hide();
         }
 
@@ -326,6 +334,7 @@ namespace Madlands.Client
             if (KeyBindings.WasPressed(GameAction.ToggleBags)) _inventory.ToggleBags();
             if (KeyBindings.WasPressed(GameAction.ToggleCharacter)) _inventory.ToggleCharacter();
             if (KeyBindings.WasPressed(GameAction.ToggleQuestLog)) _quests.ToggleLog();
+            if (KeyBindings.WasPressed(GameAction.ToggleMap)) _map.ToggleWorldMap();
             for (int i = 0; i < SlotCount; i++)
                 if (KeyBindings.WasPressed(KeyBindings.ActionButton(i))) UseSpell(_slots[i].SpellId);
         }
@@ -349,7 +358,7 @@ namespace Madlands.Client
                 _vendor.Close();
                 return true;
             }
-            if (_quests.HandleEscape() || _inventory.HandleEscape()) return true;
+            if (_map.HandleEscape() || _quests.HandleEscape() || _inventory.HandleEscape()) return true;
             if (!Client.Target.IsEmpty)
             {
                 Client.SetTarget(EntityGuid.Empty);

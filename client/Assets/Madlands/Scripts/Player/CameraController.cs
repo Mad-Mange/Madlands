@@ -82,7 +82,8 @@ namespace Madlands.Client
                 _yaw = Mathf.MoveTowardsAngle(_yaw, _target.transform.eulerAngles.y, followSpeedDegrees * Time.deltaTime);
             }
 
-            if (mouse != null)
+            // The wheel over a window or the minimap scrolls or zooms that instead.
+            if (mouse != null && (dragging || !UiPointer.IsOverInteractive(mouse.position.ReadValue())))
             {
                 float scroll = mouse.scroll.ReadValue().y;
                 if (scroll != 0f) _distance = Mathf.Clamp(_distance * (scroll > 0 ? 0.88f : 1.12f), minDistance, maxDistance);

@@ -47,6 +47,11 @@ namespace Madlands.Shared.Game
         public ushort Count;
         /// <summary>Quest log line, e.g. "Mire Frog slain" or "Scout the bandit camp".</summary>
         public string Text;
+        /// <summary>Explore: the place to reach (map, center, radius in meters), drawn on the world map. 0 otherwise.</summary>
+        public ushort Map;
+        public float X;
+        public float Z;
+        public float Radius;
     }
 
     public struct QuestItemReward
@@ -102,6 +107,10 @@ namespace Madlands.Shared.Game
                 w.WriteUInt(o.Target);
                 w.WriteUShort(o.Count);
                 w.WriteString(o.Text);
+                w.WriteUShort(o.Map);
+                w.WriteFloat(o.X);
+                w.WriteFloat(o.Z);
+                w.WriteFloat(o.Radius);
             }
             w.WriteInt(RewardXp);
             w.WriteUInt(RewardMoney);
@@ -129,6 +138,10 @@ namespace Madlands.Shared.Game
                 o.Target = r.ReadUInt();
                 o.Count = r.ReadUShort();
                 o.Text = r.ReadString(MaxTitleBytes);
+                o.Map = r.ReadUShort();
+                o.X = r.ReadFloat();
+                o.Z = r.ReadFloat();
+                o.Radius = r.ReadFloat();
                 q.ObjectiveList.Add(o);
             }
             q.RewardXp = r.ReadInt();

@@ -701,6 +701,10 @@ public sealed class GameServer : IDisposable
                     Target = o.Type == ObjectiveType.Collect ? o.Item : (uint)Math.Max(0, o.Creature),
                     Count = (ushort)o.Count,
                     Text = ObjectiveText(content, o),
+                    Map = o.Type == ObjectiveType.Explore ? (ushort)o.Map : (ushort)0,
+                    X = o.X,
+                    Z = o.Z,
+                    Radius = o.Radius,
                 });
             }
             info.RewardItems.AddRange(q.Rewards.Items.Select(r => new QuestItemReward { Item = r.Item, Count = (ushort)r.Count }));

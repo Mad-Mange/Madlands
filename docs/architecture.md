@@ -159,7 +159,7 @@ Map instances share no mutable state and own their own `PacketWriter`, random ge
 - **`FrontEnd`** (build index 0) is always loaded. It holds the camera, networking (`NetworkController`), the world view, targeting, spell effects and one UI Toolkit document: login, character select and create, the Esc menu and the in-game HUD.
 - **The HUD** (`HudController`): player and target frames, auras, cast bars, the action bar (keys 1-0, -, =), the experience bar, tooltips, error texts, chat (Enter; lines starting with `.` are GM commands), nameplates and floating combat text. It only shows ClientCore state and asks the server for actions.
 - **Windows** (Phase 4, plain C# classes owned by the HUD): bags (B), character sheet (C), quest log (L), loot, vendor and NPC dialogs, the quest tracker and item tooltips (`InventoryUi`, `LootUi`, `VendorUi`, `QuestUi`, `ItemWidgets`). Items move WoW-style: click to pick up, click to put down (or drag); dropping outside the windows asks to destroy. Right-click on a unit attacks, talks or loots.
-- **Map scenes** (`World_0001`, …) contain only the world: terrain, props, colliders, light and fog, creature spawn markers (editor only) and a `MapInfo` component.
+- **Map scenes** (`World_0001`, …) contain only the world: terrain, props, colliders, light and fog, creature spawn markers (editor only) and a `MapInfo` component. `MapInfo` also holds the map image Export Map renders from above, used by the minimap and the world map (`MapUi`).
   - They are loaded additively when the server's `Welcome` names the map, and unloaded on logout.
   - The map scene is set active so its lighting and fog apply.
 - **Editor:** pressing Play always boots from `FrontEnd`.

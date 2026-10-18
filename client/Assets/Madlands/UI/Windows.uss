@@ -712,3 +712,152 @@
     border-color: rgb(255, 214, 90);
     color: rgb(255, 214, 90);
 }
+
+/* ---------------------------------------------------------------- minimap and world map */
+
+.minimap-frame {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 210px;
+    align-items: center;
+}
+
+.minimap {
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+    background-color: rgb(20, 24, 30);
+    border-width: 3px;
+    border-color: rgb(122, 98, 48);
+    border-radius: 100px;
+}
+
+.map-image {
+    position: absolute;
+}
+
+.minimap-buttons {
+    position: absolute;
+    left: 0;
+    top: 140px;
+}
+
+.minimap-button {
+    width: 24px;
+    height: 24px;
+    margin: 1px;
+    padding: 0;
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(240, 230, 210);
+    background-color: rgb(30, 36, 52);
+    border-width: 1px;
+    border-color: rgb(122, 98, 48);
+    border-radius: 12px;
+}
+
+.minimap-caption {
+    margin-top: 3px;
+    padding: 1px 8px;
+    font-size: 13px;
+    color: rgb(255, 230, 160);
+    background-color: rgb(16, 20, 32);
+    border-width: 1px;
+    border-color: rgb(122, 98, 48);
+    border-radius: 4px;
+}
+
+.map-arrow {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    margin-left: -11px;
+    margin-top: -11px;
+}
+
+.worldmap-view .map-arrow {
+    width: 30px;
+    height: 30px;
+    margin-left: -15px;
+    margin-top: -15px;
+}
+
+.map-marker {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    margin-left: -4px;
+    margin-top: -4px;
+    border-radius: 5px;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-marker.player {
+    background-color: rgb(80, 160, 255);
+    border-width: 1px;
+    border-color: rgb(10, 20, 40);
+}
+
+.map-marker.npc {
+    background-color: rgb(90, 220, 90);
+    border-width: 1px;
+    border-color: rgb(10, 40, 10);
+}
+
+.map-marker.quest {
+    width: 22px;
+    height: 26px;
+    margin-left: -11px;
+    margin-top: -13px;
+}
+
+.map-marker .unity-label {
+    padding: 0;
+    margin: 0;
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(255, 214, 40);
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(40, 24, 0);
+}
+
+.map-marker.quest.incomplete .unity-label {
+    color: rgb(190, 190, 190);
+}
+
+.window.worldmap {
+    left: 50%;
+    top: 50px;
+    width: 830px;
+    margin-left: -415px;
+}
+
+.worldmap-view {
+    width: 800px;
+    height: 800px;
+    overflow: hidden;
+    border-width: 1px;
+    border-color: rgb(122, 98, 48);
+}
+
+.map-area {
+    position: absolute;
+    border-width: 2px;
+    border-color: rgb(255, 214, 60);
+    background-color: rgba(255, 214, 60, 0.18);
+}
+
+.map-area-label {
+    position: absolute;
+    width: 200px;
+    -unity-text-align: upper-center;
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(255, 230, 120);
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 3px;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
