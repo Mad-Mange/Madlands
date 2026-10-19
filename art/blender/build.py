@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 import beasts  # noqa: E402
+import brute  # noqa: E402
 import buildings  # noqa: E402
 import creatures  # noqa: E402
 import humanoid  # noqa: E402
@@ -42,6 +43,7 @@ ASSETS = {
     "Gloomjaw": ("Creatures", lambda: beasts.build_quad("Gloomjaw"), True),
     "Spider": ("Creatures", beasts.build_spider, True),
     "Shardling": ("Creatures", beasts.build_shardling, True),
+    "Slagborn": ("Creatures", brute.build_slagborn, True),
 }
 ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in props.PROPS.items()})

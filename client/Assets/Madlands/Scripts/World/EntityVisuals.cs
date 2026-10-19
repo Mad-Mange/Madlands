@@ -157,6 +157,7 @@ namespace Madlands.Client
         public const uint SpiderDisplay = 127;
         public const uint BearDisplay = 128;
         public const uint ShardlingDisplay = 129;
+        public const uint SlagbornDisplay = 130;
 
         /// <summary>The model file whose clips every humanoid race plays (retargeted by Unity).</summary>
         public const string HumanoidClips = "HumanoidAnimations";
@@ -360,6 +361,21 @@ namespace Madlands.Client
                     return Creature(parent, displayId, "Bear", 1.0f, walkSpeed: 1.4f, runSpeed: 4.5f, out model);
                 case ShardlingDisplay:
                     return Creature(parent, displayId, "Shardling", 0.7f, walkSpeed: 1.5f, runSpeed: 4f, out model);
+                case SlagbornDisplay:
+                {
+                    // Ruukhar the Slagborn: the brute of the Cinder Cut, lit by his own molten seams.
+                    shape = Creature(parent, displayId, "Slagborn", 1.0f, walkSpeed: 1.3f, runSpeed: 3f, out model);
+                    if (model == null) return shape;
+                    var glow = new GameObject("MoltenGlow").AddComponent<Light>();
+                    glow.transform.SetParent(model.Root, false);
+                    glow.transform.localPosition = new Vector3(0f, 1.5f, 0.5f);
+                    glow.type = LightType.Point;
+                    glow.color = Hex("#ff7a30");
+                    glow.range = 7f;
+                    glow.intensity = 1.6f;
+                    glow.shadows = LightShadows.None;
+                    return Scaled(shape, model, 1.35f);
+                }
                 default:
                     return Placeholder(parent, displayId);
             }

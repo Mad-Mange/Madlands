@@ -18,6 +18,7 @@ namespace Madlands.Client
         public const uint CrystalRod = 2007;
         public const uint OrnateMace = 2008;
         public const uint GreatAxe = 2009;
+        public const uint Cleaver = 2010;
 
         private static readonly Color Wood = new Color(0.42f, 0.29f, 0.17f);
         private static readonly Color DarkWood = new Color(0.3f, 0.2f, 0.12f);
@@ -26,13 +27,14 @@ namespace Madlands.Client
         private static readonly Color Gold = new Color(0.86f, 0.68f, 0.25f);
 
         /// <summary>Held in both hands: swings with the two-handed attack.</summary>
-        public static bool IsTwoHanded(uint displayId) => displayId == Staff || displayId == CrystalRod || displayId == GreatAxe;
+        public static bool IsTwoHanded(uint displayId) => displayId == Staff || displayId == CrystalRod || displayId == GreatAxe || displayId == Cleaver;
 
         /// <summary>The Blender model of each display (art/blender/items.py).</summary>
         private static readonly System.Collections.Generic.Dictionary<uint, string> Models = new System.Collections.Generic.Dictionary<uint, string>
         {
             { Shortsword, "Shortsword" }, { Staff, "Staff" }, { Cudgel, "Cudgel" }, { Hatchet, "Hatchet" }, { Cutlass, "Cutlass" },
             { Buckler, "Buckler" }, { CrystalRod, "CrystalRod" }, { OrnateMace, "OrnateMace" }, { GreatAxe, "GreatAxe" },
+            { Cleaver, "Cleaver" },
         };
 
         public static void Create(Transform hand, uint displayId)

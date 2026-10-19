@@ -141,6 +141,18 @@
       "id": 25, "name": "Mire Snapper", "displayId": 125, "minLevel": 6, "maxLevel": 8, "faction": 2,
       "aggroRadius": 11, "health": 1.3, "armor": 1.6, "runSpeed": 5.5, "respawnSeconds": 50, "loot": 15,
       "spells": [ { "spell": 910, "chance": 0.25, "cooldownMs": 12000 } ]
+    },
+
+    {
+      "id": 26, "name": "Ruukhar the Slagborn", "displayId": 130, "minLevel": 12, "maxLevel": 12, "faction": 2,
+      "aggroRadius": 16, "health": 26, "damage": 1.8, "armor": 2.2, "attackSpeedMs": 3000, "runSpeed": 5.5,
+      "respawnSeconds": 900, "corpseSeconds": 180, "xp": 8, "callForHelpRadius": 0, "loot": 16,
+      "spells": [
+        { "spell": 915, "chance": 1, "cooldownMs": 600000, "healthBelow": 30 },
+        { "spell": 914, "chance": 1, "cooldownMs": 18000 },
+        { "spell": 912, "chance": 0.45, "cooldownMs": 10000 },
+        { "spell": 913, "chance": 0.35, "cooldownMs": 8000 }
+      ]
     }
   ]
 }

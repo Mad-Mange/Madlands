@@ -54,8 +54,10 @@ namespace Madlands.Client
             { 3401, new Look(Style.Tint, "#3a2a1a") }, { 3402, new Look(Style.Tint, "#c8a840") }, { 3403, new Look(Style.Tint, "#8a6a4a") },
             // Head
             { 3501, new Look(Style.Hood, "#3a3a3a") }, { 3502, new Look(Style.WideHat, "#d8bf6a") }, { 3503, new Look(Style.Helm, "#8a96a0") },
+            { 3504, new Look(Style.Hood, "#ddd7c3") },
             // Shoulders
             { 3601, new Look(Style.Pads, "#6a5a4a") }, { 3602, new Look(Style.Mantle, "#4a3a2c") }, { 3603, new Look(Style.Pads, "#5a6a8a") },
+            { 3604, new Look(Style.Pads, "#4a4146") },
             // Back
             { 3701, new Look(Style.Cloak, "#4a5a35") },
         };

@@ -31,6 +31,7 @@ x = east, z = north, meters. The water level is 21 m; all water is shallow (you 
 | Shrine of the Still Water | (-110, 250) | 8–10 | Brother Aldous. |
 | The Drowned Ruins | (0, 320) | 8–10 | The sunken old town: the drowned dead, shardlings, the bell tower (15, 352). |
 | Gloomjaw's Lagoon | (70, 395) | 10+ | The world boss. |
+| The Cinder Cut | (365, 370) | 10+ | A bowl past the quarry where the rock runs hot: pools of molten slag, glowing slag heaps, the skull of something enormous. Ruukhar the Slagborn's lair. |
 
 Roads lead from Mirewatch's gates to the dock, to Westbrook and the old mill, to Reedfen, around the west shore
 past Rennick's Watch to the shrine and the ruins, and around the east shore past Ironvein Camp to Shardscar.
@@ -44,7 +45,7 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 | 12 | Quartermaster Holt | Mirewatch, supply tent | Vendor: food, drink, draughts, elixirs and tonics (long buffs), bags, basic armor |
 | 13 | Marla Fenn | The Muddy Boot | Vendor: food and drink |
 | 14 | Farmer Wil Tenney | Westbrook | Boars, tusks, the old mill |
-| 15 | Brannoc Ironvein | Ironvein Camp | Pickaxes, Lieutenant Vorn |
+| 15 | Brannoc Ironvein | Ironvein Camp | Pickaxes, Lieutenant Vorn, Ruukhar the Slagborn |
 | 16 | Scout Rennick | Rennick's Watch | Spiders, venom, bears |
 | 17 | Old Pell | Mirewatch dock | Mirelings, nets, the singing stone |
 | 18 | Brother Aldous | The shrine | The drowned dead, shardlings, the bell, Gloomjaw |
@@ -68,8 +69,9 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 | 21 | Drowned Dead | 8–9 | Drowned Ruins | Chill Touch (slow) |
 | 22 | Shardling | 9–10 | Drowned Ruins | Shard Pulse (area) |
 | 24 | Gloomjaw | 12 | The lagoon | World boss: 30x health, Death Roll, Tail Sweep (area, slow). Respawns in 15 minutes |
+| 26 | Ruukhar the Slagborn | 12 | The Cinder Cut | Boss for a group of three: 26x health. Molten Cleave (heavy hit), Searing Brand (fire damage over time, stacks 3x), Cinder Quake (2.5 s wind-up, then fire damage and a 50% slow to everyone within 12 m: get out of reach), Forgefire Rage below 30% health (+50% damage). Respawns in 15 minutes |
 
-## Quests (28)
+## Quests (29)
 
 | Chain | Quests | Levels |
 |---|---|---|
@@ -77,7 +79,7 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 | Westbrook | Word from Westbrook → Boars in the Barley → The Old Mill; Tough as Tusks | 3–4 |
 | The mere | Something in the Reeds → The Singing Stone → A Pearl for Tamsin; Nets and Nonsense | 4–5 |
 | Wolves and the wood | Wolves at Dusk → Rennick's Watch; Pelts for the Palisade; Webs in the Greywood → The Old Bears; Venom for the Infirmary | 4–7 |
-| Bandits | Wolves at Dusk → Eyes on the Camp → Shards in the Wrong Hands → News for Tamsin; Eyes on the Camp → Ironvein's Trouble; Pickaxes Back → Lieutenant Vorn | 5–8 |
+| Bandits | Wolves at Dusk → Eyes on the Camp → Shards in the Wrong Hands → News for Tamsin; Eyes on the Camp → Ironvein's Trouble; Pickaxes Back → Lieutenant Vorn → The One Vorn Answered To (Ruukhar) | 5–10 |
 | The drowned | News for Tamsin + A Pearl for Tamsin → Whispers Under the Water; Rest for the Drowned → Shards That Walk + The Sunken Bell → What Wakes Beneath (Gloomjaw) | 8–10 |
 
 Quest experience adds up to about 16,000 of the 27,600 needed for level 10; creatures give the rest.
@@ -85,5 +87,5 @@ Quest experience adds up to about 16,000 of the 27,600 needed for level 10; crea
 ## Open
 
 - The south of the valley is empty: room for a later quest hub or a dungeon entrance.
-- Gloomjaw is meant for a group; groups arrive in Phase 6. Until then the first player to hit it gets the kill.
+- Gloomjaw and Ruukhar are meant for groups; groups arrive in Phase 6. Until then the first player to hit them gets the kill.
 - Playtest: walking distances, creature density, quest experience and drop rates.

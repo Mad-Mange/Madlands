@@ -235,6 +235,7 @@ public static class ContentLoader
                     if (!spellsById.TryGetValue(cs.Spell, out var spell)) Error($"{where} uses spell {cs.Spell}, which does not exist");
                     else if (spell.PowerType == PowerType.Mana && spell.Cost > 0 && c.Mana <= 0) Error($"{where} uses mana spell {cs.Spell} but has no mana");
                     if (cs.Chance <= 0 || cs.Chance > 1) Error($"{where}: spell {cs.Spell} chance must be in (0, 1]");
+                    if (cs.HealthBelow is < 0 or > 100) Error($"{where}: spell {cs.Spell} healthBelow must be in 0..100");
                 }
             }
 

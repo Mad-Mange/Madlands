@@ -666,6 +666,15 @@
           }
         ]
       }
+    },
+    {
+      "id": 29, "title": "The One Vorn Answered To", "level": 10, "minLevel": 9, "giver": 15, "ender": 15, "requires": [ 23 ],
+      "details": "Vorn's dead, and the bandits still dig. My crew went down to the far end of the quarry to find out why. Two came back.\n\nThere's a cut past the pit, north-east, where the rock runs hot and the ground glows. Something lives in it: a brute in slag-iron plate, wearing a beast's skull for a hat, swinging a cleaver bigger than my cart. The bandits call him Ruukhar, and they dig for him. Shards go in, and he gets bigger.\n\nDon't go alone. Take a shield, take a healer, take everyone. When he raises that cleaver over his head, run. And when his armor goes white, finish it fast.",
+      "summary": "Kill Ruukhar the Slagborn in the Cinder Cut north-east of the Shardscar quarry. A group of three is recommended.",
+      "progress": "Is the Cinder Cut quiet yet?",
+      "completion": "You came back. From down there. With that.\n\nThe whole camp heard the ground stop shaking. Take your pick of what we pulled out of his lair, and know that every Korrin in Hollowmere owes you a drink.",
+      "objectives": [ { "type": "kill", "creature": 26, "count": 1 } ],
+      "rewards": { "xp": 2400, "money": 400, "choices": [ { "item": 1290 }, { "item": 1291 }, { "item": 1292 } ] }
     }
   ]
 }

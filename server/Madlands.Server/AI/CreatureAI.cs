@@ -1,5 +1,6 @@
 using Madlands.Content;
 using Madlands.Navigation;
+using Madlands.Server.Combat;
 using Madlands.Server.World;
 using Madlands.Shared;
 using Madlands.Shared.Game;
@@ -221,9 +222,12 @@ public sealed class CreatureAI
             if (!Map.Content.Spells.TryGetValue(cs.Spell, out var spell)) continue;
             if (onlyRanged && spell.RangeMax <= GameConstants.MeleeRange) continue;
             if (_c.Cooldowns.TryGetValue(cs.Spell, out long ready) && now < ready) continue;
+            if (cs.HealthBelow > 0 && _c.Health * 100f > _c.MaxHealth * cs.HealthBelow) continue;
             if (spell.Cost > 0 && (_c.PowerType != spell.PowerType || _c.Power < spell.Cost)) continue;
             if (onlyRanged) return cs; // "could cast": decides whether to keep casting distance
-            if (_c.DistanceTo(_target) > spell.RangeMax) continue;
+            // Spells on the creature itself or around it (a slam, an enrage) are used with the target in melee reach.
+            float reach = spell.Target is SpellTarget.Enemy or SpellTarget.Friend ? spell.RangeMax : GameConstants.MeleeRange + CombatSystem.MeleeLeeway;
+            if (_c.DistanceTo(_target) > reach) continue;
             if (Map.Random.NextSingle() > cs.Chance)
             {
                 // Missed the roll: try again a little later, not every think.

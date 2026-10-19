@@ -146,6 +146,7 @@
     { "creature": 25, "x": 332.16, "z": 17.74, "yawDegrees": 148, "wanderRadius": 8, "respawnSeconds": 0 },
     { "creature": 25, "x": 333.06, "z": 7.79, "yawDegrees": 51, "wanderRadius": 8, "respawnSeconds": 0 },
     { "creature": 25, "x": 337.59, "z": 102.99, "yawDegrees": 57, "wanderRadius": 8, "respawnSeconds": 0 },
-    { "creature": 25, "x": 369.28, "z": 45.75, "yawDegrees": 53, "wanderRadius": 8, "respawnSeconds": 0 }
+    { "creature": 25, "x": 369.28, "z": 45.75, "yawDegrees": 53, "wanderRadius": 8, "respawnSeconds": 0 },
+    { "creature": 26, "x": 367.00, "z": 375.00, "yawDegrees": 225, "wanderRadius": 2, "respawnSeconds": 0 }
   ]
 }

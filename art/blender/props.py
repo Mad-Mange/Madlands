@@ -162,6 +162,69 @@ def stump():
     return mb.finish()
 
 
+def slag_pool():
+    """A pool of molten slag in a crust of black rock: walk around it (or through it, it is only a look)."""
+    rng = random.Random(31)
+    m = mats()
+    mb = lp.MeshBuilder("SlagPool")
+    glow = lp.material("LavaGlow", "#b8300a", emission=3.0)
+    crust = lp.material("SlagCrust", "#2e2a2b")
+    rim = []
+    for i in range(14):
+        a = 2 * math.pi * i / 14
+        r = rng.uniform(2.2, 2.7)
+        rim.append((math.cos(a) * r, math.sin(a) * r))
+    # The molten middle, a little sunk, and the crust ring around it in lumps.
+    mb.add([(x * 0.8, y * 0.8, 0.04) for x, y in rim], [tuple(range(len(rim)))], glow)
+    for i, (x, y) in enumerate(rim):
+        nx, ny = rim[(i + 1) % len(rim)]
+        mb.hull([(x * 0.75, y * 0.75, 0.0), (nx * 0.75, ny * 0.75, 0.0), (x * 1.05, y * 1.05, 0.0), (nx * 1.05, ny * 1.05, 0.0),
+                 ((x + nx) * 0.45, (y + ny) * 0.45, rng.uniform(0.15, 0.35))], crust)
+    # Floating crust plates with glowing cracks between them.
+    for _ in range(4):
+        cx, cy = rng.uniform(-1.0, 1.0), rng.uniform(-1.0, 1.0)
+        mb.hull([(cx + rng.uniform(-0.45, 0.45), cy + rng.uniform(-0.45, 0.45), rng.uniform(0.03, 0.09)) for _ in range(7)], crust)
+    return mb.finish()
+
+
+def slag_rock():
+    """A heap of black slag split by glowing veins."""
+    rng = random.Random(37)
+    m = mats()
+    mb = lp.MeshBuilder("SlagRock")
+    glow = lp.material("LavaGlow", "#b8300a", emission=3.0)
+    crust = lp.material("SlagCrust", "#2e2a2b")
+    for cx, cy, r, h in ((0, 0, 1.1, 1.6), (0.9, 0.4, 0.7, 0.9), (-0.8, -0.3, 0.6, 0.7)):
+        mb.hull([(cx + math.cos(a) * r * rng.uniform(0.7, 1.0), cy + math.sin(a) * r * rng.uniform(0.7, 1.0), rng.uniform(-0.2, 0.2))
+                 for a in [i * 2 * math.pi / 7 for i in range(7)]]
+                + [(cx + rng.uniform(-0.3, 0.3) * r, cy + rng.uniform(-0.3, 0.3) * r, h * rng.uniform(0.8, 1.0)) for _ in range(3)], crust)
+    for a, z0, z1 in ((0.3, 0.2, 1.3), (2.2, 0.1, 1.0), (4.1, 0.3, 1.2)):
+        x, y = math.cos(a) * 0.82, math.sin(a) * 0.82
+        mb.frustum((x, y, z0), (x * 0.55, y * 0.55, z1), 0.06, 0.03, glow, sides=4)
+    return mb.finish()
+
+
+def beast_skull():
+    """The bleached skull of something enormous, half sunk in the ground: horns, eye sockets, a row of teeth."""
+    m = mats()
+    mb = lp.MeshBuilder("BeastSkull")
+    bone = lp.material("Bone", "#ddd7c3")
+    shadow = lp.material("BoneShadow", "#aaa290")
+    dark = lp.material("SocketDark", "#2c2829")
+    mb.hull([(sx * 1.2, -0.2, 0.0) for sx in (1, -1)] + [(sx * 1.0, 1.6, 0.0) for sx in (1, -1)]
+            + [(sx * 0.9, 0.1, 1.5) for sx in (1, -1)] + [(sx * 0.6, 1.4, 1.2) for sx in (1, -1)] + [(0, -0.4, 1.2)], bone)
+    mb.hull([(sx * 0.8, -0.2, 0.0) for sx in (1, -1)] + [(sx * 0.5, -2.2, 0.0) for sx in (1, -1)]
+            + [(sx * 0.7, -0.2, 0.9) for sx in (1, -1)] + [(sx * 0.4, -2.1, 0.5) for sx in (1, -1)], bone)
+    for sx in (1, -1):
+        mb.box((sx * 0.92, -0.05, 0.95), (0.3, 0.55, 0.42), dark, rotation=(0, sx * -15, 0))
+        mb.frustum((sx * 0.7, 0.8, 1.2), (sx * 2.2, 1.6, 2.8), 0.32, 0.03, shadow, sides=6)
+        for i in range(5):
+            y = -2.0 + i * 0.36
+            mb.frustum((sx * (0.45 - i * 0.02), y, 0.1), (sx * (0.45 - i * 0.02), y, -0.35), 0.09, 0.01, bone, sides=4)
+    mb.box((0, -1.2, 0.62), (0.28, 0.5, 0.18), dark)
+    return mb.finish()
+
+
 def crystal_cluster():
     rng = random.Random(11)
     m = mats()
@@ -488,4 +551,5 @@ PROPS = {
     "Crate": crate, "Barrel": barrel, "Sacks": sacks, "Campfire": campfire, "BannerPole": banner_pole,
     "Cauldron": cauldron, "Bridge": bridge, "Dock": dock, "LanternPost": lantern_post,
     "RuinPillar": ruin_pillar, "RuinWall": ruin_wall,
+    "SlagPool": slag_pool, "SlagRock": slag_rock, "BeastSkull": beast_skull,
 }

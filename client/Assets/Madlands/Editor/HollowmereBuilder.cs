@@ -45,6 +45,8 @@ namespace Madlands.Client.Editor
         public static readonly Vector2 RennickTower = new Vector2(-175f, 40f);
         public static readonly Vector2 Shardscar = new Vector2(265f, 265f);
         public static readonly Vector2 Quarry = new Vector2(300f, 300f);
+        /// <summary>The boss's lair past the quarry: a glowing bowl of slag (Ruukhar the Slagborn).</summary>
+        public static readonly Vector2 CinderCut = new Vector2(365f, 370f);
         public static readonly Vector2 BanditCamp = new Vector2(225f, 215f);
         public static readonly Vector2 BrannocCamp = new Vector2(160f, 130f);
         public static readonly Vector2 Ruins = new Vector2(0f, 320f);
@@ -113,6 +115,7 @@ namespace Madlands.Client.Editor
             CreateWilds(terrain, rng);
             CreateCamps(terrain, rng);
             CreateRuins(terrain, rng);
+            CreateCinderCut();
             CreateSpawns(terrain, rng);
             CreateMapInfo(terrain);
 
@@ -149,6 +152,7 @@ namespace Madlands.Client.Editor
             h += Influence(x, z, Greywood, 240f) * (6f + Noise(x, z, 0.013f, 7f, 9f));
             h += Influence(x, z, Shardscar, 210f) * (16f + Noise(x, z, 0.02f, 5f, 13f));
             h -= (1f - Smooth01(Vector2.Distance(new Vector2(x, z), Quarry) / 70f)) * 13f;
+            h -= (1f - Smooth01(Vector2.Distance(new Vector2(x, z), CinderCut) / 32f)) * 6f;
             // Mountains close the valley.
             float edge = Mathf.Max(Mathf.Abs(x), Mathf.Abs(z)) + Noise(x, z, 0.008f, 28f, 23f);
             float rim = Mathf.Max(0f, edge - 380f) / 130f;
@@ -231,6 +235,7 @@ namespace Madlands.Client.Editor
                     float height = HeightAt(wx, wz);
                     float rock = Smooth01((data.GetSteepness(nx, nz) - 24f) / 12f);
                     rock = Mathf.Max(rock, Mathf.Clamp01(Influence(wx, wz, Quarry, 80f) * 1.5f));
+                    rock = Mathf.Max(rock, Mathf.Clamp01(Influence(wx, wz, CinderCut, 42f) * 1.8f));
                     float mud = Smooth01((WaterLevel + 1.2f - height) / 1.2f);
                     float road = 1f - Smooth01((DistanceToRoad(new Vector2(wx, wz)) - 2.2f) / 2f);
                     float village = Influence(wx, wz, Village, VillageRadius - 5f) * 2f;
@@ -637,6 +642,45 @@ namespace Madlands.Client.Editor
             }
         }
 
+        // ------------------------------------------------------------------ the Cinder Cut
+
+        /// <summary>
+        /// Ruukhar's lair: a bowl past the quarry with pools of molten slag, glowing slag heaps on the rim and the
+        /// skull of something enormous. Its own random numbers, built after the rest, so nothing else moves.
+        /// </summary>
+        private static void CreateCinderCut()
+        {
+            var rng = new System.Random(77);
+            var lair = Group("CinderCut");
+            // Clear the scattered trees, bushes and rocks out of the bowl first.
+            foreach (var name in new[] { "Trees", "Plants", "Rocks" })
+            {
+                var group = GameObject.Find(name);
+                if (group == null) continue;
+                for (int i = group.transform.childCount - 1; i >= 0; i--)
+                {
+                    var child = group.transform.GetChild(i);
+                    if (Vector2.Distance(new Vector2(child.position.x, child.position.z), CinderCut) < 36f) Object.DestroyImmediate(child.gameObject);
+                }
+            }
+            // Slag pools around the middle (the fight needs the middle free), heaps on the rim.
+            for (int i = 0; i < 6; i++)
+            {
+                float a = i * Mathf.PI * 2f / 6f + Range(rng, -0.25f, 0.25f), r = Range(rng, 13f, 19f);
+                Place("SlagPool", lair, CinderCut.x + Mathf.Cos(a) * r, CinderCut.y + Mathf.Sin(a) * r, Range(rng, 0f, 360f), Range(rng, 0.8f, 1.3f), Collide.None, sink: 0.05f);
+            }
+            for (int i = 0; i < 10; i++)
+            {
+                float a = i * Mathf.PI * 2f / 10f + Range(rng, -0.2f, 0.2f), r = Range(rng, 24f, 30f);
+                // Leave the way in from the quarry (south-west) open.
+                if (Mathf.Abs(Mathf.DeltaAngle(a * Mathf.Rad2Deg, 225f)) < 25f) continue;
+                Place("SlagRock", lair, CinderCut.x + Mathf.Cos(a) * r, CinderCut.y + Mathf.Sin(a) * r, Range(rng, 0f, 360f), Range(rng, 1.0f, 1.8f), Collide.Mesh, sink: 0.3f);
+            }
+            Place("BeastSkull", lair, CinderCut.x + 9f, CinderCut.y + 14f, 200f, 1.6f, Collide.Mesh, sink: 0.6f);
+            Place("CrystalCluster", lair, CinderCut.x - 14f, CinderCut.y + 10f, 40f, 1.2f, Collide.None, sink: 0.3f);
+            Place("CrystalCluster", lair, CinderCut.x + 16f, CinderCut.y - 6f, 120f, 0.9f, Collide.None, sink: 0.3f);
+        }
+
         // ------------------------------------------------------------------ camps
 
         private static void CreateCamps(Terrain terrain, System.Random rng)
@@ -748,6 +792,7 @@ namespace Madlands.Client.Editor
         private const int CaptainEdda = 10, OldTamsin = 11, QuartermasterHolt = 12, InnkeeperMarla = 13, FarmerTenney = 14;
         private const int BrannocIronvein = 15, ScoutRennick = 16, FishermanPell = 17, BrotherAldous = 18, SmithGerta = 19;
         private const int GreywoodBear = 20, DrownedDead = 21, Shardling = 22, LieutenantVorn = 23, Gloomjaw = 24, MireSnapper = 25;
+        private const int RuukharTheSlagborn = 26;
 
         /// <summary>Spawn markers (exported to spawns.json). EditorOnly: they are not part of player builds.</summary>
         private static void CreateSpawns(Terrain terrain, System.Random rng)
@@ -820,6 +865,8 @@ namespace Madlands.Client.Editor
             Pack(DrownedDead, Ruins, 55f, 14, 6f);
             Pack(Shardling, Ruins + new Vector2(25f, 40f), 30f, 8, 5f);
             Spawn(Gloomjaw, Lagoon.x, Lagoon.y, 200f, 4f);
+            // The boss of the Cinder Cut, facing the way in from the quarry.
+            Spawn(RuukharTheSlagborn, CinderCut.x + 2f, CinderCut.y + 5f, 225f, 2f);
         }
 
         // ------------------------------------------------------------------ scene objects
@@ -875,6 +922,7 @@ namespace Madlands.Client.Editor
                 new MapArea { name = "Rennick's Watch", center = RennickTower, radius = 25f, ambience = "amb_forest" },
                 new MapArea { name = "The Greywood", center = Greywood, radius = 240f, ambience = "amb_forest" },
                 new MapArea { name = "Ironvein Camp", center = BrannocCamp, radius = 25f },
+                new MapArea { name = "The Cinder Cut", center = CinderCut, radius = 40f, music = "music_drowned", ambience = "amb_ruins" },
                 new MapArea { name = "Shardscar", center = Shardscar, radius = 200f },
                 new MapArea { name = "Gloomjaw's Lagoon", center = Lagoon, radius = 55f, music = "music_drowned", ambience = "amb_ruins" },
                 new MapArea { name = "The Drowned Ruins", center = Ruins, radius = 85f, music = "music_drowned", ambience = "amb_ruins" },

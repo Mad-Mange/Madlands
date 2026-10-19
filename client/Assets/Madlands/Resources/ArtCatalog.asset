@@ -31,6 +31,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
   - Name: Shardling
     Prefab: {fileID: 919132149155446097, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Name: Slagborn
+    Prefab: {fileID: 919132149155446097, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
   - Name: Spider
     Prefab: {fileID: 919132149155446097, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Name: TrainingDummy
@@ -39,6 +41,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
   - Name: Buckler
     Prefab: {fileID: 919132149155446097, guid: 30578add63835cf41b9ba1531ea6e9c3, type: 3}
+  - Name: Cleaver
+    Prefab: {fileID: 919132149155446097, guid: 773e39e8fcfa6d748b5342e307c9e147, type: 3}
   - Name: CrystalRod
     Prefab: {fileID: 919132149155446097, guid: 809ccbb9678a53946829bb1dccba6d85, type: 3}
   - Name: Cudgel
@@ -59,6 +63,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: da60cbabacc975742a94901644e7c3c7, type: 3}
   - Name: Barrel
     Prefab: {fileID: 919132149155446097, guid: 9dde7a9eeee57114f9267fc2924ac812, type: 3}
+  - Name: BeastSkull
+    Prefab: {fileID: 919132149155446097, guid: 96286cd2ef0766e44b58572a61c2969b, type: 3}
   - Name: Boulder
     Prefab: {fileID: 919132149155446097, guid: eca3c5cea5c383e4bb39a4df7dfaf895, type: 3}
   - Name: Bridge
@@ -111,6 +117,10 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: e08acd6568a24894d9cd82a238801c35, type: 3}
   - Name: Signpost
     Prefab: {fileID: 919132149155446097, guid: 7f6074999d8fdfb4eaa9fb9c305b9b85, type: 3}
+  - Name: SlagPool
+    Prefab: {fileID: 919132149155446097, guid: 75e0719cab01c914c93b22f781a415cb, type: 3}
+  - Name: SlagRock
+    Prefab: {fileID: 919132149155446097, guid: b7abfc63c0a3c5d4dba57bb089cb5b26, type: 3}
   - Name: Stump
     Prefab: {fileID: 919132149155446097, guid: a8a50c94f8a4ecd4e88c3a8159daf2de, type: 3}
   - Name: Tent
@@ -130,30 +140,6 @@ MonoBehaviour:
   - Name: Well
     Prefab: {fileID: 919132149155446097, guid: 07c3e833ababa7d4bae8a8375afce81d, type: 3}
   Clips:
-  - Set: HumanoidAnimations
-    Name: Walk
-    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Attack1H
-    Clip: {fileID: 8394281637225282446, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Attack2H
-    Clip: {fileID: -8883204860901330040, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: CastRelease
-    Clip: {fileID: -1534196613224196608, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Death
-    Clip: {fileID: -982115091633673366, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Fall
-    Clip: {fileID: -5025487861805838091, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Idle
-    Clip: {fileID: -8945691123924629249, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
     Name: Jump
     Clip: {fileID: 1079665108409675491, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
@@ -178,6 +164,30 @@ MonoBehaviour:
   - Set: HumanoidAnimations
     Name: CastLoop
     Clip: {fileID: -8265580086071612076, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Attack1H
+    Clip: {fileID: 8394281637225282446, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Attack2H
+    Clip: {fileID: -8883204860901330040, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: CastRelease
+    Clip: {fileID: -1534196613224196608, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Fall
+    Clip: {fileID: -5025487861805838091, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: Bear
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
@@ -286,6 +296,30 @@ MonoBehaviour:
   - Set: Shardling
     Name: Walk
     Clip: {fileID: 8349542763059015795, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Slagborn
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+  - Set: Slagborn
+    Name: CastLoop
+    Clip: {fileID: -8265580086071612076, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+  - Set: Slagborn
+    Name: CastRelease
+    Clip: {fileID: -1534196613224196608, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+  - Set: Slagborn
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+  - Set: Slagborn
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+  - Set: Slagborn
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+  - Set: Slagborn
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+  - Set: Slagborn
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
   - Set: Spider
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}

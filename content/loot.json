@@ -54,6 +54,7 @@
     { "id": 12, "name": "Shardling", "money": { "min": 0, "max": 0 }, "items": [ { "item": 2011, "chance": 0.6 }, { "item": 3008, "chance": 0.6 } ], "groups": [ { "chance": 0.08, "items": [1223, 1226, 1264] } ] },
     { "id": 13, "name": "Lieutenant Vorn", "money": { "min": 60, "max": 120 }, "items": [ { "item": 4005, "chance": 0.5, "min": 1, "max": 3 } ], "groups": [ { "chance": 1.0, "items": [1220, 1221, 1223, 1224] } ] },
     { "id": 14, "name": "Gloomjaw", "money": { "min": 300, "max": 500 }, "items": [ { "item": 2013, "chance": 1.0, "min": 1, "max": 3 } ], "groups": [ { "chance": 1.0, "items": [1280, 1281, 1282, 1283] } ] },
-    { "id": 15, "name": "Mire Snapper", "money": { "min": 6, "max": 18 }, "items": [ { "item": 2012, "chance": 0.5 }, { "item": 2010, "chance": 0.1 } ], "groups": [ { "chance": 0.06, "items": [1224, 1227, 1228] } ] }
+    { "id": 15, "name": "Mire Snapper", "money": { "min": 6, "max": 18 }, "items": [ { "item": 2012, "chance": 0.5 }, { "item": 2010, "chance": 0.1 } ], "groups": [ { "chance": 0.06, "items": [1224, 1227, 1228] } ] },
+    { "id": 16, "name": "Ruukhar the Slagborn", "money": { "min": 350, "max": 600 }, "items": [ { "item": 2014, "chance": 1.0, "min": 1, "max": 3 } ], "groups": [ { "chance": 1.0, "items": [1290, 1291, 1292] } ] }
   ]
 }

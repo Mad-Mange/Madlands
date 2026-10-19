@@ -282,6 +282,8 @@ public sealed class CreatureSpell
     /// <summary>Chance to use it each time the creature decides what to do (0..1).</summary>
     public float Chance { get; set; } = 1f;
     public int CooldownMs { get; set; } = 8000;
+    /// <summary>Only used below this much health, in percent (a boss's enrage); 0 = at any health.</summary>
+    public float HealthBelow { get; set; }
 }
 
 /// <summary>content/creatures.json entry: a creature template; spawns place instances of it.</summary>

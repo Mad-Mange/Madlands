@@ -117,6 +117,12 @@
                 "cooldownMs": {
                   "type": "integer",
                   "minimum": 0
+                },
+                "healthBelow": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Only used below this much health, in percent (an enrage); 0 = at any health."
                 }
               }
             }

@@ -116,6 +116,29 @@ def great_axe():
     return mb.finish()
 
 
+def cleaver():
+    """A two-handed cleaver of slag iron: a long wrapped haft and a broad slab blade with a glowing toothed edge."""
+    mb = lp.MeshBuilder("Cleaver")
+    wrap = lp.material("Leather", "#3a3230")
+    iron = lp.material("DarkMetal", "#4a4146")
+    rust = lp.material("Rust", "#6e3a2e")
+    glow = lp.material("EmberGlow", "#ffb030", emission=3.0)
+    mb.frustum((0, 0, -0.42), (0, 0, 0.95), 0.024, 0.026, wrap, sides=6)
+    for z in (-0.2, 0.05, 0.3):
+        mb.frustum((0, 0, z), (0, 0, z + 0.05), 0.032, 0.032, iron, sides=6)
+    mb.frustum((0, 0.03, -0.47), (0, -0.03, -0.47), 0.05, 0.05, iron, sides=6, cap_a=False, cap_b=False)
+    # The blade: a slab from the haft toward +X, wider at the tip, its edge along the far side.
+    mb.hull([(x, y, z) for y in (0.018, -0.018) for x, z in ((-0.03, 0.5), (-0.03, 1.02), (0.3, 1.08), (0.34, 0.46))], iron)
+    mb.hull([(x, y, z) for y in (0.022, -0.022) for x, z in ((-0.05, 0.98), (-0.05, 1.04), (0.3, 1.1), (0.3, 1.04))], rust)
+    mb.box((0.12, 0, 0.92), (0.06, 0.05, 0.06), iron)
+    for i in range(6):
+        z = 0.5 + i * 0.105
+        x = 0.335 - 0.04 * (i / 5)
+        mb.hull([(x - 0.03, 0.012, z), (x - 0.03, -0.012, z), (x - 0.03, 0.012, z + 0.09), (x - 0.03, -0.012, z + 0.09),
+                 (x + 0.06, 0.0, z + 0.04)], glow)
+    return mb.finish()
+
+
 def buckler():
     mb = lp.MeshBuilder("Buckler")
     wood = lp.material("Wood", "#7a5531")
@@ -135,5 +158,6 @@ WEAPONS = {
     "OrnateMace": ornate_mace,
     "Hatchet": hatchet,
     "GreatAxe": great_axe,
+    "Cleaver": cleaver,
     "Buckler": buckler,
 }

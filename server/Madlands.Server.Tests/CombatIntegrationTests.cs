@@ -307,6 +307,23 @@ public class CombatIntegrationTests
     }
 
     [Fact]
+    public async Task The_slagborn_slams_the_ground_and_enrages_below_30_percent()
+    {
+        const int Ruukhar = 26;
+        var (realm, s) = await StartAsync(Warrior, gm: true, At(Ruukhar, 0, 4));
+        await using var _ = realm;
+        using var __ = s;
+        var c = s.Client;
+        s.Command(".level 10");
+        var boss = s.Find("Ruukhar the Slagborn");
+        c.SetTarget(boss.Guid);
+        s.Command(".damage 4000");                       // 5200 health: below 30% at once, and he comes for us
+        s.Pump(() => boss.Unit!.Auras.Any(a => a.SpellId == 915), 6000);   // Forgefire Rage
+        // Cinder Quake hits everyone around him (an area spell on himself: used with the target in melee reach).
+        s.Pump(() => s.Events.Any(e => e.Source == boss.Guid && e.Target == c.LocalGuid && e.Spell == 914), 10000);
+    }
+
+    [Fact]
     public async Task Long_buffs_are_kept_over_relogging()
     {
         var database = new Persistence.InMemoryGameDatabase();
