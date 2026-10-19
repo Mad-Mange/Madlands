@@ -11,9 +11,9 @@
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)
 ![Tests](https://img.shields.io/badge/tests-141%20passing-brightgreen)
 
-<img src="docs/images/phase5-hollowmere.jpg" alt="The village of Mirewatch inside its palisade on the shore of the mere, the Reedfen marsh and the Greywood beyond" width="100%">
+<img src="docs/images/phase5-hero.jpg" alt="A Korrin warden in a steel breastplate, a human warrior with helm, mantle and cloak, and a human mage in a violet robe on the square of Mirewatch" width="100%">
 
-<sub><i>Phase 5: Hollowmere, the first real zone. The village of Mirewatch on the shore of the mere; everything here (terrain, buildings, characters, animations, music) is made by scripts.</i></sub>
+<sub><i>Phase 5: adventurers on the square of Mirewatch, the village of Hollowmere. A Korrin warden and two humans, their armor visible on them; the models, animations and the village itself are made by scripts in Blender and Unity.</i></sub>
 
 </div>
 
@@ -66,11 +66,11 @@ Everything for the first real zone is in; what is left is putting a realm online
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/phase5-mirewatch.jpg" alt="The square of Mirewatch: the inn, the well and market stalls"></td>
+    <td width="50%"><img src="docs/images/phase5-hollowmere.jpg" alt="The village of Mirewatch inside its palisade on the shore of the mere"></td>
     <td width="50%"><img src="docs/images/phase5-gear.jpg" alt="Three characters showing their gear: a Korrin in a robe, a warrior with helm, mantle and cloak, a mage in a blue robe"></td>
   </tr>
   <tr>
-    <td><sub><b>Mirewatch.</b> The square with the Muddy Boot inn, the well and the stalls; Marla and Quartermaster Holt at work.</sub></td>
+    <td><sub><b>Mirewatch.</b> The village inside its palisade on the shore of the mere, the Reedfen marsh and the Greywood beyond.</sub></td>
     <td><sub><b>Gear.</b> A Korrin warden in a robe, a warrior with helm, mantle and cloak, a mage in a blue robe: worn armor shows on the character.</sub></td>
   </tr>
   <tr>
