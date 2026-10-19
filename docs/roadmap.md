@@ -187,7 +187,7 @@ Every phase ends in something playable and tested. Architectural decisions are i
   200 bots seeing each other: 2–3 MB/s out instead of 8–15 MB/s.
 - **Tick spikes:** p99 and max sometimes reached 8–17 ms under bot load. Profile GC and scheduling, and run the bots on another machine when measuring.
 - **Movement timestamps:** the server stamps with receive time, which adds some jitter over the internet. Consider mapping the client's (already validated) time instead.
-- **IMGUI is still used for the debug overlay (F3).** Everything else is UI Toolkit.
+- ~~**IMGUI is still used for the debug overlay (F3)**~~ (done 2026-10-19): it is a UI Toolkit panel you can drag with the mouse.
 - **LiteNetLib reports 0 RTT in threaded mode.** The overlay uses our own Ping/Pong measurement instead.
 - **Addressables** get installed when first needed (asset streaming). Localization uses our own tables (ADR 0013).
 - ~~**TLS for the account API**~~ (done 2026-10-18): `deploy/Caddyfile` and [deployment.md](deployment.md); the API binds to

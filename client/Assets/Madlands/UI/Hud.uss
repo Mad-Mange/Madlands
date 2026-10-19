@@ -669,3 +669,24 @@
     border-color: rgb(122, 98, 48);
     border-radius: 8px;
 }
+
+/* ---------------------------------------------------------------- debug panel (F3) */
+
+/* Opaque: URP's linear color space lets bright text behind translucent panels shine through. */
+.debug-panel {
+    position: absolute;
+    left: 10px;
+    top: 130px;
+    min-width: 300px;
+    padding: 6px 10px;
+    background-color: rgb(14, 16, 22);
+    border-width: 1px;
+    border-color: rgb(80, 72, 52);
+    border-radius: 4px;
+}
+
+.debug-panel > Label {
+    font-size: 13px;
+    color: rgb(220, 220, 210);
+    white-space: normal;
+}

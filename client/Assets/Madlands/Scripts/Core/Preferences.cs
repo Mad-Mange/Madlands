@@ -29,6 +29,7 @@ namespace Madlands.Client
             EffectsVolume = Mathf.Clamp01(GetFloat("volume.effects", 0.9f));
             AmbienceVolume = Mathf.Clamp01(GetFloat("volume.ambience", 0.7f));
             Language = GetString("language", "en");
+            DebugPanelPosition = new Vector2(GetFloat("debugPanel.x", -1f), GetFloat("debugPanel.y", -1f));
         }
 
         public static float MouseSensitivity { get; private set; }
@@ -42,6 +43,8 @@ namespace Madlands.Client
         public static float AmbienceVolume { get; private set; }
         /// <summary>Interface language code (Resources/Localization); applied on the next start.</summary>
         public static string Language { get; private set; }
+        /// <summary>Where the F3 panel was dragged to (HUD coordinates); negative = not moved yet.</summary>
+        public static Vector2 DebugPanelPosition { get; private set; }
 
         /// <summary>Raised after a setting changed.</summary>
         public static event Action Changed;
@@ -92,6 +95,18 @@ namespace Madlands.Client
         public static void SetEffectsVolume(float value) => SetFloat("volume.effects", EffectsVolume = Mathf.Clamp01(value));
 
         public static void SetAmbienceVolume(float value) => SetFloat("volume.ambience", AmbienceVolume = Mathf.Clamp01(value));
+
+        public static void SetDebugPanelPosition(Vector2 position)
+        {
+            DebugPanelPosition = position;
+            try
+            {
+                PlayerPrefs.SetFloat(Prefix + "debugPanel.x", position.x);
+                PlayerPrefs.SetFloat(Prefix + "debugPanel.y", position.y);
+                PlayerPrefs.Save();
+            }
+            catch (Exception ex) { Debug.LogWarning("[Prefs] " + ex.Message); }
+        }
 
         public static void SetLanguage(string code)
         {
