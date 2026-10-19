@@ -481,11 +481,11 @@ namespace Madlands.Client.Editor
             foreach (var (x, z) in new[] { (-7f, -7f), (7f, -7f), (-7f, 14f), (7f, 14f) })
                 Place("LanternPost", parent, vx + x, vz + z, x < 0 ? 90f : 270f, 1f, Collide.Trunk, trunkRadius: 0.15f);
 
-            // Homes around the square, facing it.
-            Place("Cottage", parent, vx - 30f, vz - 6f, 90f, sink: 0.3f);
-            Place("Cottage", parent, vx - 28f, vz + 14f, 110f, sink: 0.3f);
-            Place("Cottage", parent, vx + 30f, vz - 6f, 270f, sink: 0.3f);
-            Place("Cottage", parent, vx + 28f, vz + 14f, 250f, sink: 0.3f);
+            // Homes around the square, facing it: four timber grove houses on the square, cottages further out.
+            Place("GroveHouse", parent, vx - 30f, vz - 6f, 90f, sink: 0.2f);
+            Place("GroveHouse", parent, vx - 28f, vz + 14f, 110f, sink: 0.2f);
+            Place("GroveHouse", parent, vx + 30f, vz - 6f, 270f, sink: 0.2f);
+            Place("GroveHouse", parent, vx + 28f, vz + 14f, 250f, sink: 0.2f);
             Place("Cottage", parent, vx - 14f, vz - 34f, 10f, sink: 0.3f);
             Place("Cottage", parent, vx + 14f, vz - 34f, -10f, sink: 0.3f);
             Place("Cottage", parent, vx - 41f, vz + 2f, 90f, sink: 0.3f);

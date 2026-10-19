@@ -19,7 +19,7 @@ x = east, z = north, meters. The water level is 21 m; all water is shallow (you 
 
 | Place | Center | Levels | What is there |
 |---|---|---|---|
-| Mirewatch | (0, -140) | 1–3 | The hub village: palisade with three gates, the Muddy Boot inn, market square, cottages, the captain's yard with training dummies, a dock on the mere. Player spawn and rest area (rested experience). |
+| Mirewatch | (0, -140) | 1–3 | The hub village: palisade with three gates, the Muddy Boot inn, market square, four timber grove houses facing it and cottages further out, the captain's yard with training dummies, a dock on the mere. Player spawn and rest area (rested experience). |
 | The Mere | (0, 60) | 1–2 | Shallow lake. Mire frogs on the south shore. |
 | Westbrook | (-260, -150) | 2–4 | Farmhouse, barn and four fields with fences. Bristleback boars. |
 | The Old Mill | (-390, -40) | 4 | Ruins of a mill; bandit waystation (explore objective). |
