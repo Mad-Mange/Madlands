@@ -200,7 +200,7 @@ namespace Madlands.Client
             if (changed) GearVisuals.Apply(_model, _gear, _gearParts);
         }
 
-        /// <summary>A slowly turning golden mote over a corpse the local player may loot.</summary>
+        /// <summary>A golden halo, sparkles and a gem over a corpse the local player may loot.</summary>
         public void SetLootable(bool lootable)
         {
             if (lootable == (_sparkle != null)) return;
@@ -210,9 +210,7 @@ namespace Madlands.Client
                 _sparkle = null;
                 return;
             }
-            _sparkle = EntityVisuals.Glow(transform, Vector3.up * (Shape.Height * 0.45f + 0.3f), Vector3.one * 0.22f, new Color(1f, 0.85f, 0.3f));
-            _sparkle.localRotation = Quaternion.Euler(45f, 0f, 45f);
-            _sparkle.gameObject.AddComponent<Spinner>();
+            _sparkle = LootSparkle.Create(transform, Shape).transform;
         }
 
         /// <summary>Shows (school given) or hides a glow above the unit while it casts.</summary>
