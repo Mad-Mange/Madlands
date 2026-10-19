@@ -22,6 +22,7 @@ public class CombatProtocolTests
         SpeedPercent = 60,
         ClassId = 3,
         NpcFlags = NpcFlags.QuestGiver | NpcFlags.Vendor,
+        NpcRole = NpcRole.Innkeeper,
         MainHandDisplay = 2004,
         OffHandDisplay = 2006,
         Gear = { [0] = 3501, [3] = 3004, [7] = 70000 },
@@ -82,6 +83,7 @@ public class CombatProtocolTests
         target.CopyFrom(first.Values, first.Mask);
         Assert.Equal((123, UnitFlags.InCombat | UnitFlags.Rooted, (byte)1, 999), (target.Health, target.Flags, target.Level, target.MaxHealth));
         Assert.True(copy.Entries[1].Values.ValueEquals(SampleValues));
+        Assert.Equal((NpcFlags.QuestGiver | NpcFlags.Vendor, NpcRole.Innkeeper), (copy.Entries[1].Values.NpcFlags, copy.Entries[1].Values.NpcRole));
     }
 
     [Fact]

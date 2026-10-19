@@ -154,6 +154,16 @@
               "minimum": 1
             }
           },
+          "role": {
+            "enum": [
+              "none",
+              "generalGoods",
+              "innkeeper",
+              "weaponsmith"
+            ],
+            "default": "none",
+            "description": "What the NPC is for players: its symbol over the head and on the maps, and its title. The roles sell, so they need a vendor list."
+          },
           "equipment": {
             "type": "object",
             "additionalProperties": false,

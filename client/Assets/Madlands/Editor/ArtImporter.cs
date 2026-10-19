@@ -37,6 +37,20 @@ namespace Madlands.Client.Editor
 
         public override int GetPostprocessOrder() => 10; // after URP's own material conversion
 
+        /// <summary>Icons/ are interface pictures (art/blender/icons.py): kept sharp and transparent when drawn small.</summary>
+        private void OnPreprocessTexture()
+        {
+            if (!assetPath.StartsWith(ArtRoot + "Icons/", System.StringComparison.Ordinal)) return;
+            var importer = (TextureImporter)assetImporter;
+            importer.textureType = TextureImporterType.Default;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+        }
+
         private void OnPreprocessModel()
         {
             if (!IsArt) return;
@@ -156,6 +170,13 @@ namespace Madlands.Client.Editor
             }
             catalog.Models.Clear();
             catalog.Clips.Clear();
+            catalog.Icons.Clear();
+            foreach (var path in AssetDatabase.FindAssets("t:Texture2D", new[] { ArtRoot + "Icons" })
+                         .Select(AssetDatabase.GUIDToAssetPath).Distinct().OrderBy(p => p, System.StringComparer.Ordinal))
+            {
+                var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (icon != null) catalog.Icons.Add(new ArtCatalog.IconEntry { Name = Path.GetFileNameWithoutExtension(path), Texture = icon });
+            }
             var guids = AssetDatabase.FindAssets("t:Model", new[] { ArtRoot.TrimEnd('/') });
             foreach (var path in guids.Select(AssetDatabase.GUIDToAssetPath).Distinct().OrderBy(p => p, System.StringComparer.Ordinal))
             {
@@ -171,7 +192,7 @@ namespace Madlands.Client.Editor
             catalog.Invalidate();
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssetIfDirty(catalog);
-            Debug.Log($"[ArtImporter] Art catalog: {catalog.Models.Count} models, {catalog.Clips.Count} clips");
+            Debug.Log($"[ArtImporter] Art catalog: {catalog.Models.Count} models, {catalog.Clips.Count} clips, {catalog.Icons.Count} icons");
         }
 
         /// <summary>

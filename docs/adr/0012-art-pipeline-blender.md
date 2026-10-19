@@ -28,6 +28,8 @@ its look. The project owner wants to use Blender and to start very low-poly, ref
 - Material names are a contract with the client: the gear regions of characters (`Skin`, `Hair`, `Eyes`, `Chest`,
   `Arms`, `Hands`, `Waist`, `Legs`, `Feet`) are recolored at runtime by name. `Metal` in a name makes a material
   metallic, `Glow` makes it emissive.
+- Interface symbols are small low-poly models too, rendered from the front to transparent PNGs with a dark rim
+  (`art/blender/icons.py`), so they match the world.
 
 **Conventions**
 

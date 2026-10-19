@@ -42,14 +42,14 @@
     {
       "id": 12, "name": "Quartermaster Holt", "displayId": 112, "minLevel": 10, "maxLevel": 10, "faction": 1,
       "health": 6, "damage": 1.5, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
-      "vendor": [4001, 4002, 4005, 4003, 4004, 5001, 1301, 1302, 1303]
+      "vendor": [4001, 4002, 4005, 4003, 4004, 5001, 1301, 1302, 1303], "role": "generalGoods"
     },
 
     {
       "id": 13, "name": "Marla Fenn", "displayId": 113, "minLevel": 10, "maxLevel": 10, "faction": 1,
       "health": 5, "damage": 1, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
       "gossip": "Welcome to the Muddy Boot. Wipe your feet, love. The name was a warning, not a joke.",
-      "vendor": [4001, 4002, 4006, 4007, 4005]
+      "vendor": [4001, 4002, 4006, 4007, 4005], "role": "innkeeper"
     },
     {
       "id": 14, "name": "Farmer Wil Tenney", "displayId": 114, "minLevel": 8, "maxLevel": 8, "faction": 1,
@@ -85,7 +85,7 @@
       "health": 6, "damage": 1.5, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
       "equipment": { "mainHand": 1011 },
       "gossip": "Steel, wood, a bit of leather. If it's broken, bring it. If it's bent, that's extra.",
-      "vendor": [1001, 1002, 1003, 1011, 1030, 1035, 1036]
+      "vendor": [1001, 1002, 1003, 1011, 1030, 1035, 1036], "role": "weaponsmith"
     },
 
     {

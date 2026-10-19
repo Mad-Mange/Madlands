@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Madlands.Client
 {
     /// <summary>
-    /// Every model and animation clip under Assets/Madlands/Art (built in Blender, see art/README.md),
-    /// by name. Kept up to date by the editor (ArtImporter) and loaded from Resources at runtime.
+    /// Every model, animation clip and interface icon under Assets/Madlands/Art (built in Blender, see
+    /// art/README.md), by name. Kept up to date by the editor (ArtImporter) and loaded from Resources at runtime.
     /// </summary>
     public sealed class ArtCatalog : ScriptableObject
     {
@@ -26,12 +26,22 @@ namespace Madlands.Client
             public AnimationClip Clip;
         }
 
+        [Serializable]
+        public struct IconEntry
+        {
+            public string Name;
+            public Texture2D Texture;
+        }
+
         public List<ModelEntry> Models = new List<ModelEntry>();
         public List<ClipEntry> Clips = new List<ClipEntry>();
+        /// <summary>Interface symbols from Art/Icons (art/blender/icons.py).</summary>
+        public List<IconEntry> Icons = new List<IconEntry>();
 
         private static ArtCatalog _instance;
         private static bool _loaded;
         private Dictionary<string, GameObject> _models;
+        private Dictionary<string, Texture2D> _icons;
         private Dictionary<string, Dictionary<string, AnimationClip>> _sets;
 
         public static ArtCatalog Instance
@@ -58,6 +68,17 @@ namespace Madlands.Client
             return _models.TryGetValue(name, out var prefab) ? prefab : null;
         }
 
+        public Texture2D GetIcon(string name)
+        {
+            if (_icons == null)
+            {
+                _icons = new Dictionary<string, Texture2D>();
+                foreach (var entry in Icons)
+                    if (entry.Texture != null) _icons[entry.Name] = entry.Texture;
+            }
+            return _icons.TryGetValue(name, out var icon) ? icon : null;
+        }
+
         /// <summary>The clips of one model file by clip name (empty if there are none).</summary>
         public IReadOnlyDictionary<string, AnimationClip> GetClips(string set)
         {
@@ -81,6 +102,7 @@ namespace Madlands.Client
         {
             _models = null;
             _sets = null;
+            _icons = null;
         }
     }
 }

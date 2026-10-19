@@ -198,6 +198,9 @@ public class ContentLoaderTests
         // Armor others can see has a look.
         foreach (var item in db.Items.Values.Where(i => VisibleGear.Slots.Any(slot => ItemRules.SlotsFor(i.Slot).Contains(slot))))
             Assert.True(item.DisplayId != 0, $"{item.Name} is worn where others see it but has no displayId");
+        // Every vendor shows what it sells (its symbol and title).
+        foreach (var vendor in db.Creatures.Values.Where(c => c.Vendor.Count > 0))
+            Assert.True(vendor.Role != NpcRole.None, $"{vendor.Name} sells things but has no role");
         // Characters start in a village where they build up rested experience.
         foreach (var race in db.Races.Values)
         {

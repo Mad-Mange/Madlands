@@ -316,6 +316,7 @@ public static class ContentLoader
                     else if (item.BuyPrice <= 0) Error($"{where} sells item {id}, which has no buyPrice");
                 }
                 if (c.Vendor.Count > Shared.Net.VendorInventory.MaxItems) Error($"{where} sells too many items");
+                if (c.Role != NpcRole.None && c.Vendor.Count == 0) Error($"{where} has the role {c.Role} but sells nothing");
                 if (Bytes(c.Gossip) > QuestInfo.MaxTextBytes || Bytes(c.Name) > SpellInfo.MaxNameBytes) Error($"{where}: name or gossip is too long");
                 CheckHeld(where, c.Equipment.MainHand, InventoryType.MainHand, InventoryType.TwoHand);
                 CheckHeld(where, c.Equipment.OffHand, InventoryType.OffHand, InventoryType.OffHand);

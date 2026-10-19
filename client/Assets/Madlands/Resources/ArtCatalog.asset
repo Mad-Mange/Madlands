@@ -329,3 +329,10 @@ MonoBehaviour:
   - Set: Wolf
     Name: Walk
     Clip: {fileID: 8349542763059015795, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
+  Icons:
+  - Name: IconGoods
+    Texture: {fileID: 2800000, guid: 04b8fbda5f0ad8d42bd241dacdd77a93, type: 3}
+  - Name: IconInn
+    Texture: {fileID: 2800000, guid: c0069a1bd22693a4f9da65669a02ae46, type: 3}
+  - Name: IconWeapons
+    Texture: {fileID: 2800000, guid: 0128580afe91f974ebbe9dcb278828c9, type: 3}

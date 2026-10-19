@@ -39,6 +39,7 @@ dotnet run --project tools/Madlands.ContentTool -- validate
 
 $blender = "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 & $blender -b --factory-startup -P art/blender/build.py -- [asset ...] [--preview <dir>]   # FBX into the Unity project (+ pictures)
+& $blender -b --factory-startup -P art/blender/icons.py -- [icon ...]                      # interface symbols as PNG
 & $blender -b --factory-startup -P art/audio/build.py -- [sound ...]                       # synthesized music/sounds as OGG
 python art/audio/kenney.py                                                                  # re-import the CC0 Kenney sounds
 

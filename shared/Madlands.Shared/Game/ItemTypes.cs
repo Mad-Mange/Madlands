@@ -130,6 +130,21 @@ namespace Madlands.Shared.Game
     }
 
     /// <summary>
+    /// What an NPC is, for the player: the client shows its symbol over the head and on the maps, and a title
+    /// under the name ("&lt;Innkeeper&gt;"). Values are stable: append, never renumber.
+    /// </summary>
+    public enum NpcRole : byte
+    {
+        None = 0,
+        /// <summary>Sells supplies, bags and basic gear.</summary>
+        GeneralGoods = 1,
+        /// <summary>Runs an inn: food and drink.</summary>
+        Innkeeper = 2,
+        /// <summary>Sells weapons and shields.</summary>
+        Weaponsmith = 3,
+    }
+
+    /// <summary>
     /// An inventory position: a container and a slot in it. Container 0 is the equipment (slot =
     /// <see cref="EquipSlot"/>), 1 the backpack, 2-5 the bags in the bag slots Bag1-Bag4.
     /// </summary>

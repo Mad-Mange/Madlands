@@ -124,6 +124,12 @@ public abstract class Unit : Entity
         set { if (Values.NpcFlags != value) { Values.NpcFlags = value; Dirty |= UnitFieldMask.NpcFlags; } }
     }
 
+    public NpcRole NpcRole
+    {
+        get => Values.NpcRole;
+        set { if (Values.NpcRole != value) { Values.NpcRole = value; Dirty |= UnitFieldMask.NpcFlags; } }
+    }
+
     public uint MainHandDisplay
     {
         get => Values.MainHandDisplay;

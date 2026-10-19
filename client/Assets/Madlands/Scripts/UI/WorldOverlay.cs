@@ -22,7 +22,10 @@ namespace Madlands.Client
         {
             public VisualElement Root;
             public Label Mark;
+            public VisualElement Icon;
             public Label Name;
+            public Label Title;
+            public NpcRole Role;
             public VisualElement Fill;
             public VisualElement Cast;
             public VisualElement CastFill;
@@ -113,6 +116,19 @@ namespace Madlands.Client
                 plate.Mark.text = status == QuestGiverStatus.Available ? "!" : status == QuestGiverStatus.None ? "" : "?";
                 plate.Mark.EnableInClassList("incomplete", status == QuestGiverStatus.Incomplete);
                 plate.Mark.style.display = status == QuestGiverStatus.None ? DisplayStyle.None : DisplayStyle.Flex;
+                // What the NPC is: its symbol (unless a quest mark is shown) and its title under the name.
+                var role = reaction == Reaction.Friendly ? values.NpcRole : NpcRole.None;
+                if (role != plate.Role)
+                {
+                    plate.Role = role;
+                    var icon = NpcRoleUi.Icon(role);
+                    plate.Icon.style.backgroundImage = icon != null ? new StyleBackground(icon) : new StyleBackground(StyleKeyword.None);
+                    plate.Title.text = NpcRoleUi.Title(role) ?? "";
+                }
+                bool showIcon = status == QuestGiverStatus.None && role != NpcRole.None && !values.IsDead;
+                bool showTitle = role != NpcRole.None;
+                plate.Icon.style.display = showIcon ? DisplayStyle.Flex : DisplayStyle.None;
+                plate.Title.style.display = showTitle ? DisplayStyle.Flex : DisplayStyle.None;
                 plate.Name.text = values.Level > 0 && !isPlayer ? entity.Name + "  " + values.Level : entity.Name;
                 plate.Fill.style.width = Length.Percent(values.HealthFraction * 100f);
 
@@ -122,7 +138,7 @@ namespace Madlands.Client
 
                 var p = RuntimePanelUtils.CameraTransformWorldToPanel(panel, head, cam);
                 plate.Root.style.left = p.x;
-                plate.Root.style.top = p.y - (status == QuestGiverStatus.None ? 30f : 72f);
+                plate.Root.style.top = p.y - 30f - (showTitle ? 15f : 0f) - (status != QuestGiverStatus.None ? 42f : showIcon ? 34f : 0f);
                 plate.Root.style.display = DisplayStyle.Flex;
             }
 
@@ -154,8 +170,15 @@ namespace Madlands.Client
             mark.AddToClassList("quest-mark");
             mark.style.display = DisplayStyle.None;
             root.Add(mark);
+            var icon = new VisualElement { pickingMode = PickingMode.Ignore };
+            icon.AddToClassList("nameplate-icon");
+            icon.style.display = DisplayStyle.None;
+            root.Add(icon);
             var label = new Label(name) { pickingMode = PickingMode.Ignore };
             label.AddToClassList("nameplate-name");
+            var title = new Label { pickingMode = PickingMode.Ignore };
+            title.AddToClassList("nameplate-title");
+            title.style.display = DisplayStyle.None;
             var bar = new VisualElement { pickingMode = PickingMode.Ignore };
             bar.AddToClassList("nameplate-bar");
             var fill = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -167,10 +190,11 @@ namespace Madlands.Client
             castFill.AddToClassList("bar-fill");
             cast.Add(castFill);
             root.Add(label);
+            root.Add(title);
             root.Add(bar);
             root.Add(cast);
             _nameplateLayer.Add(root);
-            return new Nameplate { Root = root, Mark = mark, Name = label, Fill = fill, Cast = cast, CastFill = castFill };
+            return new Nameplate { Root = root, Mark = mark, Icon = icon, Name = label, Title = title, Fill = fill, Cast = cast, CastFill = castFill };
         }
 
         private void UpdateTexts(WorldView world, Camera cam, IPanel panel)

@@ -215,12 +215,12 @@ namespace Madlands.Client
             int used = 0;
             foreach (var entity in _client.World.Entities)
             {
-                if (!MarkerFor(entity, out string text, out string css)) continue;
+                if (!MarkerFor(entity, out string text, out string css, out var icon)) continue;
                 var p = entity.Movement.Sample(_client.RenderTimeMs).Position;
                 float dx = p.X - me.X, dz = p.Z - me.Z;
                 if (dx * dx + dz * dz > radius * radius * 0.92f) continue;
                 var marker = Take(_miniPool, _miniMarkers, used++);
-                SetMarker(marker, text, css);
+                SetMarker(marker, text, css, icon);
                 Place(marker.Root, half + dx * ppm, half - dz * ppm);
             }
             Hide(_miniPool, used);
@@ -238,10 +238,10 @@ namespace Madlands.Client
             int used = 0;
             foreach (var entity in _client.World.Entities)
             {
-                if (!MarkerFor(entity, out string text, out string css)) continue;
+                if (!MarkerFor(entity, out string text, out string css, out var icon)) continue;
                 var p = entity.Movement.Sample(_client.RenderTimeMs).Position;
                 var marker = Take(_worldPool, _worldMarkers, used++);
-                SetMarker(marker, text, css);
+                SetMarker(marker, text, css, icon);
                 var v = ToView(p.X, p.Z);
                 Place(marker.Root, v.x, v.y);
             }
@@ -326,11 +326,15 @@ namespace Madlands.Client
             circle.style.borderTopLeftRadius = circle.style.borderTopRightRadius = circle.style.borderBottomLeftRadius = circle.style.borderBottomRightRadius = r;
         }
 
-        /// <summary>What an entity looks like on the maps: players as blue dots, NPCs as green dots or their quest mark.</summary>
-        private bool MarkerFor(RemoteEntity entity, out string text, out string css)
+        /// <summary>
+        /// What an entity looks like on the maps: players as blue dots, NPCs as their quest mark, else the symbol of
+        /// what they are (a vendor), else green dots.
+        /// </summary>
+        private bool MarkerFor(RemoteEntity entity, out string text, out string css, out Texture2D icon)
         {
             text = "";
             css = null;
+            icon = null;
             if (entity.Unit == null || entity.Unit.Values.IsDead) return false;
             if (entity.Guid.Type == EntityType.Player)
             {
@@ -343,7 +347,10 @@ namespace Madlands.Client
                 case QuestGiverStatus.Available: text = "!"; css = "quest"; break;
                 case QuestGiverStatus.Reward: text = "?"; css = "quest"; break;
                 case QuestGiverStatus.Incomplete: text = "?"; css = "quest incomplete"; break;
-                default: css = "npc"; break;
+                default:
+                    icon = NpcRoleUi.Icon(entity.Unit.Values.NpcRole);
+                    css = icon != null ? "role" : "npc";
+                    break;
             }
             return true;
         }
@@ -366,11 +373,12 @@ namespace Madlands.Client
             return marker;
         }
 
-        private static void SetMarker(Marker marker, string text, string css)
+        private static void SetMarker(Marker marker, string text, string css, Texture2D icon)
         {
             marker.Root.ClearClassList();
             marker.Root.AddToClassList("map-marker");
             foreach (var c in css.Split(' ')) marker.Root.AddToClassList(c);
+            marker.Root.style.backgroundImage = icon != null ? new StyleBackground(icon) : new StyleBackground(StyleKeyword.Null);
             marker.Text.text = text;
         }
 

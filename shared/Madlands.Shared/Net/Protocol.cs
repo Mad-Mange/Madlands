@@ -6,7 +6,7 @@ namespace Madlands.Shared.Net
         /// Bump on ANY wire-format or shared-rule change. Checked in the handshake; a mismatching
         /// client is rejected with <see cref="RejectReason.ProtocolMismatch"/> ("please update").
         /// </summary>
-        public const ushort Current = 11;
+        public const ushort Current = 12;
 
         /// <summary>LiteNetLib connection key; filters out stray traffic before the handshake.</summary>
         public const string ConnectionKey = "Madlands";

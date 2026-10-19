@@ -61,7 +61,7 @@ Everything for the first real zone is in; what is left is putting a realm online
 | Art | Low-poly models made by Python scripts in Blender: two races, creatures, weapons and 36 props ([ADR 0012](docs/adr/0012-art-pipeline-blender.md)) |
 | Animation | 16 humanoid clips made once and retargeted to every race; creatures have their own. Worn gear shows on characters |
 | Sound | Synthesized music and ambience per area, footsteps that splash in the water, swings, hits, spells by school, jingles; effects from Kenney's CC0 packs ([credits](CREDITS.md)) |
-| Getting around | Sprint on stamina (Shift); the world map and minimap circle where each quest objective is done, worked out from where the creatures live; lootable corpses shimmer; bigger click targets and clickable nameplates |
+| Getting around | Sprint on stamina (Shift); the world map and minimap circle where each quest objective is done, worked out from where the creatures live; lootable corpses shimmer; symbols over vendors and the innkeeper; bigger click targets and clickable nameplates |
 | Rested experience | Rest in Mirewatch or log out there and kills give double experience for a while, as in WoW: a darker stretch on the blue experience bar shows how much is left |
 | Settings | Rebindable keys, mouse, graphics, window mode and resolution, interface scale, volumes; every interface text in a string table ([ADR 0013](docs/adr/0013-localization.md)) |
 | Online | A deployment guide for a VPS behind Caddy (TLS) ([deployment.md](docs/deployment.md)) |

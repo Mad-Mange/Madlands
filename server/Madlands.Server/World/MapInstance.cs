@@ -126,6 +126,7 @@ public sealed class MapInstance
             MovementTimeMs = nowMs,
             LastChangeMs = nowMs,
             NpcFlags = Content.NpcFlagsOf(template),
+            NpcRole = template.Role,
             MainHandDisplay = Content.Items.GetValueOrDefault(template.Equipment.MainHand)?.DisplayId ?? 0,
             OffHandDisplay = Content.Items.GetValueOrDefault(template.Equipment.OffHand)?.DisplayId ?? 0,
         };

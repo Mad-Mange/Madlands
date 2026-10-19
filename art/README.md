@@ -31,6 +31,7 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 | `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, frog, training dummy. |
 | `blender/items.py` | Held items: origin at the grip, pointing along +Z, edge along X; shields face +X. |
 | `blender/preview.py` | The preview renders. |
+| `blender/icons.py` | Interface symbols (what an NPC is: general goods, innkeeper, weaponsmith), modelled like everything else and rendered to transparent PNGs with a dark rim in `client/Assets/Madlands/Art/Icons/`: `blender -b --factory-startup -P art/blender/icons.py -- [icon ...]`. |
 
 ## Conventions
 

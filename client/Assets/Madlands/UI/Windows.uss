@@ -813,6 +813,16 @@
     margin-top: -13px;
 }
 
+/* A vendor or innkeeper: the symbol of what it is (NpcRoleUi). */
+.map-marker.role {
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    border-radius: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
 .map-marker .unity-label {
     padding: 0;
     margin: 0;

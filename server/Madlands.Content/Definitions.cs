@@ -318,6 +318,8 @@ public sealed class CreatureDefinition
     public string Gossip { get; set; } = "";
     /// <summary>Item ids it sells; empty = not a vendor.</summary>
     public List<uint> Vendor { get; set; } = new();
+    /// <summary>What the NPC is for players: its symbol over the head and on the maps, and its title.</summary>
+    public NpcRole Role { get; set; }
     /// <summary>Items it holds (only their looks matter): a weapon and a shield or held item.</summary>
     public CreatureEquipment Equipment { get; set; } = new();
 }
