@@ -14,6 +14,7 @@
   "action.ToggleDebug": "Debug overlay",
   "action.ToggleMap": "World map",
   "action.ToggleQuestLog": "Quest log",
+  "action.ToggleSpellbook": "Spellbook",
   "action.TurnLeft": "Turn left",
   "action.TurnRight": "Turn right",
   "action.button": "Action button {0}",
@@ -163,6 +164,7 @@
   "micro.bags": "Bags",
   "micro.character": "Char",
   "micro.quests": "Quests",
+  "micro.spellbook": "Spells",
   "nameplate.title": "<{0}>",
   "quest.abandon": "Abandon quest",
   "quest.accept": "Accept",
@@ -240,6 +242,8 @@
   "spell.melee": "Melee",
   "spell.meleeRange": "Melee range",
   "spell.range": "{0} m range",
+  "spellbook.hint": "Drag a spell onto the action bar; drag one off the bar to take it off. Click to cast.",
+  "spellbook.learned": "Learned at level {0}",
   "stat.Agility": "Agility",
   "stat.Armor": "Armor",
   "stat.AttackPower": "Attack Power",
@@ -270,5 +274,6 @@
   "window.destroy": "Destroy item",
   "window.loot": "Loot",
   "window.map": "World map",
+  "window.spellbook": "Spellbook",
   "window.vendor": "Vendor"
 }

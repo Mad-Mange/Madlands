@@ -187,3 +187,35 @@ public class ItemComparisonTests
         Assert.Empty(ItemComparison.Replaced(new ItemInfo { InventoryType = InventoryType.Bag, BagSlots = 6 }, slot => equipped.GetValueOrDefault(slot)));
     }
 }
+
+public class ActionBarLayoutTests
+{
+    [Fact]
+    public void New_spells_fill_empty_slots_and_moves_are_kept()
+    {
+        var layout = ActionBarLayout.Load(null);
+        Assert.True(layout.AddNew(new uint[] { 1, 100, 103 }));
+        Assert.Equal((1u, 100u, 103u, 0u), (layout[0], layout[1], layout[2], layout[3]));
+
+        layout.Swap(0, 5);       // auto-attack to the sixth slot
+        layout.Clear(2);         // Battle Shout off the bar
+        var again = ActionBarLayout.Load(layout.Save());
+        Assert.Equal((0u, 100u, 0u, 1u), (again[0], again[1], again[2], again[5]));
+
+        // Learning Rend fills the first empty slot; Battle Shout stays off the bar.
+        Assert.True(again.AddNew(new uint[] { 1, 100, 103, 101 }));
+        Assert.Equal((101u, 0u), (again[0], again[2]));
+        Assert.False(again.AddNew(new uint[] { 1, 100, 103, 101 }));
+
+        again.Set(2, 103);       // dragged back from the spellbook
+        Assert.Equal(103u, ActionBarLayout.Load(again.Save())[2]);
+    }
+
+    [Fact]
+    public void Broken_text_loads_as_an_empty_layout()
+    {
+        var layout = ActionBarLayout.Load("x,y|z");
+        Assert.True(layout.AddNew(new uint[] { 1 }));
+        Assert.Equal(1u, layout[0]);
+    }
+}

@@ -64,9 +64,13 @@ namespace Madlands.Client
             Client.Dispose();
         }
 
+        /// <summary>The realm and character being played ("host:port/id"), for settings kept per character.</summary>
+        public string CharacterKey { get; private set; } = "";
+
         public void EnterWorld(string host, int port, string sessionToken, ulong characterId)
         {
             if (Client.State != ClientState.Disconnected) return;
+            CharacterKey = host + ":" + port + "/" + characterId;
             Client.Connect(host, port, sessionToken, characterId);
         }
 

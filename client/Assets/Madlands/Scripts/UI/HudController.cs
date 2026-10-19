@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Madlands.ClientCore;
 using Madlands.Shared;
 using Madlands.Shared.Game;
@@ -61,8 +62,12 @@ namespace Madlands.Client
         private VendorUi _vendor;
         private QuestUi _quests;
         private MapUi _map;
+        private SpellbookUi _spellbook;
+        private SpellDrag _spellDrag;
+        /// <summary>The player's arrangement of the action bar; null until a character is in the world.</summary>
+        private ActionBarLayout _layout;
         private GameSounds _sounds;
-        private Button _characterButton, _bagsButton, _questsButton;
+        private Button _characterButton, _bagsButton, _questsButton, _spellsButton;
         private readonly Slot[] _slots = new Slot[SlotCount];
         private readonly List<AuraIcon> _playerAuraIcons = new List<AuraIcon>();
         private readonly List<AuraIcon> _targetAuraIcons = new List<AuraIcon>();
@@ -148,8 +153,8 @@ namespace Madlands.Client
             _chat = new ChatPanel(r.Q("chat-log"), chatInput, text => Client.SendChat(text));
             _overlay = new WorldOverlay(r.Q("nameplates"), r.Q("combat-text"));
             _overlay.Clicked += (guid, use) => targeting.Select(guid, use);
-            BuildActionBar();
             BuildWindows();
+            BuildActionBar();
             KeyBindings.Changed += RelabelKeys;
         }
 
@@ -160,6 +165,7 @@ namespace Madlands.Client
             _characterButton.text = MicroText(Loc.T("micro.character"), GameAction.ToggleCharacter);
             _bagsButton.text = MicroText(Loc.T("micro.bags"), GameAction.ToggleBags);
             _questsButton.text = MicroText(Loc.T("micro.quests"), GameAction.ToggleQuestLog);
+            _spellsButton.text = MicroText(Loc.T("micro.spellbook"), GameAction.ToggleSpellbook);
         }
 
         private static string MicroText(string name, GameAction action)
@@ -180,10 +186,14 @@ namespace Madlands.Client
             _loot = new LootUi(windows, Client, _itemTooltip);
             _vendor = new VendorUi(windows, Client, _itemTooltip, _inventory);
             _quests = new QuestUi(windows, Client, _itemTooltip);
+            _spellDrag = new SpellDrag(overlay, Client);
+            _spellDrag.Dropped += OnSpellDropped;
+            _spellbook = new SpellbookUi(windows, Client, _spellDrag, UseSpell, (id, anchor) => ShowTooltip(id, anchor, 1), HideTooltip);
 
             var menu = new VisualElement { pickingMode = PickingMode.Ignore };
             menu.AddToClassList("micro-menu");
             _characterButton = MicroButton(menu, MicroText(Loc.T("micro.character"), GameAction.ToggleCharacter), () => _inventory.ToggleCharacter());
+            _spellsButton = MicroButton(menu, MicroText(Loc.T("micro.spellbook"), GameAction.ToggleSpellbook), () => _spellbook.Toggle());
             _bagsButton = MicroButton(menu, MicroText(Loc.T("micro.bags"), GameAction.ToggleBags), () => _inventory.ToggleBags());
             _questsButton = MicroButton(menu, MicroText(Loc.T("micro.quests"), GameAction.ToggleQuestLog), () => _quests.ToggleLog());
             windows.Add(menu);
@@ -225,6 +235,9 @@ namespace Madlands.Client
                 case "map":
                     if (!_map.WorldMapOpen) _map.ToggleWorldMap();
                     break;
+                case "spellbook":
+                    if (!_spellbook.IsOpen) _spellbook.Toggle();
+                    break;
             }
         }
 
@@ -251,6 +264,8 @@ namespace Madlands.Client
                 _statsSeen = false;
                 _selfAurasDirty = _targetAurasDirty = true;
                 CloseWindows();
+                _layout = ActionBarLayout.Load(Preferences.GetActionBar(network.CharacterKey));
+                RefreshActionBar();
             };
             c.InventoryChanged += () => _inventory.Refresh();
             c.StatsChanged += () =>
@@ -319,6 +334,7 @@ namespace Madlands.Client
             _characterButton.EnableInClassList("active", _inventory.CharacterOpen);
             _bagsButton.EnableInClassList("active", _inventory.BagsOpen);
             _questsButton.EnableInClassList("active", _quests.LogOpen);
+            _spellsButton.EnableInClassList("active", _spellbook.IsOpen);
             HandleKeys();
         }
 
@@ -329,6 +345,7 @@ namespace Madlands.Client
             _vendor.Close();
             _quests.CloseDialog();
             if (_quests.LogOpen) _quests.ToggleLog();
+            _spellbook.Close();
             _map.Close();
             _itemTooltip.Hide();
         }
@@ -355,6 +372,7 @@ namespace Madlands.Client
             if (KeyBindings.WasPressed(GameAction.ToggleBags)) _inventory.ToggleBags();
             if (KeyBindings.WasPressed(GameAction.ToggleCharacter)) _inventory.ToggleCharacter();
             if (KeyBindings.WasPressed(GameAction.ToggleQuestLog)) _quests.ToggleLog();
+            if (KeyBindings.WasPressed(GameAction.ToggleSpellbook)) _spellbook.Toggle();
             if (KeyBindings.WasPressed(GameAction.ToggleMap)) _map.ToggleWorldMap();
             for (int i = 0; i < SlotCount; i++)
                 if (KeyBindings.WasPressed(KeyBindings.ActionButton(i))) UseSpell(_slots[i].SpellId);
@@ -379,7 +397,7 @@ namespace Madlands.Client
                 _vendor.Close();
                 return true;
             }
-            if (_map.HandleEscape() || _quests.HandleEscape() || _inventory.HandleEscape()) return true;
+            if (_map.HandleEscape() || _quests.HandleEscape() || _spellbook.HandleEscape() || _inventory.HandleEscape()) return true;
             if (!Client.Target.IsEmpty)
             {
                 Client.SetTarget(EntityGuid.Empty);
@@ -517,7 +535,8 @@ namespace Madlands.Client
                 root.Add(cooldown);
                 root.Add(key);
                 var slot = new Slot { Root = root, Icon = icon, Shade = shade, Cooldown = cooldown, Key = key };
-                root.RegisterCallback<ClickEvent>(_ => UseSpell(slot.SpellId));
+                // Click to cast; drag onto another slot to swap, or off the bar to take the spell off.
+                _spellDrag.Attach(root, () => slot.SpellId, i, () => UseSpell(slot.SpellId));
                 root.RegisterCallback<PointerEnterEvent>(_ => ShowTooltip(slot.SpellId, root, 0));
                 root.RegisterCallback<PointerLeaveEvent>(_ => HideTooltip());
                 _slots[i] = slot;
@@ -525,27 +544,48 @@ namespace Madlands.Client
             }
         }
 
-        /// <summary>Auto-attack first, then the class's spells in the order they are learned.</summary>
+        /// <summary>
+        /// Shows the player's arrangement. Spells learned since it was saved go into the first empty slots (auto-attack
+        /// first, then in the order they are learned); slots with a spell the character does not know show empty.
+        /// </summary>
         private void RefreshActionBar()
         {
-            var spells = new List<SpellInfo>();
-            foreach (var id in Client.KnownSpells)
-                if (Client.Data.TryGetSpell(id, out var s) && !s.Has(SpellFlags.Hidden)) spells.Add(s);
-            spells.Sort((a, b) =>
-            {
-                if (a.IsAutoAttack != b.IsAutoAttack) return a.IsAutoAttack ? -1 : 1;
-                int byLevel = a.LearnLevel.CompareTo(b.LearnLevel);
-                return byLevel != 0 ? byLevel : a.Id.CompareTo(b.Id);
-            });
+            if (_layout == null) return;
+            var known = SpellbookUi.KnownInOrder(Client);
+            var ids = new List<uint>(known.Count);
+            foreach (var spell in known) ids.Add(spell.Id);
+            if (_layout.AddNew(ids)) SaveLayout();
             for (int i = 0; i < SlotCount; i++)
             {
                 var slot = _slots[i];
-                var spell = i < spells.Count ? spells[i] : null;
+                uint id = _layout[i];
+                var spell = id != 0 && Client.KnownSpells.Contains(id) ? Client.Data.GetSpell(id) : null;
                 slot.SpellId = spell?.Id ?? 0;
                 slot.Root.EnableInClassList("empty", spell == null);
                 if (spell != null) SpellIcons.Apply(slot.Icon, spell);
             }
         }
+
+        /// <summary>A spell let go of: onto a slot it goes there (two slots swap), off the bar it leaves the bar.</summary>
+        private void OnSpellDropped(uint spellId, int fromSlot, Vector2 position)
+        {
+            if (_layout == null) return;
+            int target = -1;
+            for (int i = 0; i < SlotCount; i++)
+                if (_slots[i].Root.worldBound.Contains(position)) target = i;
+            if (target >= 0)
+            {
+                if (fromSlot >= 0) _layout.Swap(fromSlot, target);
+                else _layout.Set(target, spellId);
+            }
+            else if (fromSlot >= 0 && !_actionBar.worldBound.Contains(position)) _layout.Clear(fromSlot);
+            else return;
+            SaveLayout();
+            RefreshActionBar();
+            HideTooltip();
+        }
+
+        private void SaveLayout() => Preferences.SetActionBar(network.CharacterKey, _layout.Save());
 
         private void UpdateActionBar()
         {

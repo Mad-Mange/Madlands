@@ -119,6 +119,62 @@
     width: 300px;
 }
 
+/* The spellbook (SpellbookUi): spells to drag onto the action bar. */
+.window.spellbook {
+    left: 18px;
+    top: 120px;
+    width: 340px;
+}
+
+.spellbook-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 5px 6px;
+    margin-bottom: 4px;
+    background-color: rgb(22, 26, 40);
+    border-width: 1px;
+    border-color: rgb(44, 50, 70);
+    border-radius: 4px;
+}
+
+.spellbook-row:hover {
+    background-color: rgb(34, 40, 60);
+    border-color: rgb(122, 98, 48);
+}
+
+.spellbook-icon {
+    width: 42px;
+    height: 42px;
+    margin-right: 10px;
+    border-width: 1px;
+    border-color: rgb(10, 10, 14);
+    border-radius: 3px;
+}
+
+.spellbook-name {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(255, 230, 160);
+}
+
+.spellbook-meta {
+    font-size: 12px;
+    color: rgb(170, 180, 200);
+}
+
+/* A spell being dragged onto the action bar follows the pointer. */
+.spell-drag {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    right: auto;
+    bottom: auto;
+    opacity: 0.85;
+    border-width: 2px;
+    border-color: rgb(255, 214, 90);
+    border-radius: 3px;
+}
+
 .window.questlog {
     left: 50%;
     top: 110px;

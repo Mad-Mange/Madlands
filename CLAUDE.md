@@ -62,7 +62,7 @@ builds/client/Madlands.exe -screen-fullscreen 0 -screenshot builds/screenshots/l
 # Combat (server with --gm-all): -class picks the class of a new character, -exec sends chat lines/GM commands
 # after entering the world, -autofight targets the nearest enemy and uses the action bar.
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 3;.tele -60 -62" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
-# Items and quests: -open bags,character,questlog opens windows, -talkto "Old Tamsin" (+ -quest 1) opens an NPC dialog,
+# Items and quests: -open bags,character,questlog,spellbook,map opens windows, -talkto "Old Tamsin" (+ -quest 1) opens an NPC dialog,
 # -loot opens loot of corpses in reach, -tooltip <item id> shows a bag item's tooltip, -equip 1020,1210 equips from the bags.
 # -autorun runs forward from the start, -sprint holds the sprint key (test sprint and stamina against the server).
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Shopper -exec ".money 5000;.tele 10 -142" -talkto "Quartermaster Holt" -screenshot builds/screenshots/vendor.png -screenshotdelay 9 -quitafter 13

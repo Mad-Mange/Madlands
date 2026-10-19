@@ -133,6 +133,22 @@ namespace Madlands.Client
 
         public static void SetAmbienceVolume(float value) => SetFloat("volume.ambience", AmbienceVolume = Mathf.Clamp01(value));
 
+        /// <summary>A character's action bar arrangement (<see cref="Madlands.ClientCore.ActionBarLayout"/>), per realm and character.</summary>
+        public static string GetActionBar(string characterKey) => GetString("actionBar." + characterKey, "");
+
+        public static void SetActionBar(string characterKey, string layout)
+        {
+            try
+            {
+                PlayerPrefs.SetString(Prefix + "actionBar." + characterKey, layout);
+                PlayerPrefs.Save();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Prefs] " + ex.Message);
+            }
+        }
+
         public static void SetDebugPanelPosition(Vector2 position)
         {
             DebugPanelPosition = position;
