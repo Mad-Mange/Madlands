@@ -121,7 +121,8 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] Sprint: hold Shift to run 40% faster on stamina (about 5 s, refills after a short rest), shown under the
   player frame. The server simulates the same stamina and only allows the speed while it lasts (protocol v9)
 - [x] Minimap (north up, zoom, players, NPCs and quest marks) and world map (M) with the places active quests send you
-  to. Export Map renders the map image from above
+  to: the place to explore, or circles where the creatures to kill (or that drop the items to collect) live and where
+  the NPC to talk to stands, worked out from the spawns (protocol v10). Export Map renders the map image from above
 - [x] Sound and music: three synthesized music loops (Mirewatch, the valley, the drowned ruins) and five ambience
   loops that cross-fade with the area you are in; footsteps (grass, wood, splashing through water), swings, hits,
   spells by school, loot, coins, windows, quest and level jingles; volume sliders (Settings > Sound). Effects from

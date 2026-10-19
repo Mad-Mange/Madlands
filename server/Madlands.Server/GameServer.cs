@@ -11,6 +11,7 @@ using Madlands.Server.Diagnostics;
 using Madlands.Server.Items;
 using Madlands.Server.Net;
 using Madlands.Server.Persistence;
+using Madlands.Server.Quests;
 using Madlands.Server.World;
 using Madlands.Shared;
 using Madlands.Shared.Game;
@@ -702,10 +703,7 @@ public sealed class GameServer : IDisposable
                     Target = o.Type == ObjectiveType.Collect ? o.Item : (uint)Math.Max(0, o.Creature),
                     Count = (ushort)o.Count,
                     Text = ObjectiveText(content, o),
-                    Map = o.Type == ObjectiveType.Explore ? (ushort)o.Map : (ushort)0,
-                    X = o.X,
-                    Z = o.Z,
-                    Radius = o.Radius,
+                    Areas = QuestAreas.For(content, o),
                 });
             }
             info.RewardItems.AddRange(q.Rewards.Items.Select(r => new QuestItemReward { Item = r.Item, Count = (ushort)r.Count }));

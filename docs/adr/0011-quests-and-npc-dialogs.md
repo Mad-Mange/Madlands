@@ -19,6 +19,7 @@
 - Taking, turning in and abandoning are requests the server checks: the NPC must be in reach and actually give or end that quest, prerequisites must be met, the objectives done and the rewards must fit in the bags (the collected items are handed in first and put back if they still do not fit).
 - Abandoning a quest destroys its quest-only items unless another quest needs them.
 - The quest log is saved with the character (ADR 0010).
+- Each objective carries the areas where it can be done, worked out from content at startup (`QuestAreas`): the explore circle, or circles around the spawns of the creatures to kill, of the creatures whose loot drops the item to collect, or of the NPC to talk to (spawns within 70 m share a circle, at most four per objective). The world map draws them until the objective is done.
 
 **NPC dialogs**
 

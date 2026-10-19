@@ -214,6 +214,8 @@ namespace Madlands.Client
             if (_areasForQuestLogVersion == _questLogVersion) return;
             _areasForQuestLogVersion = _questLogVersion;
             _worldAreas.Clear();
+            // One label per objective, on its busiest area (the first); objectives sharing a circle share a label.
+            var labels = new List<(Vector2 Center, float Radius, string Text)>();
             foreach (var quest in _client.Quests.Active)
             {
                 var info = _client.Data.GetQuest(quest.QuestId);
@@ -222,23 +224,37 @@ namespace Madlands.Client
                 {
                     var o = info.ObjectiveList[i];
                     bool done = i < quest.Progress.Length && quest.Progress[i] >= o.Count;
-                    if (o.Type != ObjectiveType.Explore || done || o.Map != _map.mapId) continue;
-                    var center = ToView(o.X, o.Z);
-                    float r = Mathf.Max(6f, o.Radius * ppm);
-                    var area = new VisualElement { pickingMode = PickingMode.Ignore };
-                    area.AddToClassList("map-area");
-                    area.style.left = center.x - r;
-                    area.style.top = center.y - r;
-                    area.style.width = r * 2f;
-                    area.style.height = r * 2f;
-                    area.style.borderTopLeftRadius = area.style.borderTopRightRadius = area.style.borderBottomLeftRadius = area.style.borderBottomRightRadius = r;
-                    _worldAreas.Add(area);
-                    var label = new Label(o.Text) { pickingMode = PickingMode.Ignore };
-                    label.AddToClassList("map-area-label");
-                    label.style.left = center.x - 100f;
-                    label.style.top = center.y + r + 2f;
-                    _worldAreas.Add(label);
+                    if (done || o.Areas == null) continue;
+                    string text = QuestUi.ObjectiveLine(o, i < quest.Progress.Length ? quest.Progress[i] : 0);
+                    bool labeled = false;
+                    foreach (var place in o.Areas)
+                    {
+                        if (place.Map != _map.mapId) continue;
+                        var center = ToView(place.X, place.Z);
+                        float r = Mathf.Max(6f, place.Radius * ppm);
+                        var area = new VisualElement { pickingMode = PickingMode.Ignore };
+                        area.AddToClassList("map-area");
+                        area.style.left = center.x - r;
+                        area.style.top = center.y - r;
+                        area.style.width = r * 2f;
+                        area.style.height = r * 2f;
+                        area.style.borderTopLeftRadius = area.style.borderTopRightRadius = area.style.borderBottomLeftRadius = area.style.borderBottomRightRadius = r;
+                        _worldAreas.Add(area);
+                        if (labeled) continue;
+                        labeled = true;
+                        int same = labels.FindIndex(l => Vector2.Distance(l.Center, center) < Mathf.Max(l.Radius, r) * 0.5f);
+                        if (same < 0) labels.Add((center, r, text));
+                        else labels[same] = (labels[same].Center, Mathf.Max(labels[same].Radius, r), labels[same].Text + "\n" + text);
+                    }
                 }
+            }
+            foreach (var (center, r, text) in labels)
+            {
+                var label = new Label(text) { pickingMode = PickingMode.Ignore };
+                label.AddToClassList("map-area-label");
+                label.style.left = center.x - 100f;
+                label.style.top = center.y + r + 2f;
+                _worldAreas.Add(label);
             }
         }
 

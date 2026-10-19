@@ -1,4 +1,5 @@
 using Madlands.Content;
+using Madlands.Server.Quests;
 using Madlands.Shared;
 using Madlands.Shared.Game;
 using Madlands.Shared.Terrain;
@@ -203,7 +204,52 @@ public class ContentLoaderTests
         {
             Assert.Contains(quest.Giver, spawned);
             Assert.Contains(quest.Ender, spawned);
+            // ...and the world map shows where to do each objective.
+            foreach (var objective in quest.Objectives)
+                Assert.True(QuestAreas.For(db, objective).Count > 0, $"Quest {quest.Id}: no map area for a {objective.Type} objective");
         }
+    }
+
+    [Fact]
+    public void Quest_areas_circle_where_the_creatures_live()
+    {
+        var map = new MapDefinition { Id = 1, Name = "Areas" };
+        var spawns = new List<SpawnDefinition>
+        {
+            // Two packs of wolves 200 m apart, and one item-dropping boar.
+            new() { Creature = 1, X = 0, Z = 0, WanderRadius = 5 },
+            new() { Creature = 1, X = 20, Z = 0, WanderRadius = 5 },
+            new() { Creature = 1, X = 10, Z = 10 },
+            new() { Creature = 1, X = 200, Z = 0 },
+            new() { Creature = 2, X = -100, Z = 50, WanderRadius = 10 },
+            // A far roaming bear reaches its neighbor's spawn: one circle for both.
+            new() { Creature = 3, X = -250, Z = -250, WanderRadius = 75 },
+            new() { Creature = 3, X = -170, Z = -250 },
+        };
+        var content = new ContentDatabase(
+            new[] { new LoadedMap(map, HeightMap.CreateFlat(-300, -300, 10, 61, 61, 0f), spawns: spawns) },
+            creatures: [new CreatureDefinition { Id = 1, Name = "Wolf" }, new CreatureDefinition { Id = 2, Name = "Boar", Loot = 7 }],
+            lootTables: [new LootTableDefinition { Id = 7, Groups = { new LootGroupDefinition { Chance = 0.5f, Items = { 3001 } } } }]);
+
+        var wolves = QuestAreas.For(content, new QuestObjectiveDefinition { Type = ObjectiveType.Kill, Creature = 1, Count = 4 });
+        Assert.Equal(2, wolves.Count);
+        // The pack first (three spawns), centered between them and reaching past the farthest one's wander radius.
+        Assert.Equal(10f, wolves[0].X, 3);
+        Assert.Equal(10f / 3f, wolves[0].Z, 3);
+        Assert.True(wolves[0].Radius >= MathF.Sqrt(100f + 100f / 9f) + 5f);
+        Assert.Equal(200f, wolves[1].X);
+        Assert.Equal(QuestAreas.MinRadius, wolves[1].Radius);
+
+        var meat = QuestAreas.For(content, new QuestObjectiveDefinition { Type = ObjectiveType.Collect, Item = 3001, Count = 3 });
+        Assert.Equal((ushort)1, Assert.Single(meat).Map);
+        Assert.Equal(-100f, meat[0].X);
+        Assert.Equal(10f + QuestAreas.Margin, meat[0].Radius);
+
+        var place = Assert.Single(QuestAreas.For(content, new QuestObjectiveDefinition { Type = ObjectiveType.Explore, Map = 1, X = 5, Z = 6, Radius = 30 }));
+        Assert.Equal(30f, place.Radius);
+        var bears = Assert.Single(QuestAreas.For(content, new QuestObjectiveDefinition { Type = ObjectiveType.Kill, Creature = 3 }));
+        Assert.Equal((-210f, 40f + 75f + QuestAreas.Margin), (bears.X, bears.Radius));
+        Assert.Empty(QuestAreas.For(content, new QuestObjectiveDefinition { Type = ObjectiveType.Kill, Creature = 4 }));
     }
 }
 

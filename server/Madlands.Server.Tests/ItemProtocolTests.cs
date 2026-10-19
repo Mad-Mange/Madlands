@@ -136,7 +136,11 @@ public class ItemProtocolTests
             Completion = "Thanks.", EnderName = "Captain Edda Brand", RewardXp = 900, RewardMoney = 150,
         };
         quest.ObjectiveList.Add(new QuestObjectiveInfo { Type = ObjectiveType.Kill, Target = 3, Count = 6, Text = "Shard Bandit slain" });
-        quest.ObjectiveList.Add(new QuestObjectiveInfo { Type = ObjectiveType.Explore, Target = 0, Count = 1, Text = "Scout the camp", Map = 1, X = 95, Z = 75, Radius = 22 });
+        quest.ObjectiveList.Add(new QuestObjectiveInfo
+        {
+            Type = ObjectiveType.Explore, Target = 0, Count = 1, Text = "Scout the camp",
+            Areas = new List<QuestArea> { new QuestArea { Map = 1, X = 95, Z = 75, Radius = 22 }, new QuestArea { Map = 2, X = -3, Z = 4, Radius = 30 } },
+        });
         quest.RewardItems.Add(new QuestItemReward { Item = 4003, Count = 2 });
         quest.RewardChoices.Add(new QuestItemReward { Item = 1020, Count = 1 });
         quest.RewardChoices.Add(new QuestItemReward { Item = 1021, Count = 1 });
@@ -157,7 +161,9 @@ public class ItemProtocolTests
         var q = copy.Quests.Single();
         Assert.Equal((quest.Title, quest.Level, quest.Details, quest.Objectives, quest.Progress, quest.Completion, quest.EnderName),
             (q.Title, q.Level, q.Details, q.Objectives, q.Progress, q.Completion, q.EnderName));
-        Assert.Equal(quest.ObjectiveList, q.ObjectiveList);
+        Assert.Equal(quest.ObjectiveList.Select(o => (o.Type, o.Target, o.Count, o.Text)), q.ObjectiveList.Select(o => (o.Type, o.Target, o.Count, o.Text)));
+        Assert.Empty(q.ObjectiveList[0].Areas);
+        Assert.Equal(quest.ObjectiveList[1].Areas, q.ObjectiveList[1].Areas);
         Assert.Equal(quest.RewardItems, q.RewardItems);
         Assert.Equal(quest.RewardChoices, q.RewardChoices);
         Assert.Equal((900, 150u), (q.RewardXp, q.RewardMoney));

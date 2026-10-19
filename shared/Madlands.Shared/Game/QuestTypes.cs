@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Madlands.Shared.Net;
 
@@ -39,19 +40,30 @@ namespace Madlands.Shared.Game
         Complete = 2,
     }
 
+    /// <summary>A circle on a map where an objective can be done (meters).</summary>
+    public struct QuestArea
+    {
+        public ushort Map;
+        public float X;
+        public float Z;
+        public float Radius;
+    }
+
     public struct QuestObjectiveInfo
     {
+        public const int MaxAreas = 4;
+
         public ObjectiveType Type;
         /// <summary>Creature id (kill, talk) or item id (collect); 0 for explore.</summary>
         public uint Target;
         public ushort Count;
         /// <summary>Quest log line, e.g. "Mire Frog slain" or "Scout the bandit camp".</summary>
         public string Text;
-        /// <summary>Explore: the place to reach (map, center, radius in meters), drawn on the world map. 0 otherwise.</summary>
-        public ushort Map;
-        public float X;
-        public float Z;
-        public float Radius;
+        /// <summary>
+        /// Where to go, drawn on the world map: the place to explore, where the creatures to kill live,
+        /// where the creatures that drop an item to collect live, or where the NPC to talk to stands.
+        /// </summary>
+        public List<QuestArea> Areas;
     }
 
     public struct QuestItemReward
@@ -107,10 +119,15 @@ namespace Madlands.Shared.Game
                 w.WriteUInt(o.Target);
                 w.WriteUShort(o.Count);
                 w.WriteString(o.Text);
-                w.WriteUShort(o.Map);
-                w.WriteFloat(o.X);
-                w.WriteFloat(o.Z);
-                w.WriteFloat(o.Radius);
+                int areas = o.Areas == null ? 0 : Math.Min(o.Areas.Count, QuestObjectiveInfo.MaxAreas);
+                w.WriteByte((byte)areas);
+                for (int a = 0; a < areas; a++)
+                {
+                    w.WriteUShort(o.Areas[a].Map);
+                    w.WriteFloat(o.Areas[a].X);
+                    w.WriteFloat(o.Areas[a].Z);
+                    w.WriteFloat(o.Areas[a].Radius);
+                }
             }
             w.WriteInt(RewardXp);
             w.WriteUInt(RewardMoney);
@@ -138,10 +155,19 @@ namespace Madlands.Shared.Game
                 o.Target = r.ReadUInt();
                 o.Count = r.ReadUShort();
                 o.Text = r.ReadString(MaxTitleBytes);
-                o.Map = r.ReadUShort();
-                o.X = r.ReadFloat();
-                o.Z = r.ReadFloat();
-                o.Radius = r.ReadFloat();
+                int areas = r.ReadByte();
+                if (areas > QuestObjectiveInfo.MaxAreas) throw new PacketException("Objective with " + areas + " areas.");
+                o.Areas = new List<QuestArea>(areas);
+                for (int a = 0; a < areas; a++)
+                {
+                    QuestArea area;
+                    area.Map = r.ReadUShort();
+                    area.X = r.ReadFloat();
+                    area.Z = r.ReadFloat();
+                    area.Radius = r.ReadFloat();
+                    if (!float.IsFinite(area.X) || !float.IsFinite(area.Z) || !float.IsFinite(area.Radius)) throw new PacketException("Bad quest area.");
+                    o.Areas.Add(area);
+                }
                 q.ObjectiveList.Add(o);
             }
             q.RewardXp = r.ReadInt();
