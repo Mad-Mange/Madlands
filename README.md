@@ -318,7 +318,7 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | Click an item | Pick it up; click a slot to put it down (or drag). Drop it outside the windows to destroy it |
 | Right click an item | Use, equip or unequip it; sell it while a vendor is open |
 | Tab | Cycle through enemies in front of you |
-| 1–0, -, = | Action bar (hover a button for its tooltip). Drag a button onto another slot to swap them, or off the bar to take it off |
+| 1–0, -, = | Action bar (hover a button for its tooltip). Shift-drag a button onto another slot to swap them, or off the bar to take it off |
 | P | Spellbook: drag spells onto the action bar |
 | Right click a buff | Cancel it |
 | Enter | Chat. Lines starting with `.` are GM commands; `.help` lists them |

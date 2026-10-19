@@ -30,9 +30,10 @@ namespace Madlands.Client
         /// <summary>
         /// Lets the mouse drag what <paramref name="source"/> holds (<paramref name="spell"/>, read when the drag
         /// starts); <paramref name="slot"/> is its action bar slot or -1; <paramref name="click"/> runs on a press
-        /// that does not drag.
+        /// that does not drag. With <paramref name="shiftToDrag"/> a drag only starts while Shift is held (the
+        /// action bar: no spell moves by accident in a fight).
         /// </summary>
-        public void Attach(VisualElement source, Func<uint> spell, int slot, Action click)
+        public void Attach(VisualElement source, Func<uint> spell, int slot, Action click, bool shiftToDrag = false)
         {
             bool pressed = false, dragging = false;
             uint held = 0;
@@ -49,7 +50,7 @@ namespace Madlands.Client
             source.RegisterCallback<PointerMoveEvent>(e =>
             {
                 if (!pressed || !source.HasPointerCapture(e.pointerId)) return;
-                if (!dragging && Vector2.Distance(e.position, start) > StartPixels && (held = spell()) != 0)
+                if (!dragging && (!shiftToDrag || e.shiftKey) && Vector2.Distance(e.position, start) > StartPixels && (held = spell()) != 0)
                 {
                     dragging = true;
                     ShowGhost(held);

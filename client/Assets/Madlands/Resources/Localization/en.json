@@ -242,7 +242,7 @@
   "spell.melee": "Melee",
   "spell.meleeRange": "Melee range",
   "spell.range": "{0} m range",
-  "spellbook.hint": "Drag a spell onto the action bar; drag one off the bar to take it off. Click to cast.",
+  "spellbook.hint": "Drag a spell onto the action bar. Hold Shift to drag a button on the bar to another slot, or off the bar. Click to cast.",
   "spellbook.learned": "Learned at level {0}",
   "stat.Agility": "Agility",
   "stat.Armor": "Armor",

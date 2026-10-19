@@ -535,8 +535,8 @@ namespace Madlands.Client
                 root.Add(cooldown);
                 root.Add(key);
                 var slot = new Slot { Root = root, Icon = icon, Shade = shade, Cooldown = cooldown, Key = key };
-                // Click to cast; drag onto another slot to swap, or off the bar to take the spell off.
-                _spellDrag.Attach(root, () => slot.SpellId, i, () => UseSpell(slot.SpellId));
+                // Click to cast; Shift-drag onto another slot to swap, or off the bar to take the spell off.
+                _spellDrag.Attach(root, () => slot.SpellId, i, () => UseSpell(slot.SpellId), shiftToDrag: true);
                 root.RegisterCallback<PointerEnterEvent>(_ => ShowTooltip(slot.SpellId, root, 0));
                 root.RegisterCallback<PointerLeaveEvent>(_ => HideTooltip());
                 _slots[i] = slot;
