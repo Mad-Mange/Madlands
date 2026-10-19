@@ -34,6 +34,12 @@ public sealed class Player : Unit
     public ClassDefinition Class { get; }
     public RaceDefinition Race { get; }
     public int Xp;
+    /// <summary>Rested experience left (<see cref="Combat.Experience.RestedBonus"/>); whole points are saved and shown.</summary>
+    public double RestedXp;
+    /// <summary>In a rest area (a village), building up rested experience.</summary>
+    public bool Resting;
+    /// <summary>When rest was last checked; -1 = not yet.</summary>
+    public long RestCheckedAtMs = -1;
     public ushort CorrectionId;
     public long NextSaveAtMs;
 

@@ -868,7 +868,7 @@ namespace Madlands.Client.Editor
             // Named places, for the minimap and "entering" messages. The first match wins.
             info.areas = new[]
             {
-                new MapArea { name = "Mirewatch", center = Village, radius = VillageRadius + 8f, music = "music_mirewatch", ambience = "amb_village" },
+                new MapArea { name = "Mirewatch", center = Village, radius = VillageRadius + 8f, music = "music_mirewatch", ambience = "amb_village", rest = true },
                 new MapArea { name = "Westbrook", center = Farm, radius = 110f },
                 new MapArea { name = "The Old Mill", center = OldMill, radius = 30f },
                 new MapArea { name = "Reedfen", center = Reedfen, radius = 160f, ambience = "amb_marsh" },

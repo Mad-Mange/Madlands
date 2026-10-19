@@ -142,11 +142,16 @@ public class CombatProtocolTests
     [Fact]
     public void Player_messages_roundtrip()
     {
-        var stats = new PlayerStats { Xp = 250, XpToNextLevel = 900, MeleeMinDamage = 5, MeleeMaxDamage = 9, MeleeSpeedMs = 2000, CritChance = 6.5f, SpellCritChance = 5.5f, DodgeChance = 6f };
+        var stats = new PlayerStats
+        {
+            Xp = 250, XpToNextLevel = 900, RestedXp = 340, Resting = true, MeleeMinDamage = 5, MeleeMaxDamage = 9, MeleeSpeedMs = 2000,
+            CritChance = 6.5f, SpellCritChance = 5.5f, DodgeChance = 6f,
+        };
         stats.Stats[(int)StatType.Strength] = 25;
         stats.Stats[(int)StatType.AttackPower] = 30;
         var s = Roundtrip(stats);
         Assert.Equal((250, 900, 25, 30, 6.5f), (s.Xp, s.XpToNextLevel, s.Stats[(int)StatType.Strength], s.Stats[(int)StatType.AttackPower], s.CritChance));
+        Assert.Equal((340, true, 6f), (s.RestedXp, s.Resting, s.DodgeChance));
 
         var book = new Spellbook();
         book.SpellIds.AddRange(new uint[] { 1, 100, 103 });
@@ -155,7 +160,7 @@ public class CombatProtocolTests
         var chat = Roundtrip(new ChatMessage { Channel = ChatChannel.Say, Sender = Player, SenderName = "Alice", Text = "For Calderra!" });
         Assert.Equal((ChatChannel.Say, Player, "Alice", "For Calderra!"), (chat.Channel, chat.Sender, chat.SenderName, chat.Text));
 
-        var xp = Roundtrip(new ExperienceGained { Amount = 55, Victim = Wolf });
-        Assert.Equal((55, Wolf), (xp.Amount, xp.Victim));
+        var xp = Roundtrip(new ExperienceGained { Amount = 110, RestedBonus = 55, Victim = Wolf });
+        Assert.Equal((110, 55, Wolf), (xp.Amount, xp.RestedBonus, xp.Victim));
     }
 }

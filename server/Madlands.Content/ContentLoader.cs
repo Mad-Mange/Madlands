@@ -124,6 +124,9 @@ public static class ContentLoader
                 errors.Add($"{heightPath}: map extends beyond +-{max} m from the origin (float precision limit)");
             if (!heightMap.Contains(def.Spawn.X, def.Spawn.Z))
                 errors.Add($"{file}: spawn ({def.Spawn.X}, {def.Spawn.Z}) is outside the height map");
+            foreach (var area in def.RestAreas)
+                if (area.Radius <= 0f || !heightMap.Contains(area.X, area.Z))
+                    errors.Add($"{file}: rest area '{area.Name}' needs a positive radius and a center on the height map");
 
             CollisionMesh? collision = null;
             if (def.Collision is not null)
@@ -186,6 +189,8 @@ public static class ContentLoader
             if (levels.XpToNextLevel.Count != levels.MaxLevel - 1)
                 Error($"levels.json: xpToNextLevel needs {levels.MaxLevel - 1} entries (one per level below the cap), has {levels.XpToNextLevel.Count}");
             if (levels.XpToNextLevel.Any(xp => xp <= 0)) Error("levels.json: every xpToNextLevel entry must be positive");
+            if (levels.Rest.PercentPerHour < 0f || levels.Rest.MaxPercent < 0f || levels.Rest.ElsewhereFactor is < 0f or > 1f)
+                Error("levels.json: rest needs percentPerHour and maxPercent of at least 0 and an elsewhereFactor in 0..1");
 
             foreach (var f in factions)
                 foreach (var id in f.Friendly.Concat(f.Hostile).Where(id => !factionIds.Contains(id)))

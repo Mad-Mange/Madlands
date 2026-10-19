@@ -161,7 +161,7 @@ public sealed class InMemoryGameDatabase : IGameDatabase
                 _characters[s.CharacterId] = c with
                 {
                     MapId = s.MapId, X = s.X, Y = s.Y, Z = s.Z, Yaw = s.Yaw, Level = s.Level, Xp = s.Xp, Health = s.Health, Power = s.Power,
-                    Money = s.Money, StarterKit = s.StarterKit,
+                    Money = s.Money, StarterKit = s.StarterKit, RestedXp = s.RestedXp, LastSavedUtc = DateTime.UtcNow,
                 };
                 _data[s.CharacterId] = new CharacterData(s.Items.ToArray(), s.Quests.Select(q => q with { Progress = q.Progress.ToArray() }).ToArray());
             }

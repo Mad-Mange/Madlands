@@ -274,7 +274,7 @@ public sealed class GameServer : IDisposable
         var quests = player.Quests.Active.Select(q => new QuestRecord(q.Quest.Id, false, q.Counts.ToArray()))
             .Concat(player.Quests.Rewarded.Select(id => new QuestRecord(id, true, Array.Empty<int>()))).ToArray();
         return new CharacterSnapshot(player.CharacterId, player.Map?.MapId ?? 0, p.X, p.Y, p.Z, player.Movement.Yaw, player.Level,
-            player.Xp, player.Health, player.Power, player.Inventory.Money, player.StarterKitGiven, items, quests);
+            player.Xp, player.Health, player.Power, player.Inventory.Money, player.StarterKitGiven, items, quests, (int)player.RestedXp);
     }
 
     // ------------------------------------------------------------------ messages
@@ -538,7 +538,15 @@ public sealed class GameServer : IDisposable
             NextSaveAtMs = now + SaveIntervalMs,
             GmLevel = _options.GmAll ? Math.Max(1, result.GmLevel) : result.GmLevel,
             StarterKitGiven = character.StarterKit,
+            RestedXp = Math.Max(0, character.RestedXp),
         };
+        // Rest built up while logged out: at full speed if that was in a village, slower elsewhere.
+        if (character.LastSavedUtc is { } saved)
+        {
+            bool village = map.MapId == character.MapId && map.Map.Definition.IsRestArea(character.X, character.Z);
+            double away = (DateTime.UtcNow - saved).TotalSeconds;
+            CombatSystem.AddRest(player, content.Levels, Experience.RestGained(content.Levels.Rest, content.Levels.XpToNext(player.Level), away, village));
+        }
         RestoreItemsAndQuests(player, content, character, result.Data ?? CharacterData.Empty);
         if (!player.StarterKitGiven) map.Items.GiveStartingItems(player);
         player.Inventory.ClearChanges();

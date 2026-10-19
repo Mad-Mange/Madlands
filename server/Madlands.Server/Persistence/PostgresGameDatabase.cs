@@ -11,7 +11,8 @@ namespace Madlands.Server.Persistence;
 /// </summary>
 public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
 {
-    private const string CharacterColumns = "id, account_id, name, race, class, level, map_id, pos_x, pos_y, pos_z, yaw, xp, health, power, money, starter_kit";
+    private const string CharacterColumns =
+        "id, account_id, name, race, class, level, map_id, pos_x, pos_y, pos_z, yaw, xp, health, power, money, starter_kit, rested_xp, last_saved_at";
 
     private readonly NpgsqlDataSource _dataSource;
 
@@ -211,10 +212,11 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
             """
             UPDATE characters
             SET map_id = @MapId, pos_x = @X, pos_y = @Y, pos_z = @Z, yaw = @Yaw, level = @Level,
-                xp = @Xp, health = @Health, power = @Power, money = @Money, starter_kit = @StarterKit, last_saved_at = now()
+                xp = @Xp, health = @Health, power = @Power, money = @Money, starter_kit = @StarterKit, rested_xp = @RestedXp,
+                last_saved_at = now()
             WHERE id = @CharacterId
             """,
-            new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level, s.Xp, s.Health, s.Power, s.Money, s.StarterKit },
+            new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level, s.Xp, s.Health, s.Power, s.Money, s.StarterKit, s.RestedXp },
             tx, cancellationToken: ct));
 
         // Items and quests are rewritten as a whole: one statement each, whatever their number.
@@ -267,9 +269,12 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         public int? Power { get; set; }
         public long Money { get; set; }
         public bool StarterKit { get; set; }
+        public int RestedXp { get; set; }
+        public DateTime? LastSavedAt { get; set; }
 
         public CharacterRecord ToRecord() =>
-            new(Id, AccountId, Name, (byte)Race, (byte)Class, (byte)Level, (ushort)MapId, PosX, PosY, PosZ, Yaw, Xp, Health, Power, Money, StarterKit);
+            new(Id, AccountId, Name, (byte)Race, (byte)Class, (byte)Level, (ushort)MapId, PosX, PosY, PosZ, Yaw, Xp, Health, Power, Money, StarterKit,
+                RestedXp, LastSavedAt is { } saved ? DateTime.SpecifyKind(saved, DateTimeKind.Utc) : null);
     }
 
     private sealed class ItemRow

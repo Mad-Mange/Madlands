@@ -265,6 +265,7 @@ public sealed class MapInstance
         {
             Combat.UpdateUnit(_players[i], nowMs);
             Quests.UpdateExplore(_players[i], nowMs);
+            Combat.UpdateRest(_players[i], nowMs);
         }
         for (int i = 0; i < _creatures.Count; i++)
         {
@@ -429,6 +430,8 @@ public sealed class MapInstance
         player.StatsDirty = false;
         _statsMsg.Xp = player.Xp;
         _statsMsg.XpToNextLevel = Content.Levels.XpToNext(player.Level);
+        _statsMsg.RestedXp = (int)player.RestedXp;
+        _statsMsg.Resting = player.Resting;
         StatFormulas.FillPlayerStats(_statsMsg, player);
         Send(player, _statsMsg);
     }

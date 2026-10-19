@@ -11,8 +11,8 @@ namespace Madlands.Client
     /// <summary>
     /// The minimap (top right, north up, mouse wheel zooms) and the world map (M). Both draw the map
     /// image Export Map rendered from above (<see cref="MapInfo.worldMap"/>), the player's arrow,
-    /// other players, NPCs with their quest marks, and on the world map the places active quests
-    /// send you to explore.
+    /// other players, NPCs with their quest marks, and yellow circles where the active quests'
+    /// objectives are done (labeled on the world map).
     /// </summary>
     public sealed class MapUi
     {
@@ -26,9 +26,19 @@ namespace Madlands.Client
             public Label Text;
         }
 
+        /// <summary>A circle where an active quest objective is done (meters), and its map label.</summary>
+        private struct QuestPlace
+        {
+            public Vector2 Center;
+            public float Radius;
+            public string Text;
+        }
+
         private readonly GameClient _client;
         private readonly VisualElement _minimap;
         private readonly VisualElement _miniImage;
+        private readonly VisualElement _miniAreaLayer;
+        private readonly List<VisualElement> _miniAreas = new List<VisualElement>();
         private readonly VisualElement _miniMarkers;
         private readonly VisualElement _miniArrow;
         private readonly Label _caption;
@@ -47,8 +57,12 @@ namespace Madlands.Client
         /// <summary>The player walked into a named place (also when entering the world in one).</summary>
         public event System.Action<string> AreaEntered;
         private int _zoom = 2;
-        private int _areasForQuestLogVersion = -1;
+        private readonly List<QuestPlace> _questPlaces = new List<QuestPlace>();
+        private readonly List<QuestPlace> _questLabels = new List<QuestPlace>();
         private int _questLogVersion;
+        private int _placesForQuestLogVersion = -1;
+        private int _placesVersion;
+        private int _worldAreasForPlaces = -1;
 
         public MapUi(VisualElement layer, GameClient client)
         {
@@ -59,10 +73,13 @@ namespace Madlands.Client
             _minimap.AddToClassList("minimap");
             _miniImage = new VisualElement { pickingMode = PickingMode.Ignore };
             _miniImage.AddToClassList("map-image");
+            _miniAreaLayer = new VisualElement { pickingMode = PickingMode.Ignore };
+            _miniAreaLayer.AddToClassList("layer");
             _miniMarkers = new VisualElement { pickingMode = PickingMode.Ignore };
             _miniMarkers.AddToClassList("layer");
             _miniArrow = Arrow(_minimap);
             _minimap.Add(_miniImage);
+            _minimap.Add(_miniAreaLayer);
             _minimap.Add(_miniMarkers);
             _minimap.Add(_miniArrow);
             _minimap.RegisterCallback<WheelEvent>(e =>
@@ -122,7 +139,7 @@ namespace Madlands.Client
             _worldImage.style.left = 0;
             _worldImage.style.top = 0;
             _window.Title = map.mapName;
-            _areasForQuestLogVersion = -1;
+            _placesForQuestLogVersion = -1;
             _area = null;
         }
 
@@ -130,7 +147,7 @@ namespace Madlands.Client
         {
             if (_map == null || _map.worldMap == null) return;
             _window.Toggle();
-            _areasForQuestLogVersion = -1;
+            _worldAreasForPlaces = -1;
         }
 
         public void Close() => _window.Close();
@@ -158,6 +175,7 @@ namespace Madlands.Client
             }
             _caption.text = (area ?? _map.mapName) + "   " + Mathf.RoundToInt(me.Position.X).ToString(CultureInfo.InvariantCulture)
                             + ", " + Mathf.RoundToInt(me.Position.Z).ToString(CultureInfo.InvariantCulture);
+            RefreshQuestPlaces();
             UpdateMinimap(me.Position, me.Yaw);
             if (_window.IsOpen) UpdateWorldMap(me.Position, me.Yaw);
         }
@@ -175,8 +193,26 @@ namespace Madlands.Client
             Place(_miniArrow, half, half);
             _miniArrow.style.rotate = new Rotate(new Angle(yaw * Mathf.Rad2Deg, AngleUnit.Degree));
 
-            int used = 0;
             float radius = meters * 0.5f;
+            int shown = 0;
+            foreach (var place in _questPlaces)
+            {
+                float ax = place.Center.x - me.X, az = place.Center.y - me.Z;
+                float reach = radius + place.Radius;
+                if (ax * ax + az * az > reach * reach) continue;
+                if (shown == _miniAreas.Count)
+                {
+                    var circle = new VisualElement { pickingMode = PickingMode.Ignore };
+                    circle.AddToClassList("map-area");
+                    _miniAreaLayer.Add(circle);
+                    _miniAreas.Add(circle);
+                }
+                _miniAreas[shown].style.display = DisplayStyle.Flex;
+                SetCircle(_miniAreas[shown++], half + ax * ppm, half - az * ppm, Mathf.Max(4f, place.Radius * ppm));
+            }
+            for (int i = shown; i < _miniAreas.Count; i++) _miniAreas[i].style.display = DisplayStyle.None;
+
+            int used = 0;
             foreach (var entity in _client.World.Entities)
             {
                 if (!MarkerFor(entity, out string text, out string css)) continue;
@@ -211,11 +247,40 @@ namespace Madlands.Client
             }
             Hide(_worldPool, used);
 
-            if (_areasForQuestLogVersion == _questLogVersion) return;
-            _areasForQuestLogVersion = _questLogVersion;
+            if (_worldAreasForPlaces == _placesVersion) return;
+            _worldAreasForPlaces = _placesVersion;
             _worldAreas.Clear();
-            // One label per objective, on its busiest area (the first); objectives sharing a circle share a label.
-            var labels = new List<(Vector2 Center, float Radius, string Text)>();
+            foreach (var place in _questPlaces)
+            {
+                var center = ToView(place.Center.x, place.Center.y);
+                var area = new VisualElement { pickingMode = PickingMode.Ignore };
+                area.AddToClassList("map-area");
+                SetCircle(area, center.x, center.y, Mathf.Max(6f, place.Radius * ppm));
+                _worldAreas.Add(area);
+            }
+            foreach (var place in _questLabels)
+            {
+                var center = ToView(place.Center.x, place.Center.y);
+                var label = new Label(place.Text) { pickingMode = PickingMode.Ignore };
+                label.AddToClassList("map-area-label");
+                label.style.left = center.x - 100f;
+                label.style.top = center.y + Mathf.Max(6f, place.Radius * ppm) + 2f;
+                _worldAreas.Add(label);
+            }
+        }
+
+        /// <summary>
+        /// Collects the circles where the active quests' unfinished objectives are done on this map (meters),
+        /// when the quest log changed. One label per objective, on its busiest circle (the first); objectives
+        /// sharing a circle share a label.
+        /// </summary>
+        private void RefreshQuestPlaces()
+        {
+            if (_placesForQuestLogVersion == _questLogVersion) return;
+            _placesForQuestLogVersion = _questLogVersion;
+            _placesVersion++;
+            _questPlaces.Clear();
+            _questLabels.Clear();
             foreach (var quest in _client.Quests.Active)
             {
                 var info = _client.Data.GetQuest(quest.QuestId);
@@ -223,39 +288,42 @@ namespace Madlands.Client
                 for (int i = 0; i < info.ObjectiveList.Count; i++)
                 {
                     var o = info.ObjectiveList[i];
-                    bool done = i < quest.Progress.Length && quest.Progress[i] >= o.Count;
-                    if (done || o.Areas == null) continue;
-                    string text = QuestUi.ObjectiveLine(o, i < quest.Progress.Length ? quest.Progress[i] : 0);
+                    int done = i < quest.Progress.Length ? quest.Progress[i] : 0;
+                    if (done >= o.Count || o.Areas == null) continue;
+                    string text = QuestUi.ObjectiveLine(o, done);
                     bool labeled = false;
-                    foreach (var place in o.Areas)
+                    foreach (var area in o.Areas)
                     {
-                        if (place.Map != _map.mapId) continue;
-                        var center = ToView(place.X, place.Z);
-                        float r = Mathf.Max(6f, place.Radius * ppm);
-                        var area = new VisualElement { pickingMode = PickingMode.Ignore };
-                        area.AddToClassList("map-area");
-                        area.style.left = center.x - r;
-                        area.style.top = center.y - r;
-                        area.style.width = r * 2f;
-                        area.style.height = r * 2f;
-                        area.style.borderTopLeftRadius = area.style.borderTopRightRadius = area.style.borderBottomLeftRadius = area.style.borderBottomRightRadius = r;
-                        _worldAreas.Add(area);
+                        if (area.Map != _map.mapId) continue;
+                        var place = new QuestPlace { Center = new Vector2(area.X, area.Z), Radius = area.Radius, Text = text };
+                        _questPlaces.Add(place);
                         if (labeled) continue;
                         labeled = true;
-                        int same = labels.FindIndex(l => Vector2.Distance(l.Center, center) < Mathf.Max(l.Radius, r) * 0.5f);
-                        if (same < 0) labels.Add((center, r, text));
-                        else labels[same] = (labels[same].Center, Mathf.Max(labels[same].Radius, r), labels[same].Text + "\n" + text);
+                        int same = _questLabels.FindIndex(l => Vector2.Distance(l.Center, place.Center) < Mathf.Max(l.Radius, place.Radius) * 0.5f);
+                        if (same < 0)
+                        {
+                            _questLabels.Add(place);
+                        }
+                        else
+                        {
+                            var shared = _questLabels[same];
+                            shared.Radius = Mathf.Max(shared.Radius, place.Radius);
+                            shared.Text += "\n" + text;
+                            _questLabels[same] = shared;
+                        }
                     }
                 }
             }
-            foreach (var (center, r, text) in labels)
-            {
-                var label = new Label(text) { pickingMode = PickingMode.Ignore };
-                label.AddToClassList("map-area-label");
-                label.style.left = center.x - 100f;
-                label.style.top = center.y + r + 2f;
-                _worldAreas.Add(label);
-            }
+        }
+
+        /// <summary>Sizes a round element to radius <paramref name="r"/> around a point of its parent (pixels).</summary>
+        private static void SetCircle(VisualElement circle, float x, float y, float r)
+        {
+            circle.style.left = x - r;
+            circle.style.top = y - r;
+            circle.style.width = r * 2f;
+            circle.style.height = r * 2f;
+            circle.style.borderTopLeftRadius = circle.style.borderTopRightRadius = circle.style.borderBottomLeftRadius = circle.style.borderBottomRightRadius = r;
         }
 
         /// <summary>What an entity looks like on the maps: players as blue dots, NPCs as green dots or their quest mark.</summary>

@@ -58,6 +58,35 @@
           "default": 0
         }
       }
+    },
+    "restAreas": {
+      "type": "array",
+      "description": "Villages where characters build up rested experience (MapInfo areas marked rest).",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "x",
+          "z",
+          "radius"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "radius": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        }
+      }
     }
   }
 }

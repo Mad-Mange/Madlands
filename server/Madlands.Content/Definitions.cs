@@ -19,6 +19,26 @@ public sealed class MapDefinition
     /// <summary>Creature spawn list relative to the map folder; null = no creatures.</summary>
     public string? Spawns { get; set; }
     public SpawnPoint Spawn { get; set; } = new();
+    /// <summary>Villages: characters build up rested experience here (fast, logged in or out).</summary>
+    public List<RestAreaDefinition> RestAreas { get; set; } = new();
+
+    public bool IsRestArea(float x, float z)
+    {
+        foreach (var area in RestAreas)
+        {
+            float dx = x - area.X, dz = z - area.Z;
+            if (dx * dx + dz * dz <= area.Radius * area.Radius) return true;
+        }
+        return false;
+    }
+}
+
+public sealed class RestAreaDefinition
+{
+    public string Name { get; set; } = "";
+    public float X { get; set; }
+    public float Z { get; set; }
+    public float Radius { get; set; }
 }
 
 public sealed class SpawnPoint
@@ -487,4 +507,16 @@ public sealed class LevelTable
 
     /// <summary>0 at the level cap.</summary>
     public int XpToNext(int level) => level >= 1 && level < MaxLevel && level - 1 < XpToNextLevel.Count ? XpToNextLevel[level - 1] : 0;
+    public RestRules Rest { get; set; } = new();
+}
+
+/// <summary>Rested experience (levels.json "rest"); percentages are of the current level's experience bar.</summary>
+public sealed class RestRules
+{
+    /// <summary>Built up per hour in a rest area, logged in or out.</summary>
+    public float PercentPerHour { get; set; } = 2.5f;
+    /// <summary>Logged out outside a rest area, rest builds up this much slower (0.25 = a quarter of the speed).</summary>
+    public float ElsewhereFactor { get; set; } = 0.25f;
+    /// <summary>The pool never grows past this.</summary>
+    public float MaxPercent { get; set; } = 150f;
 }

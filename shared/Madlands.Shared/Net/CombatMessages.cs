@@ -417,6 +417,10 @@ namespace Madlands.Shared.Net
 
         public int Xp;
         public int XpToNextLevel;
+        /// <summary>Rested experience left: kills give double experience until it runs out.</summary>
+        public int RestedXp;
+        /// <summary>In a rest area (a village), building up rested experience.</summary>
+        public bool Resting;
         /// <summary>Indexed by <see cref="StatType"/>.</summary>
         public readonly int[] Stats = new int[StatCount];
         public int MeleeMinDamage;
@@ -433,6 +437,8 @@ namespace Madlands.Shared.Net
         {
             w.WriteInt(Xp);
             w.WriteInt(XpToNextLevel);
+            w.WriteInt(RestedXp);
+            w.WriteBool(Resting);
             for (int i = 0; i < StatCount; i++) w.WriteInt(Stats[i]);
             w.WriteInt(MeleeMinDamage);
             w.WriteInt(MeleeMaxDamage);
@@ -446,6 +452,8 @@ namespace Madlands.Shared.Net
         {
             Xp = r.ReadInt();
             XpToNextLevel = r.ReadInt();
+            RestedXp = r.ReadInt();
+            Resting = r.ReadBool();
             for (int i = 0; i < StatCount; i++) Stats[i] = r.ReadInt();
             MeleeMinDamage = r.ReadInt();
             MeleeMaxDamage = r.ReadInt();
@@ -510,8 +518,11 @@ namespace Madlands.Shared.Net
 
     public sealed class ExperienceGained : IMessage
     {
+        /// <summary>Everything gained, the rested bonus included.</summary>
         public int Amount;
-        /// <summary>The creature killed, or Empty for other sources (GM command, quests later).</summary>
+        /// <summary>The part of <see cref="Amount"/> that came from rested experience.</summary>
+        public int RestedBonus;
+        /// <summary>The creature killed, or Empty for other sources (GM command, quests).</summary>
         public EntityGuid Victim;
 
         public Opcode Opcode => Opcode.ExperienceGained;
@@ -519,12 +530,14 @@ namespace Madlands.Shared.Net
         public void Write(PacketWriter w)
         {
             w.WriteInt(Amount);
+            w.WriteInt(RestedBonus);
             w.WriteGuid(Victim);
         }
 
         public void Read(ref PacketReader r)
         {
             Amount = r.ReadInt();
+            RestedBonus = r.ReadInt();
             Victim = r.ReadGuid();
         }
     }

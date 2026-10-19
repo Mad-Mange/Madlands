@@ -73,6 +73,9 @@ namespace Madlands.Client
         private bool _targetAurasDirty = true;
         private EntityGuid _shownTarget;
         private int _lastLevel;
+        private VisualElement _xpBar, _xpRested, _playerResting;
+        private bool _statsSeen, _wasResting;
+        private int _lastRested;
         private bool _subscribed;
 
         private GameClient Client => network.Client;
@@ -122,8 +125,11 @@ namespace Madlands.Client
             _targetCastFill = r.Q("target-cast-fill");
             _targetCastText = r.Q<Label>("target-cast-text");
             _actionBar = r.Q("action-bar");
+            _xpBar = r.Q("xp-bar");
             _xpFill = r.Q("xp-fill");
+            _xpRested = r.Q("xp-rested");
             _xpText = r.Q<Label>("xp-text");
+            _playerResting = r.Q("player-resting");
             _errorText = r.Q<Label>("error-text");
             _noticeText = r.Q<Label>("notice-text");
             _tooltip = r.Q("tooltip");
@@ -242,11 +248,16 @@ namespace Madlands.Client
             c.EnteredWorld += _ =>
             {
                 _lastLevel = 0;
+                _statsSeen = false;
                 _selfAurasDirty = _targetAurasDirty = true;
                 CloseWindows();
             };
             c.InventoryChanged += () => _inventory.Refresh();
-            c.StatsChanged += () => _inventory.Refresh();
+            c.StatsChanged += () =>
+            {
+                _inventory.Refresh();
+                OnRestChanged();
+            };
             c.MoneyChanged += OnMoneyChanged;
             c.ItemReceived += OnItemReceived;
             c.ActionFailed += (error, value) => ShowError(ActionErrorText(error, value));
@@ -697,8 +708,31 @@ namespace Madlands.Client
             int level = Client.Self.Values.Level;
             int needed = Client.Data.XpToNext(level);
             int xp = Client.Stats.Xp;
-            _xpFill.style.width = Length.Percent(needed > 0 ? Mathf.Clamp01((float)xp / needed) * 100f : 100f);
-            _xpText.text = needed > 0 ? Loc.T("hud.xp", level, xp, needed) : Loc.T("hud.xpMax", level);
+            int rested = needed > 0 ? Client.Stats.RestedXp : 0;
+            float filled = needed > 0 ? Mathf.Clamp01((float)xp / needed) : 1f;
+            _xpFill.style.width = Length.Percent(filled * 100f);
+            // Rested: a blue bar, and a darker stretch up to where the double experience ends (or the bar's end).
+            _xpBar.EnableInClassList("rested", rested > 0);
+            _xpRested.style.left = Length.Percent(filled * 100f);
+            _xpRested.style.width = Length.Percent(rested > 0 ? Mathf.Min(1f - filled, (float)rested / needed) * 100f : 0f);
+            _xpText.text = needed <= 0 ? Loc.T("hud.xpMax", level)
+                : rested > 0 ? Loc.T("hud.xpRested", level, xp, needed, rested)
+                : Loc.T("hud.xp", level, xp, needed);
+            _playerResting.EnableInClassList("hidden", !Client.Stats.Resting);
+        }
+
+        /// <summary>Tells the player when resting begins and when the rested bonus runs out (not when entering the world).</summary>
+        private void OnRestChanged()
+        {
+            var stats = Client.Stats;
+            if (_statsSeen)
+            {
+                if (stats.Resting && !_wasResting) _chat.AddLine(Loc.T("chat.resting"), "system");
+                if (stats.RestedXp == 0 && _lastRested > 0 && Client.Data.XpToNext(Client.Self.Values.Level) > 0) _chat.AddLine(Loc.T("chat.restedGone"), "system");
+            }
+            _statsSeen = true;
+            _wasResting = stats.Resting;
+            _lastRested = stats.RestedXp;
         }
 
         // ------------------------------------------------------------------ events
@@ -762,11 +796,11 @@ namespace Madlands.Client
 
         private bool IsMeleeSpell(uint spellId) => Client.Data.TryGetSpell(spellId, out var s) && SpellEffects.IsMelee(s);
 
-        private void OnExperience(int amount, EntityGuid victim)
+        private void OnExperience(int amount, int restedBonus, EntityGuid victim)
         {
             _overlay.Show(Client.LocalGuid, "+" + amount + " XP", "xp");
             string from = !victim.IsEmpty && Client.World.TryGet(victim, out var entity) ? Loc.T("chat.xpFrom", entity.Name) : "";
-            _chat.AddLine(Loc.T("chat.xpGained", amount, from), "combat");
+            _chat.AddLine(restedBonus > 0 ? Loc.T("chat.xpGainedRested", amount, from, restedBonus) : Loc.T("chat.xpGained", amount, from), "combat");
         }
 
         // ------------------------------------------------------------------ items and quests

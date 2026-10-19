@@ -21,6 +21,23 @@ public class CombatRulesTests
     }
 
     [Fact]
+    public void Rest_builds_up_in_villages_and_doubles_kills_while_it_lasts()
+    {
+        var rules = new Content.RestRules { PercentPerHour = 2.5f, ElsewhereFactor = 0.25f, MaxPercent = 150f };
+        Assert.Equal(225.0, Experience.RestGained(rules, 900, 10 * 3600, inRestArea: true), 6);  // a night in Mirewatch: 25% of the bar
+        Assert.Equal(56.25, Experience.RestGained(rules, 900, 10 * 3600, inRestArea: false), 6); // a quarter of that in the wild
+        Assert.Equal(0.0, Experience.RestGained(rules, 0, 3600, true));                           // nothing at the level cap
+        Assert.Equal(1350.0, Experience.MaxRested(rules, 900), 6);
+
+        double rested = 100;
+        Assert.Equal(40, Experience.RestedBonus(40, ref rested));   // double experience...
+        Assert.Equal(20.0, rested, 6);                              // ...and the pool shrinks by all of it
+        Assert.Equal(10, Experience.RestedBonus(40, ref rested));   // the bonus stops where the pool ends
+        Assert.Equal(0.0, rested);
+        Assert.Equal(0, Experience.RestedBonus(40, ref rested));
+    }
+
+    [Fact]
     public void Armor_and_rage_formulas()
     {
         Assert.Equal(0f, StatFormulas.ArmorReduction(0, 10));

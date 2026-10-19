@@ -13,6 +13,8 @@ namespace Madlands.Client
         [Tooltip("Music and ambience clips while inside (empty: the map's).")]
         public string music;
         public string ambience;
+        [Tooltip("A village: characters build up rested experience here (exported to map.json for the server).")]
+        public bool rest;
     }
 
     /// <summary>

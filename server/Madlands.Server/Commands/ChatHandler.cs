@@ -29,6 +29,7 @@ public sealed class ChatHandler
         Add("spawn", "<creature id or name> [count]", "Spawns creatures in front of you (they do not respawn).", Spawn);
         Add("level", "<level>", "Sets the level of your target player, or yours.", Level);
         Add("xp", "<amount>", "Gives you experience.", Xp);
+        Add("rested", "<amount>", "Sets your rested experience (kills give double until it runs out).", Rested);
         Add("kill", "", "Kills your target.", Kill);
         Add("damage", "<amount>", "Damages your target.", Damage);
         Add("heal", "", "Fully heals your target, or you.", Heal);
@@ -184,6 +185,15 @@ public sealed class ChatHandler
         int amount = Math.Max(0, ParseInt(args[0]));
         player.Map!.Combat.GiveXp(player, amount, EntityGuid.Empty, now);
         return $"Gave you {amount} experience.";
+    }
+
+    private static string? Rested(Player player, string[] args, long now)
+    {
+        if (args.Length != 1) throw new FormatException();
+        if (player.Level >= player.Map!.Content.Levels.MaxLevel) return "There is no rested experience at the level cap.";
+        player.RestedXp = Math.Max(0, ParseInt(args[0]));
+        player.StatsDirty = true;
+        return $"You have {(int)player.RestedXp} rested experience.";
     }
 
     private static string? Kill(Player player, string[] args, long now)

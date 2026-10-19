@@ -150,6 +150,26 @@ public static class Experience
         return Math.Max(0, (int)MathF.Round(xp * factor));
     }
 
+    // Rested experience (as in WoW): a pool that grows while a character rests in a village (logged in or out) or,
+    // slower, while logged out elsewhere. Kills give double experience until the bar reaches the rest mark: the pool
+    // shrinks by all a kill gives, bonus included. Quest experience leaves it alone. Rules in levels.json ("rest").
+
+    /// <summary>Rest built up over <paramref name="seconds"/> at a level whose bar is <paramref name="xpToNextLevel"/>.</summary>
+    public static double RestGained(RestRules rules, int xpToNextLevel, double seconds, bool inRestArea) =>
+        seconds <= 0 || xpToNextLevel <= 0 ? 0
+            : rules.PercentPerHour / 100.0 * xpToNextLevel * (inRestArea ? 1.0 : rules.ElsewhereFactor) * seconds / 3600.0;
+
+    public static double MaxRested(RestRules rules, int xpToNextLevel) => rules.MaxPercent / 100.0 * xpToNextLevel;
+
+    /// <summary>The rested bonus on a kill worth <paramref name="xp"/>; takes the kill and the bonus from <paramref name="rested"/>.</summary>
+    public static int RestedBonus(int xp, ref double rested)
+    {
+        if (xp <= 0 || rested <= 0) return 0;
+        int bonus = (int)Math.Min(xp, Math.Floor(rested / 2));
+        rested = Math.Max(0, rested - xp - bonus);
+        return bonus;
+    }
+
     /// <summary>Creatures at or below this level give no experience.</summary>
     public static int GrayLevel(int playerLevel) => playerLevel <= 5 ? 0 : playerLevel - 5 - playerLevel / 10;
 

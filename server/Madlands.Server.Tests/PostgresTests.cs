@@ -90,10 +90,14 @@ internal static class AccountAdminChecks
 
         var items = new[] { new ItemRecord(0, 14, 1001, 1), new ItemRecord(0, 16, 5001, 1), new ItemRecord(1, 3, 4001, 7), new ItemRecord(2, 5, 2003, 4) };
         var quests = new[] { new QuestRecord(3, false, new[] { 5 }), new QuestRecord(7, false, new[] { 2, 0, 1 }), new QuestRecord(1, true, Array.Empty<int>()) };
-        await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12, 123_456, true, items, quests));
+        Assert.Null(c.LastSavedUtc);
+        await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12, 123_456, true, items, quests, RestedXp: 640));
         var loaded = await db.LoadCharacterAsync(account, c.Id);
         Assert.Equal((-12.5f, 30.25f, 99f, 3.1f, (byte)7), (loaded!.X, loaded.Y, loaded.Z, loaded.Yaw, loaded.Level));
         Assert.Equal((345, (int?)80, (int?)12, 123_456L, true), (loaded.Xp, loaded.Health, loaded.Power, loaded.Money, loaded.StarterKit));
+        // Rested experience, and when it was saved (the time away is measured from it).
+        Assert.Equal(640, loaded.RestedXp);
+        Assert.InRange(loaded.LastSavedUtc!.Value, DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow.AddMinutes(5));
 
         var data = await db.LoadCharacterDataAsync(c.Id);
         Assert.Equal(items.OrderBy(i => i.Container).ThenBy(i => i.Slot), data.Items.OrderBy(i => i.Container).ThenBy(i => i.Slot));

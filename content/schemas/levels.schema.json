@@ -24,6 +24,31 @@
         "minimum": 1
       },
       "description": "One entry per level below the cap."
+    },
+    "rest": {
+      "type": "object",
+      "description": "Rested experience: kills give double experience while the pool lasts. Percentages are of the current level's bar.",
+      "additionalProperties": false,
+      "properties": {
+        "percentPerHour": {
+          "type": "number",
+          "minimum": 0,
+          "default": 2.5,
+          "description": "Built up per hour in a rest area (a village), logged in or out."
+        },
+        "elsewhereFactor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.25,
+          "description": "Logged out outside a rest area, rest builds up this much slower."
+        },
+        "maxPercent": {
+          "type": "number",
+          "minimum": 0,
+          "default": 150
+        }
+      }
     }
   }
 }

@@ -74,6 +74,14 @@ namespace Madlands.Client.Editor
             RenderWorldMap(info, minX, minZ, Mathf.Max(maxX - minX, maxZ - minZ));
 
             var spawn = info.spawnPoint != null ? info.spawnPoint : info.transform;
+            var rest = new StringBuilder();
+            foreach (var area in info.areas)
+            {
+                if (!area.rest) continue;
+                rest.Append(rest.Length == 0 ? "\n" : ",\n");
+                rest.Append(string.Format(CultureInfo.InvariantCulture, "    {{ \"name\": \"{0}\", \"x\": {1:0.00}, \"z\": {2:0.00}, \"radius\": {3:0.0} }}",
+                    area.name.Replace("\"", "'"), area.center.x, area.center.y, area.radius));
+            }
             File.WriteAllText(Path.Combine(dir, "map.json"), string.Format(CultureInfo.InvariantCulture,
 @"{{
   ""$schema"": ""../../schemas/map.schema.json"",
@@ -83,9 +91,10 @@ namespace Madlands.Client.Editor
   ""heightmap"": ""height.bin"",
   ""collision"": ""collision.bin"",
   ""spawns"": ""spawns.json"",
-  ""spawn"": {{ ""x"": {2:0.00}, ""z"": {3:0.00}, ""yawDegrees"": {4:0.0} }}
+  ""spawn"": {{ ""x"": {2:0.00}, ""z"": {3:0.00}, ""yawDegrees"": {4:0.0} }},
+  ""restAreas"": [{5}{6}]
 }}
-", info.mapId, info.mapName.Replace("\"", "'"), spawn.position.x, spawn.position.z, spawn.eulerAngles.y));
+", info.mapId, info.mapName.Replace("\"", "'"), spawn.position.x, spawn.position.z, spawn.eulerAngles.y, rest, rest.Length > 0 ? "\n  " : ""));
 
             string summary = $"Exported map {info.mapId} '{info.mapName}': {width}x{depth} samples @ {cell} m, x {minX}..{maxX}, z {minZ}..{maxZ}, " +
                              $"{collision.TriangleCount} obstacle triangles from {colliders} colliders, {spawnCount} creature spawns -> {dir}";

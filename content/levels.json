@@ -1,5 +1,6 @@
 {
   "$schema": "schemas/levels.schema.json",
   "maxLevel": 10,
-  "xpToNextLevel": [400, 900, 1400, 2100, 2800, 3600, 4500, 5400, 6500]
+  "xpToNextLevel": [400, 900, 1400, 2100, 2800, 3600, 4500, 5400, 6500],
+  "rest": { "percentPerHour": 2.5, "elsewhereFactor": 0.25, "maxPercent": 150 }
 }

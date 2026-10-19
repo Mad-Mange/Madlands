@@ -178,8 +178,8 @@ namespace Madlands.ClientCore
         public event Action<SpellFailed> SpellFailed;
         public event Action<CombatEvent> CombatEventReceived;
         public event Action<ChatMessage> ChatReceived;
-        /// <summary>Amount and the creature it came from (Empty for other sources).</summary>
-        public event Action<int, EntityGuid> ExperienceReceived;
+        /// <summary>Amount (the rested bonus included), the rested bonus, and the creature it came from (Empty for other sources).</summary>
+        public event Action<int, int, EntityGuid> ExperienceReceived;
         public event Action SpellbookChanged;
         public event Action StatsChanged;
         public event Action<EntityGuid> TargetChanged;
@@ -843,7 +843,7 @@ namespace Madlands.ClientCore
         private void HandleExperience(ref PacketReader r)
         {
             _xp.Read(ref r);
-            ExperienceReceived?.Invoke(_xp.Amount, _xp.Victim);
+            ExperienceReceived?.Invoke(_xp.Amount, _xp.RestedBonus, _xp.Victim);
         }
 
         private void HandleInventory(ref PacketReader r)

@@ -28,7 +28,11 @@ public class CombatIntegrationTests
             client.CombatEventReceived += e => Events.Add((e.Source, e.Target, e.SpellId, e.Amount, e.Flags));
             client.SpellFailed += f => Failures.Add(f.Result);
             client.ChatReceived += c => Chat.Add(c.Text);
-            client.ExperienceReceived += (amount, _) => Xp += amount;
+            client.ExperienceReceived += (amount, bonus, _) =>
+            {
+                Xp += amount;
+                RestedBonus += bonus;
+            };
         }
 
         public TestRealm Realm { get; }
@@ -37,6 +41,7 @@ public class CombatIntegrationTests
         public List<CastResult> Failures { get; } = new();
         public List<string> Chat { get; } = new();
         public int Xp;
+        public int RestedBonus;
 
         public void Pump(Func<bool> until, int timeoutMs = 8000) => Realm.Pump(new[] { Client }, until, timeoutMs);
         public void PumpFor(int ms) => Realm.PumpFor(new[] { Client }, ms);
@@ -299,5 +304,42 @@ public class CombatIntegrationTests
         using var again = new Session(realm, realm.Enter(account, character));
         again.Pump(() => again.Client.State == ClientState.InWorld && again.Client.Stats.Xp == 150);
         Assert.Equal(saved.Health, again.Client.Self.Values.Health);
+    }
+
+    [Fact]
+    public async Task Rested_experience_doubles_kills_and_is_kept_over_relogging()
+    {
+        var database = new Persistence.InMemoryGameDatabase();
+        var content = TestRealm.CombatContent(At(MireFrog, 0, 6));
+        content.Maps[1].Definition.RestAreas.Add(new RestAreaDefinition { Name = "Inn", X = 0, Z = 0, Radius = 15 });
+        await using var realm = await TestRealm.StartAsync(database, content, gmAll: true);
+        var (account, character) = await realm.NewPlayerAsync("rester", "Rester", Warrior);
+        int left;
+        using (var s = new Session(realm, realm.Enter(account, character)))
+        {
+            var c = s.Client;
+            s.Pump(() => c.State == ClientState.InWorld && c.Stats.Resting);   // the spawn is in the inn
+            s.Command(".rested 500");
+            s.Pump(() => c.Stats.RestedXp == 500);
+
+            c.SetTarget(s.Find("Mire Frog").Guid);
+            s.Command(".damage 9999");
+            s.Pump(() => s.Xp > 0 && c.Stats.RestedXp < 500);
+            Assert.True(s.RestedBonus > 0);
+            Assert.Equal(s.Xp, 2 * s.RestedBonus);                              // double experience...
+            Assert.Equal(500 - s.Xp, c.Stats.RestedXp);                         // ...taken from the pool, bonus included
+            left = c.Stats.RestedXp;
+
+            s.Command(".tele 100 100");
+            s.Pump(() => !c.Stats.Resting);
+            c.Disconnect();
+            realm.Pump(Array.Empty<GameClient>(), () => realm.Game.World.PlayerCount == 0);
+        }
+        await WorldIntegrationTests.WaitUntilAsync(() => realm.Host.Saver.SavedCount >= 1);
+        Assert.Equal(left, (await database.LoadCharacterAsync(1, (long)character.Id))!.RestedXp);
+
+        using var again = new Session(realm, realm.Enter(account, character));
+        again.Pump(() => again.Client.State == ClientState.InWorld && again.Client.Stats.RestedXp >= left);
+        Assert.False(again.Client.Stats.Resting);
     }
 }

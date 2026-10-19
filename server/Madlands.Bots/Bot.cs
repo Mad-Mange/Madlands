@@ -56,7 +56,7 @@ public sealed class Bot
         _client.Corrected += OnCorrected;
         _client.Disconnected += reason => { _inWorld = false; LastError = reason; };
         _client.CombatEventReceived += OnCombatEvent;
-        _client.ExperienceReceived += (amount, _) => XpGained += amount;
+        _client.ExperienceReceived += (amount, _, _) => XpGained += amount;
         _client.ItemReceived += item => { if (item.Source == ReceiveSource.Loot) ItemsLooted += item.Count; };
         _client.MoneyChanged += (delta, source) => { if (source == ReceiveSource.Loot) MoneyLooted += delta; };
         _client.ActionFailed += (error, _) => { if (error == ActionError.InventoryFull) DestroyJunk(); };

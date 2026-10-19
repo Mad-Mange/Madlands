@@ -12,6 +12,7 @@
             <ui:VisualElement name="player-frame" class="unit-frame player" picking-mode="Ignore">
                 <ui:VisualElement class="portrait" picking-mode="Ignore">
                     <ui:Label name="player-level" class="portrait-level" />
+                    <ui:Label name="player-resting" class="portrait-resting hidden" text="#hud.resting" picking-mode="Ignore" />
                 </ui:VisualElement>
                 <ui:VisualElement class="frame-body" picking-mode="Ignore">
                     <ui:Label name="player-name" class="frame-name" />
@@ -64,6 +65,7 @@
             <ui:VisualElement name="bottom-bar" class="bottom-bar" picking-mode="Ignore">
                 <ui:VisualElement name="action-bar" class="action-bar" picking-mode="Ignore" />
                 <ui:VisualElement name="xp-bar" class="xp-bar" picking-mode="Ignore">
+                    <ui:VisualElement name="xp-rested" class="xp-rested" picking-mode="Ignore" />
                     <ui:VisualElement name="xp-fill" class="bar-fill" picking-mode="Ignore" />
                     <ui:Label name="xp-text" class="bar-text" />
                 </ui:VisualElement>

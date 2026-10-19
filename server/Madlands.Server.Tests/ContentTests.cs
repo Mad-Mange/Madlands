@@ -198,6 +198,12 @@ public class ContentLoaderTests
         // Armor others can see has a look.
         foreach (var item in db.Items.Values.Where(i => VisibleGear.Slots.Any(slot => ItemRules.SlotsFor(i.Slot).Contains(slot))))
             Assert.True(item.DisplayId != 0, $"{item.Name} is worn where others see it but has no displayId");
+        // Characters start in a village where they build up rested experience.
+        foreach (var race in db.Races.Values)
+        {
+            var start = db.Maps[(ushort)race.StartMap].Definition;
+            Assert.True(start.IsRestArea(start.Spawn.X, start.Spawn.Z), $"{race.Name} does not start in a rest area");
+        }
         // Every quest can be found: its giver stands somewhere in the world.
         var spawned = db.Maps.Values.SelectMany(m => m.Spawns).Select(s => s.Creature).ToHashSet();
         foreach (var quest in db.Quests.Values)

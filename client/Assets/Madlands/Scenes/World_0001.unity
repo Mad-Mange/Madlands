@@ -2780,6 +2780,7 @@ MonoBehaviour:
     radius: 58
     music: music_mirewatch
     ambience: amb_village
+    rest: 1
   - name: Westbrook
     center: {x: -260, y: -150}
     radius: 110

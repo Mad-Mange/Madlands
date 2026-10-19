@@ -1,3 +1,4 @@
+using Madlands.Content;
 using Madlands.Server.World;
 using Madlands.Shared;
 using Madlands.Shared.Game;
@@ -30,6 +31,7 @@ public sealed class CombatSystem
     /// <summary>Melee reach is checked with this much slack, so swings land on a target that just stepped away.</summary>
     public const float MeleeLeeway = 1f;
     public const long AttackErrorIntervalMs = 1000;
+    public const long RestCheckIntervalMs = 1000;
 
     private readonly MapInstance _map;
     private readonly CombatEvent _event = new();
@@ -397,12 +399,16 @@ public sealed class CombatSystem
 
     // ------------------------------------------------------------------ experience and levels
 
+    /// <summary>Kills (a <paramref name="victim"/>) get the rested bonus on top; quests and GM grants do not.</summary>
     public void GiveXp(Player player, int amount, EntityGuid victim, long now)
     {
         int maxLevel = _map.Content.Levels.MaxLevel;
         if (amount <= 0 || player.Level >= maxLevel) return;
+        int bonus = victim.IsEmpty ? 0 : Experience.RestedBonus(amount, ref player.RestedXp);
+        amount += bonus;
         player.Xp += amount;
         _xpMsg.Amount = amount;
+        _xpMsg.RestedBonus = bonus;
         _xpMsg.Victim = victim;
         _map.Send(player, _xpMsg);
 
@@ -416,13 +422,42 @@ public sealed class CombatSystem
         player.StatsDirty = true;
     }
 
+    /// <summary>Once a second: notices entering and leaving rest areas, and builds up rest inside them.</summary>
+    public void UpdateRest(Player player, long now)
+    {
+        if (player.RestCheckedAtMs >= 0 && now - player.RestCheckedAtMs < RestCheckIntervalMs) return;
+        double seconds = player.RestCheckedAtMs < 0 ? 0 : (now - player.RestCheckedAtMs) / 1000.0;
+        player.RestCheckedAtMs = now;
+        bool resting = _map.Map.Definition.IsRestArea(player.Position.X, player.Position.Z);
+        if (resting != player.Resting)
+        {
+            player.Resting = resting;
+            player.StatsDirty = true;
+        }
+        if (resting) AddRest(player, _map.Content.Levels, Experience.RestGained(_map.Content.Levels.Rest, _map.Content.Levels.XpToNext(player.Level), seconds, true));
+    }
+
+    /// <summary>Adds to the rested pool up to its cap (there is none at the level cap).</summary>
+    public static void AddRest(Player player, LevelTable levels, double amount)
+    {
+        int before = (int)player.RestedXp;
+        int needed = levels.XpToNext(player.Level);
+        if (needed <= 0) player.RestedXp = 0;
+        else if (amount > 0) player.RestedXp = Math.Max(player.RestedXp, Math.Min(Experience.MaxRested(levels.Rest, needed), player.RestedXp + amount));
+        if ((int)player.RestedXp != before) player.StatsDirty = true;
+    }
+
     public void SetLevel(Player player, int level, long now)
     {
         int maxLevel = _map.Content.Levels.MaxLevel;
         level = Math.Clamp(level, 1, maxLevel);
         bool up = level > player.Level;
         player.Level = (byte)level;
-        if (level >= maxLevel) player.Xp = 0;
+        if (level >= maxLevel)
+        {
+            player.Xp = 0;
+            player.RestedXp = 0;
+        }
         player.RecalculateStats();
         if (player.IsAlive)
         {

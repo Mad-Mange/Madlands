@@ -6,10 +6,12 @@ public sealed record AccountRecord(long Id, string Username, string PasswordHash
 /// <param name="Power">Current mana/rage; null = the class default.</param>
 /// <param name="Money">Copper.</param>
 /// <param name="StarterKit">The class's starting items were handed out.</param>
+/// <param name="RestedXp">Rested experience left.</param>
+/// <param name="LastSavedUtc">The last save (at logout, for an offline character); null if never saved.</param>
 public sealed record CharacterRecord(
     long Id, long AccountId, string Name, byte Race, byte Class, byte Level,
     ushort MapId, float X, float Y, float Z, float Yaw, int Xp = 0, int? Health = null, int? Power = null,
-    long Money = 0, bool StarterKit = false);
+    long Money = 0, bool StarterKit = false, int RestedXp = 0, DateTime? LastSavedUtc = null);
 
 /// <summary>A stack in a slot (see ItemPos).</summary>
 public readonly record struct ItemRecord(byte Container, byte Slot, uint ItemId, int Count);
@@ -26,7 +28,7 @@ public sealed record CharacterData(IReadOnlyList<ItemRecord> Items, IReadOnlyLis
 /// <summary>What the write-behind saver persists for an online character. The arrays are copies owned by the snapshot.</summary>
 public readonly record struct CharacterSnapshot(
     long CharacterId, ushort MapId, float X, float Y, float Z, float Yaw, byte Level, int Xp, int Health, int Power,
-    long Money, bool StarterKit, ItemRecord[] Items, QuestRecord[] Quests);
+    long Money, bool StarterKit, ItemRecord[] Items, QuestRecord[] Quests, int RestedXp = 0);
 
 public enum CreateCharacterOutcome
 {
