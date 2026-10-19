@@ -38,6 +38,10 @@ sysinfo.txt
 # ---- Paid / licensed third-party assets (Synty etc.) ----
 # The repo is PUBLIC and these licenses forbid redistribution: keep them only here (local) or in a private repo.
 /client/Assets/ThirdParty/Paid/
+
+# ---- Reference pictures (screenshots of other games and art) ----
+# Only for looking at while modelling; they belong to their owners and must never reach the public repo.
+/art/inspiration/
 /client/Assets/ThirdParty/Paid.meta
 
 # ---- Builds & generated content ----

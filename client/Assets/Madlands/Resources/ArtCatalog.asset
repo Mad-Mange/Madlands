@@ -83,6 +83,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: c19c7baaf892528428c41b3931e9efc1, type: 3}
   - Name: Gate
     Prefab: {fileID: 919132149155446097, guid: 0442017d8938c744e9ab1e6ba60a7ec9, type: 3}
+  - Name: GroveHouse
+    Prefab: {fileID: 919132149155446097, guid: dc82fe7531503284eb0352ae2e25356b, type: 3}
   - Name: LanternPost
     Prefab: {fileID: 919132149155446097, guid: b5e9cabbafe17214ea1b9921880c6baa, type: 3}
   - Name: Log

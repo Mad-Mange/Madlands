@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 import beasts  # noqa: E402
+import buildings  # noqa: E402
 import creatures  # noqa: E402
 import humanoid  # noqa: E402
 import items  # noqa: E402
@@ -44,6 +45,7 @@ ASSETS = {
 }
 ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in props.PROPS.items()})
+ASSETS.update({name: ("Props", builder, False) for name, builder in buildings.BUILDINGS.items()})
 
 # Previews of mesh-less animation files put a body on the skeleton (after the export).
 PREVIEW_DRESS = {
