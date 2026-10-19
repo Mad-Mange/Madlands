@@ -61,7 +61,8 @@ Everything for the first real zone is in; what is left is putting a realm online
 | Art | Low-poly models made by Python scripts in Blender: two races, creatures, weapons and 36 props ([ADR 0012](docs/adr/0012-art-pipeline-blender.md)) |
 | Animation | 16 humanoid clips made once and retargeted to every race; creatures have their own. Worn gear shows on characters |
 | Sound | Synthesized music and ambience per area, footsteps that splash in the water, swings, hits, spells by school, jingles; effects from Kenney's CC0 packs ([credits](CREDITS.md)) |
-| Settings | Rebindable keys, mouse, graphics, interface scale, volumes; every interface text in a string table ([ADR 0013](docs/adr/0013-localization.md)) |
+| Getting around | Sprint on stamina (Shift); the world map circles where each quest objective is done, worked out from where the creatures live; lootable corpses shimmer; bigger click targets and clickable nameplates |
+| Settings | Rebindable keys, mouse, graphics, window mode and resolution, interface scale, volumes; every interface text in a string table ([ADR 0013](docs/adr/0013-localization.md)) |
 | Online | A deployment guide for a VPS behind Caddy (TLS) ([deployment.md](docs/deployment.md)) |
 
 <table>
@@ -80,6 +81,14 @@ Everything for the first real zone is in; what is left is putting a realm online
   <tr>
     <td><sub><b>Reedfen.</b> Wading through the marsh; the mirelings' huts in the reeds.</sub></td>
     <td><sub><b>Gloomjaw's lagoon.</b> Shardlings guard the world boss, a crocodile grown over with moon shards.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/phase5-questmap.jpg" alt="The world map with yellow circles where the active quests' frogs and spiders live and the bandit camp to scout"></td>
+    <td><img src="docs/images/phase5-loot.jpg" alt="Two slain wolves with golden halos and sparkles, Mirewatch in the background"></td>
+  </tr>
+  <tr>
+    <td><sub><b>Where to go.</b> The world map circles where every active objective is done: the frogs on the south shore (two quests share the circles), the spiders in the Greywood, the bandit camp to scout.</sub></td>
+    <td><sub><b>Loot.</b> Corpses you can loot get a golden halo, rising sparkles and a soft glow.</sub></td>
   </tr>
 </table>
 
@@ -300,10 +309,11 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | Both mouse buttons | Run forward |
 | Mouse wheel | Zoom |
 | Space | Jump (no air control) |
+| Shift | Sprint while the stamina lasts (the bar under your portrait) |
 | Num Lock / R | Autorun |
-| Left click a unit | Target it |
-| Right click a unit | Attack an enemy, talk to a friendly NPC, or loot a sparkling corpse (shift: take everything) |
-| B / C / L / M | Bags / character sheet / quest log / world map (the minimap zooms with the mouse wheel) |
+| Left click a unit or its nameplate | Target it |
+| Right click a unit | Attack an enemy, talk to a friendly NPC, or loot a shimmering corpse (shift: take everything) |
+| B / C / L / M | Bags / character sheet / quest log / world map with your quest areas (the minimap zooms with the mouse wheel) |
 | Click an item | Pick it up; click a slot to put it down (or drag). Drop it outside the windows to destroy it |
 | Right click an item | Use, equip or unequip it; sell it while a vendor is open |
 | Tab | Cycle through enemies in front of you |
@@ -311,7 +321,7 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | Right click a buff | Cancel it |
 | Enter | Chat. Lines starting with `.` are GM commands; `.help` lists them |
 | Esc | Close chat, windows, clear the target, or open the menu (Settings: key bindings, mouse, interface scale, graphics) |
-| F3 | Toggle the debug overlay |
+| F3 | Toggle the debug overlay (drag it where you like) |
 
 **Where to go in Hollowmere** ([zone guide](docs/zones/hollowmere.md)): you start in the village of Mirewatch on the south shore of the mere, where Captain Edda Brand, Old Tamsin and Old Pell (at the dock) have work, and Holt, Marla and Gerta sell supplies. Farmer Tenney waits in Westbrook to the west, the mirelings in the Reedfen to the east, the Greywood across the mere to the north-west, the bandits of Shardscar to the north-east and the Drowned Ruins on the far north shore, where Gloomjaw sleeps in its lagoon. `.level 5`, `.tele <x> <z>`, `.additem <id or name>`, `.money <copper>` and `.quest add|complete|reset <id>` are handy shortcuts.
 
