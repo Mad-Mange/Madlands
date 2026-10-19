@@ -166,7 +166,7 @@ namespace Madlands.Client
             var fullscreen = new Toggle(Loc.T("settings.fullscreen")) { value = Screen.fullScreen };
             fullscreen.AddToClassList("settings-field");
             fullscreen.RegisterValueChangedCallback(e =>
-                Screen.fullScreenMode = e.newValue ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed);
+                Preferences.SetDisplay(Screen.width, Screen.height, e.newValue ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed));
             page.Add(fullscreen);
 
             // Distinct sizes, largest first; the refresh rate is left to the system.
@@ -181,7 +181,7 @@ namespace Madlands.Client
             {
                 var parts = e.newValue.Split('x');
                 if (parts.Length == 2 && int.TryParse(parts[0].Trim(), out int w) && int.TryParse(parts[1].Trim(), out int h))
-                    Screen.SetResolution(w, h, Screen.fullScreenMode);
+                    Preferences.SetDisplay(w, h, Screen.fullScreenMode);
             });
             page.Add(resolution);
 

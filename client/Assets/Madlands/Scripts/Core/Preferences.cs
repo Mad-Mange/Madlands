@@ -5,8 +5,8 @@ namespace Madlands.Client
 {
     /// <summary>
     /// The player's settings (mouse, interface scale, graphics, sound volumes), saved in PlayerPrefs. Window mode and
-    /// resolution are applied when changed and then remembered by Unity itself; quality and vsync are
-    /// applied at startup.
+    /// resolution are our own keys too (Unity's own memory of them is overwritten by every start with
+    /// -screen-width/-screen-height, such as the screenshot runs); they, quality and vsync are applied at startup.
     /// </summary>
     public static class Preferences
     {
@@ -30,6 +30,9 @@ namespace Madlands.Client
             AmbienceVolume = Mathf.Clamp01(GetFloat("volume.ambience", 0.7f));
             Language = GetString("language", "en");
             DebugPanelPosition = new Vector2(GetFloat("debugPanel.x", -1f), GetFloat("debugPanel.y", -1f));
+            ScreenWidth = GetInt("screen.width", 0);
+            ScreenHeight = GetInt("screen.height", 0);
+            WindowMode = (FullScreenMode)GetInt("screen.mode", (int)FullScreenMode.FullScreenWindow);
         }
 
         public static float MouseSensitivity { get; private set; }
@@ -43,6 +46,10 @@ namespace Madlands.Client
         public static float AmbienceVolume { get; private set; }
         /// <summary>Interface language code (Resources/Localization); applied on the next start.</summary>
         public static string Language { get; private set; }
+        /// <summary>The chosen resolution (0 = never chosen: Unity's default) and window mode.</summary>
+        public static int ScreenWidth { get; private set; }
+        public static int ScreenHeight { get; private set; }
+        public static FullScreenMode WindowMode { get; private set; }
         /// <summary>Where the F3 panel was dragged to (HUD coordinates); negative = not moved yet.</summary>
         public static Vector2 DebugPanelPosition { get; private set; }
 
@@ -54,6 +61,36 @@ namespace Madlands.Client
         {
             if (QualitySettings.GetQualityLevel() != QualityLevel) QualitySettings.SetQualityLevel(QualityLevel, applyExpensiveChanges: true);
             QualitySettings.vSyncCount = VSync ? 1 : 0;
+        }
+
+        /// <summary>
+        /// Puts the saved window mode and resolution back at startup. Not in the editor, and not when the
+        /// command line chose a screen size itself (test and screenshot runs).
+        /// </summary>
+        public static void ApplyDisplay()
+        {
+            if (Application.isEditor || ScreenWidth <= 0 || ScreenHeight <= 0) return;
+            foreach (var arg in Environment.GetCommandLineArgs())
+                if (arg.StartsWith("-screen-", StringComparison.OrdinalIgnoreCase) || arg.Equals("-popupwindow", StringComparison.OrdinalIgnoreCase)) return;
+            Screen.SetResolution(ScreenWidth, ScreenHeight, WindowMode);
+        }
+
+        /// <summary>Changes and remembers the window mode and resolution.</summary>
+        public static void SetDisplay(int width, int height, FullScreenMode mode)
+        {
+            ScreenWidth = width;
+            ScreenHeight = height;
+            WindowMode = mode;
+            try
+            {
+                PlayerPrefs.SetInt(Prefix + "screen.width", width);
+                PlayerPrefs.SetInt(Prefix + "screen.height", height);
+                PlayerPrefs.SetInt(Prefix + "screen.mode", (int)mode);
+                PlayerPrefs.Save();
+            }
+            catch (Exception ex) { Debug.LogWarning("[Prefs] " + ex.Message); }
+            Screen.SetResolution(width, height, mode);
+            Changed?.Invoke();
         }
 
         public static void SetMouseSensitivity(float value)

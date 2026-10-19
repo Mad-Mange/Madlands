@@ -48,6 +48,7 @@ namespace Madlands.Client
         {
             if (network == null) network = GetComponent<NetworkController>();
             if (hud == null) hud = GetComponent<HudController>();
+            Preferences.ApplyDisplay();
             Preferences.ApplyGraphics();
         }
 
