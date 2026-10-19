@@ -78,8 +78,8 @@
             </ui:VisualElement>
 
             <ui:VisualElement name="death-panel" class="death-panel hidden">
-                <ui:Label text="You have died." class="heading" />
-                <ui:Button name="release-button" text="Release spirit" class="button primary" />
+                <ui:Label text="#hud.died" class="heading" />
+                <ui:Button name="release-button" text="#hud.release" class="button primary" />
             </ui:VisualElement>
         </ui:VisualElement>
 
@@ -87,22 +87,22 @@
         <ui:VisualElement name="login-screen" class="screen" picking-mode="Ignore">
             <ui:VisualElement class="brand" picking-mode="Ignore">
                 <ui:Label text="MADLANDS" class="brand-title" />
-                <ui:Label text="Where the moon fell" class="brand-tagline" />
+                <ui:Label text="#login.tagline" class="brand-tagline" />
             </ui:VisualElement>
             <ui:VisualElement class="panel">
-                <ui:TextField name="login-username" label="Account" max-length="32" class="field" />
-                <ui:TextField name="login-password" label="Password" password="true" max-length="128" class="field" />
+                <ui:TextField name="login-username" label="#login.account" max-length="32" class="field" />
+                <ui:TextField name="login-password" label="#login.password" password="true" max-length="128" class="field" />
                 <ui:VisualElement class="button-row">
-                    <ui:Button name="login-button" text="Log in" class="button primary" />
-                    <ui:Button name="register-button" text="Create account" class="button" />
+                    <ui:Button name="login-button" text="#login.logIn" class="button primary" />
+                    <ui:Button name="register-button" text="#login.createAccount" class="button" />
                 </ui:VisualElement>
-                <ui:Button name="quick-login-button" text="Quick login" class="button quick hidden" />
+                <ui:Button name="quick-login-button" text="#login.quick" class="button quick hidden" />
                 <ui:Label name="login-status" class="status" />
             </ui:VisualElement>
             <ui:VisualElement class="footer" picking-mode="Ignore">
-                <ui:TextField name="login-server" label="Server" class="field small" />
+                <ui:TextField name="login-server" label="#login.server" class="field small" />
                 <ui:VisualElement class="footer-right" picking-mode="Ignore">
-                    <ui:Button name="login-settings-button" text="Settings" class="button" />
+                    <ui:Button name="login-settings-button" text="#common.settings" class="button" />
                     <ui:Label name="version-label" class="version" />
                 </ui:VisualElement>
             </ui:VisualElement>
@@ -111,15 +111,15 @@
         <!-- Character select -->
         <ui:VisualElement name="characters-screen" class="screen hidden" picking-mode="Ignore">
             <ui:VisualElement class="panel wide">
-                <ui:Label text="Choose your character" class="heading" />
+                <ui:Label text="#characters.title" class="heading" />
                 <ui:Label name="realm-label" class="subheading" />
                 <ui:ScrollView name="character-list" class="character-list" />
-                <ui:Label name="characters-empty" text="No characters yet. Create one to begin your journey." class="hint" />
+                <ui:Label name="characters-empty" text="#characters.empty" class="hint" />
                 <ui:VisualElement class="button-row">
-                    <ui:Button name="enter-world-button" text="Enter world" class="button primary" />
-                    <ui:Button name="create-new-button" text="Create new" class="button" />
-                    <ui:Button name="delete-button" text="Delete" class="button danger" />
-                    <ui:Button name="logout-button" text="Log out" class="button" />
+                    <ui:Button name="enter-world-button" text="#characters.enter" class="button primary" />
+                    <ui:Button name="create-new-button" text="#characters.createNew" class="button" />
+                    <ui:Button name="delete-button" text="#characters.delete" class="button danger" />
+                    <ui:Button name="logout-button" text="#common.logOut" class="button" />
                 </ui:VisualElement>
                 <ui:Label name="characters-status" class="status" />
             </ui:VisualElement>
@@ -128,13 +128,13 @@
         <!-- Create character -->
         <ui:VisualElement name="create-screen" class="screen hidden" picking-mode="Ignore">
             <ui:VisualElement class="panel">
-                <ui:Label text="Create a character" class="heading" />
-                <ui:TextField name="create-name" label="Name" max-length="16" class="field" />
-                <ui:DropdownField name="create-race" label="Race" class="field" />
-                <ui:DropdownField name="create-class" label="Class" class="field" />
+                <ui:Label text="#create.title" class="heading" />
+                <ui:TextField name="create-name" label="#create.name" max-length="16" class="field" />
+                <ui:DropdownField name="create-race" label="#create.race" class="field" />
+                <ui:DropdownField name="create-class" label="#create.class" class="field" />
                 <ui:VisualElement class="button-row">
-                    <ui:Button name="create-button" text="Create" class="button primary" />
-                    <ui:Button name="create-cancel-button" text="Back" class="button" />
+                    <ui:Button name="create-button" text="#create.create" class="button primary" />
+                    <ui:Button name="create-cancel-button" text="#create.back" class="button" />
                 </ui:VisualElement>
                 <ui:Label name="create-status" class="status" />
             </ui:VisualElement>
@@ -142,17 +142,17 @@
 
         <!-- Busy overlay (blocks input while a request is running) -->
         <ui:VisualElement name="busy-overlay" class="overlay hidden">
-            <ui:Label name="busy-label" text="Please wait..." class="busy-label" />
+            <ui:Label name="busy-label" text="#common.wait" class="busy-label" />
         </ui:VisualElement>
 
         <!-- In-game menu (Esc) -->
         <ui:VisualElement name="game-menu" class="overlay hidden">
             <ui:VisualElement class="panel narrow">
-                <ui:Label text="Menu" class="heading" />
-                <ui:Button name="menu-resume-button" text="Resume" class="button primary" />
-                <ui:Button name="menu-settings-button" text="Settings" class="button" />
-                <ui:Button name="menu-logout-button" text="Log out" class="button" />
-                <ui:Button name="menu-quit-button" text="Exit game" class="button" />
+                <ui:Label text="#menu.title" class="heading" />
+                <ui:Button name="menu-resume-button" text="#menu.resume" class="button primary" />
+                <ui:Button name="menu-settings-button" text="#common.settings" class="button" />
+                <ui:Button name="menu-logout-button" text="#common.logOut" class="button" />
+                <ui:Button name="menu-quit-button" text="#menu.exit" class="button" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

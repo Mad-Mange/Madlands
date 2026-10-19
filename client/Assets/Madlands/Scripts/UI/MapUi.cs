@@ -85,7 +85,7 @@ namespace Madlands.Client
             frame.Add(_caption);
             layer.Add(frame);
 
-            _window = new GameWindow(layer, "World map", "worldmap");
+            _window = new GameWindow(layer, Loc.T("window.map"), "worldmap");
             _worldView = new VisualElement { pickingMode = PickingMode.Position };
             _worldView.AddToClassList("worldmap-view");
             _worldImage = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -100,7 +100,7 @@ namespace Madlands.Client
             _worldArrow = Arrow(_worldView);
             _worldView.Add(_worldArrow);
             _window.Body.Add(_worldView);
-            GameWindow.Text(_window.Body, "Yellow circles: places your quests send you to. \"!\" a quest to take, \"?\" one to turn in.", "window-hint");
+            GameWindow.Text(_window.Body, Loc.T("map.hint"), "window-hint");
 
             client.QuestLogChanged += () => _questLogVersion++;
         }

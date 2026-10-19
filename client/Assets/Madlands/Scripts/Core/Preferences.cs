@@ -28,6 +28,7 @@ namespace Madlands.Client
             MusicVolume = Mathf.Clamp01(GetFloat("volume.music", 0.6f));
             EffectsVolume = Mathf.Clamp01(GetFloat("volume.effects", 0.9f));
             AmbienceVolume = Mathf.Clamp01(GetFloat("volume.ambience", 0.7f));
+            Language = GetString("language", "en");
         }
 
         public static float MouseSensitivity { get; private set; }
@@ -39,6 +40,8 @@ namespace Madlands.Client
         public static float MusicVolume { get; private set; }
         public static float EffectsVolume { get; private set; }
         public static float AmbienceVolume { get; private set; }
+        /// <summary>Interface language code (Resources/Localization); applied on the next start.</summary>
+        public static string Language { get; private set; }
 
         /// <summary>Raised after a setting changed.</summary>
         public static event Action Changed;
@@ -89,6 +92,20 @@ namespace Madlands.Client
         public static void SetEffectsVolume(float value) => SetFloat("volume.effects", EffectsVolume = Mathf.Clamp01(value));
 
         public static void SetAmbienceVolume(float value) => SetFloat("volume.ambience", AmbienceVolume = Mathf.Clamp01(value));
+
+        public static void SetLanguage(string code)
+        {
+            Language = code;
+            try { PlayerPrefs.SetString(Prefix + "language", code); PlayerPrefs.Save(); }
+            catch (Exception ex) { Debug.LogWarning("[Prefs] " + ex.Message); }
+            Changed?.Invoke();
+        }
+
+        private static string GetString(string key, string fallback)
+        {
+            try { return PlayerPrefs.GetString(Prefix + key, fallback); }
+            catch { return fallback; }
+        }
 
         private static float GetFloat(string key, float fallback)
         {

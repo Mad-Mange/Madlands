@@ -205,6 +205,7 @@ See [adr/](adr/). Summary:
 | 0010 | Items, inventory, loot and money: items as content, one inventory rules class, loot for the tapper, saves in one transaction |
 | 0011 | Quests and NPC dialogs: quests as content (kill, collect, talk, explore), server-computed quest marks |
 | 0012 | Art: low-poly models made by Python scripts in Blender, exported as FBX; humanoid animations retargeted to every race |
+| 0013 | Localization: flat JSON string tables per language, `Loc.T` in code and `#key` in UXML; server content later |
 
 ## Known simplifications (deliberate)
 
@@ -213,7 +214,7 @@ See [adr/](adr/). Summary:
 - **Art is scripted low-poly** (ADR 0012): races, NPCs, creatures and weapons are Blender models with animations; props and buildings are still Unity primitives, spell icons colored tiles with initials. NPCs differ by recolored gear regions and attached primitives.
 - **The debug overlay is IMGUI.** Everything else is UI Toolkit.
 - **The account API is plain HTTP in dev.** A public realm runs behind Caddy for TLS ([deployment.md](deployment.md)).
-- **Addressables and Localization are not installed yet.** The packages are added when first used (Phase 5).
+- **Addressables are not installed yet.** Interface text is localized with our own string tables (ADR 0013); game content from the server is English only.
 - **Players are not checked against walls**, only against the terrain (ADR 0009).
 - **No groups yet**: kill credit and loot go to the first player who damaged a creature.
 - **Items have no per-instance data** (durability, enchantments) and no per-instance ids yet (ADR 0010). Worn armor shows as recolored body regions plus simple shapes (helmets, hoods, pads, cloaks), not modeled pieces yet.

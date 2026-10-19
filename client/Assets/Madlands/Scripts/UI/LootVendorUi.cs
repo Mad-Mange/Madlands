@@ -21,10 +21,10 @@ namespace Madlands.Client
         {
             _client = client;
             _tooltip = tooltip;
-            _window = new GameWindow(layer, "Loot", "loot");
+            _window = new GameWindow(layer, Loc.T("window.loot"), "loot");
             _list = new VisualElement { pickingMode = PickingMode.Ignore };
             _window.Body.Add(_list);
-            _window.AddFooterButton("Take all", () => _client.TakeLoot(LootTake.AllSlots), "primary");
+            _window.AddFooterButton(Loc.T("loot.takeAll"), () => _client.TakeLoot(LootTake.AllSlots), "primary");
             _window.Closed += () =>
             {
                 _tooltip.Hide();
@@ -45,13 +45,13 @@ namespace Madlands.Client
                 if (_window.IsOpen) _window.Close();
                 return;
             }
-            _window.Title = _client.World.TryGet(loot.Corpse, out var corpse) ? corpse.Name : "Loot";
+            _window.Title = _client.World.TryGet(loot.Corpse, out var corpse) ? corpse.Name : Loc.T("window.loot");
             _list.Clear();
             _tooltip.Hide();
             if (loot.Money > 0)
             {
                 var row = Row(() => _client.TakeLoot(LootTake.MoneySlot));
-                var coins = new ItemSlotView("Coins", "small");
+                var coins = new ItemSlotView(Loc.T("loot.coins"), "small");
                 coins.Root.pickingMode = PickingMode.Ignore;
                 coins.Root.AddToClassList("coin-icon");
                 row.Add(coins.Root);
@@ -108,12 +108,12 @@ namespace Madlands.Client
             _client = client;
             _tooltip = tooltip;
             _inventory = inventory;
-            _window = new GameWindow(layer, "Vendor", "dialog");
+            _window = new GameWindow(layer, Loc.T("window.vendor"), "dialog");
             _grid = new VisualElement { pickingMode = PickingMode.Ignore };
             _grid.AddToClassList("vendor-grid");
             _window.Body.Add(_grid);
-            GameWindow.Text(_window.Body, "Click to buy (shift-click: a stack). Right-click items in your bags to sell them.", "window-hint");
-            _window.AddFooterButton("Sell junk", SellJunk);
+            GameWindow.Text(_window.Body, Loc.T("vendor.hint"), "window-hint");
+            _window.AddFooterButton(Loc.T("vendor.sellJunk"), SellJunk);
             _window.Closed += () =>
             {
                 _vendor = EntityGuid.Empty;
@@ -130,7 +130,7 @@ namespace Madlands.Client
         {
             _vendor = wares.Vendor;
             _inventory.Vendor = wares.Vendor;
-            _window.Title = _client.World.TryGet(wares.Vendor, out var npc) ? npc.Name : "Vendor";
+            _window.Title = _client.World.TryGet(wares.Vendor, out var npc) ? npc.Name : Loc.T("window.vendor");
             _grid.Clear();
             foreach (var id in wares.ItemIds)
             {

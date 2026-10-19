@@ -41,7 +41,7 @@ namespace Madlands.Client
                 _tooltip.Hide();
             };
 
-            _log = new GameWindow(layer, "Quest log", "questlog");
+            _log = new GameWindow(layer, Loc.T("quest.window"), "questlog");
             var body = new VisualElement { pickingMode = PickingMode.Ignore };
             body.AddToClassList("questlog-body");
             _logList = new ScrollView { pickingMode = PickingMode.Position };
@@ -51,7 +51,7 @@ namespace Madlands.Client
             body.Add(_logList);
             body.Add(_logDetails);
             _log.Body.Add(body);
-            _log.AddFooterButton("Abandon quest", () =>
+            _log.AddFooterButton(Loc.T("quest.abandon"), () =>
             {
                 if (_selectedQuest != 0) _client.AbandonQuest(_selectedQuest);
             }, "danger");
@@ -110,7 +110,7 @@ namespace Madlands.Client
             }
             Begin(NpcName(menu.Npc));
             if (!string.IsNullOrEmpty(menu.Text)) GameWindow.Text(_dialog.Body, menu.Text, "window-text");
-            if (menu.Quests.Count > 0) GameWindow.Text(_dialog.Body, "Quests", "section-title");
+            if (menu.Quests.Count > 0) GameWindow.Text(_dialog.Body, Loc.T("quest.quests"), "section-title");
             foreach (var q in menu.Quests)
             {
                 var info = _client.Data.GetQuest(q.QuestId);
@@ -121,8 +121,8 @@ namespace Madlands.Client
                 option.EnableInClassList("incomplete", status == QuestGiverStatus.Incomplete);
             }
             if ((menu.Flags & NpcFlags.Vendor) != 0)
-                Option("$", "Let me browse your goods.", () => _client.Interact(_npc, InteractOption.Vendor));
-            _dialog.AddFooterButton("Goodbye", _dialog.Close);
+                Option("$", Loc.T("quest.browse"), () => _client.Interact(_npc, InteractOption.Vendor));
+            _dialog.AddFooterButton(Loc.T("quest.goodbye"), _dialog.Close);
             _dialog.Open();
         }
 
@@ -150,16 +150,16 @@ namespace Madlands.Client
             Begin(NpcName(_npc));
             GameWindow.Text(_dialog.Body, quest.Title, "quest-title");
             GameWindow.Text(_dialog.Body, quest.Details, "window-text");
-            GameWindow.Text(_dialog.Body, "Quest objectives", "section-title");
+            GameWindow.Text(_dialog.Body, Loc.T("quest.objectivesTitle"), "section-title");
             GameWindow.Text(_dialog.Body, quest.Objectives, "window-text");
             AddRewards(_dialog.Body, quest, selectable: false);
             uint id = quest.Id;
-            _dialog.AddFooterButton("Accept", () =>
+            _dialog.AddFooterButton(Loc.T("quest.accept"), () =>
             {
                 _client.AcceptQuest(_npc, id);
                 _dialog.Close();
             }, "primary");
-            _dialog.AddFooterButton("Decline", _dialog.Close);
+            _dialog.AddFooterButton(Loc.T("quest.decline"), _dialog.Close);
             _dialog.Open();
         }
 
@@ -167,11 +167,11 @@ namespace Madlands.Client
         {
             Begin(NpcName(_npc));
             GameWindow.Text(_dialog.Body, quest.Title, "quest-title");
-            GameWindow.Text(_dialog.Body, string.IsNullOrEmpty(quest.Progress) ? "Is it done?" : quest.Progress, "window-text");
+            GameWindow.Text(_dialog.Body, string.IsNullOrEmpty(quest.Progress) ? Loc.T("quest.isItDone") : quest.Progress, "window-text");
             AddObjectives(_dialog.Body, quest, _client.Quests.Find(quest.Id));
-            var complete = _dialog.AddFooterButton("Complete quest", () => { }, "primary");
+            var complete = _dialog.AddFooterButton(Loc.T("quest.complete"), () => { }, "primary");
             complete.SetEnabled(false);
-            _dialog.AddFooterButton("Goodbye", _dialog.Close);
+            _dialog.AddFooterButton(Loc.T("quest.goodbye"), _dialog.Close);
             _dialog.Open();
         }
 
@@ -182,11 +182,11 @@ namespace Madlands.Client
             GameWindow.Text(_dialog.Body, quest.Completion, "window-text");
             AddRewards(_dialog.Body, quest, selectable: true);
             uint id = quest.Id;
-            _dialog.AddFooterButton("Complete quest", () =>
+            _dialog.AddFooterButton(Loc.T("quest.complete"), () =>
             {
                 if (quest.RewardChoices.Count > 0 && _choice < 0)
                 {
-                    _tooltip.ShowText("Choose your reward", "Click one of the items above first.", _dialog.Footer);
+                    _tooltip.ShowText(Loc.T("quest.chooseReward"), Loc.T("quest.chooseRewardHint"), _dialog.Footer);
                     return;
                 }
                 _client.TurnInQuest(_npc, id, quest.RewardChoices.Count > 0 ? (byte)_choice : QuestTurnIn.NoChoice);
@@ -226,7 +226,7 @@ namespace Madlands.Client
         private void AddObjectives(VisualElement parent, QuestInfo quest, ClientQuest progress)
         {
             if (quest.ObjectiveList.Count == 0) return;
-            GameWindow.Text(parent, "Objectives", "section-title");
+            GameWindow.Text(parent, Loc.T("quest.objectives"), "section-title");
             for (int i = 0; i < quest.ObjectiveList.Count; i++)
             {
                 var o = quest.ObjectiveList[i];
@@ -237,15 +237,15 @@ namespace Madlands.Client
         }
 
         public static string ObjectiveLine(QuestObjectiveInfo o, int done) =>
-            o.Count > 1 ? o.Text + ": " + done + "/" + o.Count : o.Text + (done >= o.Count ? " (done)" : "");
+            o.Count > 1 ? o.Text + ": " + done + "/" + o.Count : o.Text + (done >= o.Count ? Loc.T("quest.done") : "");
 
         private void AddRewards(VisualElement parent, QuestInfo quest, bool selectable)
         {
             if (quest.RewardItems.Count == 0 && quest.RewardChoices.Count == 0 && quest.RewardMoney == 0 && quest.RewardXp == 0) return;
-            GameWindow.Text(parent, "Rewards", "section-title");
+            GameWindow.Text(parent, Loc.T("quest.rewards"), "section-title");
             if (quest.RewardChoices.Count > 0)
             {
-                GameWindow.Text(parent, "Choose one of these:", "window-hint");
+                GameWindow.Text(parent, Loc.T("quest.chooseOne"), "window-hint");
                 var row = RewardRow(parent);
                 for (int i = 0; i < quest.RewardChoices.Count; i++)
                 {
@@ -262,7 +262,7 @@ namespace Madlands.Client
             }
             if (quest.RewardItems.Count > 0)
             {
-                GameWindow.Text(parent, "You will also receive:", "window-hint");
+                GameWindow.Text(parent, Loc.T("quest.alsoReceive"), "window-hint");
                 var row = RewardRow(parent);
                 foreach (var reward in quest.RewardItems) RewardEntry(row, reward);
             }
@@ -309,7 +309,7 @@ namespace Madlands.Client
             if (!_log.IsOpen) return;
             var active = _client.Quests.Active;
             if (_client.Quests.Find(_selectedQuest) == null) _selectedQuest = active.Count > 0 ? active[0].QuestId : 0;
-            _log.Title = "Quest log  (" + active.Count + "/" + GameConstants.MaxQuestLog + ")";
+            _log.Title = Loc.T("quest.logTitle", active.Count, GameConstants.MaxQuestLog);
             _logList.Clear();
             foreach (var quest in active)
             {
@@ -319,7 +319,7 @@ namespace Madlands.Client
                 var row = new VisualElement { pickingMode = PickingMode.Position };
                 row.AddToClassList("list-row");
                 row.EnableInClassList("selected", id == _selectedQuest);
-                var title = GameWindow.Text(row, "[" + info.Level + "] " + info.Title + (quest.IsComplete ? " (complete)" : ""), "list-name");
+                var title = GameWindow.Text(row, "[" + info.Level + "] " + info.Title + (quest.IsComplete ? Loc.T("quest.completeTag") : ""), "list-name");
                 title.style.color = LevelColor(info.Level);
                 row.RegisterCallback<ClickEvent>(_ =>
                 {
@@ -328,7 +328,7 @@ namespace Madlands.Client
                 });
                 _logList.Add(row);
             }
-            if (active.Count == 0) GameWindow.Text(_logList, "Your quest log is empty. Look for NPCs with a yellow \"!\" above their heads.", "window-hint");
+            if (active.Count == 0) GameWindow.Text(_logList, Loc.T("quest.logEmpty"), "window-hint");
 
             _logDetails.Clear();
             var selected = _client.Data.GetQuest(_selectedQuest);
@@ -338,8 +338,8 @@ namespace Madlands.Client
             GameWindow.Text(_logDetails, selected.Objectives, "window-text");
             AddObjectives(_logDetails, selected, progress);
             if (progress != null && progress.IsComplete && !string.IsNullOrEmpty(selected.EnderName))
-                GameWindow.Text(_logDetails, "Return to " + selected.EnderName + ".", "window-hint");
-            GameWindow.Text(_logDetails, "Description", "section-title");
+                GameWindow.Text(_logDetails, Loc.T("quest.returnTo", selected.EnderName), "window-hint");
+            GameWindow.Text(_logDetails, Loc.T("quest.description"), "section-title");
             GameWindow.Text(_logDetails, selected.Details, "window-text");
             AddRewards(_logDetails, selected, selectable: false);
         }
@@ -366,7 +366,7 @@ namespace Madlands.Client
                     var line = GameWindow.Text(_tracker, "- " + ObjectiveLine(o, done), "tracker-line");
                     line.EnableInClassList("done", done >= o.Count);
                 }
-                if (info.ObjectiveList.Count == 0 && info.EnderName.Length > 0) GameWindow.Text(_tracker, "- Speak with " + info.EnderName, "tracker-line");
+                if (info.ObjectiveList.Count == 0 && info.EnderName.Length > 0) GameWindow.Text(_tracker, Loc.T("quest.speakWith", info.EnderName), "tracker-line");
             }
         }
 

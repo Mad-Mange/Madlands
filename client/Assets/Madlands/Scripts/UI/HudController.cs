@@ -88,6 +88,7 @@ namespace Madlands.Client
             var document = GetComponent<UIDocument>();
             UiPointer.Register(document);
             var r = document.rootVisualElement;
+            Loc.Apply(r);
             _hud = r.Q("hud");
             // Only buttons, aura icons and the chat line take the mouse; the rest lets clicks through to the world.
             _hud.Query<VisualElement>().ForEach(e => e.pickingMode = PickingMode.Ignore);
@@ -145,9 +146,9 @@ namespace Madlands.Client
         private void RelabelKeys()
         {
             for (int i = 0; i < SlotCount; i++) _slots[i].Key.text = KeyBindings.ShortcutText(KeyBindings.ActionButton(i));
-            _characterButton.text = MicroText("Char", GameAction.ToggleCharacter);
-            _bagsButton.text = MicroText("Bags", GameAction.ToggleBags);
-            _questsButton.text = MicroText("Quests", GameAction.ToggleQuestLog);
+            _characterButton.text = MicroText(Loc.T("micro.character"), GameAction.ToggleCharacter);
+            _bagsButton.text = MicroText(Loc.T("micro.bags"), GameAction.ToggleBags);
+            _questsButton.text = MicroText(Loc.T("micro.quests"), GameAction.ToggleQuestLog);
         }
 
         private static string MicroText(string name, GameAction action)
@@ -171,9 +172,9 @@ namespace Madlands.Client
 
             var menu = new VisualElement { pickingMode = PickingMode.Ignore };
             menu.AddToClassList("micro-menu");
-            _characterButton = MicroButton(menu, MicroText("Char", GameAction.ToggleCharacter), () => _inventory.ToggleCharacter());
-            _bagsButton = MicroButton(menu, MicroText("Bags", GameAction.ToggleBags), () => _inventory.ToggleBags());
-            _questsButton = MicroButton(menu, MicroText("Quests", GameAction.ToggleQuestLog), () => _quests.ToggleLog());
+            _characterButton = MicroButton(menu, MicroText(Loc.T("micro.character"), GameAction.ToggleCharacter), () => _inventory.ToggleCharacter());
+            _bagsButton = MicroButton(menu, MicroText(Loc.T("micro.bags"), GameAction.ToggleBags), () => _inventory.ToggleBags());
+            _questsButton = MicroButton(menu, MicroText(Loc.T("micro.quests"), GameAction.ToggleQuestLog), () => _quests.ToggleLog());
             windows.Add(menu);
         }
 
@@ -684,7 +685,7 @@ namespace Madlands.Client
             int needed = Client.Data.XpToNext(level);
             int xp = Client.Stats.Xp;
             _xpFill.style.width = Length.Percent(needed > 0 ? Mathf.Clamp01((float)xp / needed) * 100f : 100f);
-            _xpText.text = needed > 0 ? $"Level {level}   {xp} / {needed} XP" : $"Level {level} (max)";
+            _xpText.text = needed > 0 ? Loc.T("hud.xp", level, xp, needed) : Loc.T("hud.xpMax", level);
         }
 
         // ------------------------------------------------------------------ events
@@ -693,7 +694,7 @@ namespace Madlands.Client
         {
             if (guid != Client.LocalGuid || (mask & UnitFieldMask.Level) == 0) return;
             int level = Client.Self.Values.Level;
-            if (_lastLevel > 0 && level > _lastLevel) ShowNotice("Level " + level + "!");
+            if (_lastLevel > 0 && level > _lastLevel) ShowNotice(Loc.T("hud.levelUp", level));
             _lastLevel = level;
         }
 
@@ -705,7 +706,7 @@ namespace Madlands.Client
                 _playerCast.RemoveFromClassList("hidden");
                 _playerCast.AddToClassList("failed");
                 _playerCastFill.style.width = Length.Percent(100f);
-                _playerCastText.text = "Interrupted";
+                _playerCastText.text = Loc.T("cast.interrupted");
                 _playerCastFailedUntil = Time.time + 0.6f;
             }
             if (failed.Result != CastResult.Cancelled && failed.Result != CastResult.Success) ShowError(failed.Result);
@@ -726,11 +727,11 @@ namespace Madlands.Client
 
             string text;
             string css;
-            if (e.Has(CombatFlags.Miss)) { text = "Miss"; css = "miss"; }
-            else if (e.Has(CombatFlags.Dodge)) { text = "Dodge"; css = "miss"; }
-            else if (e.Has(CombatFlags.Parry)) { text = "Parry"; css = "miss"; }
-            else if (e.Has(CombatFlags.Evade)) { text = "Evade"; css = "miss"; }
-            else if (e.Has(CombatFlags.Immune)) { text = "Immune"; css = "miss"; }
+            if (e.Has(CombatFlags.Miss)) { text = Loc.T("combat.miss"); css = "miss"; }
+            else if (e.Has(CombatFlags.Dodge)) { text = Loc.T("combat.dodge"); css = "miss"; }
+            else if (e.Has(CombatFlags.Parry)) { text = Loc.T("combat.parry"); css = "miss"; }
+            else if (e.Has(CombatFlags.Evade)) { text = Loc.T("combat.evade"); css = "miss"; }
+            else if (e.Has(CombatFlags.Immune)) { text = Loc.T("combat.immune"); css = "miss"; }
             else if (heal)
             {
                 text = "+" + e.Amount;
@@ -738,7 +739,7 @@ namespace Madlands.Client
             }
             else
             {
-                text = e.Amount > 0 ? e.Amount.ToString(CultureInfo.InvariantCulture) : "Absorbed";
+                text = e.Amount > 0 ? e.Amount.ToString(CultureInfo.InvariantCulture) : Loc.T("combat.absorbed");
                 if (e.Absorbed > 0 && e.Amount > 0) text += " (" + e.Absorbed + " absorbed)";
                 css = atMe ? "taken" : e.SpellId != 0 ? "spell" : null;
             }
@@ -751,8 +752,8 @@ namespace Madlands.Client
         private void OnExperience(int amount, EntityGuid victim)
         {
             _overlay.Show(Client.LocalGuid, "+" + amount + " XP", "xp");
-            string from = !victim.IsEmpty && Client.World.TryGet(victim, out var entity) ? " from " + entity.Name : "";
-            _chat.AddLine($"You gain {amount} experience{from}.", "combat");
+            string from = !victim.IsEmpty && Client.World.TryGet(victim, out var entity) ? Loc.T("chat.xpFrom", entity.Name) : "";
+            _chat.AddLine(Loc.T("chat.xpGained", amount, from), "combat");
         }
 
         // ------------------------------------------------------------------ items and quests
@@ -762,7 +763,7 @@ namespace Madlands.Client
             _inventory.Refresh();
             if (delta <= 0 || source == ReceiveSource.Quest) return;
             string money = Money.Format(delta);
-            _chat.AddLine(source == ReceiveSource.Loot ? "You loot " + money + "." : "You receive " + money + ".", "loot");
+            _chat.AddLine(Loc.T(source == ReceiveSource.Loot ? "chat.lootMoney" : "chat.receiveMoney", money), "loot");
         }
 
         private void OnItemReceived(ItemReceived received)
@@ -770,9 +771,9 @@ namespace Madlands.Client
             string item = ItemTooltip.Describe(Client.Data, received.ItemId, received.Count);
             switch (received.Source)
             {
-                case ReceiveSource.Loot: _chat.AddLine("You receive loot: " + item + ".", "loot"); break;
-                case ReceiveSource.Vendor: _chat.AddLine("You purchase " + item + ".", "loot"); break;
-                default: _chat.AddLine("You receive item: " + item + ".", "loot"); break;
+                case ReceiveSource.Loot: _chat.AddLine(Loc.T("chat.receiveLoot", item), "loot"); break;
+                case ReceiveSource.Vendor: _chat.AddLine(Loc.T("chat.purchase", item), "loot"); break;
+                default: _chat.AddLine(Loc.T("chat.receiveItem", item), "loot"); break;
             }
         }
 
@@ -792,14 +793,14 @@ namespace Madlands.Client
             switch (state)
             {
                 case QuestLogState.Active:
-                    if (Client.Quests.Find(questId) != null) _chat.AddLine("Quest accepted: " + quest.Title, "quest");
+                    if (Client.Quests.Find(questId) != null) _chat.AddLine(Loc.T("chat.questAccepted", quest.Title), "quest");
                     break;
                 case QuestLogState.Complete:
-                    _chat.AddLine(quest.Title + " (Complete)", "quest");
-                    ShowNotice(quest.Title + " (Complete)", small: true);
+                    _chat.AddLine(Loc.T("quest.completeSuffix", quest.Title), "quest");
+                    ShowNotice(Loc.T("quest.completeSuffix", quest.Title), small: true);
                     break;
                 case QuestLogState.Removed:
-                    if (!Client.Quests.IsCompleted(questId)) _chat.AddLine("Quest abandoned: " + quest.Title, "quest");
+                    if (!Client.Quests.IsCompleted(questId)) _chat.AddLine(Loc.T("chat.questAbandoned", quest.Title), "quest");
                     break;
             }
         }
@@ -807,37 +808,37 @@ namespace Madlands.Client
         private void OnQuestCompleted(QuestCompleted completed)
         {
             var quest = Client.Data.GetQuest(completed.QuestId);
-            _chat.AddLine((quest != null ? quest.Title : "Quest") + " completed.", "quest");
-            if (completed.Xp > 0) _chat.AddLine("Experience gained: " + completed.Xp + ".", "quest");
-            if (completed.Money > 0) _chat.AddLine("Received " + Money.Format(completed.Money) + ".", "quest");
+            _chat.AddLine(Loc.T("chat.questCompleted", quest != null ? quest.Title : Loc.T("quest.generic")), "quest");
+            if (completed.Xp > 0) _chat.AddLine(Loc.T("chat.experienceGained", completed.Xp), "quest");
+            if (completed.Money > 0) _chat.AddLine(Loc.T("chat.received", Money.Format(completed.Money)), "quest");
         }
 
         private static string ActionErrorText(ActionError error, int value)
         {
             switch (error)
             {
-                case ActionError.InventoryFull: return "Inventory is full.";
-                case ActionError.ItemNotFound: return "Item not found.";
-                case ActionError.CantEquipThere: return "That item does not go in that slot.";
-                case ActionError.LevelTooLow: return "You must reach level " + value + " to use that item.";
-                case ActionError.WrongClass: return "Your class can not use that item.";
-                case ActionError.BagNotEmpty: return "You can only move or destroy empty bags.";
-                case ActionError.BagInItself: return "You can not put a bag inside itself.";
-                case ActionError.NotABag: return "Only bags go in bag slots.";
-                case ActionError.NotEnoughMoney: return "You don't have enough money.";
-                case ActionError.CantSellItem: return "The merchant does not want that item.";
-                case ActionError.TooFarAway: return "You are too far away.";
-                case ActionError.NotUsable: return "That item can not be used.";
-                case ActionError.TwoHandEquipped: return "You can not equip that with a two-handed weapon.";
-                case ActionError.LootNotYours: return "You can not loot that.";
-                case ActionError.QuestLogFull: return "Your quest log is full.";
-                case ActionError.QuestNotAvailable: return "You can not take that quest.";
-                case ActionError.QuestNotComplete: return "You have not finished that quest.";
-                case ActionError.ChooseReward: return "Choose a reward first.";
-                case ActionError.CantInteract: return "You can not interact with that.";
-                case ActionError.NoRoomForReward: return "Make room in your bags for the reward.";
-                case ActionError.CantDestroyItem: return "You can not destroy that.";
-                default: return "You can not do that now.";
+                case ActionError.InventoryFull: return Loc.T("error.inventoryFull");
+                case ActionError.ItemNotFound: return Loc.T("error.itemNotFound");
+                case ActionError.CantEquipThere: return Loc.T("error.cantEquipThere");
+                case ActionError.LevelTooLow: return Loc.T("error.levelTooLow", value);
+                case ActionError.WrongClass: return Loc.T("error.wrongClass");
+                case ActionError.BagNotEmpty: return Loc.T("error.bagNotEmpty");
+                case ActionError.BagInItself: return Loc.T("error.bagInItself");
+                case ActionError.NotABag: return Loc.T("error.notABag");
+                case ActionError.NotEnoughMoney: return Loc.T("error.notEnoughMoney");
+                case ActionError.CantSellItem: return Loc.T("error.cantSellItem");
+                case ActionError.TooFarAway: return Loc.T("error.tooFarAway");
+                case ActionError.NotUsable: return Loc.T("error.notUsable");
+                case ActionError.TwoHandEquipped: return Loc.T("error.twoHandEquipped");
+                case ActionError.LootNotYours: return Loc.T("error.lootNotYours");
+                case ActionError.QuestLogFull: return Loc.T("error.questLogFull");
+                case ActionError.QuestNotAvailable: return Loc.T("error.questNotAvailable");
+                case ActionError.QuestNotComplete: return Loc.T("error.questNotComplete");
+                case ActionError.ChooseReward: return Loc.T("error.chooseReward");
+                case ActionError.CantInteract: return Loc.T("error.cantInteract");
+                case ActionError.NoRoomForReward: return Loc.T("error.noRoomForReward");
+                case ActionError.CantDestroyItem: return Loc.T("error.cantDestroyItem");
+                default: return Loc.T("error.default");
             }
         }
 
@@ -849,7 +850,7 @@ namespace Madlands.Client
                     ShowError(message.Text);
                     break;
                 case ChatChannel.Say:
-                    _chat.AddLine($"[{message.SenderName}] says: {message.Text}");
+                    _chat.AddLine(Loc.T("chat.says", message.SenderName, message.Text));
                     break;
                 default:
                     _chat.AddLine(message.Text, "system");
@@ -890,25 +891,25 @@ namespace Madlands.Client
         {
             switch (result)
             {
-                case CastResult.Interrupted: return "Interrupted";
-                case CastResult.NotKnown: return "You do not know that spell.";
-                case CastResult.OnCooldown: return "That is not ready yet.";
-                case CastResult.NotReady: return "Ability is not ready yet.";
+                case CastResult.Interrupted: return Loc.T("cast.interrupted");
+                case CastResult.NotKnown: return Loc.T("cast.notKnown");
+                case CastResult.OnCooldown: return Loc.T("cast.onCooldown");
+                case CastResult.NotReady: return Loc.T("cast.notReady");
                 case CastResult.NoPower:
-                    return Client.Self.Values.PowerType == PowerType.Rage ? "Not enough rage."
-                        : Client.Self.Values.PowerType == PowerType.Energy ? "Not enough energy." : "Not enough mana.";
-                case CastResult.NoTarget: return "You have no target.";
-                case CastResult.InvalidTarget: return "Invalid target.";
-                case CastResult.OutOfRange: return "Out of range.";
-                case CastResult.TooClose: return "Target is too close.";
-                case CastResult.NotInLineOfSight: return "Target not in line of sight.";
-                case CastResult.NotFacing: return "You are facing the wrong way!";
-                case CastResult.Moving: return "Can not do that while moving.";
-                case CastResult.CasterDead: return "You are dead.";
-                case CastResult.Stunned: return "Can not do that while stunned.";
-                case CastResult.AlreadyCasting: return "Another action is in progress.";
-                case CastResult.TargetDead: return "Your target is dead.";
-                case CastResult.InCombat: return "You can not do that while in combat.";
+                    return Loc.T(Client.Self.Values.PowerType == PowerType.Rage ? "cast.noRage"
+                        : Client.Self.Values.PowerType == PowerType.Energy ? "cast.noEnergy" : "cast.noMana");
+                case CastResult.NoTarget: return Loc.T("cast.noTarget");
+                case CastResult.InvalidTarget: return Loc.T("cast.invalidTarget");
+                case CastResult.OutOfRange: return Loc.T("cast.outOfRange");
+                case CastResult.TooClose: return Loc.T("cast.tooClose");
+                case CastResult.NotInLineOfSight: return Loc.T("cast.notInLineOfSight");
+                case CastResult.NotFacing: return Loc.T("cast.notFacing");
+                case CastResult.Moving: return Loc.T("cast.moving");
+                case CastResult.CasterDead: return Loc.T("cast.casterDead");
+                case CastResult.Stunned: return Loc.T("cast.stunned");
+                case CastResult.AlreadyCasting: return Loc.T("cast.alreadyCasting");
+                case CastResult.TargetDead: return Loc.T("cast.targetDead");
+                case CastResult.InCombat: return Loc.T("cast.inCombat");
                 default: return null;
             }
         }
@@ -919,10 +920,10 @@ namespace Madlands.Client
             _tooltipTitle.text = spell.Name;
             var meta = new List<string>();
             if (spell.Cost > 0) meta.Add(spell.Cost + " " + spell.PowerType.ToString().ToLowerInvariant());
-            meta.Add(spell.IsAutoAttack ? "Melee" : spell.CastTimeMs > 0 ? (spell.CastTimeMs / 1000f).ToString("0.#", CultureInfo.InvariantCulture) + " s cast" : "Instant");
-            if (spell.MaxRange > GameConstants.MeleeRange) meta.Add(spell.MaxRange.ToString("0", CultureInfo.InvariantCulture) + " m range");
-            else if (spell.MaxRange > 0) meta.Add("Melee range");
-            if (spell.CooldownMs > 0) meta.Add(Seconds(spell.CooldownMs) + " cooldown");
+            meta.Add(spell.IsAutoAttack ? Loc.T("spell.melee") : spell.CastTimeMs > 0 ? Loc.T("spell.castTime", (spell.CastTimeMs / 1000f).ToString("0.#", CultureInfo.InvariantCulture)) : Loc.T("spell.instant"));
+            if (spell.MaxRange > GameConstants.MeleeRange) meta.Add(Loc.T("spell.range", spell.MaxRange.ToString("0", CultureInfo.InvariantCulture)));
+            else if (spell.MaxRange > 0) meta.Add(Loc.T("spell.meleeRange"));
+            if (spell.CooldownMs > 0) meta.Add(Loc.T("spell.cooldown", Seconds(spell.CooldownMs)));
             _tooltipMeta.text = string.Join("   ", meta);
             _tooltipBody.text = spell.Description;
             _tooltip.RemoveFromClassList("hidden");

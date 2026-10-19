@@ -105,7 +105,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
   shields, and 36 props (trees, rocks, reeds, cottages, an inn, watchtowers, palisades, tents, stalls, ruins...).
   Worn gear is visible on characters (protocol v8): body armor recolors the gear regions, robes cover the legs,
   helmets, hoods, hats, shoulder pads and cloaks are shapes sized from each race's skeleton
-- [ ] Localization (Unity Localization package, English first)
+- [x] Localization, English first ([ADR 0013](adr/0013-localization.md)): every interface text comes from a string table
+  (`Resources/Localization/en.json`, 257 keys) through `Loc.T` or `#key` in UXML, with a language setting. Our own
+  tables instead of Unity's package (no Addressables). Game content from the server is still English
 - [x] Rebindable key bindings (two keys per action) and a settings window: mouse sensitivity and inversion, interface
   scale, window mode, resolution, vsync and quality (Esc > Settings, or on the login screen)
 - [x] Animations retargeted to a shared humanoid rig: 16 clips made once (idle, walk, run, backpedal, strafe, jump,
@@ -187,7 +189,7 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - **Movement timestamps:** the server stamps with receive time, which adds some jitter over the internet. Consider mapping the client's (already validated) time instead.
 - **IMGUI is still used for the debug overlay (F3).** Everything else is UI Toolkit.
 - **LiteNetLib reports 0 RTT in threaded mode.** The overlay uses our own Ping/Pong measurement instead.
-- **Addressables and Localization** get installed when first used.
+- **Addressables** get installed when first needed (asset streaming). Localization uses our own tables (ADR 0013).
 - ~~**TLS for the account API**~~ (done 2026-10-18): `deploy/Caddyfile` and [deployment.md](deployment.md); the API binds to
   loopback behind the proxy (`--api-bind`, `--trust-proxy`), and a public realm refuses to start with plain-HTTP passwords.
 - ~~**Session cleanup**~~ (done 2026-10-18): expired sessions are deleted at startup and every hour.

@@ -28,12 +28,12 @@ namespace Madlands.Client
 
         public SettingsUi(VisualElement layer)
         {
-            _window = new GameWindow(layer, "Settings", "settings");
+            _window = new GameWindow(layer, Loc.T("settings.window"), "settings");
             var tabs = new VisualElement { pickingMode = PickingMode.Ignore };
             tabs.AddToClassList("settings-tabs");
-            _controlsButton = TabButton(tabs, "Key bindings", () => ShowTab(0));
-            _videoButton = TabButton(tabs, "Graphics & interface", () => ShowTab(1));
-            _soundButton = TabButton(tabs, "Sound", () => ShowTab(2));
+            _controlsButton = TabButton(tabs, Loc.T("settings.tabKeys"), () => ShowTab(0));
+            _videoButton = TabButton(tabs, Loc.T("settings.tabVideo"), () => ShowTab(1));
+            _soundButton = TabButton(tabs, Loc.T("settings.tabSound"), () => ShowTab(2));
             _window.Body.Add(tabs);
 
             _controlsTab = new ScrollView { pickingMode = PickingMode.Position };
@@ -51,7 +51,7 @@ namespace Madlands.Client
             BuildSound(_soundTab);
             _window.Body.Add(_soundTab);
 
-            _window.AddFooterButton("Done", Close, "primary");
+            _window.AddFooterButton(Loc.T("settings.done"), Close, "primary");
             _window.Closed += () => _capturing = null;
             ShowTab(0);
             KeyBindings.Changed += RefreshKeys;
@@ -106,24 +106,24 @@ namespace Madlands.Client
 
         private void BuildControls(VisualElement page)
         {
-            GameWindow.Text(page, "Mouse", "section-title");
-            var sensitivity = new Slider("Mouse sensitivity", Preferences.MinSensitivity, Preferences.MaxSensitivity) { value = Preferences.MouseSensitivity };
+            GameWindow.Text(page, Loc.T("settings.mouse"), "section-title");
+            var sensitivity = new Slider(Loc.T("settings.sensitivity"), Preferences.MinSensitivity, Preferences.MaxSensitivity) { value = Preferences.MouseSensitivity };
             sensitivity.AddToClassList("settings-field");
             sensitivity.RegisterValueChangedCallback(e => Preferences.SetMouseSensitivity(e.newValue));
             page.Add(sensitivity);
-            var invert = new Toggle("Invert vertical mouse") { value = Preferences.InvertMouseY };
+            var invert = new Toggle(Loc.T("settings.invert")) { value = Preferences.InvertMouseY };
             invert.AddToClassList("settings-field");
             invert.RegisterValueChangedCallback(e => Preferences.SetInvertMouseY(e.newValue));
             page.Add(invert);
 
             var header = new VisualElement { pickingMode = PickingMode.Ignore };
             header.AddToClassList("binding-header");
-            GameWindow.Text(header, "Keys", "section-title");
-            var reset = new Button(() => KeyBindings.ResetToDefaults()) { text = "Reset to defaults" };
+            GameWindow.Text(header, Loc.T("settings.keys"), "section-title");
+            var reset = new Button(() => KeyBindings.ResetToDefaults()) { text = Loc.T("settings.resetKeys") };
             reset.AddToClassList("button");
             header.Add(reset);
             page.Add(header);
-            GameWindow.Text(page, "Click a key, then press the new one. Esc cancels, Backspace clears.", "window-hint");
+            GameWindow.Text(page, Loc.T("settings.keysHint"), "window-hint");
 
             foreach (var action in KeyBindings.Actions)
             {
@@ -153,7 +153,7 @@ namespace Madlands.Client
             foreach (var (target, button) in _keyButtons)
             {
                 bool capturing = _capturing is { } c && c.Action == target.Item1 && c.Slot == target.Item2;
-                button.text = capturing ? "Press a key..." : KeyBindings.KeyName(KeyBindings.Get(target.Item1, target.Item2));
+                button.text = capturing ? Loc.T("settings.pressKey") : KeyBindings.KeyName(KeyBindings.Get(target.Item1, target.Item2));
                 button.EnableInClassList("capturing", capturing);
             }
         }
@@ -162,8 +162,8 @@ namespace Madlands.Client
 
         private void BuildVideo(VisualElement page)
         {
-            GameWindow.Text(page, "Display", "section-title");
-            var fullscreen = new Toggle("Fullscreen") { value = Screen.fullScreen };
+            GameWindow.Text(page, Loc.T("settings.display"), "section-title");
+            var fullscreen = new Toggle(Loc.T("settings.fullscreen")) { value = Screen.fullScreen };
             fullscreen.AddToClassList("settings-field");
             fullscreen.RegisterValueChangedCallback(e =>
                 Screen.fullScreenMode = e.newValue ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed);
@@ -175,7 +175,7 @@ namespace Madlands.Client
             var names = _resolutions.Select(r => r.width + " x " + r.height).ToList();
             string current = Screen.width + " x " + Screen.height;
             if (!names.Contains(current)) names.Insert(0, current);
-            var resolution = new DropdownField("Resolution", names, names.IndexOf(current));
+            var resolution = new DropdownField(Loc.T("settings.resolution"), names, names.IndexOf(current));
             resolution.AddToClassList("settings-field");
             resolution.RegisterValueChangedCallback(e =>
             {
@@ -185,36 +185,46 @@ namespace Madlands.Client
             });
             page.Add(resolution);
 
-            var vsync = new Toggle("Vertical sync") { value = Preferences.VSync };
+            var vsync = new Toggle(Loc.T("settings.vsync")) { value = Preferences.VSync };
             vsync.AddToClassList("settings-field");
             vsync.RegisterValueChangedCallback(e => Preferences.SetVSync(e.newValue));
             page.Add(vsync);
 
             var qualityNames = QualitySettings.names.ToList();
-            var quality = new DropdownField("Quality", qualityNames, Preferences.QualityLevel);
+            var quality = new DropdownField(Loc.T("settings.quality"), qualityNames, Preferences.QualityLevel);
             quality.AddToClassList("settings-field");
             quality.RegisterValueChangedCallback(e => Preferences.SetQualityLevel(qualityNames.IndexOf(e.newValue)));
             page.Add(quality);
 
-            GameWindow.Text(page, "Interface", "section-title");
-            var scale = new Slider("Interface scale", Preferences.MinUiScale, Preferences.MaxUiScale) { value = Preferences.UiScale };
+            GameWindow.Text(page, Loc.T("settings.interface"), "section-title");
+            var scale = new Slider(Loc.T("settings.uiScale"), Preferences.MinUiScale, Preferences.MaxUiScale) { value = Preferences.UiScale };
             scale.AddToClassList("settings-field");
             var scaleLabel = GameWindow.Text(page, Percent(Preferences.UiScale), "window-hint");
             // Applied when the slider is let go: rescaling the panel under the mouse while dragging makes the handle jump.
             scale.RegisterValueChangedCallback(e => scaleLabel.text = Percent(e.newValue));
             scale.RegisterCallback<PointerCaptureOutEvent>(_ => Preferences.SetUiScale(scale.value));
             page.Insert(page.IndexOf(scaleLabel), scale);
+
+            // Every language with a table; the interface is rebuilt in it on the next start.
+            var languages = Loc.Languages;
+            var languageNames = languages.Select(l => l.Value).ToList();
+            int currentLanguage = Math.Max(0, languages.ToList().FindIndex(l => l.Key == Preferences.Language));
+            var language = new DropdownField(Loc.T("settings.language"), languageNames, currentLanguage);
+            language.AddToClassList("settings-field");
+            language.RegisterValueChangedCallback(e => Preferences.SetLanguage(languages[languageNames.IndexOf(e.newValue)].Key));
+            page.Add(language);
+            if (languages.Count > 1) GameWindow.Text(page, Loc.T("settings.languageHint"), "window-hint");
         }
 
         // ------------------------------------------------------------------ sound
 
         private static void BuildSound(VisualElement page)
         {
-            GameWindow.Text(page, "Volume", "section-title");
-            Volume(page, "Master", Preferences.MasterVolume, Preferences.SetMasterVolume);
-            Volume(page, "Music", Preferences.MusicVolume, Preferences.SetMusicVolume);
-            Volume(page, "Effects", Preferences.EffectsVolume, Preferences.SetEffectsVolume);
-            Volume(page, "Ambience", Preferences.AmbienceVolume, Preferences.SetAmbienceVolume);
+            GameWindow.Text(page, Loc.T("settings.volume"), "section-title");
+            Volume(page, Loc.T("settings.master"), Preferences.MasterVolume, Preferences.SetMasterVolume);
+            Volume(page, Loc.T("settings.music"), Preferences.MusicVolume, Preferences.SetMusicVolume);
+            Volume(page, Loc.T("settings.effects"), Preferences.EffectsVolume, Preferences.SetEffectsVolume);
+            Volume(page, Loc.T("settings.ambience"), Preferences.AmbienceVolume, Preferences.SetAmbienceVolume);
         }
 
         private static void Volume(VisualElement page, string label, float value, Action<float> set)

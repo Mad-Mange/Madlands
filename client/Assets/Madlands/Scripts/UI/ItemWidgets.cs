@@ -271,33 +271,33 @@ namespace Madlands.Client
             if (item.IsWeapon)
             {
                 var row = Row();
-                Line(item.MinDamage + " - " + item.MaxDamage + " Damage", "tip-line", row);
-                Line("Speed " + (item.SpeedMs / 1000f).ToString("0.00", CultureInfo.InvariantCulture), "tip-line", row);
-                Line("(" + item.Dps.ToString("0.0", CultureInfo.InvariantCulture) + " damage per second)", "tip-line");
+                Line(Loc.T("tip.damage", item.MinDamage, item.MaxDamage), "tip-line", row);
+                Line(Loc.T("tip.speed", (item.SpeedMs / 1000f).ToString("0.00", CultureInfo.InvariantCulture)), "tip-line", row);
+                Line(Loc.T("tip.dps", item.Dps.ToString("0.0", CultureInfo.InvariantCulture)), "tip-line");
             }
             int armor = item.GetStat(StatType.Armor);
-            if (armor > 0) Line(armor + " Armor", "tip-line");
+            if (armor > 0) Line(Loc.T("tip.armor", armor), "tip-line");
             foreach (var stat in item.Stats)
                 if (stat.Stat != StatType.Armor) Line((stat.Value > 0 ? "+" : "") + stat.Value + " " + StatName(stat.Stat), "tip-line stat");
-            if (item.BagSlots > 0) Line(item.BagSlots + " Slot Bag", "tip-line");
+            if (item.BagSlots > 0) Line(Loc.T("tip.bagSlots", item.BagSlots), "tip-line");
 
             var self = client.Self.Values;
             if (item.RequiredLevel > 1)
-                Line("Requires Level " + item.RequiredLevel, self.Level < item.RequiredLevel ? "tip-line red" : "tip-line");
+                Line(Loc.T("tip.requiresLevel", item.RequiredLevel), self.Level < item.RequiredLevel ? "tip-line red" : "tip-line");
             if (item.AllowedClasses.Length > 0)
             {
                 var names = new List<string>();
                 foreach (var c in item.AllowedClasses) names.Add(client.Data.ClassName(c));
-                Line("Classes: " + string.Join(", ", names), item.AllowsClass(self.ClassId) ? "tip-line" : "tip-line red");
+                Line(Loc.T("tip.classes", string.Join(", ", names)), item.AllowsClass(self.ClassId) ? "tip-line" : "tip-line red");
             }
             if (!string.IsNullOrEmpty(item.Description))
             {
                 bool use = item.Description.StartsWith("Use:", StringComparison.Ordinal);
                 Line(use ? item.Description : "\"" + item.Description + "\"", use ? "tip-line use" : "tip-line flavor");
             }
-            if (item.Class == ItemClass.Quest) Line("Quest Item", "tip-line dim");
-            if (price != null) PriceLine("Price:", price.Value);
-            else if (item.SellPrice > 0) PriceLine("Sell price:", (long)item.SellPrice * Math.Max(1, count));
+            if (item.Class == ItemClass.Quest) Line(Loc.T("tip.questItem"), "tip-line dim");
+            if (price != null) PriceLine(Loc.T("tip.price"), price.Value);
+            else if (item.SellPrice > 0) PriceLine(Loc.T("tip.sellPrice"), (long)item.SellPrice * Math.Max(1, count));
 
             _root.RemoveFromClassList("hidden");
             Place(anchor);
@@ -350,27 +350,13 @@ namespace Madlands.Client
 
         public static string SlotName(ItemInfo item)
         {
-            switch (item.InventoryType)
-            {
-                case InventoryType.MainHand: return "Main Hand";
-                case InventoryType.OffHand: return "Off Hand";
-                case InventoryType.TwoHand: return "Two-Hand";
-                case InventoryType.Finger: return "Finger";
-                case InventoryType.Bag: return "Bag";
-                case InventoryType.None:
-                    return item.Class == ItemClass.Consumable ? "Consumable" : item.Class == ItemClass.TradeGoods ? "Trade Goods" : "";
-                default: return item.InventoryType.ToString();
-            }
+            if (item.InventoryType != InventoryType.None) return Loc.T("slot." + item.InventoryType);
+            return item.Class == ItemClass.Consumable ? Loc.T("itemClass.consumable") : item.Class == ItemClass.TradeGoods ? Loc.T("itemClass.tradeGoods") : "";
         }
 
         public static string StatName(StatType stat)
         {
-            switch (stat)
-            {
-                case StatType.AttackPower: return "Attack Power";
-                case StatType.SpellPower: return "Spell Power";
-                default: return stat.ToString();
-            }
+            return Loc.T("stat." + stat);
         }
 
         /// <summary>"Mire Frog Leg x2" style chat text with the item's name.</summary>
@@ -378,7 +364,7 @@ namespace Madlands.Client
         {
             var item = data.GetItem(itemId);
             var sb = new StringBuilder();
-            sb.Append('[').Append(item != null ? item.Name : "Item " + itemId).Append(']');
+            sb.Append('[').Append(item != null ? item.Name : Loc.T("tip.unknownItem", itemId)).Append(']');
             if (count > 1) sb.Append(" x").Append(count);
             return sb.ToString();
         }

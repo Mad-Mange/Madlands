@@ -20,13 +20,13 @@ namespace Madlands.Client
     {
         private static readonly (EquipSlot Slot, string Name)[] LeftColumn =
         {
-            (EquipSlot.Head, "Head"), (EquipSlot.Neck, "Neck"), (EquipSlot.Shoulders, "Shoul-ders"), (EquipSlot.Back, "Back"),
-            (EquipSlot.Chest, "Chest"), (EquipSlot.Wrists, "Wrists"), (EquipSlot.Hands, "Hands"),
+            (EquipSlot.Head, "equip.Head"), (EquipSlot.Neck, "equip.Neck"), (EquipSlot.Shoulders, "equip.Shoulders"), (EquipSlot.Back, "equip.Back"),
+            (EquipSlot.Chest, "equip.Chest"), (EquipSlot.Wrists, "equip.Wrists"), (EquipSlot.Hands, "equip.Hands"),
         };
         private static readonly (EquipSlot Slot, string Name)[] RightColumn =
         {
-            (EquipSlot.Waist, "Waist"), (EquipSlot.Legs, "Legs"), (EquipSlot.Feet, "Feet"), (EquipSlot.Finger1, "Finger"),
-            (EquipSlot.Finger2, "Finger"), (EquipSlot.Trinket1, "Trinket"), (EquipSlot.Trinket2, "Trinket"),
+            (EquipSlot.Waist, "equip.Waist"), (EquipSlot.Legs, "equip.Legs"), (EquipSlot.Feet, "equip.Feet"), (EquipSlot.Finger1, "equip.Finger1"),
+            (EquipSlot.Finger2, "equip.Finger2"), (EquipSlot.Trinket1, "equip.Trinket1"), (EquipSlot.Trinket2, "equip.Trinket2"),
         };
 
         private readonly GameClient _client;
@@ -56,14 +56,14 @@ namespace Madlands.Client
             _tooltip = tooltip;
             _error = error;
 
-            _bags = new GameWindow(layer, "Bags", "bags");
+            _bags = new GameWindow(layer, Loc.T("window.bags"), "bags");
             var bagHeader = new VisualElement { pickingMode = PickingMode.Ignore };
             bagHeader.AddToClassList("bag-header");
-            GameWindow.Text(bagHeader, "Bag slots", "section-title");
+            GameWindow.Text(bagHeader, Loc.T("bags.bagSlots"), "section-title");
             var bagSlots = new VisualElement { pickingMode = PickingMode.Ignore };
             bagSlots.AddToClassList("bag-slots");
             for (var slot = EquipSlot.Bag1; slot <= EquipSlot.Bag4; slot++)
-                bagSlots.Add(MakeSlot(ItemPos.Equip(slot), "Bag", "small").Root);
+                bagSlots.Add(MakeSlot(ItemPos.Equip(slot), Loc.T("bags.bag"), "small").Root);
             bagHeader.Add(bagSlots);
             _bags.Body.Add(bagHeader);
             _bagContainers = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -72,7 +72,7 @@ namespace Madlands.Client
             _bags.Body.Add(_money);
             _bags.Closed += CancelHeld;
 
-            _character = new GameWindow(layer, "Character", "character");
+            _character = new GameWindow(layer, Loc.T("window.character"), "character");
             var doll = new VisualElement { pickingMode = PickingMode.Ignore };
             doll.AddToClassList("paperdoll");
             doll.Add(Column(LeftColumn));
@@ -83,15 +83,15 @@ namespace Madlands.Client
             _character.Body.Add(doll);
             var weapons = new VisualElement { pickingMode = PickingMode.Ignore };
             weapons.AddToClassList("weapon-row");
-            weapons.Add(MakeSlot(ItemPos.Equip(EquipSlot.MainHand), "Main hand", "large").Root);
-            weapons.Add(MakeSlot(ItemPos.Equip(EquipSlot.OffHand), "Off hand", "large").Root);
+            weapons.Add(MakeSlot(ItemPos.Equip(EquipSlot.MainHand), Loc.T("character.mainHand"), "large").Root);
+            weapons.Add(MakeSlot(ItemPos.Equip(EquipSlot.OffHand), Loc.T("character.offHand"), "large").Root);
             _character.Body.Add(weapons);
             _character.Closed += CancelHeld;
 
-            _confirm = new GameWindow(layer, "Destroy item", "confirm");
+            _confirm = new GameWindow(layer, Loc.T("window.destroy"), "confirm");
             _confirmText = GameWindow.Text(_confirm.Body, "", "window-text");
-            _confirm.AddFooterButton("Destroy", ConfirmDestroy, "danger");
-            _confirm.AddFooterButton("Cancel", () => _confirm.Close());
+            _confirm.AddFooterButton(Loc.T("destroy.destroy"), ConfirmDestroy, "danger");
+            _confirm.AddFooterButton(Loc.T("common.cancel"), () => _confirm.Close());
 
             _cursor = new VisualElement { pickingMode = PickingMode.Ignore };
             _cursor.AddToClassList("cursor-item");
@@ -192,8 +192,8 @@ namespace Madlands.Client
                 int size = inventory.ContainerSize(c);
                 if (c >= ItemPos.FirstBag) layout = layout * 64 + size;
                 if (size == 0) continue;
-                string name = c == ItemPos.Backpack ? "Backpack"
-                    : _client.Data.GetItem(inventory.Equipped(ItemPos.BagSlotOf(c)).ItemId)?.Name ?? "Bag";
+                string name = c == ItemPos.Backpack ? Loc.T("bags.backpack")
+                    : _client.Data.GetItem(inventory.Equipped(ItemPos.BagSlotOf(c)).ItemId)?.Name ?? Loc.T("bags.bag");
                 GameWindow.Text(_bagContainers, name, "section-title");
                 var grid = new VisualElement { pickingMode = PickingMode.Ignore };
                 grid.AddToClassList("item-grid");
@@ -212,18 +212,18 @@ namespace Madlands.Client
         {
             var stats = _client.Stats;
             var self = _client.Self.Values;
-            _character.Title = _client.LocalName + "  -  level " + self.Level + " " + _client.Data.ClassName(self.ClassId);
+            _character.Title = Loc.T("character.title", _client.LocalName, self.Level, _client.Data.ClassName(self.ClassId));
             _stats.Clear();
-            GameWindow.Text(_stats, "Attributes", "section-title");
-            for (int i = 0; i <= (int)StatType.Spirit; i++) Stat(((StatType)i).ToString(), stats.Stats[i].ToString(CultureInfo.InvariantCulture));
-            GameWindow.Text(_stats, "Combat", "section-title");
-            Stat("Armor", stats.Stats[(int)StatType.Armor].ToString(CultureInfo.InvariantCulture));
-            Stat("Damage", stats.MeleeMinDamage + " - " + stats.MeleeMaxDamage);
-            Stat("Speed", (stats.MeleeSpeedMs / 1000f).ToString("0.00", CultureInfo.InvariantCulture));
-            Stat("Attack power", stats.Stats[(int)StatType.AttackPower].ToString(CultureInfo.InvariantCulture));
-            Stat("Spell power", stats.Stats[(int)StatType.SpellPower].ToString(CultureInfo.InvariantCulture));
-            Stat("Crit", stats.CritChance.ToString("0.0", CultureInfo.InvariantCulture) + "%");
-            Stat("Dodge", stats.DodgeChance.ToString("0.0", CultureInfo.InvariantCulture) + "%");
+            GameWindow.Text(_stats, Loc.T("character.attributes"), "section-title");
+            for (int i = 0; i <= (int)StatType.Spirit; i++) Stat(Loc.T("stat." + (StatType)i), stats.Stats[i].ToString(CultureInfo.InvariantCulture));
+            GameWindow.Text(_stats, Loc.T("character.combat"), "section-title");
+            Stat(Loc.T("character.armor"), stats.Stats[(int)StatType.Armor].ToString(CultureInfo.InvariantCulture));
+            Stat(Loc.T("character.damage"), stats.MeleeMinDamage + " - " + stats.MeleeMaxDamage);
+            Stat(Loc.T("character.speed"), (stats.MeleeSpeedMs / 1000f).ToString("0.00", CultureInfo.InvariantCulture));
+            Stat(Loc.T("character.attackPower"), stats.Stats[(int)StatType.AttackPower].ToString(CultureInfo.InvariantCulture));
+            Stat(Loc.T("character.spellPower"), stats.Stats[(int)StatType.SpellPower].ToString(CultureInfo.InvariantCulture));
+            Stat(Loc.T("character.crit"), stats.CritChance.ToString("0.0", CultureInfo.InvariantCulture) + "%");
+            Stat(Loc.T("character.dodge"), stats.DodgeChance.ToString("0.0", CultureInfo.InvariantCulture) + "%");
         }
 
         private void Stat(string name, string value)
@@ -239,7 +239,7 @@ namespace Madlands.Client
         {
             var column = new VisualElement { pickingMode = PickingMode.Ignore };
             column.AddToClassList("paperdoll-column");
-            foreach (var (slot, name) in slots) column.Add(MakeSlot(ItemPos.Equip(slot), name, null).Root);
+            foreach (var (slot, name) in slots) column.Add(MakeSlot(ItemPos.Equip(slot), Loc.T(name), null).Root);
             return column;
         }
 
@@ -318,7 +318,7 @@ namespace Madlands.Client
                 _client.AutoEquip(pos);
                 return;
             }
-            _error("That item can not be used.");
+            _error(Loc.T("error.notUsable"));
         }
 
         private void CancelHeld()
@@ -383,7 +383,7 @@ namespace Madlands.Client
             if (stack.IsEmpty) return;
             _pendingDestroy = pos;
             var item = _client.Data.GetItem(stack.ItemId);
-            _confirmText.text = "Destroy " + ItemTooltip.Describe(_client.Data, stack.ItemId, stack.Count) + "? It will be gone for good.";
+            _confirmText.text = Loc.T("destroy.confirm", ItemTooltip.Describe(_client.Data, stack.ItemId, stack.Count));
             if (item != null && item.Class == ItemClass.Quest) _confirmText.text += " It is needed for a quest.";
             _confirm.Open();
             Refresh();

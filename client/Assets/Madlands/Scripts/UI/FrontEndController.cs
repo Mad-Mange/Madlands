@@ -70,6 +70,7 @@ namespace Madlands.Client
             var doc = GetComponent<UIDocument>();
             var r = doc.rootVisualElement;
             r.pickingMode = PickingMode.Ignore;
+            Loc.Apply(r);
             if (_panelSettings == null && doc.panelSettings != null)
             {
                 _panelSettings = doc.panelSettings;
@@ -103,7 +104,7 @@ namespace Madlands.Client
 
             r.Q<Button>("login-button").clicked += () => _ = LoginAsync(register: false);
             r.Q<Button>("register-button").clicked += () => _ = LoginAsync(register: true);
-            _quickLogin.text = "Quick login: " + ClientSettings.QuickLoginAccount;
+            _quickLogin.text = Loc.T("login.quickAs", ClientSettings.QuickLoginAccount);
             _quickLogin.clicked += () => _ = QuickLoginAsync();
             _server.RegisterValueChangedCallback(_ => UpdateQuickLogin());
             r.Q<Button>("enter-world-button").clicked += EnterWorld;
@@ -182,7 +183,7 @@ namespace Madlands.Client
             if (IsVisible(_busyOverlay)) return;
             EnsureAccountClient();
             SetStatus(_loginStatus, "");
-            SetBusy(register ? "Creating account..." : "Logging in...");
+            SetBusy(Loc.T(register ? "login.creatingAccount" : "login.loggingIn"));
             var response = register
                 ? await _account.RegisterAsync(_username.value, _password.value)
                 : await _account.LoginAsync(_username.value, _password.value);
@@ -205,7 +206,7 @@ namespace Madlands.Client
             EnsureAccountClient();
             SetStatus(_loginStatus, "");
             string account = ClientSettings.QuickLoginAccount;
-            SetBusy("Logging in as " + account + "...");
+            SetBusy(Loc.T("login.loggingInAs", account));
             var response = await _account.LoginOrRegisterAsync(account, ClientSettings.DevPassword);
             SetBusy(null);
             if (!response.Ok)
@@ -233,7 +234,7 @@ namespace Madlands.Client
         private async Task AutoConnectAsync()
         {
             EnsureAccountClient();
-            SetBusy("Logging in as " + Settings.User + "...");
+            SetBusy(Loc.T("login.loggingInAs", Settings.User));
             var auth = await _account.LoginOrRegisterAsync(Settings.User, Settings.Password);
             if (!auth.Ok)
             {
@@ -333,7 +334,7 @@ namespace Madlands.Client
             entry.AddToClassList("character-entry");
             var name = new Label(c.Name);
             name.AddToClassList("character-name");
-            var details = new Label($"Level {c.Level} {OptionName(_list.Races, c.Race)} {OptionName(_list.Classes, c.Class)}");
+            var details = new Label(Loc.T("characters.details", c.Level, OptionName(_list.Races, c.Race), OptionName(_list.Classes, c.Class)));
             details.AddToClassList("character-details");
             entry.Add(name);
             entry.Add(details);
@@ -358,7 +359,7 @@ namespace Madlands.Client
             if (_selectedId == 0 || auth == null || IsVisible(_busyOverlay)) return;
             PlayerPrefs.SetString(LastCharacterKey, _selectedId.ToString());
             SetStatus(_charactersStatus, "");
-            SetBusy("Entering the world...");
+            SetBusy(Loc.T("characters.entering"));
             // A dev server bound to loopback announces 127.0.0.1; if we reached its API on another
             // address, the game port is on that address too.
             string apiHost = new System.Uri(_account.BaseUrl).Host;
@@ -374,7 +375,7 @@ namespace Madlands.Client
             {
                 _pendingDeleteId = _selectedId;
                 _pendingDeleteUntil = Time.time + DeleteConfirmSeconds;
-                SetStatus(_charactersStatus, $"Click Delete again to permanently delete {character.Name}.");
+                SetStatus(_charactersStatus, Loc.T("characters.confirmDelete", character.Name));
                 return;
             }
             _pendingDeleteId = 0;
@@ -402,10 +403,10 @@ namespace Madlands.Client
             var name = NameRules.NormalizeCharacterName(_createName.value);
             if (name == null)
             {
-                SetStatus(_createStatus, $"Names are {NameRules.CharacterNameMin}-{NameRules.CharacterNameMax} letters, no spaces or digits.");
+                SetStatus(_createStatus, Loc.T("create.nameRules", NameRules.CharacterNameMin, NameRules.CharacterNameMax));
                 return;
             }
-            SetBusy("Creating " + name + "...");
+            SetBusy(Loc.T("create.creating", name));
             var race = _list.Races[Mathf.Max(0, _raceDropdown.index)].Id;
             var cls = _list.Classes[Mathf.Max(0, _classDropdown.index)].Id;
             var created = await _account.CreateCharacterAsync(name, race, cls);
@@ -434,11 +435,11 @@ namespace Madlands.Client
             if (_account == null || rejectReason == RejectReason.InvalidSession)
             {
                 Show(_loginScreen);
-                SetStatus(_loginStatus, rejectReason == RejectReason.InvalidSession ? "Your session has expired. Please log in again." : reason);
+                SetStatus(_loginStatus, rejectReason == RejectReason.InvalidSession ? Loc.T("login.sessionExpired") : reason);
                 return;
             }
             bool userLeft = reason == "DisconnectPeerCalled";
-            _ = ShowCharactersAsync(userLeft ? "" : "Disconnected: " + reason);
+            _ = ShowCharactersAsync(userLeft ? "" : Loc.T("login.disconnected", reason));
         }
 
         // ------------------------------------------------------------------ helpers

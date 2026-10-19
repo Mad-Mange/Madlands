@@ -113,6 +113,9 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   special case per spell id (ADR 0005). Balance numbers live in `content/` and `Combat/StatFormulas.cs`.
 - **Art comes from the `art/` scripts** (ADR 0012). `ArtImporter` owns the import settings of everything in
   `Assets/Madlands/Art`; never set them by hand. Character material names are the gear regions the client recolors.
+- **No hard-coded interface text** (ADR 0013): use `Loc.T("area.key")` in code and `text="#area.key"` in UXML, and
+  add the English text to `client/Assets/Madlands/Resources/Localization/en.json`. Game content texts come from the
+  server (content/) and are not keys.
 - **Sounds are played by name** through `SoundSystem` (`Play`, `PlayAt`, `SetMusic`, `SetAmbience`); game events map
   to sounds in `GameSounds`. Only CC0 or self-made audio goes in the repo; list third-party sources in `CREDITS.md`.
 - **Content ids are stable and never reused.** Content is data (`content/`), validated by `ContentLoader`

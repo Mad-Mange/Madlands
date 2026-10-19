@@ -196,26 +196,9 @@ namespace Madlands.Client
 
         public static string Label(GameAction action)
         {
-            switch (action)
-            {
-                case GameAction.MoveForward: return "Move forward";
-                case GameAction.MoveBackward: return "Move backward";
-                case GameAction.TurnLeft: return "Turn left";
-                case GameAction.TurnRight: return "Turn right";
-                case GameAction.StrafeLeft: return "Strafe left";
-                case GameAction.StrafeRight: return "Strafe right";
-                case GameAction.Jump: return "Jump";
-                case GameAction.AutoRun: return "Autorun";
-                case GameAction.TargetNextEnemy: return "Target next enemy";
-                case GameAction.OpenChat: return "Open chat";
-                case GameAction.ChatCommand: return "Chat command (/)";
-                case GameAction.ToggleBags: return "Bags";
-                case GameAction.ToggleCharacter: return "Character";
-                case GameAction.ToggleQuestLog: return "Quest log";
-                case GameAction.ToggleMap: return "World map";
-                case GameAction.ToggleDebug: return "Debug overlay";
-                default: return "Action button " + (action - GameAction.Action1 + 1);
-            }
+            return action >= GameAction.Action1
+                ? Loc.T("action.button", action - GameAction.Action1 + 1)
+                : Loc.T("action." + action);
         }
 
         private static void Save()
