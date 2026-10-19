@@ -45,6 +45,8 @@ namespace Madlands.Client
         public float? CameraDistance;
         public float? CameraYawOffset;
         public bool HideDebug;
+        /// <summary>No HUD at all (-hidehud): for pictures of the world.</summary>
+        public bool HideHud;
         /// <summary>Class name or id for characters created by -autoconnect.</summary>
         public string ClassName;
         /// <summary>Race name or id for characters created by -autoconnect.</summary>
@@ -133,6 +135,9 @@ namespace Madlands.Client
                         break;
                     case "-hidedebug":
                         s.HideDebug = true;
+                        break;
+                    case "-hidehud":
+                        s.HideHud = true;
                         break;
                     case "-class" when next != null:
                         s.ClassName = next;

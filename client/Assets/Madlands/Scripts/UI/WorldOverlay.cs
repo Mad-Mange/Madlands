@@ -10,6 +10,7 @@ namespace Madlands.Client
     /// <summary>
     /// Screen-space elements that follow units: nameplates (name, health, cast) and floating combat
     /// text (damage, heals, misses, experience). Positions are projected from the unit views each frame.
+    /// Nameplates can be clicked like the unit itself (left: select, right: select and use).
     /// </summary>
     public sealed class WorldOverlay
     {
@@ -42,6 +43,9 @@ namespace Madlands.Client
         private readonly Dictionary<EntityGuid, Nameplate> _nameplates = new Dictionary<EntityGuid, Nameplate>();
         private readonly List<EntityGuid> _stale = new List<EntityGuid>();
         private readonly List<FloatingText> _texts = new List<FloatingText>();
+
+        /// <summary>A nameplate was clicked: the unit, and whether it was the right button.</summary>
+        public event System.Action<EntityGuid, bool> Clicked;
 
         public WorldOverlay(VisualElement nameplateLayer, VisualElement textLayer)
         {
@@ -92,7 +96,7 @@ namespace Madlands.Client
 
                 if (!_nameplates.TryGetValue(entity.Guid, out var plate))
                 {
-                    plate = CreateNameplate(entity.Name);
+                    plate = CreateNameplate(entity.Guid, entity.Name);
                     _nameplates.Add(entity.Guid, plate);
                 }
                 plate.Seen = true;
@@ -136,10 +140,16 @@ namespace Madlands.Client
             }
         }
 
-        private Nameplate CreateNameplate(string name)
+        private Nameplate CreateNameplate(EntityGuid guid, string name)
         {
-            var root = new VisualElement { pickingMode = PickingMode.Ignore };
+            var root = new VisualElement { pickingMode = PickingMode.Position };
             root.AddToClassList("nameplate");
+            root.RegisterCallback<PointerDownEvent>(e => e.StopPropagation());
+            root.RegisterCallback<PointerUpEvent>(e =>
+            {
+                if (e.button == 0 || e.button == 1) Clicked?.Invoke(guid, e.button == 1);
+                e.StopPropagation();
+            });
             var mark = new Label { pickingMode = PickingMode.Ignore };
             mark.AddToClassList("quest-mark");
             mark.style.display = DisplayStyle.None;

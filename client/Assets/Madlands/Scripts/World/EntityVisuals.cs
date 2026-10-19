@@ -245,7 +245,8 @@ namespace Madlands.Client
                     return shape;
                 }
                 case FrogDisplay:
-                    return Creature(parent, displayId, "Frog", 0.6f, walkSpeed: 1.2f, runSpeed: 3.5f, out model);
+                    // "Fat as dogs, they are" (Old Tamsin).
+                    return Scaled(Creature(parent, displayId, "Frog", 0.6f, walkSpeed: 1.2f, runSpeed: 3.5f, out model), model, 1.5f);
                 case WolfDisplay:
                     return Creature(parent, displayId, "Wolf", 0.7f, walkSpeed: 1.3f, runSpeed: 4.2f, out model);
                 case DummyDisplay:

@@ -137,6 +137,7 @@ namespace Madlands.Client
             chatInput.Query<VisualElement>().ForEach(e => e.pickingMode = PickingMode.Position);
             _chat = new ChatPanel(r.Q("chat-log"), chatInput, text => Client.SendChat(text));
             _overlay = new WorldOverlay(r.Q("nameplates"), r.Q("combat-text"));
+            _overlay.Clicked += (guid, use) => targeting.Select(guid, use);
             BuildActionBar();
             BuildWindows();
             KeyBindings.Changed += RelabelKeys;
@@ -275,7 +276,7 @@ namespace Madlands.Client
         {
             if (!_subscribed) return;
             bool inWorld = network.InWorld;
-            _hud.EnableInClassList("hidden", !inWorld);
+            _hud.EnableInClassList("hidden", !inWorld || network.Settings != null && network.Settings.HideHud);
             if (!inWorld)
             {
                 if (_chat.IsOpen) _chat.Close();

@@ -62,12 +62,13 @@ namespace Madlands.Client
             if (view._model != null && view._model.Animator != null && view._model.Clips.Count > 0)
                 view._animator = new UnitAnimator(view._model.Animator, view._model.Clips, view._model.Humanoid, view._model.WalkSpeed, view._model.RunSpeed);
 
-            // Click target for selection. A trigger: never blocks movement or the camera.
+            // Click target for selection, a bit larger than the body so units are easy to hit.
+            // A trigger: never blocks movement or the camera.
             var collider = go.AddComponent<CapsuleCollider>();
             collider.isTrigger = true;
-            collider.height = view.Shape.Height;
-            collider.radius = Mathf.Max(0.4f, view.Shape.Radius);
-            collider.center = Vector3.up * (view.Shape.Height * 0.5f);
+            collider.radius = Mathf.Max(0.55f, view.Shape.Radius * 1.15f + 0.1f);
+            collider.height = Mathf.Max(view.Shape.Height + 0.35f, 1.3f, collider.radius * 2f);
+            collider.center = Vector3.up * (collider.height * 0.5f - 0.1f);
             return view;
         }
 

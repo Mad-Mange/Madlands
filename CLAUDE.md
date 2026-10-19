@@ -130,5 +130,5 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
 - **The GitHub repo (Mad-Mange/Madlands) is PUBLIC.** Never commit paid/licensed asset packs (Synty etc.):
   they go in `client/Assets/ThirdParty/Paid/`, which is gitignored. Only free/CC0 or own assets in git.
 - README progress images: `docs/images/phaseN-*.jpg`, captured with the client's `-screenshot` flags
-  (`-campitch/-camdistance/-camyaw/-hidedebug` for framing) and `BuildTools.CaptureWorldScreenshot`.
+  (`-campitch/-camdistance/-camyaw/-hidedebug/-hidehud` for framing) and `BuildTools.CaptureWorldScreenshot`.
   Update the README progress table + development log when a phase completes.

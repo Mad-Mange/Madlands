@@ -21,6 +21,9 @@ namespace Madlands.Client
         private const float ClickMaxPixels = 6f;
         private const float ClickMaxSeconds = 0.35f;
         private const float TabRange = 45f;
+        private const float PickRange = 300f;
+        /// <summary>How far (reference pixels at 1080p) a click may miss a unit's outline and still select it.</summary>
+        private const float ClickSlackPixels = 28f;
 
         [SerializeField] private NetworkController network;
 
@@ -78,8 +81,14 @@ namespace Madlands.Client
 
             var unit = PickUnit(_pressPosition);
             if (unit == null) return;
-            Client.SetTarget(unit.Guid);
-            if (rightUp) Use(unit.Guid);
+            Select(unit.Guid, use: rightUp);
+        }
+
+        /// <summary>Targets a unit; <paramref name="use"/> (right-click) also attacks, talks or loots.</summary>
+        public void Select(EntityGuid guid, bool use)
+        {
+            Client.SetTarget(guid);
+            if (use) Use(guid);
         }
 
         /// <summary>Right-click on a unit: loot a corpse, attack an enemy, or talk to an NPC.</summary>
@@ -109,14 +118,75 @@ namespace Madlands.Client
             }
         }
 
-        private static UnitView PickUnit(Vector2 screenPosition)
+        /// <summary>
+        /// The unit under the cursor. Your own character never hides what is behind it; terrain and
+        /// buildings do. A click that just misses a unit still selects the one drawn closest to it.
+        /// </summary>
+        private UnitView PickUnit(Vector2 screenPosition)
         {
             var cam = Camera.main;
             if (cam == null) return null;
+            var self = network.LocalPlayer != null ? network.LocalPlayer.transform : null;
             var ray = cam.ScreenPointToRay(screenPosition);
-            // Nearest hit of anything (terrain included, so units behind hills cannot be clicked).
-            if (!Physics.Raycast(ray, out var hit, 300f, ~0, QueryTriggerInteraction.Collide)) return null;
-            return hit.collider.GetComponentInParent<UnitView>();
+            var hits = Physics.RaycastAll(ray, PickRange, ~0, QueryTriggerInteraction.Collide);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            UnitView mine = null;
+            foreach (var hit in hits)
+            {
+                var unit = hit.collider.GetComponentInParent<UnitView>();
+                if (self != null && hit.collider.transform.IsChildOf(self))
+                {
+                    mine = unit ?? mine;
+                    continue;
+                }
+                if (unit != null) return unit;
+                if (!hit.collider.isTrigger) break; // terrain, a wall, a tree: nothing behind it counts
+            }
+            return NearestOnScreen(cam, screenPosition, self) ?? mine;
+        }
+
+        private UnitView NearestOnScreen(Camera cam, Vector2 click, Transform self)
+        {
+            float slack = ClickSlackPixels * Screen.height / 1080f;
+            UnitView best = null;
+            float bestScore = float.MaxValue;
+            foreach (var entity in Client.World.Entities)
+            {
+                if (!network.WorldView.TryGetView(entity.Guid, out var view)) continue;
+                var feet = view.transform.position;
+                var head = feet + Vector3.up * view.Shape.Height;
+                var a = cam.WorldToScreenPoint(feet);
+                var b = cam.WorldToScreenPoint(head);
+                if (a.z <= 0f || b.z <= 0f || a.z > PickRange) continue;
+                // The unit's outline on screen: a stroke from feet to head, as wide as the unit.
+                float pixelsPerMeter = Vector2.Distance(a, b) / Mathf.Max(view.Shape.Height, 0.1f);
+                float reach = view.Shape.Radius * pixelsPerMeter + slack;
+                float miss = DistanceToSegment(click, a, b);
+                if (miss > reach) continue;
+                float score = miss / reach + a.z * 0.002f;
+                if (score >= bestScore || Hidden(cam, view, self)) continue;
+                best = view;
+                bestScore = score;
+            }
+            return best;
+        }
+
+        /// <summary>Something solid (not your own character) between the camera and the unit's chest.</summary>
+        private static bool Hidden(Camera cam, UnitView view, Transform self)
+        {
+            var from = cam.transform.position;
+            var to = view.ChestPosition;
+            var hits = Physics.RaycastAll(from, to - from, Vector3.Distance(from, to), ~0, QueryTriggerInteraction.Ignore);
+            foreach (var hit in hits)
+                if (self == null || !hit.collider.transform.IsChildOf(self)) return true;
+            return false;
+        }
+
+        private static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
+        {
+            var ab = b - a;
+            float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude) : 0f;
+            return Vector2.Distance(p, a + ab * t);
         }
 
         /// <summary>Nearest living enemies in front of the camera, closest first; each press moves to the next.</summary>
