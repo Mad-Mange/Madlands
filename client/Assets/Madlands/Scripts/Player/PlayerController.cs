@@ -34,10 +34,13 @@ namespace Madlands.Client
         private float _verticalVelocity;
         private Vector3 _airHorizontalVelocity;
         private bool _autorun;
+        private bool _airSprint;
 
         public MovementState State => _state;
         public UnitView View { get; private set; }
         public bool IsMovingForward => (_state.Flags & MovementFlags.Forward) != 0;
+        /// <summary>Sprint stamina (the server simulates the same pool and allows the speed while it lasts).</summary>
+        public Stamina Stamina { get; } = new Stamina();
 
         public static PlayerController Create(MovementState spawn, NetworkController network, CameraController camera)
         {
@@ -60,6 +63,7 @@ namespace Madlands.Client
             player._camera = camera;
             player._state = spawn;
             player._yaw = spawn.Yaw;
+            player._autorun = network.Settings != null && network.Settings.AutoRun;
             return player;
         }
 
@@ -126,12 +130,22 @@ namespace Madlands.Client
             if (turnLeft && !turnRight) flags |= MovementFlags.TurnLeft;
             if (turnRight && !turnLeft) flags |= MovementFlags.TurnRight;
 
+            // Sprint while the key is held, running forward, as long as the stamina lasts. A jump keeps
+            // the speed it started with.
+            bool sprint = _airborne
+                ? _airSprint
+                : (Held(GameAction.Sprint) || _network.Settings != null && _network.Settings.HoldSprint)
+                  && (flags & MovementFlags.Forward) != 0 && Stamina.CanSprint;
+            Stamina.Advance(sprint, dt, _network.Client.LocalTimeMs);
+            if (sprint) flags |= MovementFlags.Sprinting;
+
             Vector3 horizontal;
             if (!_airborne)
             {
                 horizontal = DesiredVelocity(flags);
                 if (jump)
                 {
+                    _airSprint = sprint;
                     _airborne = true;
                     _verticalVelocity = GameConstants.JumpVelocity;
                     _airHorizontalVelocity = horizontal;
@@ -184,6 +198,7 @@ namespace Madlands.Client
             float x = ((flags & MovementFlags.StrafeRight) != 0 ? 1f : 0f) - ((flags & MovementFlags.StrafeLeft) != 0 ? 1f : 0f);
             if (x == 0f && z == 0f) return Vector3.zero;
             float speed = (z < 0f ? GameConstants.BackwardSpeed : GameConstants.RunSpeed) * _network.Client.Self.Values.SpeedPercent / 100f;
+            if ((flags & MovementFlags.Sprinting) != 0) speed *= Stamina.SpeedMultiplier;
             var local = new Vector3(x, 0f, z).normalized * speed;
             return Conversions.YawToRotation(_yaw) * local;
         }
@@ -200,6 +215,7 @@ namespace Madlands.Client
             else
             {
                 _airborne = true;
+                _airSprint = (_state.Flags & MovementFlags.Sprinting) != 0;
                 _verticalVelocity = 0f;
                 _airHorizontalVelocity = horizontal;
             }

@@ -20,7 +20,9 @@ public enum MoveVerdict
 ///  - horizontal distance per client-time step is bounded by run speed,
 ///  - position must be inside the map and near the ground (height map from Unity export),
 ///  - slows, roots and stuns (from the unit's auras) lower the allowed speed after a short grace
-///    period, because the client only learns about them one round trip later.
+///    period, because the client only learns about them one round trip later,
+///  - sprinting is faster only while the player's <see cref="Stamina"/> (simulated here on the client's
+///    timestamps, like the client does) lasts, with a short grace for timing differences.
 /// </summary>
 public sealed class MovementValidator
 {
@@ -35,6 +37,8 @@ public sealed class MovementValidator
     public const long LimitGraceMs = 1000;
     /// <summary>Per-update slack while immobile (rooted, stunned, dead).</summary>
     public const float ImmobileSlack = 0.05f;
+    /// <summary>Sprint speed stays allowed this long (client time) after the stamina ran out.</summary>
+    public const long SprintGraceMs = 750;
 
     private readonly HeightMap _heightMap;
     private MovementState _last;
@@ -46,6 +50,7 @@ public sealed class MovementValidator
     private float _speedMultiplier = 1f;
     private float _graceMultiplier;
     private long _graceUntilMs;
+    private long _sprintGraceUntilClientMs;
 
     public MovementValidator(HeightMap heightMap)
     {
@@ -53,6 +58,8 @@ public sealed class MovementValidator
     }
 
     public MovementState LastAccepted => _last;
+    /// <summary>The player's sprint stamina as the server sees it.</summary>
+    public Stamina Stamina { get; } = new();
     public string LastRejectReason { get; private set; } = "";
 
     /// <summary>Start over from a known-good state (spawn, teleport, correction).</summary>
@@ -109,7 +116,7 @@ public sealed class MovementValidator
         }
 
         float seconds = Math.Clamp(stepMs, 0, MaxStepMs) / 1000f;
-        float multiplier = AllowedMultiplier(serverNowMs);
+        float multiplier = AllowedMultiplier(serverNowMs) * SprintMultiplier(next, seconds, clientMs);
         float slack = multiplier > 0f ? DistanceSlack : ImmobileSlack;
         float maxDistance = GameConstants.RunSpeed * multiplier * seconds * SpeedTolerance + slack;
         float distance = Vec3.HorizontalDistance(_last.Position, next.Position);
@@ -126,6 +133,22 @@ public sealed class MovementValidator
         _lastClientMs = clientMs;
         _hasClientTime = true;
         return MoveVerdict.Accepted;
+    }
+
+    /// <summary>
+    /// Advances the stamina over the step (the previous update's sprinting was in effect during it) and
+    /// returns the extra speed factor this update may have.
+    /// </summary>
+    private float SprintMultiplier(in MovementState next, float seconds, long clientMs)
+    {
+        bool wasSprinting = (_last.Flags & MovementFlags.Sprinting) != 0;
+        bool sprinting = (next.Flags & MovementFlags.Sprinting) != 0;
+        Stamina.Advance(wasSprinting, seconds, clientMs);
+        if (Stamina.Value > 0f) _sprintGraceUntilClientMs = clientMs + SprintGraceMs;
+        // A jump keeps the speed it started with, even if the stamina runs out in the air.
+        bool allowed = (wasSprinting || sprinting) &&
+                       (Stamina.Value > 0f || clientMs <= _sprintGraceUntilClientMs || wasSprinting && _last.IsAirborne);
+        return allowed ? Stamina.SpeedMultiplier : 1f;
     }
 
     private MoveVerdict Reject(string reason)

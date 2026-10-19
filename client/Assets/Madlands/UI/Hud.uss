@@ -690,3 +690,33 @@
     color: rgb(220, 220, 210);
     white-space: normal;
 }
+
+/* ---------------------------------------------------------------- sprint stamina */
+
+/* Hangs under the player frame; fades out while full. */
+.stamina-bar {
+    position: absolute;
+    left: 72px;
+    right: 8px;
+    bottom: -11px;
+    height: 7px;
+    background-color: rgb(10, 10, 12);
+    border-width: 1px;
+    border-color: rgb(0, 0, 0);
+    border-radius: 2px;
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 0.6s;
+}
+
+.stamina-bar.full {
+    opacity: 0;
+}
+
+.stamina-bar .bar-fill {
+    background-color: rgb(232, 176, 44);
+}
+
+.stamina-bar.low .bar-fill {
+    background-color: rgb(200, 90, 40);
+}

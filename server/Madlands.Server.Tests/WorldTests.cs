@@ -164,6 +164,58 @@ public class MovementValidatorTests
         state.Velocity = new Vec3(0, 0, 20);
         Assert.Equal(MoveVerdict.Rejected, v.Validate(state, 1000, 1000));
     }
+
+    private static MovementState Sprinting(float z) =>
+        new(new Vec3(0, 10f, z), 0f, new Vec3(0, 0, GameConstants.RunSpeed * Stamina.SpeedMultiplier),
+            MovementFlags.Forward | MovementFlags.Sprinting);
+
+    [Fact]
+    public void Sprinting_is_faster_while_the_stamina_lasts()
+    {
+        float sprintSpeed = GameConstants.RunSpeed * Stamina.SpeedMultiplier;
+        var v = Spawned();
+        Assert.Equal(MoveVerdict.Accepted, v.Validate(Sprinting(0), 1000, 1000));
+        // Without the sprint flag the same speed is too fast.
+        var plain = Spawned();
+        Assert.Equal(MoveVerdict.Accepted, plain.Validate(Running(0, 0), 1000, 1000));
+        Assert.Equal(MoveVerdict.Rejected, plain.Validate(Running(0, sprintSpeed * 0.5f), 1500, 1500));
+
+        // Full stamina lasts Max / DrainPerSecond seconds (about 5.5 s); then the grace, then no more.
+        float z = 0f;
+        long t = 1000;
+        while (v.Stamina.Value > 0f)
+        {
+            t += 500;
+            z += sprintSpeed * 0.5f;
+            Assert.Equal(MoveVerdict.Accepted, v.Validate(Sprinting(z), t, t));
+        }
+        Assert.InRange(t - 1000, 5000, 6000);
+        t += MovementValidator.SprintGraceMs + 500;
+        z += sprintSpeed * (MovementValidator.SprintGraceMs + 500) / 1000f;
+        Assert.Equal(MoveVerdict.Rejected, v.Validate(Sprinting(z), t, t));
+    }
+
+    [Fact]
+    public void Stamina_drains_while_sprinting_and_refills_after_a_rest()
+    {
+        var stamina = new Stamina();
+        Assert.True(stamina.CanSprint);
+        stamina.Advance(true, 2f, 2000);
+        Assert.Equal(Stamina.Max - 2 * Stamina.DrainPerSecond, stamina.Value, 3);
+        stamina.Advance(true, 10f, 12000);
+        Assert.Equal(0f, stamina.Value);
+        Assert.False(stamina.CanSprint);
+
+        // No refill during the rest delay, then a steady refill; a new sprint needs a little first.
+        stamina.Advance(false, 1f, 13000);
+        Assert.Equal(0f, stamina.Value);
+        stamina.Advance(false, 0.5f, 13600);
+        Assert.Equal(0.5f * Stamina.RegenPerSecond, stamina.Value, 3);
+        Assert.Equal(Stamina.ToStart <= stamina.Value, stamina.CanSprint);
+        stamina.Advance(false, 60f, 73600);
+        Assert.Equal(Stamina.Max, stamina.Value);
+        Assert.True(stamina.CanSprint);
+    }
 }
 
 public class ServerMiscTests

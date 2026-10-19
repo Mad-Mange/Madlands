@@ -47,6 +47,9 @@ namespace Madlands.Client
         public bool HideDebug;
         /// <summary>No HUD at all (-hidehud): for pictures of the world.</summary>
         public bool HideHud;
+        /// <summary>Test runs: run forward from the start (-autorun), holding sprint (-sprint).</summary>
+        public bool AutoRun;
+        public bool HoldSprint;
         /// <summary>Class name or id for characters created by -autoconnect.</summary>
         public string ClassName;
         /// <summary>Race name or id for characters created by -autoconnect.</summary>
@@ -138,6 +141,12 @@ namespace Madlands.Client
                         break;
                     case "-hidehud":
                         s.HideHud = true;
+                        break;
+                    case "-autorun":
+                        s.AutoRun = true;
+                        break;
+                    case "-sprint":
+                        s.HoldSprint = true;
                         break;
                     case "-class" when next != null:
                         s.ClassName = next;

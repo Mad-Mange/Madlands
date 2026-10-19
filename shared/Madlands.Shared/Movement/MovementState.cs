@@ -16,9 +16,13 @@ namespace Madlands.Shared.Movement
         /// <summary>Jumping or falling: vertical motion follows gravity, not the terrain.</summary>
         Airborne = 1 << 6,
         Walking = 1 << 7,
+        /// <summary>Running faster on <see cref="Stamina"/>. Only in the client's own updates: others see the speed.</summary>
+        Sprinting = 1 << 8,
 
         MoveMask = Forward | Backward | StrafeLeft | StrafeRight,
         TurnMask = TurnLeft | TurnRight,
+        /// <summary>The flags other clients get (one byte in the compact form); higher ones stay between client and server.</summary>
+        CompactMask = 0xFF,
     }
 
     /// <summary>
@@ -104,7 +108,7 @@ namespace Madlands.Shared.Movement
             w.WriteShort(QuantizeShort(Velocity.X));
             w.WriteShort(QuantizeShort(Velocity.Y));
             w.WriteShort(QuantizeShort(Velocity.Z));
-            w.WriteByte((byte)Flags);
+            w.WriteByte((byte)(Flags & MovementFlags.CompactMask));
         }
 
         public static MovementState ReadCompact(ref PacketReader r)

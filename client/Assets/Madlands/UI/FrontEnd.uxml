@@ -24,6 +24,9 @@
                         <ui:Label name="player-power-text" class="bar-text" />
                     </ui:VisualElement>
                 </ui:VisualElement>
+                <ui:VisualElement name="player-stamina" class="stamina-bar full" picking-mode="Ignore">
+                    <ui:VisualElement name="player-stamina-fill" class="bar-fill" picking-mode="Ignore" />
+                </ui:VisualElement>
             </ui:VisualElement>
 
             <ui:VisualElement name="target-frame" class="unit-frame target hidden" picking-mode="Ignore">

@@ -63,6 +63,7 @@ builds/client/Madlands.exe -screen-fullscreen 0 -screenshot builds/screenshots/l
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 3;.tele -60 -62" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
 # Items and quests: -open bags,character,questlog opens windows, -talkto "Old Tamsin" (+ -quest 1) opens an NPC dialog,
 # -loot opens loot of corpses in reach, -tooltip <item id> shows a bag item's tooltip, -equip 1020,1210 equips from the bags.
+# -autorun runs forward from the start, -sprint holds the sprint key (test sprint and stamina against the server).
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Shopper -exec ".money 5000;.tele 10 -142" -talkto "Quartermaster Holt" -screenshot builds/screenshots/vendor.png -screenshotdelay 9 -quitafter 13
 ```
 Then read the PNG to verify. Use `-logFile` for the player log. The server keeps characters between client runs:
@@ -107,7 +108,8 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   gets a roundtrip test in `ProtocolTests.cs`.
 - **Client input goes through `KeyBindings`** (`IsHeld`/`WasPressed` of a `GameAction`), never `Keyboard.current[...]`
   directly, so every key stays rebindable. Exceptions: Esc and text-field submit. Settings live in `Preferences`.
-- **Server is authoritative.** Clients only predict their own movement (and the global cooldown); the server validates
+- **Server is authoritative.** Clients only predict their own movement (and the global cooldown, and sprint stamina:
+  `Movement/Stamina.cs` is simulated identically on both sides); the server validates
   (`MovementValidator`, `SpellSystem.Check`) and corrects. Never trust client data; reject NaN; rate-limit every message type.
 - **Combat rules are data + one formula file.** New spell/aura behaviour = a new effect type with a handler, never a
   special case per spell id (ADR 0005). Balance numbers live in `content/` and `Combat/StatFormulas.cs`.

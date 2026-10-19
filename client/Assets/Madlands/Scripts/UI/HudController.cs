@@ -3,6 +3,7 @@ using System.Globalization;
 using Madlands.ClientCore;
 using Madlands.Shared;
 using Madlands.Shared.Game;
+using Madlands.Shared.Movement;
 using Madlands.Shared.Net;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -47,6 +48,7 @@ namespace Madlands.Client
         [SerializeField] private TargetingController targeting;
 
         private VisualElement _hud, _playerFrame, _targetFrame, _playerHealthFill, _playerPower, _playerPowerFill;
+        private VisualElement _stamina, _staminaFill;
         private VisualElement _targetHealthFill, _targetPower, _targetPowerFill, _playerAuras, _targetAuras;
         private VisualElement _playerCast, _playerCastFill, _targetCast, _targetCastFill, _actionBar, _xpFill, _tooltip, _deathPanel;
         private Label _playerName, _playerLevel, _playerHealthText, _playerPowerText, _targetName, _targetLevel, _targetHealthText;
@@ -101,6 +103,8 @@ namespace Madlands.Client
             _playerPower = r.Q("player-power");
             _playerPowerFill = r.Q("player-power-fill");
             _playerPowerText = r.Q<Label>("player-power-text");
+            _stamina = r.Q("player-stamina");
+            _staminaFill = r.Q("player-stamina-fill");
             _targetFrame = r.Q("target-frame");
             _targetName = r.Q<Label>("target-name");
             _targetLevel = r.Q<Label>("target-level");
@@ -384,6 +388,14 @@ namespace Madlands.Client
             SetPower(_playerPower, _playerPowerFill, _playerPowerText, v);
             _playerFrame.EnableInClassList("combat", v.Has(UnitFlags.InCombat));
             _playerFrame.EnableInClassList("dead", v.IsDead);
+
+            var stamina = network.LocalPlayer != null ? network.LocalPlayer.Stamina : null;
+            if (stamina != null)
+            {
+                _staminaFill.style.width = Length.Percent(stamina.Fraction * 100f);
+                _stamina.EnableInClassList("full", stamina.Value >= Stamina.Max);
+                _stamina.EnableInClassList("low", !stamina.Sprinting && stamina.Value < Stamina.ToStart);
+            }
         }
 
         private void UpdateTargetFrame()

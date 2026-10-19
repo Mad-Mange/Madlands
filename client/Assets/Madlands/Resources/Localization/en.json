@@ -5,6 +5,7 @@
   "action.MoveBackward": "Move backward",
   "action.MoveForward": "Move forward",
   "action.OpenChat": "Open chat",
+  "action.Sprint": "Sprint (hold)",
   "action.StrafeLeft": "Strafe left",
   "action.StrafeRight": "Strafe right",
   "action.TargetNextEnemy": "Target next enemy",

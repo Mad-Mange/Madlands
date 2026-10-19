@@ -253,8 +253,12 @@ public class ProtocolTests
         var writer = new PacketWriter();
         SampleState.WriteCompact(writer);
         Assert.Equal(MovementState.CompactWireSize, writer.Length);
-        // Every movement flag fits the compact form's byte.
-        foreach (MovementFlags flag in Enum.GetValues(typeof(MovementFlags))) Assert.True((uint)flag <= byte.MaxValue, flag.ToString());
+        // Every flag others need fits the compact form's byte; sprinting stays between client and server.
+        foreach (MovementFlags flag in Enum.GetValues(typeof(MovementFlags)))
+            Assert.True((uint)flag <= byte.MaxValue || flag == MovementFlags.Sprinting, flag.ToString());
+        var sprinting = SampleState;
+        sprinting.Flags |= MovementFlags.Sprinting;
+        Assert.Equal(SampleState.Flags, sprinting.Quantized().Flags);
     }
 
     [Fact]
