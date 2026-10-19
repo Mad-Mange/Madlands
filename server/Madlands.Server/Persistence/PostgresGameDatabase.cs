@@ -199,9 +199,13 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         var quests = await conn.QueryAsync<QuestRow>(new CommandDefinition(
             "SELECT quest_id, rewarded, progress FROM character_quests WHERE character_id = @characterId ORDER BY quest_id",
             new { characterId }, cancellationToken: ct));
+        var auras = await conn.QueryAsync<AuraRow>(new CommandDefinition(
+            "SELECT spell_id, caster_level, stacks, remaining_ms FROM character_auras WHERE character_id = @characterId ORDER BY spell_id",
+            new { characterId }, cancellationToken: ct));
         return new CharacterData(
             items.Select(i => new ItemRecord((byte)i.Container, (byte)i.Slot, (uint)i.ItemId, i.Count)).ToList(),
-            quests.Select(q => new QuestRecord((uint)q.QuestId, q.Rewarded, q.Progress ?? Array.Empty<int>())).ToList());
+            quests.Select(q => new QuestRecord((uint)q.QuestId, q.Rewarded, q.Progress ?? Array.Empty<int>())).ToList(),
+            auras.Select(a => new AuraRecord((uint)a.SpellId, a.CasterLevel, a.Stacks, a.RemainingMs)).ToList());
     }
 
     public async Task SaveCharacterAsync(CharacterSnapshot s, CancellationToken ct = default)
@@ -219,7 +223,8 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
             new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level, s.Xp, s.Health, s.Power, s.Money, s.StarterKit, s.RestedXp },
             tx, cancellationToken: ct));
 
-        // Items and quests are rewritten as a whole: one statement each, whatever their number.
+        // Items, quests and long buffs are rewritten as a whole: one statement each, whatever their number.
+        var auras = s.Auras ?? Array.Empty<AuraRecord>();
         await conn.ExecuteAsync(new CommandDefinition(
             """
             DELETE FROM character_items WHERE character_id = @CharacterId;
@@ -228,6 +233,9 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
             DELETE FROM character_quests WHERE character_id = @CharacterId;
             INSERT INTO character_quests (character_id, quest_id, rewarded, progress)
             SELECT @CharacterId, q, r, string_to_array(p, ',')::integer[] FROM unnest(@QuestIds, @Rewarded, @Progress) AS t(q, r, p);
+            DELETE FROM character_auras WHERE character_id = @CharacterId;
+            INSERT INTO character_auras (character_id, spell_id, caster_level, stacks, remaining_ms)
+            SELECT @CharacterId, sp, l, st, ms FROM unnest(@AuraSpells, @AuraLevels, @AuraStacks, @AuraRemaining) AS t(sp, l, st, ms);
             """,
             new
             {
@@ -239,6 +247,10 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
                 QuestIds = s.Quests.Select(q => (long)q.QuestId).ToArray(),
                 Rewarded = s.Quests.Select(q => q.Rewarded).ToArray(),
                 Progress = s.Quests.Select(q => string.Join(',', q.Progress)).ToArray(),
+                AuraSpells = auras.Select(a => (long)a.SpellId).ToArray(),
+                AuraLevels = auras.Select(a => (short)a.CasterLevel).ToArray(),
+                AuraStacks = auras.Select(a => (short)a.Stacks).ToArray(),
+                AuraRemaining = auras.Select(a => a.RemainingMs).ToArray(),
             },
             tx, cancellationToken: ct));
         await tx.CommitAsync(ct);
@@ -290,5 +302,13 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         public long QuestId { get; set; }
         public bool Rewarded { get; set; }
         public int[]? Progress { get; set; }
+    }
+
+    private sealed class AuraRow
+    {
+        public long SpellId { get; set; }
+        public short CasterLevel { get; set; }
+        public short Stacks { get; set; }
+        public int RemainingMs { get; set; }
     }
 }

@@ -100,6 +100,13 @@
       ],
       "aura": { "durationMs": 12000, "tickMs": 3000, "effects": [ { "type": "periodicDamage", "amount": 4, "perLevel": 1 } ] }
     },
+    {
+      "id": 205, "name": "Shard Insight", "icon": 205,
+      "description": "Fills a friendly target's mind with shard light, raising Intellect (and so maximum mana) for 30 minutes.",
+      "school": "arcane", "target": "friend", "rangeMax": 30, "powerType": "mana", "cost": 30,
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 1800000, "effects": [ { "type": "modStat", "stat": "intellect", "amount": 5, "perLevel": 1 } ] }
+    },
 
     {
       "id": 300, "name": "Mending Light", "icon": 300,
@@ -139,6 +146,13 @@
       ],
       "aura": { "durationMs": 3000, "effects": [ { "type": "stun" } ] }
     },
+    {
+      "id": 305, "name": "Oakheart", "icon": 305,
+      "description": "Gives a friendly target the endurance of the old oaks, raising Stamina (and so maximum health) for 30 minutes.",
+      "school": "nature", "target": "friend", "rangeMax": 30, "powerType": "mana", "cost": 30,
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 1800000, "effects": [ { "type": "modStat", "stat": "stamina", "amount": 6, "perLevel": 1.5 } ] }
+    },
 
     {
       "id": 500, "name": "Food", "icon": 500,
@@ -177,6 +191,34 @@
       "flags": ["hidden", "notInCombat"],
       "effects": [ { "type": "applyAura" } ],
       "aura": { "durationMs": 18000, "tickMs": 3000, "breakOnCombat": true, "effects": [ { "type": "periodicHeal", "amount": 40 } ] }
+    },
+    {
+      "id": 505, "name": "Elixir of Fortitude", "icon": 505,
+      "description": "Stamina raised by 10 for 30 minutes.",
+      "school": "nature", "target": "self", "rangeMax": 0, "gcdMs": 1000, "flags": ["hidden"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 1800000, "effects": [ { "type": "modStat", "stat": "stamina", "amount": 10 } ] }
+    },
+    {
+      "id": 506, "name": "Elixir of Insight", "icon": 506,
+      "description": "Intellect raised by 10 for 30 minutes.",
+      "school": "arcane", "target": "self", "rangeMax": 0, "gcdMs": 1000, "flags": ["hidden"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 1800000, "effects": [ { "type": "modStat", "stat": "intellect", "amount": 10 } ] }
+    },
+    {
+      "id": 507, "name": "Bogroot Tonic", "icon": 507,
+      "description": "Restores 4 health every 5 seconds for 10 minutes.",
+      "school": "nature", "target": "self", "rangeMax": 0, "gcdMs": 1000, "flags": ["hidden"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 600000, "tickMs": 5000, "effects": [ { "type": "periodicHeal", "amount": 4 } ] }
+    },
+    {
+      "id": 508, "name": "Moonwater Tonic", "icon": 508,
+      "description": "Restores 6 mana every 5 seconds for 10 minutes.",
+      "school": "frost", "target": "self", "rangeMax": 0, "gcdMs": 1000, "flags": ["hidden"],
+      "effects": [ { "type": "applyAura" } ],
+      "aura": { "durationMs": 600000, "tickMs": 5000, "effects": [ { "type": "periodicEnergize", "power": "mana", "amount": 6 } ] }
     },
 
     {

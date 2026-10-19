@@ -16,6 +16,9 @@
 - Aura effect types: `periodicDamage`, `periodicHeal`, `modStat`, `modSpeed`, `modDamageDone`, `stun`, `root`, `absorb`.
 - Harmful auras stack per caster (two players can both bleed a wolf); beneficial ones replace each other.
 - Amounts are fixed when the aura is applied (from the caster's level at that moment).
+- Long beneficial auras (at least a minute: class buffs such as Oakheart and Shard Insight, elixirs, tonics) are saved
+  with the character, as in WoW: their time stands still while logged out. Eating and drinking end at logout, and
+  every aura ends at death (`AuraSystem.Persists`, table `character_auras`).
 
 **On the server**
 

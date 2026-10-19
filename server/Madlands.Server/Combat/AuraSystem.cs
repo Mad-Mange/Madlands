@@ -11,6 +11,8 @@ namespace Madlands.Server.Combat;
 public sealed class AuraSystem
 {
     public const int MaxAurasPerUnit = 40;
+    /// <summary>Beneficial auras at least this long are saved with the character (class buffs, elixirs).</summary>
+    public const int PersistMinMs = 60_000;
 
     private readonly MapInstance _map;
     // Separate lists: a periodic tick can kill (RemoveAll) or hit an absorb while Update iterates.
@@ -76,6 +78,29 @@ public sealed class AuraSystem
             if (target is Creature creature) _map.Combat.AddThreat(creature, caster, 1f, now);
         }
         return aura;
+    }
+
+    /// <summary>Long beneficial auras survive logging out, as in WoW (not eating and drinking).</summary>
+    public static bool Persists(Aura aura) => !aura.IsHarmful && !aura.Definition.BreakOnCombat && aura.DurationMs >= PersistMinMs;
+
+    /// <summary>
+    /// Puts a saved aura back on a player entering the world, with the time it had left. Sends nothing: the
+    /// player is not on a map yet (<see cref="MapInstance.SendOwnAuras"/> follows).
+    /// </summary>
+    public static void Restore(Unit target, SpellDefinition spell, int casterLevel, int stacks, int remainingMs, long now)
+    {
+        if (spell.Aura is not { } def || remainingMs <= 0 || target.Auras.Count >= MaxAurasPerUnit) return;
+        foreach (var a in target.Auras) if (a.Spell.Id == spell.Id) return;
+        var aura = new Aura(spell, target.Guid, casterLevel, FreeSlot(target))
+        {
+            AppliedMs = now,
+            NextTickMs = now + def.TickMs,
+            ExpiresMs = now + Math.Min(remainingMs, def.DurationMs),
+            Stacks = Math.Clamp(stacks, 1, def.MaxStacks),
+        };
+        for (int i = 0; i < def.Effects.Count; i++)
+            aura.Amounts[i] = def.Effects[i].Amount + def.Effects[i].PerLevel * Math.Max(0, casterLevel - 1);
+        target.Auras.Add(aura);
     }
 
     public void Remove(Unit unit, Aura aura, long now)

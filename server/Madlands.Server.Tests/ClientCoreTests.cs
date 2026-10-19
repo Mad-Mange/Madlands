@@ -1,5 +1,6 @@
 using Madlands.ClientCore;
 using Madlands.Shared;
+using Madlands.Shared.Game;
 using Madlands.Shared.Movement;
 
 namespace Madlands.Server.Tests;
@@ -133,5 +134,56 @@ public class MovementSenderTests
         var turned = MovementState.Idle(Vec3.Zero, 0.5f);
         Assert.False(sender.ShouldSend(turned, 50));
         Assert.True(sender.ShouldSend(turned, MovementSender.MinIntervalMs));
+    }
+}
+
+public class ItemComparisonTests
+{
+    private static ItemInfo Item(InventoryType type, params (StatType Stat, int Value)[] stats)
+    {
+        var item = new ItemInfo { Name = type.ToString(), InventoryType = type };
+        foreach (var (stat, value) in stats) item.Stats.Add(new ItemStat { Stat = stat, Value = value });
+        return item;
+    }
+
+    private static ItemInfo Weapon(InventoryType type, int min, int max, int speedMs) =>
+        new() { Name = "Weapon", InventoryType = type, MinDamage = min, MaxDamage = max, SpeedMs = speedMs };
+
+    [Fact]
+    public void Compares_with_the_worn_item_in_the_same_slot()
+    {
+        var worn = Item(InventoryType.Chest, (StatType.Armor, 40), (StatType.Stamina, 2), (StatType.Strength, 1));
+        var found = Item(InventoryType.Chest, (StatType.Armor, 55), (StatType.Stamina, 1), (StatType.Agility, 3));
+        var equipped = new Dictionary<EquipSlot, ItemInfo> { [EquipSlot.Chest] = worn };
+        var replaced = ItemComparison.Replaced(found, slot => equipped.GetValueOrDefault(slot));
+        Assert.Equal(worn, Assert.Single(replaced));
+
+        var changes = ItemComparison.Changes(found, replaced).Select(c => (c.Stat, c.Delta)).ToList();
+        // Armor first, then the stats in order; Stamina and Strength go down.
+        Assert.Equal(new (StatType?, float)[] { (StatType.Armor, 15), (StatType.Strength, -1), (StatType.Agility, 3), (StatType.Stamina, -1) }, changes);
+
+        // Nothing worn there: nothing to compare with.
+        Assert.Empty(ItemComparison.Replaced(Item(InventoryType.Legs), slot => equipped.GetValueOrDefault(slot)));
+    }
+
+    [Fact]
+    public void Two_handed_weapons_replace_both_hands()
+    {
+        var sword = Weapon(InventoryType.MainHand, 4, 8, 2000);   // 3 damage per second
+        var shield = Item(InventoryType.OffHand, (StatType.Armor, 30));
+        var axe = Weapon(InventoryType.TwoHand, 15, 25, 3200);    // 6.25 damage per second
+        var equipped = new Dictionary<EquipSlot, ItemInfo> { [EquipSlot.MainHand] = sword, [EquipSlot.OffHand] = shield };
+        var replaced = ItemComparison.Replaced(axe, slot => equipped.GetValueOrDefault(slot));
+        Assert.Equal(new[] { sword, shield }, replaced);
+
+        var changes = ItemComparison.Changes(axe, replaced);
+        Assert.Null(changes[0].Stat);
+        Assert.Equal(3.25f, changes[0].Delta, 3);
+        Assert.Equal((StatType.Armor, -30f), (changes[1].Stat!.Value, changes[1].Delta));
+
+        // A shield next to a two-handed weapon takes the weapon's place.
+        equipped = new Dictionary<EquipSlot, ItemInfo> { [EquipSlot.MainHand] = axe };
+        Assert.Equal(axe, Assert.Single(ItemComparison.Replaced(shield, slot => equipped.GetValueOrDefault(slot))));
+        Assert.Empty(ItemComparison.Replaced(new ItemInfo { InventoryType = InventoryType.Bag, BagSlots = 6 }, slot => equipped.GetValueOrDefault(slot)));
     }
 }

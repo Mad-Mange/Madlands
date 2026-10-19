@@ -250,7 +250,7 @@ namespace Madlands.Client
             view.Root.RegisterCallback<PointerUpEvent>(e => OnPointerUp(pos, e));
             view.Root.RegisterCallback<PointerEnterEvent>(_ =>
             {
-                if (view.Item != null) _tooltip.Show(view.Item, view.Count, view.Root, _client);
+                if (view.Item != null) _tooltip.Show(view.Item, view.Count, view.Root, _client, compare: pos.Container != ItemPos.Equipment);
             });
             view.Root.RegisterCallback<PointerLeaveEvent>(_ => _tooltip.Hide());
             _slots[pos] = view;
@@ -371,7 +371,7 @@ namespace Madlands.Client
             foreach (var (pos, view) in _slots)
             {
                 if (view.Item == null || view.Item.Id != itemId) continue;
-                _tooltip.Show(view.Item, view.Count, view.Root, _client);
+                _tooltip.Show(view.Item, view.Count, view.Root, _client, compare: pos.Container != ItemPos.Equipment);
                 return;
             }
         }

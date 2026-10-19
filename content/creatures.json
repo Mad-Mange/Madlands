@@ -42,7 +42,7 @@
     {
       "id": 12, "name": "Quartermaster Holt", "displayId": 112, "minLevel": 10, "maxLevel": 10, "faction": 1,
       "health": 6, "damage": 1.5, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
-      "vendor": [4001, 4002, 4005, 4003, 4004, 5001, 1301, 1302, 1303], "role": "generalGoods"
+      "vendor": [4001, 4002, 4005, 4003, 4004, 4008, 4009, 4010, 4011, 5001, 1301, 1302, 1303], "role": "generalGoods"
     },
 
     {

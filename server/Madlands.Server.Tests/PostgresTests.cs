@@ -91,7 +91,8 @@ internal static class AccountAdminChecks
         var items = new[] { new ItemRecord(0, 14, 1001, 1), new ItemRecord(0, 16, 5001, 1), new ItemRecord(1, 3, 4001, 7), new ItemRecord(2, 5, 2003, 4) };
         var quests = new[] { new QuestRecord(3, false, new[] { 5 }), new QuestRecord(7, false, new[] { 2, 0, 1 }), new QuestRecord(1, true, Array.Empty<int>()) };
         Assert.Null(c.LastSavedUtc);
-        await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12, 123_456, true, items, quests, RestedXp: 640));
+        var auras = new[] { new AuraRecord(305, 6, 1, 1_500_000), new AuraRecord(505, 1, 1, 90_000) };
+        await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12, 123_456, true, items, quests, RestedXp: 640, Auras: auras));
         var loaded = await db.LoadCharacterAsync(account, c.Id);
         Assert.Equal((-12.5f, 30.25f, 99f, 3.1f, (byte)7), (loaded!.X, loaded.Y, loaded.Z, loaded.Yaw, loaded.Level));
         Assert.Equal((345, (int?)80, (int?)12, 123_456L, true), (loaded.Xp, loaded.Health, loaded.Power, loaded.Money, loaded.StarterKit));
@@ -103,11 +104,13 @@ internal static class AccountAdminChecks
         Assert.Equal(items.OrderBy(i => i.Container).ThenBy(i => i.Slot), data.Items.OrderBy(i => i.Container).ThenBy(i => i.Slot));
         Assert.Equal(quests.Select(q => (q.QuestId, q.Rewarded, string.Join(",", q.Progress))).OrderBy(q => q.QuestId),
             data.Quests.Select(q => (q.QuestId, q.Rewarded, string.Join(",", q.Progress))).OrderBy(q => q.QuestId));
+        Assert.Equal(auras, data.SavedAuras.OrderBy(a => a.SpellId));
 
         await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, 0, 0, 0, 0, 7, 345, 80, 12, 5, true, new[] { new ItemRecord(1, 0, 1002, 1) }, Array.Empty<QuestRecord>()));
         data = await db.LoadCharacterDataAsync(c.Id);
         Assert.Equal(new[] { new ItemRecord(1, 0, 1002, 1) }, data.Items);
         Assert.Empty(data.Quests);
+        Assert.Empty(data.SavedAuras);
         Assert.Equal(5L, (await db.LoadCharacterAsync(account, c.Id))!.Money);
     }
 }

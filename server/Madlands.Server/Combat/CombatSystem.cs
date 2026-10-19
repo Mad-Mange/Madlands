@@ -234,7 +234,9 @@ public sealed class CombatSystem
         int before = target.Health;
         target.Health = before + amount;
         int effective = target.Health - before;
-        SendEvent(healer?.Guid ?? EntityGuid.Empty, healer, target, spellId, school, amount, 0, flags | CombatFlags.Heal);
+        // Heal-over-time ticks on someone at full health are not shown (a ten-minute tonic would spam them).
+        if (effective > 0 || (flags & CombatFlags.Periodic) == 0)
+            SendEvent(healer?.Guid ?? EntityGuid.Empty, healer, target, spellId, school, amount, 0, flags | CombatFlags.Heal);
 
         if (healer is not null && effective > 0 && target is Player patient && patient.ThreatenedBy.Count > 0)
         {

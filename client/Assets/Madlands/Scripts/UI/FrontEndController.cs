@@ -319,7 +319,7 @@ namespace Madlands.Client
 
             _list = list;
             var auth = _account.LastAuth;
-            _realmLabel.text = auth != null ? $"{auth.RealmName} · {list.Characters.Count}/{list.MaxCharacters} characters" : "";
+            _realmLabel.text = auth != null ? Loc.T("characters.realm", auth.RealmName, list.Characters.Count, list.MaxCharacters) : "";
             _characterList.Clear();
             foreach (var c in list.Characters) _characterList.Add(CreateEntry(c));
             _charactersEmpty.style.display = list.Characters.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
@@ -333,12 +333,19 @@ namespace Madlands.Client
         {
             var entry = new VisualElement { userData = c.Id };
             entry.AddToClassList("character-entry");
+            // The level in a round badge like the portrait in the game, then the name over race and class.
+            var level = new Label(c.Level.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            level.AddToClassList("character-level");
             var name = new Label(c.Name);
             name.AddToClassList("character-name");
-            var details = new Label(Loc.T("characters.details", c.Level, OptionName(_list.Races, c.Race), OptionName(_list.Classes, c.Class)));
+            var details = new Label(Loc.T("characters.details", OptionName(_list.Races, c.Race), OptionName(_list.Classes, c.Class)));
             details.AddToClassList("character-details");
-            entry.Add(name);
-            entry.Add(details);
+            var text = new VisualElement();
+            text.AddToClassList("character-text");
+            text.Add(name);
+            text.Add(details);
+            entry.Add(level);
+            entry.Add(text);
             entry.RegisterCallback<ClickEvent>(e =>
             {
                 Select(c.Id);

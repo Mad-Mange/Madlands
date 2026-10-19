@@ -41,7 +41,7 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 |---|---|---|---|
 | 10 | Captain Edda Brand | Mirewatch, captain's yard | Wolves, the bandit camp, sends you to Westbrook, Rennick and Brannoc |
 | 11 | Old Tamsin | Mirewatch, her garden | Frogs, the singing pearl, sends you to Brother Aldous |
-| 12 | Quartermaster Holt | Mirewatch, supply tent | Vendor: food, drink, draughts, bags, basic armor |
+| 12 | Quartermaster Holt | Mirewatch, supply tent | Vendor: food, drink, draughts, elixirs and tonics (long buffs), bags, basic armor |
 | 13 | Marla Fenn | The Muddy Boot | Vendor: food and drink |
 | 14 | Farmer Wil Tenney | Westbrook | Boars, tusks, the old mill |
 | 15 | Brannoc Ironvein | Ironvein Camp | Pickaxes, Lieutenant Vorn |

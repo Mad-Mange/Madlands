@@ -402,6 +402,9 @@ public sealed class MapInstance
         SendToObservers(unit, _auraMsg);
     }
 
+    /// <summary>A player's own auras, to its client (after entering the world with saved buffs).</summary>
+    public void SendOwnAuras(Player player, long nowMs) => SendAllAuras(player, player, nowMs);
+
     private void SendAllAuras(Player observer, Unit unit, long nowMs)
     {
         if (unit.Auras.Count == 0) return;

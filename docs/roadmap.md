@@ -124,6 +124,12 @@ Every phase ends in something playable and tested. Architectural decisions are i
   "Zzz" on the portrait while resting (protocol v11)
 - [x] Sprint: hold Shift to run 40% faster on stamina (about 5 s, refills after a short rest), shown under the
   player frame. The server simulates the same stamina and only allows the speed while it lasts (protocol v9)
+- [x] Long buffs, as in WoW: the Warden's Oakheart (Stamina, so health) and the Shardmage's Shard Insight (Intellect,
+  so mana) last 30 minutes and can be cast on others; Holt sells elixirs (Stamina, Intellect) and tonics that restore
+  health or mana every 5 seconds for 10 minutes. Long buffs survive logging out
+- [x] Item comparison: tooltips of gear that is not worn show what equipping it changes (damage per second, armor,
+  stats; green better, red worse) and the worn items it would replace beside them ("Currently Equipped")
+- [x] Character select shows each character's level in a badge
 - [x] NPC symbols: what an NPC is (`role` in creatures.json: general goods, innkeeper, weaponsmith) shows as a small
   symbol over its head (unless a quest mark is), a title under its name ("<Innkeeper>") and on the maps. The symbols
   are low-poly models rendered by `art/blender/icons.py` (protocol v12)

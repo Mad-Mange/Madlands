@@ -237,9 +237,16 @@ namespace Madlands.Client
         }
     }
 
-    /// <summary>The item tooltip: name in its quality color, slot, damage, armor, stats, requirements, use text and price.</summary>
+    /// <summary>
+    /// The item tooltip: name in its quality color, slot, damage, armor, stats, requirements, use text and price.
+    /// For gear that is not worn it also says what equipping it would change (green better, red worse) and shows
+    /// the items it would replace beside it ("Currently Equipped"), as in WoW.
+    /// </summary>
     public sealed class ItemTooltip
     {
+        private const float CardWidth = 300f;
+        private const float CardGap = 8f;
+
         private readonly VisualElement _root;
         private readonly VisualElement _layer;
 
@@ -247,15 +254,18 @@ namespace Madlands.Client
         {
             _layer = layer;
             _root = new VisualElement { pickingMode = PickingMode.Ignore };
-            _root.AddToClassList("item-tooltip");
+            _root.AddToClassList("item-tooltip-group");
             _root.AddToClassList("hidden");
             layer.Add(_root);
+            // Once laid out, a tall tooltip moves up so that its bottom stays on the screen.
+            _root.RegisterCallback<GeometryChangedEvent>(_ => KeepOnScreen());
         }
 
         public void Hide() => _root.AddToClassList("hidden");
 
         /// <param name="price">Shown as the vendor price (buying), else the sell price is shown.</param>
-        public void Show(ItemInfo item, int count, VisualElement anchor, GameClient client, long? price = null)
+        /// <param name="compare">Compare with the worn gear (off for items that are worn).</param>
+        public void Show(ItemInfo item, int count, VisualElement anchor, GameClient client, long? price = null, bool compare = true)
         {
             if (item == null)
             {
@@ -263,86 +273,143 @@ namespace Madlands.Client
                 return;
             }
             _root.Clear();
-            var title = Line(ItemName(item, count), "tip-title");
-            ItemIcons.SetQuality(title, item.Quality, text: true);
-
-            string slot = SlotName(item);
-            if (slot.Length > 0) Line(slot, "tip-line");
-            if (item.IsWeapon)
+            var replaced = compare ? ItemComparison.Replaced(item, client.Inventory, client.Data) : new List<ItemInfo>();
+            var main = Card();
+            Describe(main, item, count, client, price);
+            if (replaced.Count > 0) Comparison(main, item, replaced);
+            var worn = new List<VisualElement>();
+            foreach (var other in replaced)
             {
-                var row = Row();
-                Line(Loc.T("tip.damage", item.MinDamage, item.MaxDamage), "tip-line", row);
-                Line(Loc.T("tip.speed", (item.SpeedMs / 1000f).ToString("0.00", CultureInfo.InvariantCulture)), "tip-line", row);
-                Line(Loc.T("tip.dps", item.Dps.ToString("0.0", CultureInfo.InvariantCulture)), "tip-line");
+                var card = Card();
+                Line(card, Loc.T("tip.equipped"), "tip-line equipped-header");
+                Describe(card, other, 1, client, null);
+                worn.Add(card);
             }
-            int armor = item.GetStat(StatType.Armor);
-            if (armor > 0) Line(Loc.T("tip.armor", armor), "tip-line");
-            foreach (var stat in item.Stats)
-                if (stat.Stat != StatType.Armor) Line((stat.Value > 0 ? "+" : "") + stat.Value + " " + StatName(stat.Stat), "tip-line stat");
-            if (item.BagSlots > 0) Line(Loc.T("tip.bagSlots", item.BagSlots), "tip-line");
 
-            var self = client.Self.Values;
-            if (item.RequiredLevel > 1)
-                Line(Loc.T("tip.requiresLevel", item.RequiredLevel), self.Level < item.RequiredLevel ? "tip-line red" : "tip-line");
-            if (item.AllowedClasses.Length > 0)
-            {
-                var names = new List<string>();
-                foreach (var c in item.AllowedClasses) names.Add(client.Data.ClassName(c));
-                Line(Loc.T("tip.classes", string.Join(", ", names)), item.AllowsClass(self.ClassId) ? "tip-line" : "tip-line red");
-            }
-            if (!string.IsNullOrEmpty(item.Description))
-            {
-                bool use = item.Description.StartsWith("Use:", StringComparison.Ordinal);
-                Line(use ? item.Description : "\"" + item.Description + "\"", use ? "tip-line use" : "tip-line flavor");
-            }
-            if (item.Class == ItemClass.Quest) Line(Loc.T("tip.questItem"), "tip-line dim");
-            if (price != null) PriceLine(Loc.T("tip.price"), price.Value);
-            else if (item.SellPrice > 0) PriceLine(Loc.T("tip.sellPrice"), (long)item.SellPrice * Math.Max(1, count));
-
+            // The new item next to the anchor, the worn ones further out.
+            bool right = anchor.worldBound.center.x < _layer.layout.width * 0.5f;
+            if (right) _root.Add(main);
+            foreach (var card in worn) _root.Add(card);
+            if (!right) _root.Add(main);
             _root.RemoveFromClassList("hidden");
-            Place(anchor);
+            Place(anchor, 1 + worn.Count);
         }
 
         /// <summary>A plain text tooltip (quest rewards of money, buttons).</summary>
         public void ShowText(string title, string body, VisualElement anchor)
         {
             _root.Clear();
-            Line(title, "tip-title");
-            if (!string.IsNullOrEmpty(body)) Line(body, "tip-line dim");
+            var card = Card();
+            Line(card, title, "tip-title");
+            if (!string.IsNullOrEmpty(body)) Line(card, body, "tip-line dim");
+            _root.Add(card);
             _root.RemoveFromClassList("hidden");
-            Place(anchor);
+            Place(anchor, 1);
         }
 
-        private void Place(VisualElement anchor)
+        private void Describe(VisualElement card, ItemInfo item, int count, GameClient client, long? price)
+        {
+            var title = Line(card, ItemName(item, count), "tip-title");
+            ItemIcons.SetQuality(title, item.Quality, text: true);
+
+            string slot = SlotName(item);
+            if (slot.Length > 0) Line(card, slot, "tip-line");
+            if (item.IsWeapon)
+            {
+                var row = Row(card);
+                Line(row, Loc.T("tip.damage", item.MinDamage, item.MaxDamage), "tip-line");
+                Line(row, Loc.T("tip.speed", (item.SpeedMs / 1000f).ToString("0.00", CultureInfo.InvariantCulture)), "tip-line");
+                Line(card, Loc.T("tip.dps", item.Dps.ToString("0.0", CultureInfo.InvariantCulture)), "tip-line");
+            }
+            int armor = item.GetStat(StatType.Armor);
+            if (armor > 0) Line(card, Loc.T("tip.armor", armor), "tip-line");
+            foreach (var stat in item.Stats)
+                if (stat.Stat != StatType.Armor) Line(card, (stat.Value > 0 ? "+" : "") + stat.Value + " " + StatName(stat.Stat), "tip-line stat");
+            if (item.BagSlots > 0) Line(card, Loc.T("tip.bagSlots", item.BagSlots), "tip-line");
+
+            var self = client.Self.Values;
+            if (item.RequiredLevel > 1)
+                Line(card, Loc.T("tip.requiresLevel", item.RequiredLevel), self.Level < item.RequiredLevel ? "tip-line red" : "tip-line");
+            if (item.AllowedClasses.Length > 0)
+            {
+                var names = new List<string>();
+                foreach (var c in item.AllowedClasses) names.Add(client.Data.ClassName(c));
+                Line(card, Loc.T("tip.classes", string.Join(", ", names)), item.AllowsClass(self.ClassId) ? "tip-line" : "tip-line red");
+            }
+            if (!string.IsNullOrEmpty(item.Description))
+            {
+                bool use = item.Description.StartsWith("Use:", StringComparison.Ordinal);
+                Line(card, use ? item.Description : "\"" + item.Description + "\"", use ? "tip-line use" : "tip-line flavor");
+            }
+            if (item.Class == ItemClass.Quest) Line(card, Loc.T("tip.questItem"), "tip-line dim");
+            if (price != null) PriceLine(card, Loc.T("tip.price"), price.Value);
+            else if (item.SellPrice > 0) PriceLine(card, Loc.T("tip.sellPrice"), (long)item.SellPrice * Math.Max(1, count));
+        }
+
+        /// <summary>"If you equip this item:" and a line per number that changes.</summary>
+        private void Comparison(VisualElement card, ItemInfo item, List<ItemInfo> replaced)
+        {
+            Line(card, Loc.T("tip.compareHeader"), "tip-line compare-header");
+            var changes = ItemComparison.Changes(item, replaced);
+            if (changes.Count == 0) Line(card, Loc.T("tip.compareSame"), "tip-line dim");
+            foreach (var change in changes)
+            {
+                string sign = change.Delta > 0 ? "+" : "";
+                string text = change.Stat == null
+                    ? Loc.T("tip.compareDps", sign + change.Delta.ToString("0.0", CultureInfo.InvariantCulture))
+                    : change.Stat == StatType.Armor
+                        ? Loc.T("tip.armor", sign + change.Delta.ToString("0", CultureInfo.InvariantCulture))
+                        : sign + change.Delta.ToString("0", CultureInfo.InvariantCulture) + " " + StatName(change.Stat.Value);
+                Line(card, text, change.Delta > 0 ? "tip-line better" : "tip-line worse");
+            }
+        }
+
+        private void Place(VisualElement anchor, int cards)
         {
             // Away from the screen edge: right of things on the left half, left of things on the right half.
             var bound = anchor.worldBound;
             var layer = _layer.layout;
-            float left = bound.center.x < layer.width * 0.5f ? bound.xMax + 8f : bound.x - 308f;
-            _root.style.left = Mathf.Max(4f, left);
-            _root.style.top = Mathf.Clamp(bound.y, 4f, Mathf.Max(4f, layer.height - 260f));
+            float width = cards * CardWidth + (cards - 1) * CardGap;
+            float left = bound.center.x < layer.width * 0.5f ? bound.xMax + 8f : bound.x - 8f - width;
+            _root.style.left = Mathf.Clamp(left, 4f, Mathf.Max(4f, layer.width - width - 4f));
+            _root.style.top = Mathf.Max(4f, bound.y);
+            KeepOnScreen();
         }
 
-        private void PriceLine(string label, long copper)
+        private void KeepOnScreen()
         {
-            var row = Row();
-            Line(label, "tip-line dim", row);
+            float bottom = _layer.layout.height - 4f;
+            var box = _root.layout;
+            if (box.height > 0f && box.yMax > bottom) _root.style.top = Mathf.Max(4f, bottom - box.height);
+        }
+
+        private VisualElement Card()
+        {
+            var card = new VisualElement { pickingMode = PickingMode.Ignore };
+            card.AddToClassList("item-tooltip");
+            return card;
+        }
+
+        private void PriceLine(VisualElement card, string label, long copper)
+        {
+            var row = Row(card);
+            Line(row, label, "tip-line dim");
             row.Add(MoneyView.Create(copper, "list-price"));
         }
 
-        private VisualElement Row()
+        private static VisualElement Row(VisualElement parent)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             row.AddToClassList("tip-row");
-            _root.Add(row);
+            parent.Add(row);
             return row;
         }
 
-        private Label Line(string text, string classes, VisualElement parent = null)
+        private static Label Line(VisualElement parent, string text, string classes)
         {
             var label = new Label(text) { pickingMode = PickingMode.Ignore };
             foreach (var c in classes.Split(' ')) label.AddToClassList(c);
-            (parent ?? _root).Add(label);
+            parent.Add(label);
             return label;
         }
 

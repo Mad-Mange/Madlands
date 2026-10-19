@@ -36,6 +36,7 @@
         { "spell": 1, "level": 1 },
         { "spell": 200, "level": 1 },
         { "spell": 201, "level": 2 },
+        { "spell": 205, "level": 3 },
         { "spell": 202, "level": 4 },
         { "spell": 203, "level": 6 },
         { "spell": 204, "level": 8 }
@@ -58,6 +59,7 @@
         { "spell": 300, "level": 1 },
         { "spell": 301, "level": 1 },
         { "spell": 302, "level": 2 },
+        { "spell": 305, "level": 3 },
         { "spell": 303, "level": 4 },
         { "spell": 304, "level": 6 }
       ]

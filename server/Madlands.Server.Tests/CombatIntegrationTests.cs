@@ -307,6 +307,38 @@ public class CombatIntegrationTests
     }
 
     [Fact]
+    public async Task Long_buffs_are_kept_over_relogging()
+    {
+        var database = new Persistence.InMemoryGameDatabase();
+        await using var realm = await TestRealm.StartAsync(database, TestRealm.CombatContent(), gmAll: true);
+        var (account, character) = await realm.NewPlayerAsync("buffed", "Buffed", Warrior);
+        int buffedHealth;
+        using (var s = new Session(realm, realm.Enter(account, character)))
+        {
+            var c = s.Client;
+            s.Pump(() => c.State == ClientState.InWorld);
+            int before = c.Self.Values.MaxHealth;
+            s.Command(".aura 505");   // Elixir of Fortitude: +10 Stamina for 30 minutes
+            s.Pump(() => c.Self.Auras.Any(a => a.SpellId == 505) && c.Self.Values.MaxHealth > before);
+            buffedHealth = c.Self.Values.MaxHealth;
+            Assert.Equal(before + 20, buffedHealth);   // 2 health per point of Stamina
+            s.Command(".aura 500");   // eating ends when you log out
+            s.Pump(() => c.Self.Auras.Any(a => a.SpellId == 500));
+            c.Disconnect();
+            realm.Pump(Array.Empty<GameClient>(), () => realm.Game.World.PlayerCount == 0);
+        }
+        await WorldIntegrationTests.WaitUntilAsync(() => realm.Host.Saver.SavedCount >= 1);
+        var saved = Assert.Single((await database.LoadCharacterDataAsync((long)character.Id)).SavedAuras);
+        Assert.Equal(505u, saved.SpellId);
+        Assert.InRange(saved.RemainingMs, 1_700_000, 1_800_000);
+
+        using var again = new Session(realm, realm.Enter(account, character));
+        again.Pump(() => again.Client.State == ClientState.InWorld && again.Client.Self.Auras.Any(a => a.SpellId == 505));
+        again.Pump(() => again.Client.Self.Values.MaxHealth == buffedHealth);
+        Assert.DoesNotContain(again.Client.Self.Auras, a => a.SpellId == 500);
+    }
+
+    [Fact]
     public async Task Rested_experience_doubles_kills_and_is_kept_over_relogging()
     {
         var database = new Persistence.InMemoryGameDatabase();

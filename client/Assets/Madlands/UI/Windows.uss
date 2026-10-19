@@ -558,14 +558,40 @@
 
 /* ---------------------------------------------------------------- item tooltip */
 
-.item-tooltip {
+/* The item tooltip and, beside it, the worn items it would replace (ItemTooltip). */
+.item-tooltip-group {
     position: absolute;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.item-tooltip {
     width: 300px;
+    margin-right: 8px;
     padding: 8px 10px;
     background-color: rgb(10, 12, 22);
     border-width: 1px;
     border-color: rgb(122, 98, 48);
     border-radius: 5px;
+}
+
+.tip-line.equipped-header {
+    color: rgb(150, 156, 176);
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+.tip-line.compare-header {
+    color: rgb(255, 210, 90);
+    margin-top: 6px;
+}
+
+.tip-line.better {
+    color: rgb(30, 255, 0);
+}
+
+.tip-line.worse {
+    color: rgb(255, 80, 70);
 }
 
 .tip-title {
@@ -616,7 +642,7 @@
 }
 
 .nameplate.npc .nameplate-name {
-    color: rgb(120, 230, 120);
+    color: rgb(110, 245, 110);
 }
 
 /* ---------------------------------------------------------------- HUD additions */

@@ -19,16 +19,21 @@ public readonly record struct ItemRecord(byte Container, byte Slot, uint ItemId,
 /// <summary>A quest in the log (<paramref name="Rewarded"/> false, with objective counts) or one turned in.</summary>
 public readonly record struct QuestRecord(uint QuestId, bool Rewarded, int[] Progress);
 
-/// <summary>A character's items and quests, loaded when it enters the world.</summary>
-public sealed record CharacterData(IReadOnlyList<ItemRecord> Items, IReadOnlyList<QuestRecord> Quests)
+/// <summary>A long buff kept over logging out (<see cref="Combat.AuraSystem.Persists"/>); its time stands still while offline.</summary>
+public readonly record struct AuraRecord(uint SpellId, int CasterLevel, int Stacks, int RemainingMs);
+
+/// <summary>A character's items, quests and long buffs, loaded when it enters the world.</summary>
+public sealed record CharacterData(IReadOnlyList<ItemRecord> Items, IReadOnlyList<QuestRecord> Quests, IReadOnlyList<AuraRecord>? Auras = null)
 {
     public static readonly CharacterData Empty = new(Array.Empty<ItemRecord>(), Array.Empty<QuestRecord>());
+
+    public IReadOnlyList<AuraRecord> SavedAuras => Auras ?? Array.Empty<AuraRecord>();
 }
 
 /// <summary>What the write-behind saver persists for an online character. The arrays are copies owned by the snapshot.</summary>
 public readonly record struct CharacterSnapshot(
     long CharacterId, ushort MapId, float X, float Y, float Z, float Yaw, byte Level, int Xp, int Health, int Power,
-    long Money, bool StarterKit, ItemRecord[] Items, QuestRecord[] Quests, int RestedXp = 0);
+    long Money, bool StarterKit, ItemRecord[] Items, QuestRecord[] Quests, int RestedXp = 0, AuraRecord[]? Auras = null);
 
 public enum CreateCharacterOutcome
 {

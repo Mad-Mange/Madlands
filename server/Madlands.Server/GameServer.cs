@@ -267,14 +267,17 @@ public sealed class GameServer : IDisposable
         }
     }
 
-    private static CharacterSnapshot Snapshot(Player player)
+    private CharacterSnapshot Snapshot(Player player)
     {
         var p = player.Movement.Position;
+        long now = NowMs;
+        var auras = player.Auras.Where(a => AuraSystem.Persists(a) && a.RemainingMs(now) > 0)
+            .Select(a => new AuraRecord(a.Spell.Id, a.CasterLevel, a.Stacks, a.RemainingMs(now))).ToArray();
         var items = player.Inventory.All().Select(e => new ItemRecord(e.Pos.Container, e.Pos.Slot, e.Stack.Item.Id, e.Stack.Count)).ToArray();
         var quests = player.Quests.Active.Select(q => new QuestRecord(q.Quest.Id, false, q.Counts.ToArray()))
             .Concat(player.Quests.Rewarded.Select(id => new QuestRecord(id, true, Array.Empty<int>()))).ToArray();
         return new CharacterSnapshot(player.CharacterId, player.Map?.MapId ?? 0, p.X, p.Y, p.Z, player.Movement.Yaw, player.Level,
-            player.Xp, player.Health, player.Power, player.Inventory.Money, player.StarterKitGiven, items, quests, (int)player.RestedXp);
+            player.Xp, player.Health, player.Power, player.Inventory.Money, player.StarterKitGiven, items, quests, (int)player.RestedXp, auras);
     }
 
     // ------------------------------------------------------------------ messages
@@ -547,9 +550,15 @@ public sealed class GameServer : IDisposable
             double away = (DateTime.UtcNow - saved).TotalSeconds;
             CombatSystem.AddRest(player, content.Levels, Experience.RestGained(content.Levels.Rest, content.Levels.XpToNext(player.Level), away, village));
         }
-        RestoreItemsAndQuests(player, content, character, result.Data ?? CharacterData.Empty);
+        var data = result.Data ?? CharacterData.Empty;
+        RestoreItemsAndQuests(player, content, character, data);
         if (!player.StarterKitGiven) map.Items.GiveStartingItems(player);
         player.Inventory.ClearChanges();
+        // Long buffs kept over logging out (their time stood still), unless the character logged out dead.
+        if (!wasDead)
+            foreach (var buff in data.SavedAuras)
+                if (content.Spells.TryGetValue(buff.SpellId, out var spell))
+                    AuraSystem.Restore(player, spell, buff.CasterLevel, buff.Stacks, buff.RemainingMs, now);
         player.RecalculateStats();
         player.UpdateKnownSpells();
         player.Health = wasDead ? player.MaxHealth / 2 : character.Health ?? player.MaxHealth;
@@ -578,6 +587,7 @@ public sealed class GameServer : IDisposable
         map.SendPlayerStats(player);
         map.Items.SendAll(player);
         map.Quests.SendLog(player);
+        map.SendOwnAuras(player, now);
         Log.Information("{Player} entered map {MapId} from {Address}", player, map.MapId, session.Peer);
     }
 

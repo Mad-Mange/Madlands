@@ -138,7 +138,7 @@ namespace Madlands.Client
 
                 var p = RuntimePanelUtils.CameraTransformWorldToPanel(panel, head, cam);
                 plate.Root.style.left = p.x;
-                plate.Root.style.top = p.y - 30f - (showTitle ? 15f : 0f) - (status != QuestGiverStatus.None ? 42f : showIcon ? 34f : 0f);
+                plate.Root.style.top = p.y - 33f - (showTitle ? 17f : 0f) - (status != QuestGiverStatus.None ? 42f : showIcon ? 34f : 0f);
                 plate.Root.style.display = DisplayStyle.Flex;
             }
 
