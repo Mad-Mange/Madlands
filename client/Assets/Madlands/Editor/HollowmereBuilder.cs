@@ -584,7 +584,8 @@ namespace Madlands.Client.Editor
                 string model = pine ? (rng.NextDouble() < 0.5 ? "TreePine1" : "TreePine2") : (rng.NextDouble() < 0.5 ? "TreeOak1" : "TreeOak2");
                 Place(model, trees, p.x, p.y, Range(rng, 0f, 360f), Range(rng, 0.8f, 1.3f), Collide.Trunk, sink: 0.2f, trunkRadius: pine ? 0.3f : 0.38f);
                 placed++;
-                if (rng.NextDouble() < 0.12) Place("Mushrooms", plants, p.x + 2f, p.y + 1f, Range(rng, 0f, 360f), 1f, Collide.None, sink: 0f);
+                // Glowcaps at the feet of the trees: gatherable for Old Tamsin's quest (drawn by the client, not the scene).
+                if (rng.NextDouble() < 0.12) ObjectSpawn(GlowcapMushrooms, p.x + 2f, p.y + 1f, Range(rng, 0f, 360f));
                 if (rng.NextDouble() < 0.05) Place("Log", plants, p.x - 3f, p.y + 2f, Range(rng, 0f, 360f), 1f, Collide.Mesh, sink: 0.15f);
                 if (rng.NextDouble() < 0.05) Place("Stump", plants, p.x + 3f, p.y - 2f, Range(rng, 0f, 360f), 1f, Collide.Mesh);
             }
@@ -793,6 +794,18 @@ namespace Madlands.Client.Editor
         private const int BrannocIronvein = 15, ScoutRennick = 16, FishermanPell = 17, BrotherAldous = 18, SmithGerta = 19;
         private const int GreywoodBear = 20, DrownedDead = 21, Shardling = 22, LieutenantVorn = 23, Gloomjaw = 24, MireSnapper = 25;
         private const int RuukharTheSlagborn = 26;
+        private const int GlowcapMushrooms = 1;
+
+        /// <summary>A gatherable object (exported to objects.json): the server spawns it and the client draws it.</summary>
+        private static void ObjectSpawn(int objectId, float x, float z, float yaw)
+        {
+            var parent = GameObject.Find("ObjectSpawns");
+            if (parent == null) parent = new GameObject("ObjectSpawns") { tag = "EditorOnly" };
+            var go = new GameObject("Object " + objectId) { tag = "EditorOnly" };
+            go.transform.SetParent(parent.transform);
+            go.transform.SetPositionAndRotation(new Vector3(x, GroundAt(x, z), z), Quaternion.Euler(0f, yaw, 0f));
+            go.AddComponent<ObjectSpawnPoint>().objectId = objectId;
+        }
 
         /// <summary>Spawn markers (exported to spawns.json). EditorOnly: they are not part of player builds.</summary>
         private static void CreateSpawns(Terrain terrain, System.Random rng)

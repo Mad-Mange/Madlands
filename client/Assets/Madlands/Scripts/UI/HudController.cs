@@ -915,6 +915,7 @@ namespace Madlands.Client
                 case ActionError.NotEnoughMoney: return Loc.T("error.notEnoughMoney");
                 case ActionError.CantSellItem: return Loc.T("error.cantSellItem");
                 case ActionError.TooFarAway: return Loc.T("error.tooFarAway");
+                case ActionError.NotNeeded: return Loc.T("error.notNeeded");
                 case ActionError.NotUsable: return Loc.T("error.notUsable");
                 case ActionError.TwoHandEquipped: return Loc.T("error.twoHandEquipped");
                 case ActionError.LootNotYours: return Loc.T("error.lootNotYours");

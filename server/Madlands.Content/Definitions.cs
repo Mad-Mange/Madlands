@@ -18,6 +18,8 @@ public sealed class MapDefinition
     public string? Collision { get; set; }
     /// <summary>Creature spawn list relative to the map folder; null = no creatures.</summary>
     public string? Spawns { get; set; }
+    /// <summary>Gatherable objects (objects.json) relative to the map folder; null = none.</summary>
+    public string? Objects { get; set; }
     public SpawnPoint Spawn { get; set; } = new();
     /// <summary>Villages: characters build up rested experience here (fast, logged in or out).</summary>
     public List<RestAreaDefinition> RestAreas { get; set; } = new();
@@ -50,18 +52,21 @@ public sealed class SpawnPoint
 
 public sealed class LoadedMap
 {
-    public LoadedMap(MapDefinition definition, HeightMap heightMap, CollisionMesh? collision = null, IReadOnlyList<SpawnDefinition>? spawns = null)
+    public LoadedMap(MapDefinition definition, HeightMap heightMap, CollisionMesh? collision = null, IReadOnlyList<SpawnDefinition>? spawns = null,
+        IReadOnlyList<ObjectSpawnDefinition>? objects = null)
     {
         Definition = definition;
         HeightMap = heightMap;
         Collision = collision ?? CollisionMesh.Empty;
         Spawns = spawns ?? Array.Empty<SpawnDefinition>();
+        Objects = objects ?? Array.Empty<ObjectSpawnDefinition>();
     }
 
     public MapDefinition Definition { get; }
     public HeightMap HeightMap { get; }
     public CollisionMesh Collision { get; }
     public IReadOnlyList<SpawnDefinition> Spawns { get; }
+    public IReadOnlyList<ObjectSpawnDefinition> Objects { get; }
     public ushort Id => (ushort)Definition.Id;
 
     public Vec3 SpawnPosition =>
@@ -500,6 +505,35 @@ public sealed class SpawnDefinition
     public float WanderRadius { get; set; }
     /// <summary>0 = the creature template's respawn time.</summary>
     public int RespawnSeconds { get; set; }
+}
+
+/// <summary>maps/&lt;id&gt;/objects.json entry: where a gatherable object grows (written by Unity's Export Map).</summary>
+public sealed class ObjectSpawnDefinition
+{
+    public int Object { get; set; }
+    public float X { get; set; }
+    public float Z { get; set; }
+    public float YawDegrees { get; set; }
+}
+
+/// <summary>
+/// content/objects.json entry: something in the world players gather with a right-click (mushrooms, herbs). It
+/// gives an item and grows back after a while.
+/// </summary>
+public sealed class GameObjectDefinition
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    /// <summary>How it looks (the client's object displays).</summary>
+    public uint DisplayId { get; set; }
+    /// <summary>The item it gives, MinCount..MaxCount of them.</summary>
+    public uint Item { get; set; }
+    public int MinCount { get; set; } = 1;
+    public int MaxCount { get; set; } = 1;
+    /// <summary>Grows back this long after it was gathered.</summary>
+    public int RespawnSeconds { get; set; } = 60;
+    /// <summary>Only players who still need the item for a quest can gather it (and see it shine).</summary>
+    public bool QuestOnly { get; set; } = true;
 }
 
 /// <summary>content/levels.json</summary>

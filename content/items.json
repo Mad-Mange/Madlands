@@ -130,6 +130,7 @@
     { "id": 3006, "name": "Greywood Venom Sac", "icon": 3006, "quality": "common", "class": "quest", "stackSize": 10 },
     { "id": 3007, "name": "Korrin Pickaxe", "icon": 3007, "quality": "common", "class": "quest", "stackSize": 10 },
     { "id": 3008, "name": "Humming Shard Core", "icon": 3008, "quality": "common", "class": "quest", "stackSize": 10 },
+    { "id": 3009, "name": "Glowcap", "icon": 3009, "quality": "common", "class": "quest", "stackSize": 10, "description": "A pale mushroom that glows faintly in the dark." },
     { "id": 4006, "name": "Mirewatch Ale", "icon": 4006, "quality": "common", "class": "consumable", "stackSize": 20, "buyPrice": 25, "sellPrice": 1, "useSpell": 501, "description": "Use: Restores 90 mana over 18 sec. Must remain out of combat." },
     { "id": 4007, "name": "Smoked Mere Eel", "icon": 4007, "quality": "common", "class": "consumable", "requiredLevel": 3, "stackSize": 20, "buyPrice": 60, "sellPrice": 3, "useSpell": 504, "description": "Use: Restores 240 health over 18 sec. Must remain out of combat." },
     { "id": 4008, "name": "Elixir of Fortitude", "icon": 4008, "quality": "common", "class": "consumable", "requiredLevel": 3, "stackSize": 10, "buyPrice": 150, "sellPrice": 35, "useSpell": 505, "description": "Use: Increases Stamina by 10 for 30 min." },

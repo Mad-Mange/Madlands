@@ -314,6 +314,7 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | Num Lock / R | Autorun |
 | Left click a unit or its nameplate | Target it |
 | Right click a unit | Attack an enemy, talk to a friendly NPC, or loot a shimmering corpse (shift: take everything) |
+| Right click a shining object | Gather it (glowcap mushrooms shine while a quest needs them) |
 | B / C / L / M | Bags / character sheet / quest log / world map with your quest areas (the minimap zooms with the mouse wheel) |
 | Click an item | Pick it up; click a slot to put it down (or drag). Drop it outside the windows to destroy it |
 | Right click an item | Use, equip or unequip it; sell it while a vendor is open |

@@ -413,7 +413,8 @@ public sealed class GameServer : IDisposable
                 break;
             case Opcode.Interact:
                 _interact.Read(ref reader);
-                map.Quests.Interact(player, _interact.Npc, _interact.Option);
+                if (_interact.Npc.Type == EntityType.GameObject) map.Items.Gather(player, _interact.Npc, now);
+                else map.Quests.Interact(player, _interact.Npc, _interact.Option);
                 break;
             case Opcode.LootOpen:
                 _lootOpen.Read(ref reader);

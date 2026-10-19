@@ -39,6 +39,10 @@
       "type": "string",
       "description": "Creature spawn list (spawns.json)."
     },
+    "objects": {
+      "type": "string",
+      "description": "Gatherable objects (objects.json: object id, x, z, yawDegrees)."
+    },
     "spawn": {
       "type": "object",
       "required": [

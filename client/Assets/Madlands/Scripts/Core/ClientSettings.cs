@@ -17,7 +17,7 @@ namespace Madlands.Client
     ///   Item and quest checks: -open bags,character,questlog (windows), -talkto "Old Tamsin" (opens
     ///   that NPC's dialog), -quest 1 (with -talkto: shows that quest's page), -loot (opens the loot
     ///   of nearby corpses), -tooltip 1224 (shows the tooltip of that item in the open bags),
-    ///   -equip 1020,1210 (equips those items from the bags)
+    ///   -equip 1020,1210 (equips those items from the bags), -gather (gathers objects in reach, like mushrooms)
     /// </summary>
     public sealed class ClientSettings
     {
@@ -65,6 +65,8 @@ namespace Madlands.Client
         public uint QuestId;
         /// <summary>Open the loot window of lootable corpses in reach.</summary>
         public bool AutoLoot;
+        /// <summary>Gather gatherable objects in reach (a right-click on each).</summary>
+        public bool AutoGather;
         /// <summary>An item id whose tooltip is shown once the bags are open.</summary>
         public uint TooltipItem;
         /// <summary>Item ids to equip from the bags once the -exec lines ran.</summary>
@@ -177,6 +179,9 @@ namespace Madlands.Client
                         break;
                     case "-loot":
                         s.AutoLoot = true;
+                        break;
+                    case "-gather":
+                        s.AutoGather = true;
                         break;
                     case "-equip" when next != null:
                         s.Equip = Array.ConvertAll(next.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries),

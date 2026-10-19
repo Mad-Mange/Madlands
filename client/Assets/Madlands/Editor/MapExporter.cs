@@ -71,6 +71,7 @@ namespace Madlands.Client.Editor
             var collision = CollisionExporter.Build(out int colliders);
             collision.Save(Path.Combine(dir, "collision.bin"));
             int spawnCount = WriteSpawns(Path.Combine(dir, "spawns.json"));
+            int objectCount = WriteObjects(Path.Combine(dir, "objects.json"));
             RenderWorldMap(info, minX, minZ, Mathf.Max(maxX - minX, maxZ - minZ));
 
             var spawn = info.spawnPoint != null ? info.spawnPoint : info.transform;
@@ -91,13 +92,14 @@ namespace Madlands.Client.Editor
   ""heightmap"": ""height.bin"",
   ""collision"": ""collision.bin"",
   ""spawns"": ""spawns.json"",
+  ""objects"": ""objects.json"",
   ""spawn"": {{ ""x"": {2:0.00}, ""z"": {3:0.00}, ""yawDegrees"": {4:0.0} }},
   ""restAreas"": [{5}{6}]
 }}
 ", info.mapId, info.mapName.Replace("\"", "'"), spawn.position.x, spawn.position.z, spawn.eulerAngles.y, rest, rest.Length > 0 ? "\n  " : ""));
 
             string summary = $"Exported map {info.mapId} '{info.mapName}': {width}x{depth} samples @ {cell} m, x {minX}..{maxX}, z {minZ}..{maxZ}, " +
-                             $"{collision.TriangleCount} obstacle triangles from {colliders} colliders, {spawnCount} creature spawns -> {dir}";
+                             $"{collision.TriangleCount} obstacle triangles from {colliders} colliders, {spawnCount} creature spawns, {objectCount} objects -> {dir}";
             Debug.Log("[MapExporter] " + summary);
             return summary;
         }
@@ -162,6 +164,27 @@ namespace Madlands.Client.Editor
             EditorUtility.SetDirty(info);
             EditorSceneManager.MarkSceneDirty(info.gameObject.scene);
             EditorSceneManager.SaveScene(info.gameObject.scene);
+        }
+
+        /// <summary>All ObjectSpawnPoint markers (gatherable objects), sorted so the file only changes when the markers do.</summary>
+        private static int WriteObjects(string path)
+        {
+            var markers = UnityEngine.Object.FindObjectsByType<ObjectSpawnPoint>()
+                .OrderBy(m => m.objectId).ThenBy(m => m.transform.position.x).ThenBy(m => m.transform.position.z).ToList();
+            var sb = new StringBuilder();
+            sb.Append("{\n  \"$schema\": \"../../schemas/map-objects.schema.json\",\n");
+            sb.Append("  \"_generated\": \"Written by Unity (Madlands > Export Map) from ObjectSpawnPoint markers. Edit the scene, not this file.\",\n");
+            sb.Append("  \"objects\": [");
+            for (int i = 0; i < markers.Count; i++)
+            {
+                var p = markers[i].transform.position;
+                sb.Append(i == 0 ? "\n" : ",\n");
+                sb.Append(string.Format(CultureInfo.InvariantCulture, "    {{ \"object\": {0}, \"x\": {1:0.00}, \"z\": {2:0.00}, \"yawDegrees\": {3:0} }}",
+                    markers[i].objectId, p.x, p.z, markers[i].transform.eulerAngles.y));
+            }
+            sb.Append(markers.Count > 0 ? "\n  ]\n}\n" : "]\n}\n");
+            File.WriteAllText(path, sb.ToString());
+            return markers.Count;
         }
 
         /// <summary>All CreatureSpawnPoint markers, sorted so the file only changes when the markers do.</summary>

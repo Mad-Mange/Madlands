@@ -6,7 +6,8 @@ namespace Madlands.Server.Quests;
 /// <summary>
 /// Works out where a quest objective can be done, for the world map: the explore place itself, or circles
 /// around the spawn points of the creatures involved (the ones to kill, the ones whose loot drops the item
-/// to collect, else the vendors selling it, the one to talk to). Spawns close to each other share a circle.
+/// to collect or the objects it grows on, else the vendors selling it, the one to talk to). Spawns close to
+/// each other share a circle.
 /// </summary>
 public static class QuestAreas
 {
@@ -28,8 +29,9 @@ public static class QuestAreas
             case ObjectiveType.Talk:
                 return Around(content, id => id == objective.Creature, NpcRadius);
             case ObjectiveType.Collect:
-                var droppers = Around(content, id => content.Creatures.TryGetValue(id, out var creature) && Drops(content, creature, objective.Item), MinRadius);
-                return droppers.Count > 0 ? droppers
+                var sources = Around(content, id => content.Creatures.TryGetValue(id, out var creature) && Drops(content, creature, objective.Item), MinRadius,
+                    id => content.Objects.TryGetValue(id, out var obj) && obj.Item == objective.Item);
+                return sources.Count > 0 ? sources
                     : Around(content, id => content.Creatures.TryGetValue(id, out var creature) && creature.Vendor.Contains(objective.Item), NpcRadius);
             default:
                 return new List<QuestArea>();
@@ -47,18 +49,23 @@ public static class QuestAreas
     /// Circles around the spawns of the matching creatures on every map, the busiest first. Spawns join the
     /// first circle in range; then circles reaching another one's center merge.
     /// </summary>
-    private static List<QuestArea> Around(ContentDatabase content, Func<int, bool> matches, float minRadius)
+    /// <param name="objects">Gatherable objects to circle too, by object id.</param>
+    private static List<QuestArea> Around(ContentDatabase content, Func<int, bool> matches, float minRadius, Func<int, bool>? objects = null)
     {
         var clusters = new List<Cluster>();
+        void Add(ushort map, SpawnDefinition spawn)
+        {
+            var cluster = clusters.FirstOrDefault(c => c.Map == map && c.DistanceTo(spawn.X, spawn.Z) <= ClusterRange);
+            if (cluster == null) clusters.Add(cluster = new Cluster(map));
+            cluster.Spawns.Add(spawn);
+        }
         foreach (var map in content.Maps.Values.OrderBy(m => m.Id))
         {
             foreach (var spawn in map.Spawns)
-            {
-                if (!matches(spawn.Creature)) continue;
-                var cluster = clusters.FirstOrDefault(c => c.Map == map.Id && c.DistanceTo(spawn.X, spawn.Z) <= ClusterRange);
-                if (cluster == null) clusters.Add(cluster = new Cluster(map.Id));
-                cluster.Spawns.Add(spawn);
-            }
+                if (matches(spawn.Creature)) Add(map.Id, spawn);
+            if (objects is null) continue;
+            foreach (var o in map.Objects)
+                if (objects(o.Object)) Add(map.Id, new SpawnDefinition { X = o.X, Z = o.Z });
         }
         for (bool merged = true; merged;)
         {

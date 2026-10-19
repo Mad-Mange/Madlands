@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/objects.schema.json",
+  "title": "Gatherable objects (content/objects.json)",
+  "description": "Things in the world players gather with a right-click (mushrooms, herbs). Where they grow is in each map's objects.json.",
+  "type": "object",
+  "required": [
+    "objects"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "displayId",
+          "item"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Stable object id. Never reuse."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "displayId": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "How it looks (the client's object displays)."
+          },
+          "item": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The item it gives."
+          },
+          "minCount": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "maxCount": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "respawnSeconds": {
+            "type": "integer",
+            "minimum": 5,
+            "default": 60,
+            "description": "Grows back this long after it was gathered."
+          },
+          "questOnly": {
+            "type": "boolean",
+            "default": true,
+            "description": "Only players who still need the item for a quest can gather it (and see it shine)."
+          }
+        }
+      }
+    }
+  }
+}

@@ -175,6 +175,8 @@ namespace Madlands.Shared.Net
         public MovementState State;
         /// <summary>Only written and read when <see cref="EntityGuid.IsUnit"/>.</summary>
         public readonly UnitValues Unit = new UnitValues();
+        /// <summary>Gatherable objects: the item they give (the client makes them shine when a quest needs it).</summary>
+        public uint ObjectItem;
 
         public Opcode Opcode => Opcode.EntitySpawn;
 
@@ -186,6 +188,7 @@ namespace Madlands.Shared.Net
             w.WriteLong(StateServerTimeMs);
             State.Write(w);
             if (Guid.IsUnit) Unit.Write(w, UnitFieldMask.All);
+            if (Guid.Type == EntityType.GameObject) w.WriteUInt(ObjectItem);
         }
 
         public void Read(ref PacketReader r)
@@ -196,6 +199,7 @@ namespace Madlands.Shared.Net
             StateServerTimeMs = r.ReadLong();
             State = MovementState.Read(ref r);
             if (Guid.IsUnit) Unit.Read(ref r, UnitFieldMask.All);
+            ObjectItem = Guid.Type == EntityType.GameObject ? r.ReadUInt() : 0;
         }
     }
 

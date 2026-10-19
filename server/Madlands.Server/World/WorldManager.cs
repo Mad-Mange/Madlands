@@ -18,6 +18,7 @@ public sealed class WorldManager
 
     private readonly Dictionary<(ushort MapId, uint InstanceId), MapInstance> _instances = new();
     private long _nextCreatureCounter;
+    private long _nextObjectCounter;
 
     public WorldManager(ContentDatabase content, int? randomSeed = null)
     {
@@ -42,6 +43,9 @@ public sealed class WorldManager
 
     /// <summary>Creature ids are unique per realm process (not persistent). Thread-safe for future per-instance threads.</summary>
     public EntityGuid NextCreatureGuid() => EntityGuid.Create(EntityType.Creature, (ulong)Interlocked.Increment(ref _nextCreatureCounter));
+
+    /// <summary>Gatherable object ids, like creature ids.</summary>
+    public EntityGuid NextObjectGuid() => EntityGuid.Create(EntityType.GameObject, (ulong)Interlocked.Increment(ref _nextObjectCounter));
 
     public void Tick(long nowMs, long tick)
     {

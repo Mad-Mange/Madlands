@@ -108,6 +108,8 @@ namespace Madlands.Shared.Game
         /// <summary>The reward or bought items do not fit (no money or items were taken).</summary>
         NoRoomForReward = 21,
         CantDestroyItem = 22,
+        /// <summary>Gathering something no quest needs.</summary>
+        NotNeeded = 23,
     }
 
     /// <summary>How an item or money reached the player (chat lines: "You receive loot", "Received ...").</summary>

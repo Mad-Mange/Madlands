@@ -71,11 +71,11 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 | 24 | Gloomjaw | 12 | The lagoon | World boss: 30x health, Death Roll, Tail Sweep (area, slow). Respawns in 15 minutes |
 | 26 | Ruukhar the Slagborn | 12 | The Cinder Cut | Boss for a group of three: 26x health. Molten Cleave (heavy hit), Searing Brand (fire damage over time, stacks 3x), Cinder Quake (2.5 s wind-up, then fire damage and a 50% slow to everyone within 12 m: get out of reach), Forgefire Rage below 30% health (+50% damage). Respawns in 15 minutes |
 
-## Quests (29)
+## Quests (30)
 
 | Chain | Quests | Levels |
 |---|---|---|
-| Mirewatch | Trouble in the Mire, A Taste for Frog Legs, Supplies and Sense | 1–2 |
+| Mirewatch | Trouble in the Mire, A Taste for Frog Legs, Supplies and Sense; Glowcaps for a Salve (gather the glowcap mushrooms at the feet of the Greywood's trees for Old Tamsin) | 1–5 |
 | Westbrook | Word from Westbrook → Boars in the Barley → The Old Mill; Tough as Tusks | 3–4 |
 | The mere | Something in the Reeds → The Singing Stone → A Pearl for Tamsin; Nets and Nonsense | 4–5 |
 | Wolves and the wood | Wolves at Dusk → Rennick's Watch; Pelts for the Palisade; Webs in the Greywood → The Old Bears; Venom for the Infirmary | 4–7 |

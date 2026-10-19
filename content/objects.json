@@ -1,0 +1,9 @@
+{
+  "$schema": "schemas/objects.schema.json",
+  "objects": [
+    {
+      "id": 1, "name": "Glowcap Mushrooms", "displayId": 1, "item": 3009, "minCount": 1, "maxCount": 1,
+      "respawnSeconds": 45, "questOnly": true
+    }
+  ]
+}

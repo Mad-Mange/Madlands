@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://madlands.local/schemas/map-objects.schema.json",
+  "title": "Where gatherable objects grow (content/maps/<id>/objects.json)",
+  "description": "Written by Unity (Madlands > Export Map) from ObjectSpawnPoint markers. The scene is the source of truth.",
+  "type": "object",
+  "required": [
+    "objects"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "_generated": {
+      "type": "string"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "object",
+          "x",
+          "z"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "object": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Object id from content/objects.json."
+          },
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "yawDegrees": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      }
+    }
+  }
+}

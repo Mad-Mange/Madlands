@@ -128,6 +128,8 @@ Every phase ends in something playable and tested. Architectural decisions are i
   (Brannoc's quest "The One Vorn Answered To", rare rewards: a cleaver, pauldrons, a skull hood). A hunched brute in
   slag-iron plate with a beast's skull for a hood, made in Blender with his own clips; a telegraphed area slam to run
   from, a stacking burn and an enrage below 30% health (`healthBelow` on creature spells)
+- [x] Gatherable objects: glowcap mushrooms at the feet of the Greywood's trees shine while Old Tamsin's quest "Glowcaps
+  for a Salve" needs them; right-click to pick, they grow back after 45 s (`content/objects.json`, protocol v13)
 - [x] Action bar arranged by the player: Shift-drag buttons between slots or off the bar, drag spells from the spellbook (P)
   onto it; newly learned spells go into the first empty slot. Saved per character (`ActionBarLayout`)
 - [x] Long buffs, as in WoW: the Warden's Oakheart (Stamina, so health) and the Shardmage's Shard Insight (Intellect,

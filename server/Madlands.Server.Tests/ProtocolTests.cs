@@ -205,9 +205,10 @@ public class ProtocolTests
         Assert.Equal(SampleState, spawn.State);
         Assert.Equal(guid, Roundtrip(new EntityDespawn { Guid = guid }).Guid);
 
-        // Non-unit entities carry no unit values.
+        // Non-unit entities carry no unit values; gatherable objects carry the item they give.
         var objectGuid = EntityGuid.Create(EntityType.GameObject, 3);
-        Assert.Equal(objectGuid, Roundtrip(new EntitySpawn { Guid = objectGuid, Name = "Chest", DisplayId = 5, State = SampleState }).Guid);
+        var mushrooms = Roundtrip(new EntitySpawn { Guid = objectGuid, Name = "Glowcap Mushrooms", DisplayId = 1, State = SampleState, ObjectItem = 3009 });
+        Assert.Equal((objectGuid, "Glowcap Mushrooms", 3009u), (mushrooms.Guid, mushrooms.Name, mushrooms.ObjectItem));
     }
 
     [Fact]

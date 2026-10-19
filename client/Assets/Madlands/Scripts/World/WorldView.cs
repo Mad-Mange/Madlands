@@ -18,6 +18,7 @@ namespace Madlands.Client
         private NetworkController _network;
         private readonly List<RemoteEntity> _views = new List<RemoteEntity>();
         private readonly Dictionary<EntityGuid, UnitView> _units = new Dictionary<EntityGuid, UnitView>();
+        private readonly Dictionary<EntityGuid, ObjectView> _objects = new Dictionary<EntityGuid, ObjectView>();
         private bool _ready;
 
         private void Awake()
@@ -47,10 +48,10 @@ namespace Madlands.Client
         {
             if (!_ready) return;
             var go = new GameObject("Entity " + entity.Name);
-            var view = UnitView.Attach(go, entity.Guid, entity.DisplayId, isLocal: false);
             entity.View = go;
-            _units[entity.Guid] = view;
             _views.Add(entity);
+            if (entity.IsObject) _objects[entity.Guid] = ObjectView.Attach(go, entity.Guid, entity.DisplayId);
+            else _units[entity.Guid] = UnitView.Attach(go, entity.Guid, entity.DisplayId, isLocal: false);
             Place(entity, go.transform);
         }
 
@@ -60,6 +61,7 @@ namespace Madlands.Client
             entity.View = null;
             _views.Remove(entity);
             _units.Remove(entity.Guid);
+            _objects.Remove(entity.Guid);
         }
 
         public void Clear()
@@ -68,6 +70,7 @@ namespace Madlands.Client
                 if (entity.View is GameObject go) Destroy(go);
             _views.Clear();
             _units.Clear();
+            _objects.Clear();
         }
 
         private void LateUpdate()
@@ -78,6 +81,7 @@ namespace Madlands.Client
                 if (!(entity.View is GameObject go)) continue;
                 Place(entity, go.transform);
                 if (entity.Unit != null && _units.TryGetValue(entity.Guid, out var view)) Animate(view, entity.Unit, client);
+                else if (_objects.TryGetValue(entity.Guid, out var obj)) obj.SetShining(client.NeedsItem(entity.ObjectItem));
             }
             if (_network.LocalPlayer != null && _units.TryGetValue(client.LocalGuid, out var local))
             {

@@ -126,6 +126,7 @@
   "error.noRoomForReward": "Make room in your bags for the reward.",
   "error.notABag": "Only bags go in bag slots.",
   "error.notEnoughMoney": "You don't have enough money.",
+  "error.notNeeded": "You don't need any of that.",
   "error.notUsable": "That item can not be used.",
   "error.questLogFull": "Your quest log is full.",
   "error.questNotAvailable": "You can not take that quest.",

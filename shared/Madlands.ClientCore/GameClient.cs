@@ -369,6 +369,20 @@ namespace Madlands.ClientCore
         }
 
         /// <summary>Talks to an NPC (or asks for its wares).</summary>
+        /// <summary>A quest in the log still needs this item (gatherable objects shine for it, like the server's check).</summary>
+        public bool NeedsItem(uint itemId)
+        {
+            if (itemId == 0) return false;
+            foreach (var quest in Quests.Active)
+            {
+                var info = Data.GetQuest(quest.QuestId);
+                if (info == null) continue;
+                foreach (var o in info.ObjectiveList)
+                    if (o.Type == ObjectiveType.Collect && o.Target == itemId && Inventory.Count(itemId) < o.Count) return true;
+            }
+            return false;
+        }
+
         public void Interact(EntityGuid npc, InteractOption option = InteractOption.Talk)
         {
             _interact.Npc = npc;
@@ -679,6 +693,7 @@ namespace Madlands.ClientCore
             _spawn.Read(ref r);
             if (_spawn.Guid == LocalGuid) return;
             var entity = World.Add(_spawn.Guid, _spawn.Name, _spawn.DisplayId, _spawn.StateServerTimeMs, _spawn.State);
+            entity.ObjectItem = _spawn.ObjectItem;
             if (entity.Unit != null)
             {
                 entity.Unit.Values.CopyFrom(_spawn.Unit);

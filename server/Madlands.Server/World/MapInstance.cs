@@ -48,6 +48,7 @@ public sealed class MapInstance
     private readonly List<EntityGuid> _removeScratch = new();
     private readonly List<Creature> _despawnScratch = new();
     private readonly List<(SpawnDefinition Spawn, long AtMs)> _respawns = new();
+    private readonly List<(ObjectSpawnDefinition Spawn, long AtMs)> _objectRespawns = new();
     private readonly PacketWriter _writer = new(1500);
     private readonly EntitySpawn _spawnMsg = new();
     private readonly EntityDespawn _despawnMsg = new();
@@ -76,6 +77,7 @@ public sealed class MapInstance
         Loot = new LootSystem(this);
         Quests = new QuestSystem(this);
         foreach (var spawn in map.Spawns) SpawnFromDefinition(spawn, 0);
+        foreach (var spawn in map.Objects) SpawnObject(spawn, 0);
     }
 
     public LoadedMap Map { get; }
@@ -313,6 +315,12 @@ public sealed class MapInstance
             SpawnFromDefinition(_respawns[i].Spawn, nowMs);
             _respawns.RemoveAt(i);
         }
+        for (int i = _objectRespawns.Count - 1; i >= 0; i--)
+        {
+            if (nowMs < _objectRespawns[i].AtMs) continue;
+            SpawnObject(_objectRespawns[i].Spawn, nowMs);
+            _objectRespawns.RemoveAt(i);
+        }
     }
 
     /// <summary>GM: brings back everything that is dead or waiting to respawn near a point.</summary>
@@ -343,6 +351,22 @@ public sealed class MapInstance
     {
         if (!Content.Creatures.TryGetValue(spawn.Creature, out var template)) return;
         SpawnCreature(template, new Vec3(spawn.X, 0, spawn.Z), spawn.YawDegrees * MathUtil.Deg2Rad, spawn, nowMs);
+    }
+
+    private void SpawnObject(ObjectSpawnDefinition spawn, long nowMs)
+    {
+        if (!Content.Objects.TryGetValue(spawn.Object, out var template)) return;
+        var position = new Vec3(spawn.X, HeightMap.GetHeight(spawn.X, spawn.Z), spawn.Z);
+        var obj = new WorldObject(_world.NextObjectGuid(), template, spawn, position) { Map = this, MovementTimeMs = nowMs, LastChangeMs = nowMs };
+        _entities.Add(obj.Guid, obj);
+        _grid.Add(obj);
+    }
+
+    /// <summary>An object was gathered: it disappears for everyone and grows back after its respawn time.</summary>
+    public void Gathered(WorldObject obj, long nowMs)
+    {
+        RemoveEntity(obj);
+        _objectRespawns.Add((obj.Spawn, nowMs + obj.Template.RespawnSeconds * 1000L));
     }
 
     // ------------------------------------------------------------------ broadcasting
@@ -521,6 +545,7 @@ public sealed class MapInstance
         _spawnMsg.StateServerTimeMs = entity.MovementTimeMs;
         _spawnMsg.State = entity.Movement;
         if (entity is Unit unit) _spawnMsg.Unit.CopyFrom(unit.Values);
+        _spawnMsg.ObjectItem = entity is WorldObject obj ? obj.Template.Item : 0;
         Send(observer, _spawnMsg);
         if (entity is not Unit u) return;
 

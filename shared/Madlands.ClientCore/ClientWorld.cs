@@ -75,6 +75,9 @@ namespace Madlands.ClientCore
         /// <summary>Health, auras and casting for players and creatures; null for other entities.</summary>
         public UnitState Unit { get; }
         public bool IsUnit => Unit != null;
+        /// <summary>Gatherable objects: the item they give (0 for everything else).</summary>
+        public uint ObjectItem;
+        public bool IsObject => Guid.Type == EntityType.GameObject;
 
         /// <summary>Presentation-layer handle (e.g. the Unity GameObject); ClientCore never touches it.</summary>
         public object View;

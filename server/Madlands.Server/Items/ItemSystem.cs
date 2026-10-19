@@ -179,6 +179,38 @@ public sealed class ItemSystem
         return null;
     }
 
+    // ------------------------------------------------------------------ gathering
+
+    /// <summary>Right-click on a gatherable object: its item goes into the bags, and it grows back later.</summary>
+    public void Gather(Player player, EntityGuid guid, long now)
+    {
+        if (_map.Find(guid) is not WorldObject obj || player.IsDead)
+        {
+            Fail(player, ActionError.CantInteract);
+            return;
+        }
+        if (Vec3.Distance(player.Position, obj.Position) > GameConstants.InteractRange + MapInstance.InteractLeeway)
+        {
+            Fail(player, ActionError.TooFarAway);
+            return;
+        }
+        var template = obj.Template;
+        if (template.QuestOnly && !_map.Quests.NeedsItem(player, template.Item))
+        {
+            Fail(player, ActionError.NotNeeded);
+            return;
+        }
+        if (!_map.Content.Items.TryGetValue(template.Item, out var item)) return;
+        int count = _map.Random.Next(template.MinCount, template.MaxCount + 1);
+        if (Give(player, item, count, ReceiveSource.Loot) == 0)
+        {
+            Fail(player, ActionError.InventoryFull);
+            return;
+        }
+        Flush(player);
+        _map.Gathered(obj, now);
+    }
+
     // ------------------------------------------------------------------ giving
 
     /// <summary>Puts items into the bags (as many as fit) and tells the player. Call <see cref="Flush"/> afterwards.</summary>

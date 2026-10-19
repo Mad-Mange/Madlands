@@ -20,7 +20,8 @@ public sealed class ContentDatabase
         LevelTable? levels = null,
         IEnumerable<ItemDefinition>? items = null,
         IEnumerable<LootTableDefinition>? lootTables = null,
-        IEnumerable<QuestDefinition>? quests = null)
+        IEnumerable<QuestDefinition>? quests = null,
+        IEnumerable<GameObjectDefinition>? objects = null)
     {
         Maps = maps.ToDictionary(m => m.Id);
         Races = (races ?? DefaultRaces()).ToDictionary(r => (byte)r.Id);
@@ -32,6 +33,7 @@ public sealed class ContentDatabase
         Items = (items ?? Array.Empty<ItemDefinition>()).ToDictionary(i => i.Id);
         LootTables = (lootTables ?? Array.Empty<LootTableDefinition>()).ToDictionary(l => l.Id);
         Quests = (quests ?? Array.Empty<QuestDefinition>()).ToDictionary(q => q.Id);
+        Objects = (objects ?? Array.Empty<GameObjectDefinition>()).ToDictionary(o => o.Id);
         FactionTable = new FactionTable(Factions.Values.Select(f => new FactionInfo
         {
             Id = (ushort)f.Id,
@@ -57,6 +59,8 @@ public sealed class ContentDatabase
     public IReadOnlyDictionary<uint, ItemDefinition> Items { get; }
     public IReadOnlyDictionary<int, LootTableDefinition> LootTables { get; }
     public IReadOnlyDictionary<uint, QuestDefinition> Quests { get; }
+    /// <summary>Gatherable objects (content/objects.json); their spawns are in each map.</summary>
+    public IReadOnlyDictionary<int, GameObjectDefinition> Objects { get; }
     public FactionTable FactionTable { get; }
 
     /// <summary>Quests the creature offers, by id.</summary>
@@ -77,7 +81,8 @@ public sealed class ContentDatabase
 
     /// <summary>Same content with other maps (tests run the repository's spells and creatures on small flat maps).</summary>
     public ContentDatabase WithMaps(IEnumerable<LoadedMap> maps) =>
-        new(maps, Races.Values, Classes.Values, Factions.Values, Spells.Values, Creatures.Values, Levels, Items.Values, LootTables.Values, Quests.Values);
+        new(maps, Races.Values, Classes.Values, Factions.Values, Spells.Values, Creatures.Values, Levels, Items.Values, LootTables.Values, Quests.Values,
+            Objects.Values);
 
     private static void Add(Dictionary<int, List<QuestDefinition>> index, int creature, QuestDefinition quest)
     {

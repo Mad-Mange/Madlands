@@ -32,14 +32,18 @@ public static class ContentLoader
         var items = LoadList<ItemFile, ItemDefinition>(Path.Combine(contentRoot, "items.json"), f => f.Items, errors);
         var loot = LoadList<LootFile, LootTableDefinition>(Path.Combine(contentRoot, "loot.json"), f => f.LootTables, errors);
         var quests = LoadList<QuestFile, QuestDefinition>(Path.Combine(contentRoot, "quests.json"), f => f.Quests, errors);
+        // Gatherable objects are optional: not every world has something to pick.
+        var objectsPath = Path.Combine(contentRoot, "objects.json");
+        var objects = File.Exists(objectsPath) ? LoadFile<ObjectFile>(objectsPath, errors)?.Objects ?? new() : new List<GameObjectDefinition>();
 
         var content = new Validator(errors);
         content.Validate(maps, races, classes, factions, spells, creatures, levels);
         content.ValidateItems(items, spells, classes, levels);
         content.ValidateLoot(loot, items, creatures);
-        content.ValidateQuests(quests, creatures, items, classes, maps, levels, loot);
+        content.ValidateObjects(objects, items, maps);
+        content.ValidateQuests(quests, creatures, items, classes, maps, levels, loot, objects);
         if (errors.Count > 0) throw new ContentException(errors);
-        return new ContentDatabase(maps, races, classes, factions, spells, creatures, levels, items, loot, quests);
+        return new ContentDatabase(maps, races, classes, factions, spells, creatures, levels, items, loot, quests, objects);
     }
 
     private sealed class RaceFile { public List<RaceDefinition> Races { get; set; } = new(); }
@@ -51,6 +55,8 @@ public static class ContentLoader
     private sealed class ItemFile { public List<ItemDefinition> Items { get; set; } = new(); }
     private sealed class LootFile { public List<LootTableDefinition> LootTables { get; set; } = new(); }
     private sealed class QuestFile { public List<QuestDefinition> Quests { get; set; } = new(); }
+    private sealed class ObjectFile { public List<GameObjectDefinition> Objects { get; set; } = new(); }
+    private sealed class ObjectSpawnFile { public List<ObjectSpawnDefinition> Objects { get; set; } = new(); }
 
     private static T? LoadFile<T>(string path, List<string> errors) where T : class
     {
@@ -154,7 +160,16 @@ public static class ContentLoader
                 }
             }
 
-            result.Add(new LoadedMap(def, heightMap, collision, spawns));
+            List<ObjectSpawnDefinition>? objects = null;
+            if (def.Objects is not null)
+            {
+                var objectPath = Path.Combine(dir, def.Objects);
+                objects = LoadFile<ObjectSpawnFile>(objectPath, errors)?.Objects;
+                foreach (var o in objects ?? new List<ObjectSpawnDefinition>())
+                    if (!heightMap.Contains(o.X, o.Z)) errors.Add($"{objectPath}: object {o.Object} at ({o.X}, {o.Z}) is outside the map");
+            }
+
+            result.Add(new LoadedMap(def, heightMap, collision, spawns, objects));
         }
         return result;
     }
@@ -345,8 +360,28 @@ public static class ContentLoader
             }
         }
 
+        public void ValidateObjects(List<GameObjectDefinition> objects, List<ItemDefinition> items, List<LoadedMap> maps)
+        {
+            ValidateIds("objects.json", objects.Select(o => ((long)o.Id, o.Name)), int.MaxValue);
+            var itemIds = items.Select(i => i.Id).ToHashSet();
+            foreach (var o in objects)
+            {
+                string where = $"objects.json: object {o.Id} '{o.Name}'";
+                if (!itemIds.Contains(o.Item)) Error($"{where} gives item {o.Item}, which does not exist");
+                if (o.DisplayId == 0) Error($"{where} needs a displayId");
+                if (o.MinCount < 1 || o.MaxCount < o.MinCount) Error($"{where}: needs 1 <= minCount <= maxCount");
+                if (o.RespawnSeconds < 5) Error($"{where}: respawnSeconds must be at least 5");
+                if (Bytes(o.Name) > SpellInfo.MaxNameBytes) Error($"{where}: name is too long");
+            }
+            var objectIds = objects.Select(o => o.Id).ToHashSet();
+            foreach (var map in maps)
+                foreach (var spawn in map.Objects.Where(s => !objectIds.Contains(s.Object)))
+                    Error($"map {map.Id}: object spawn of object {spawn.Object}, which does not exist");
+        }
+
         public void ValidateQuests(List<QuestDefinition> quests, List<CreatureDefinition> creatures, List<ItemDefinition> items,
-            List<ClassDefinition> classes, List<LoadedMap> maps, LevelTable levels, List<LootTableDefinition> loot)
+            List<ClassDefinition> classes, List<LoadedMap> maps, LevelTable levels, List<LootTableDefinition> loot,
+            List<GameObjectDefinition> objects)
         {
             ValidateClassItems(classes, items);
             ValidateIds("quests.json", quests.Select(q => ((long)q.Id, q.Title)), uint.MaxValue);
@@ -357,7 +392,7 @@ public static class ContentLoader
             var classIds = classes.Select(c => c.Id).ToHashSet();
             // Items a player can get somewhere (collect objectives must be possible).
             var obtainable = loot.SelectMany(t => t.Items.Select(i => i.Item).Concat(t.Groups.SelectMany(g => g.Items)))
-                .Concat(creatures.SelectMany(c => c.Vendor)).ToHashSet();
+                .Concat(creatures.SelectMany(c => c.Vendor)).Concat(objects.Select(o => o.Item)).ToHashSet();
 
             foreach (var q in quests)
             {
@@ -390,7 +425,7 @@ public static class ContentLoader
                             break;
                         case ObjectiveType.Collect:
                             if (!itemsById.TryGetValue(o.Item, out var item)) Error($"{where}: collect objective item {o.Item} does not exist");
-                            else if (!obtainable.Contains(o.Item)) Error($"{where}: item {o.Item} drops nowhere and is sold nowhere");
+                            else if (!obtainable.Contains(o.Item)) Error($"{where}: item {o.Item} drops nowhere, is sold nowhere and grows nowhere");
                             break;
                         case ObjectiveType.Explore:
                             if (!mapsById.TryGetValue(o.Map, out var map)) Error($"{where}: explore objective map {o.Map} does not exist");

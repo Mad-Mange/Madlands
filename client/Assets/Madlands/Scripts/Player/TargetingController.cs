@@ -79,6 +79,12 @@ namespace Madlands.Client
             bool click = _movedPixels <= ClickMaxPixels && Time.unscaledTime - _pressTime <= ClickMaxSeconds;
             if (!click || UiPointer.IsOverInteractive(_pressPosition)) return;
 
+            // Right-click on something to gather (mushrooms): the server says whether a quest needs it.
+            if (rightUp && PickObject(_pressPosition) is { } obj)
+            {
+                Client.Interact(obj.Guid);
+                return;
+            }
             var unit = PickUnit(_pressPosition);
             if (unit == null) return;
             Select(unit.Guid, use: rightUp);
@@ -143,6 +149,24 @@ namespace Madlands.Client
                 if (!hit.collider.isTrigger) break; // terrain, a wall, a tree: nothing behind it counts
             }
             return NearestOnScreen(cam, screenPosition, self) ?? mine;
+        }
+
+        /// <summary>The gatherable object under the cursor, unless something solid is in front of it.</summary>
+        private ObjectView PickObject(Vector2 screenPosition)
+        {
+            var cam = Camera.main;
+            if (cam == null) return null;
+            var self = network.LocalPlayer != null ? network.LocalPlayer.transform : null;
+            var hits = Physics.RaycastAll(cam.ScreenPointToRay(screenPosition), PickRange, ~0, QueryTriggerInteraction.Collide);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
+            {
+                if (self != null && hit.collider.transform.IsChildOf(self)) continue;
+                var obj = hit.collider.GetComponent<ObjectView>();
+                if (obj != null) return obj;
+                if (!hit.collider.isTrigger) break;
+            }
+            return null;
         }
 
         private UnitView NearestOnScreen(Camera cam, Vector2 click, Transform self)

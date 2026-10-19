@@ -29,6 +29,7 @@ namespace Madlands.Client
         private int _equipped;
         private bool _talked;
         private float _nextTalkAt;
+        private float _nextGatherAt;
         private EntityGuid _lootedCorpse;
 
         private GameClient Client => network.Client;
@@ -44,7 +45,7 @@ namespace Madlands.Client
         {
             var settings = network.Settings;
             if (settings == null || (settings.Exec.Length == 0 && !settings.AutoFight && settings.OpenWindows.Length == 0
-                                     && settings.TalkTo == null && !settings.AutoLoot && settings.TooltipItem == 0
+                                     && settings.TalkTo == null && !settings.AutoLoot && !settings.AutoGather && settings.TooltipItem == 0
                                      && settings.Equip.Length == 0)) return;
             if (!network.InWorld)
             {
@@ -78,6 +79,7 @@ namespace Madlands.Client
             if (settings.TalkTo != null && !_talked && Time.time >= _nextTalkAt) TalkTo(settings);
             if (settings.TooltipItem != 0 && _windowsOpened && Time.time > _enteredAt + 3f) hud.ShowItemTooltip(settings.TooltipItem);
             if (settings.AutoLoot) LootNearby();
+            if (settings.AutoGather && Time.time >= _nextGatherAt) GatherNearby();
 
             if (settings.AutoFight && Time.time >= _nextFightAt)
             {
@@ -121,6 +123,20 @@ namespace Madlands.Client
         {
             Client.GossipOpened -= OpenQuestOnce;
             hud.Quests.ShowQuest(network.Settings.QuestId);
+        }
+
+        /// <summary>Right-clicks the nearest gatherable object in reach, once a second.</summary>
+        private void GatherNearby()
+        {
+            _nextGatherAt = Time.time + 1f;
+            if (network.LocalPlayer == null) return;
+            foreach (var entity in Client.World.Entities)
+            {
+                if (!entity.IsObject || !(entity.View is GameObject go)) continue;
+                if (Vector3.Distance(go.transform.position, network.LocalPlayer.transform.position) > GameConstants.InteractRange) continue;
+                Client.Interact(entity.Guid);
+                return;
+            }
         }
 
         private void LootNearby()

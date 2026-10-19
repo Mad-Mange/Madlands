@@ -6,6 +6,7 @@
   "heightmap": "height.bin",
   "collision": "collision.bin",
   "spawns": "spawns.json",
+  "objects": "objects.json",
   "spawn": { "x": 0.00, "z": -148.00, "yawDegrees": 0.0 },
   "restAreas": [
     { "name": "Mirewatch", "x": 0.00, "z": -140.00, "radius": 58.0 }

@@ -110,6 +110,38 @@ public class ItemIntegrationTests
     }
 
     [Fact]
+    public async Task Glowcaps_are_gathered_only_for_the_quest_and_grow_back()
+    {
+        const uint GlowcapQuest = 30, Glowcap = 3009;
+        // The test arena with Old Tamsin and one patch of glowcaps right in front of the spawn.
+        var content = TestRealm.CombatContent(Post);
+        var arena = content.Maps[1];
+        content = content.WithMaps(new[]
+        {
+            new LoadedMap(arena.Definition, arena.HeightMap, null, arena.Spawns, new[] { new ObjectSpawnDefinition { Object = 1, X = 0, Z = 2 } }),
+        });
+        await using var realm = await TestRealm.StartAsync(content: content, gmAll: true);
+        var (account, character) = await realm.NewPlayerAsync("picker", "Picker", Warrior);
+        using var s = new Session(realm, realm.Enter(account, character));
+        var c = s.Client;
+        s.Pump(() => c.State == ClientState.InWorld && c.Inventory.All.Any());
+        RemoteEntity? patch = null;
+        s.Pump(() => (patch = c.World.Entities.FirstOrDefault(e => e.IsObject)) is not null);
+        Assert.Equal(("Glowcap Mushrooms", Glowcap), (patch!.Name, patch.ObjectItem));
+        Assert.False(c.NeedsItem(Glowcap));
+
+        // Nobody needs them yet.
+        s.ExpectError(ActionError.NotNeeded, () => c.Interact(patch.Guid));
+
+        s.Command(".quest add " + GlowcapQuest);
+        s.Pump(() => c.NeedsItem(Glowcap));
+        c.Interact(patch.Guid);
+        s.Pump(() => s.Count(Glowcap) == 1 && s.Progress.Contains((GlowcapQuest, 0, 1)));
+        // Picked: gone for everyone until it grows back.
+        s.Pump(() => c.World.Entities.All(e => !e.IsObject));
+    }
+
+    [Fact]
     public async Task New_characters_start_equipped_and_gear_changes_stats_and_looks()
     {
         var (realm, s) = await StartAsync();

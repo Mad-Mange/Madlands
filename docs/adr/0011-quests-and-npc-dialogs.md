@@ -27,6 +27,17 @@
 - Talking to an NPC in reach counts for talk objectives.
 - Quest marks are private per player: the server computes each quest NPC's mark for a player (`QuestGiverStatus`: available "!", ready "?", in progress gray "?") when it comes into view and whenever the player's quests or level change.
 
+**Gatherable objects**
+
+- Things to pick in the world (glowcap mushrooms) are game objects: `content/objects.json` says what each gives and how
+  long it takes to grow back; each map's `objects.json` (exported from `ObjectSpawnPoint` markers) says where they grow.
+- The server spawns them as entities (`WorldObject`, guid type GameObject) seen through the same area of interest as
+  units; the spawn message carries the item they give. A right-click sends `Interact` with the object's guid: the
+  server checks the range and, for quest-only objects, that a collect objective still needs the item, then puts it in
+  the bags and the object disappears for everyone until it grows back.
+- The client draws them by displayId and makes them shine while a quest needs their item (the same check, locally).
+- Quest areas on the map circle where the objects of a collect objective grow.
+
 **On the client**
 
 - The dialog window shows the greeting and quest list, a quest's story with Accept, its progress text, and the reward screen with the choice. The quest log (L) and the tracker on the right show the objectives. Chat and the screen center announce progress ("Mire Frog slain: 3/6").

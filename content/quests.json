@@ -675,6 +675,15 @@
       "completion": "You came back. From down there. With that.\n\nThe whole camp heard the ground stop shaking. Take your pick of what we pulled out of his lair, and know that every Korrin in Hollowmere owes you a drink.",
       "objectives": [ { "type": "kill", "creature": 26, "count": 1 } ],
       "rewards": { "xp": 2400, "money": 400, "choices": [ { "item": 1290 }, { "item": 1291 }, { "item": 1292 } ] }
+    },
+    {
+      "id": 30, "title": "Glowcaps for a Salve", "level": 5, "minLevel": 4, "giver": 11, "ender": 11,
+      "details": "Those wolves and spiders in the Greywood send me more torn-up folk than I have salve for. The best salve wants glowcaps: little pale mushrooms that grow at the feet of the old trees, and shine when you know to look for them.\n\nBring me eight, dear. Pick them gently. They grow back, but slowly, and the wood remembers who was rude.",
+      "summary": "Gather 8 Glowcaps at the feet of the trees in the Greywood and bring them to Old Tamsin in Mirewatch.",
+      "progress": "Found any glowcaps?",
+      "completion": "Oh, these are lovely. Look at them shine. Here, take a few tonics from my shelf for your trouble; they're made from the last batch.",
+      "objectives": [ { "type": "collect", "item": 3009, "count": 8 } ],
+      "rewards": { "xp": 650, "money": 60, "items": [ { "item": 4010, "count": 2 } ] }
     }
   ]
 }
