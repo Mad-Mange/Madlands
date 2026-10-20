@@ -27,7 +27,7 @@ public static class QuestAreas
             case ObjectiveType.Kill:
                 return Around(content, id => id == objective.Creature, MinRadius);
             case ObjectiveType.Talk:
-                return Around(content, id => id == objective.Creature, NpcRadius);
+                return Npc(content, objective.Creature);
             case ObjectiveType.Collect:
                 var sources = Around(content, id => content.Creatures.TryGetValue(id, out var creature) && Drops(content, creature, objective.Item), MinRadius,
                     id => content.Objects.TryGetValue(id, out var obj) && obj.Item == objective.Item);
@@ -37,6 +37,9 @@ public static class QuestAreas
                 return new List<QuestArea>();
         }
     }
+
+    /// <summary>Where an NPC stands: its spawn points (a quest ender, someone to talk to).</summary>
+    public static List<QuestArea> Npc(ContentDatabase content, int creature) => Around(content, id => id == creature, NpcRadius);
 
     /// <summary>Whether the creature's loot table can drop the item.</summary>
     public static bool Drops(ContentDatabase content, CreatureDefinition creature, uint item)

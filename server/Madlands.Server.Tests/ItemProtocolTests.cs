@@ -135,6 +135,7 @@ public class ItemProtocolTests
             Id = 7, Title = "Shards in the Wrong Hands", Level = 5, Details = "Go.", Objectives = "Kill and collect.", Progress = "Well?",
             Completion = "Thanks.", EnderName = "Captain Edda Brand", RewardXp = 900, RewardMoney = 150,
         };
+        quest.EnderPlaces.Add(new QuestArea { Map = 1, X = 20, Z = -163, Radius = 10 });
         quest.ObjectiveList.Add(new QuestObjectiveInfo { Type = ObjectiveType.Kill, Target = 3, Count = 6, Text = "Shard Bandit slain" });
         quest.ObjectiveList.Add(new QuestObjectiveInfo
         {
@@ -162,6 +163,7 @@ public class ItemProtocolTests
         Assert.Equal((quest.Title, quest.Level, quest.Details, quest.Objectives, quest.Progress, quest.Completion, quest.EnderName),
             (q.Title, q.Level, q.Details, q.Objectives, q.Progress, q.Completion, q.EnderName));
         Assert.Equal(quest.ObjectiveList.Select(o => (o.Type, o.Target, o.Count, o.Text)), q.ObjectiveList.Select(o => (o.Type, o.Target, o.Count, o.Text)));
+        Assert.Equal(quest.EnderPlaces, q.EnderPlaces);
         Assert.Empty(q.ObjectiveList[0].Areas);
         Assert.Equal(quest.ObjectiveList[1].Areas, q.ObjectiveList[1].Areas);
         Assert.Equal(quest.RewardItems, q.RewardItems);

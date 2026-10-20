@@ -356,7 +356,7 @@ namespace Madlands.Client
                 title.style.color = LevelColor(info.Level);
                 if (quest.IsComplete)
                 {
-                    GameWindow.Text(_tracker, "Ready to turn in" + (info.EnderName.Length > 0 ? ": " + info.EnderName : ""), "tracker-line").AddToClassList("done");
+                    GameWindow.Text(_tracker, info.EnderName.Length > 0 ? Loc.T("quest.readyToTurnInTo", info.EnderName) : Loc.T("quest.readyToTurnIn"), "tracker-line").AddToClassList("done");
                     continue;
                 }
                 for (int i = 0; i < info.ObjectiveList.Count; i++)
@@ -370,15 +370,21 @@ namespace Madlands.Client
             }
         }
 
-        /// <summary>Quest title color by level difference: gray (trivial), green, yellow, orange, red.</summary>
-        private StyleColor LevelColor(int questLevel)
+        private StyleColor LevelColor(int questLevel) => new StyleColor(DifficultyColor(questLevel, _client.Self.Values.Level));
+
+        /// <summary>A quest's color by its level against the player's: gray (trivial), green, yellow, orange, red.</summary>
+        public static UnityEngine.Color DifficultyColor(int questLevel, int playerLevel)
         {
-            int diff = questLevel - _client.Self.Values.Level;
-            if (diff >= 5) return new StyleColor(new UnityEngine.Color(1f, 0.25f, 0.2f));
-            if (diff >= 3) return new StyleColor(new UnityEngine.Color(1f, 0.55f, 0.2f));
-            if (diff >= -2) return new StyleColor(new UnityEngine.Color(1f, 0.85f, 0.3f));
-            if (diff >= -5) return new StyleColor(new UnityEngine.Color(0.35f, 0.9f, 0.35f));
-            return new StyleColor(new UnityEngine.Color(0.6f, 0.6f, 0.6f));
+            int diff = questLevel - playerLevel;
+            if (diff >= 5) return new UnityEngine.Color(1f, 0.25f, 0.2f);
+            if (diff >= 3) return new UnityEngine.Color(1f, 0.55f, 0.2f);
+            if (diff >= -2) return new UnityEngine.Color(1f, 0.85f, 0.3f);
+            if (diff >= -5) return new UnityEngine.Color(0.35f, 0.9f, 0.35f);
+            return new UnityEngine.Color(0.6f, 0.6f, 0.6f);
         }
+
+        /// <summary>"[5]" in the quest's difficulty color (rich text), before its name or objectives on the maps.</summary>
+        public static string LevelTag(int questLevel, int playerLevel) =>
+            "<color=#" + UnityEngine.ColorUtility.ToHtmlStringRGB(DifficultyColor(questLevel, playerLevel)) + ">[" + questLevel + "]</color>";
     }
 }

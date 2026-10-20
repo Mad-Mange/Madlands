@@ -94,6 +94,8 @@ namespace Madlands.Shared.Game
         public string Completion;
         /// <summary>Who to return to (quest log: "Return to ...").</summary>
         public string EnderName;
+        /// <summary>Where the quest ender stands (the world map shows the turn-in there once the quest is done).</summary>
+        public readonly List<QuestArea> EnderPlaces = new List<QuestArea>();
         public readonly List<QuestObjectiveInfo> ObjectiveList = new List<QuestObjectiveInfo>();
         public int RewardXp;
         public uint RewardMoney;
@@ -112,6 +114,7 @@ namespace Madlands.Shared.Game
             w.WriteString(Progress);
             w.WriteString(Completion);
             w.WriteString(EnderName);
+            WriteAreas(w, EnderPlaces);
             w.WriteByte((byte)ObjectiveList.Count);
             foreach (var o in ObjectiveList)
             {
@@ -119,15 +122,7 @@ namespace Madlands.Shared.Game
                 w.WriteUInt(o.Target);
                 w.WriteUShort(o.Count);
                 w.WriteString(o.Text);
-                int areas = o.Areas == null ? 0 : Math.Min(o.Areas.Count, QuestObjectiveInfo.MaxAreas);
-                w.WriteByte((byte)areas);
-                for (int a = 0; a < areas; a++)
-                {
-                    w.WriteUShort(o.Areas[a].Map);
-                    w.WriteFloat(o.Areas[a].X);
-                    w.WriteFloat(o.Areas[a].Z);
-                    w.WriteFloat(o.Areas[a].Radius);
-                }
+                WriteAreas(w, o.Areas);
             }
             w.WriteInt(RewardXp);
             w.WriteUInt(RewardMoney);
@@ -146,6 +141,7 @@ namespace Madlands.Shared.Game
             q.Progress = r.ReadString(MaxTextBytes);
             q.Completion = r.ReadString(MaxTextBytes);
             q.EnderName = r.ReadString(Hello.MaxNameBytes);
+            ReadAreas(ref r, q.EnderPlaces);
             int objectives = r.ReadByte();
             if (objectives > MaxObjectives) throw new PacketException("Quest with " + objectives + " objectives.");
             for (int i = 0; i < objectives; i++)
@@ -155,19 +151,8 @@ namespace Madlands.Shared.Game
                 o.Target = r.ReadUInt();
                 o.Count = r.ReadUShort();
                 o.Text = r.ReadString(MaxTitleBytes);
-                int areas = r.ReadByte();
-                if (areas > QuestObjectiveInfo.MaxAreas) throw new PacketException("Objective with " + areas + " areas.");
-                o.Areas = new List<QuestArea>(areas);
-                for (int a = 0; a < areas; a++)
-                {
-                    QuestArea area;
-                    area.Map = r.ReadUShort();
-                    area.X = r.ReadFloat();
-                    area.Z = r.ReadFloat();
-                    area.Radius = r.ReadFloat();
-                    if (!float.IsFinite(area.X) || !float.IsFinite(area.Z) || !float.IsFinite(area.Radius)) throw new PacketException("Bad quest area.");
-                    o.Areas.Add(area);
-                }
+                o.Areas = new List<QuestArea>();
+                ReadAreas(ref r, o.Areas);
                 q.ObjectiveList.Add(o);
             }
             q.RewardXp = r.ReadInt();
@@ -175,6 +160,36 @@ namespace Madlands.Shared.Game
             ReadRewards(ref r, q.RewardItems);
             ReadRewards(ref r, q.RewardChoices);
             return q;
+        }
+
+        /// <summary>Up to <see cref="QuestObjectiveInfo.MaxAreas"/> places (more are left out).</summary>
+        private static void WriteAreas(PacketWriter w, List<QuestArea> areas)
+        {
+            int count = areas == null ? 0 : Math.Min(areas.Count, QuestObjectiveInfo.MaxAreas);
+            w.WriteByte((byte)count);
+            for (int a = 0; a < count; a++)
+            {
+                w.WriteUShort(areas[a].Map);
+                w.WriteFloat(areas[a].X);
+                w.WriteFloat(areas[a].Z);
+                w.WriteFloat(areas[a].Radius);
+            }
+        }
+
+        private static void ReadAreas(ref PacketReader r, List<QuestArea> areas)
+        {
+            int count = r.ReadByte();
+            if (count > QuestObjectiveInfo.MaxAreas) throw new PacketException("Quest with " + count + " places.");
+            for (int a = 0; a < count; a++)
+            {
+                QuestArea area;
+                area.Map = r.ReadUShort();
+                area.X = r.ReadFloat();
+                area.Z = r.ReadFloat();
+                area.Radius = r.ReadFloat();
+                if (!float.IsFinite(area.X) || !float.IsFinite(area.Z) || !float.IsFinite(area.Radius)) throw new PacketException("Bad quest area.");
+                areas.Add(area);
+            }
         }
 
         private static void WriteRewards(PacketWriter w, List<QuestItemReward> rewards)

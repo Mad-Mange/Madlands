@@ -919,6 +919,36 @@
     color: rgb(190, 190, 190);
 }
 
+/* Where a finished quest is turned in: a gold coin with a "?", seen from anywhere on the map. */
+.map-marker.quest.turnin {
+    width: 26px;
+    height: 26px;
+    margin-left: -13px;
+    margin-top: -13px;
+    border-radius: 13px;
+    border-width: 2px;
+    border-color: rgb(255, 214, 60);
+    background-color: rgb(70, 46, 6);
+}
+
+.map-marker.quest.turnin .unity-label {
+    font-size: 19px;
+    color: rgb(255, 222, 70);
+}
+
+/* On the minimap's rim: the turn-in is farther away, in that direction. */
+.map-marker.quest.turnin.edge {
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    border-radius: 10px;
+}
+
+.map-marker.quest.turnin.edge .unity-label {
+    font-size: 14px;
+}
+
 .window.worldmap {
     left: 50%;
     top: 50px;
@@ -952,4 +982,10 @@
     border-radius: 3px;
     -unity-text-outline-width: 1px;
     -unity-text-outline-color: rgb(0, 0, 0);
+}
+
+.map-area-label.turnin {
+    color: rgb(255, 214, 60);
+    border-width: 1px;
+    border-color: rgb(160, 120, 30);
 }

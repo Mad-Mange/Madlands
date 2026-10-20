@@ -714,6 +714,7 @@ public sealed class GameServer : IDisposable
                 RewardXp = q.Rewards.Xp,
                 RewardMoney = (uint)q.Rewards.Money,
             };
+            info.EnderPlaces.AddRange(QuestAreas.Npc(content, q.Ender));
             foreach (var o in q.Objectives)
             {
                 info.ObjectiveList.Add(new QuestObjectiveInfo

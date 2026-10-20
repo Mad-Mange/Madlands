@@ -11,8 +11,9 @@ namespace Madlands.Client
     /// <summary>
     /// The minimap (top right, north up, mouse wheel zooms) and the world map (M). Both draw the map
     /// image Export Map rendered from above (<see cref="MapInfo.worldMap"/>), the player's arrow,
-    /// other players, NPCs with their quest marks, and yellow circles where the active quests'
-    /// objectives are done (labeled on the world map).
+    /// other players, NPCs with their quest marks, yellow circles where the active quests'
+    /// objectives are done (labeled on the world map), and a big "?" where finished quests are turned
+    /// in, however far away (on the minimap's rim, pointing the way, when it is out of sight).
     /// </summary>
     public sealed class MapUi
     {
@@ -59,8 +60,13 @@ namespace Madlands.Client
         private int _zoom = 2;
         private readonly List<QuestPlace> _questPlaces = new List<QuestPlace>();
         private readonly List<QuestPlace> _questLabels = new List<QuestPlace>();
+        /// <summary>Where finished quests are turned in (Radius unused), labeled with the ender and the quests.</summary>
+        private readonly List<QuestPlace> _turnIns = new List<QuestPlace>();
+        private readonly VisualElement _miniTurnIns;
+        private readonly List<Marker> _miniTurnInPool = new List<Marker>();
         private int _questLogVersion;
         private int _placesForQuestLogVersion = -1;
+        private int _placesForLevel = -1;
         private int _placesVersion;
         private int _worldAreasForPlaces = -1;
 
@@ -77,10 +83,13 @@ namespace Madlands.Client
             _miniAreaLayer.AddToClassList("layer");
             _miniMarkers = new VisualElement { pickingMode = PickingMode.Ignore };
             _miniMarkers.AddToClassList("layer");
+            _miniTurnIns = new VisualElement { pickingMode = PickingMode.Ignore };
+            _miniTurnIns.AddToClassList("layer");
             _miniArrow = Arrow(_minimap);
             _minimap.Add(_miniImage);
             _minimap.Add(_miniAreaLayer);
             _minimap.Add(_miniMarkers);
+            _minimap.Add(_miniTurnIns);
             _minimap.Add(_miniArrow);
             _minimap.RegisterCallback<WheelEvent>(e =>
             {
@@ -218,12 +227,34 @@ namespace Madlands.Client
                 if (!MarkerFor(entity, out string text, out string css, out var icon)) continue;
                 var p = entity.Movement.Sample(_client.RenderTimeMs).Position;
                 float dx = p.X - me.X, dz = p.Z - me.Z;
-                if (dx * dx + dz * dz > radius * radius * 0.92f) continue;
+                if (dx * dx + dz * dz > radius * radius * 0.92f || ShownAsTurnIn(entity, p)) continue;
                 var marker = Take(_miniPool, _miniMarkers, used++);
                 SetMarker(marker, text, css, icon);
                 Place(marker.Root, half + dx * ppm, half - dz * ppm);
             }
             Hide(_miniPool, used);
+
+            // Turn-ins out of sight sit on the rim, in their direction.
+            float rim = half - 13f;
+            for (int i = 0; i < _turnIns.Count; i++)
+            {
+                var offset = new Vector2(_turnIns[i].Center.x - me.X, _turnIns[i].Center.y - me.Z) * ppm;
+                bool inside = offset.magnitude <= rim;
+                if (!inside) offset = offset.normalized * rim;
+                var marker = Take(_miniTurnInPool, _miniTurnIns, i);
+                SetMarker(marker, "?", inside ? "quest turnin" : "quest turnin edge", null);
+                Place(marker.Root, half + offset.x, half - offset.y);
+            }
+            Hide(_miniTurnInPool, _turnIns.Count);
+        }
+
+        /// <summary>An NPC's own "?" is left out where the turn-in mark already stands.</summary>
+        private bool ShownAsTurnIn(RemoteEntity entity, Vec3 position)
+        {
+            if (_client.GetQuestGiverStatus(entity.Guid) != QuestGiverStatus.Reward) return false;
+            foreach (var turnIn in _turnIns)
+                if (Vector2.Distance(turnIn.Center, new Vector2(position.X, position.Z)) < TurnInMergeMeters) return true;
+            return false;
         }
 
         private void UpdateWorldMap(Vec3 me, float yaw)
@@ -240,6 +271,7 @@ namespace Madlands.Client
             {
                 if (!MarkerFor(entity, out string text, out string css, out var icon)) continue;
                 var p = entity.Movement.Sample(_client.RenderTimeMs).Position;
+                if (ShownAsTurnIn(entity, p)) continue;
                 var marker = Take(_worldPool, _worldMarkers, used++);
                 SetMarker(marker, text, css, icon);
                 var v = ToView(p.X, p.Z);
@@ -267,6 +299,21 @@ namespace Madlands.Client
                 label.style.top = center.y + Mathf.Max(6f, place.Radius * ppm) + 2f;
                 _worldAreas.Add(label);
             }
+            foreach (var turnIn in _turnIns)
+            {
+                var center = ToView(turnIn.Center.x, turnIn.Center.y);
+                var mark = new VisualElement { pickingMode = PickingMode.Ignore };
+                mark.Add(new Label("?") { pickingMode = PickingMode.Ignore });
+                foreach (var css in new[] { "map-marker", "quest", "turnin" }) mark.AddToClassList(css);
+                Place(mark, center.x, center.y);
+                _worldAreas.Add(mark);
+                var label = new Label(turnIn.Text) { pickingMode = PickingMode.Ignore };
+                label.AddToClassList("map-area-label");
+                label.AddToClassList("turnin");
+                label.style.left = center.x - 100f;
+                label.style.top = center.y + 18f;
+                _worldAreas.Add(label);
+            }
         }
 
         /// <summary>
@@ -276,21 +323,31 @@ namespace Madlands.Client
         /// </summary>
         private void RefreshQuestPlaces()
         {
-            if (_placesForQuestLogVersion == _questLogVersion) return;
+            // The quests' level tags change color when the player levels up.
+            int level = _client.Self.Values.Level;
+            if (_placesForQuestLogVersion == _questLogVersion && _placesForLevel == level) return;
             _placesForQuestLogVersion = _questLogVersion;
+            _placesForLevel = level;
             _placesVersion++;
             _questPlaces.Clear();
             _questLabels.Clear();
+            _turnIns.Clear();
             foreach (var quest in _client.Quests.Active)
             {
                 var info = _client.Data.GetQuest(quest.QuestId);
                 if (info == null) continue;
+                if (quest.IsComplete || info.ObjectiveList.Count == 0)
+                {
+                    foreach (var place in info.EnderPlaces)
+                        if (place.Map == _map.mapId) AddTurnIn(new Vector2(place.X, place.Z), info);
+                    continue;
+                }
                 for (int i = 0; i < info.ObjectiveList.Count; i++)
                 {
                     var o = info.ObjectiveList[i];
                     int done = i < quest.Progress.Length ? quest.Progress[i] : 0;
                     if (done >= o.Count || o.Areas == null) continue;
-                    string text = QuestUi.ObjectiveLine(o, done);
+                    string text = QuestUi.LevelTag(info.Level, level) + " " + QuestUi.ObjectiveLine(o, done);
                     bool labeled = false;
                     foreach (var area in o.Areas)
                     {
@@ -314,6 +371,24 @@ namespace Madlands.Client
                     }
                 }
             }
+        }
+
+        /// <summary>Turn-ins this close together (meters) share a mark: the same NPC.</summary>
+        private const float TurnInMergeMeters = 6f;
+
+        /// <summary>A "?" where the quest is turned in, labeled with the ender; quests ending at the same NPC share it.</summary>
+        private void AddTurnIn(Vector2 position, QuestInfo info)
+        {
+            string title = QuestUi.LevelTag(info.Level, _client.Self.Values.Level) + " " + info.Title;
+            int same = _turnIns.FindIndex(t => Vector2.Distance(t.Center, position) < TurnInMergeMeters);
+            if (same < 0)
+            {
+                _turnIns.Add(new QuestPlace { Center = position, Text = Loc.T("map.turnIn", info.EnderName) + "\n" + title });
+                return;
+            }
+            var shared = _turnIns[same];
+            shared.Text += "\n" + title;
+            _turnIns[same] = shared;
         }
 
         /// <summary>Sizes a round element to radius <paramref name="r"/> around a point of its parent (pixels).</summary>

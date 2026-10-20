@@ -213,7 +213,8 @@ public class ContentLoaderTests
         {
             Assert.Contains(quest.Giver, spawned);
             Assert.Contains(quest.Ender, spawned);
-            // ...and the world map shows where to do each objective.
+            // ...and the world map shows where to do each objective and where to turn the quest in.
+            Assert.True(QuestAreas.Npc(db, quest.Ender).Count > 0, $"Quest {quest.Id}: no map place for its ender");
             foreach (var objective in quest.Objectives)
                 Assert.True(QuestAreas.For(db, objective).Count > 0, $"Quest {quest.Id}: no map area for a {objective.Type} objective");
         }
@@ -259,6 +260,9 @@ public class ContentLoaderTests
         var bears = Assert.Single(QuestAreas.For(content, new QuestObjectiveDefinition { Type = ObjectiveType.Kill, Creature = 3 }));
         Assert.Equal((-210f, 40f + 75f + QuestAreas.Margin), (bears.X, bears.Radius));
         Assert.Empty(QuestAreas.For(content, new QuestObjectiveDefinition { Type = ObjectiveType.Kill, Creature = 4 }));
+        // An NPC (a quest ender) stands where it spawns.
+        var boar = Assert.Single(QuestAreas.Npc(content, 2));
+        Assert.Equal((-100f, 50f, (ushort)1), (boar.X, boar.Z, boar.Map));
     }
 }
 
