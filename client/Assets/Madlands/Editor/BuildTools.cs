@@ -33,6 +33,7 @@ namespace Madlands.Client.Editor
 
         public static bool BuildWindows()
         {
+            ArtImporter.RemeasureSkeletons();
             ArtImporter.RefreshCatalog();
             SoundImporter.RefreshCatalog();
             var options = new BuildPlayerOptions

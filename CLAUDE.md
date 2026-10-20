@@ -93,8 +93,13 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
 
 - Unity keeps the orientation an FBX declares: changing Blender's export axes changes nothing. `ArtImporter`
   turns every model root 180 degrees so Blender's front (-Y) faces Unity's +Z.
-- An animation-only FBX gets its humanoid avatar from the model it was made on (`ArtImporter.AnimationSkeletons`):
-  its own imported pose is a clip frame, not the T-pose, and retargeting goes wrong (weapons point sideways).
+- Humanoid avatars: `ArtImporter` maps all 21 bones by name (Unity's own guess drops `Chest` and the shoulders, and
+  their clip rotations with them) and needs a stored skeleton for that; `ArtImporter.RemeasureSkeletons` (run by
+  builds and the art report, and by the editor after imports) stores a new one when a race's bones moved. Unity
+  only re-imports existing art after an importer change when `ArtImporter.GetVersion()` is raised.
+- `HumanoidAnimations.fbx` has its own avatar: it is exported in the Brightvale rest pose. Copying the race's avatar
+  fails (Unity drops the lone `Armature` node, the hierarchies differ) and silently imports no humanoid clips:
+  check the art report's clip count. In the report, `idle ... weapon points` shows where a held weapon points.
 - Unassigning a Blender action keeps its last pose: `lowpoly.export_fbx` resets the pose before exporting.
 - To check animated poses in batch mode use `AnimationMode.SampleAnimationClip`; `PlayableGraph.Evaluate` does
   nothing there.

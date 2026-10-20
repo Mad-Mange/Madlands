@@ -76,6 +76,7 @@ namespace Madlands.Client
                 if (part != null) Object.Destroy(part);
             parts.Clear();
             foreach (var region in TintedRegions) model.ResetTint(region);
+            model.SetHidden("Hair", false);
 
             // Legs before the chest: a robe covers them.
             Tint(model, gear[SlotOf(EquipSlot.Legs)], "Legs");
@@ -115,8 +116,10 @@ namespace Madlands.Client
         private static void Shape(DisplayModel model, Look look, List<GameObject> parts)
         {
             var head = model.RestPosition("Head");
-            float top = model.Height;
+            // The top of the skull, under the hair (older models without the marker: the model's top).
+            float top = model.Bone("HeadTop") != null ? model.RestPosition("HeadTop").y + 0.03f : model.Height;
             float size = (top - head.y) / 0.29f;
+            if (look.Style == Style.Hood || look.Style == Style.Helm) model.SetHidden("Hair", true);
             float center = (head.y + top) / 2f + 0.01f;
             var shoulder = model.RestPosition("LeftUpperArm");
             float wide = Mathf.Abs(shoulder.x) / 0.19f;

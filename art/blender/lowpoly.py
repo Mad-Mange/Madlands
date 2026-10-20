@@ -166,6 +166,41 @@ class MeshBuilder:
             faces.append((last + s, last + (s + 1) % segments, top))
         return self.add(verts, faces, mat, bone, _placement(center, rotation))
 
+    def loft(self, rings, mat, bone=None, cap_a=True, cap_b=True):
+        """A closed tube through cross-sections (lists of points with the same count): torsos, sleeves."""
+        n = len(rings[0])
+        verts = [p for r in rings for p in r]
+        faces = []
+        for k in range(len(rings) - 1):
+            for i in range(n):
+                j = (i + 1) % n
+                faces.append((k * n + i, k * n + j, (k + 1) * n + j, (k + 1) * n + i))
+        if cap_a:
+            faces.append(tuple(reversed(range(n))))
+        if cap_b:
+            faces.append(tuple(range((len(rings) - 1) * n, len(rings) * n)))
+        created = self.add(verts, faces, mat, bone)
+        self._fix_normals(created)
+        return created
+
+    def tube(self, sections, mat, bone=None, sides=6, twist=0.0, cap_a=True, cap_b=True):
+        """
+        A tube along a path of (point, radius) sections: limbs with muscles and cuffs. `radius` may be
+        (r_u, r_v): for a limb along X, u is front-back (Y) and v is up-down (Z); along -Z, u is X and v is Y.
+        """
+        points = [Vector(p) for p, _ in sections]
+        rings = []
+        for k, (_, radius) in enumerate(sections):
+            a, b = points[max(k - 1, 0)], points[min(k + 1, len(points) - 1)]
+            axis = (b - a).normalized()
+            ref = Vector((0, 0, 1)) if abs(axis.z) < 0.9 else Vector((0, -1, 0))
+            u = axis.cross(ref).normalized()
+            v = axis.cross(u).normalized()
+            ru, rv = radius if isinstance(radius, (tuple, list)) else (radius, radius)
+            rings.append([points[k] + u * (math.cos(t) * ru) + v * (math.sin(t) * rv)
+                          for t in (2 * math.pi * i / sides + twist for i in range(sides))])
+        return self.loft(rings, mat, bone, cap_a, cap_b)
+
     def hull(self, points, mat, bone=None, center=(0, 0, 0), rotation=None):
         """The convex hull of `points`: chunky heads, rocks, crystals."""
         placement = _placement(center, rotation)
@@ -199,6 +234,32 @@ class MeshBuilder:
             obj.vertex_groups.new(name=group)
         (collection or bpy.context.scene.collection).objects.link(obj)
         return obj
+
+
+def ring(z, width, depth, sides=8, front=1.0, back=1.0, y=0.0, square=0.0):
+    """
+    A horizontal cross-section at height z for MeshBuilder.loft: `width` along X by `depth` along Y,
+    the front half (-Y) stretched by `front` and the back by `back`. `square` (0..1) squares it off.
+    """
+    e = 2.0 / (2.0 + 3.0 * square)
+    points = []
+    for i in range(sides):
+        t = 2 * math.pi * (i + 0.5) / sides
+        c, s = math.cos(t), math.sin(t)
+        px = math.copysign(abs(c) ** e, c) * width / 2
+        py = math.copysign(abs(s) ** e, s) * depth / 2
+        points.append((px, y + py * (back if py > 0 else front), z))
+    return points
+
+
+def mirrored(points):
+    """The points and their mirror images in X (for symmetric hulls)."""
+    out = []
+    for x, y, z in points:
+        out.append((x, y, z))
+        if abs(x) > 1e-6:
+            out.append((-x, y, z))
+    return out
 
 
 def _placement(center, rotation):

@@ -34,9 +34,17 @@ namespace Madlands.Client
         public float WalkSpeed = 1.7f;
         public float RunSpeed = 6.2f;
 
+        /// <summary>How much darker a region's second tone (its "Trim" material: collars, cuffs, soles) is.</summary>
+        private const float TrimShade = 0.62f;
+
         private static readonly Dictionary<(Material, Color), Material> Tinted = new Dictionary<(Material, Color), Material>();
+        private static Material _invisible;
+        private static bool _invisibleLoaded;
         private Renderer _body;
         private Material[] _baseMaterials;
+        /// <summary>Each body material as it is shown (the model's own or tinted), hidden or not.</summary>
+        private Material[] _shown;
+        private readonly HashSet<string> _hidden = new HashSet<string>();
 
         public Renderer Body
         {
@@ -45,37 +53,75 @@ namespace Madlands.Client
             {
                 _body = value;
                 _baseMaterials = value != null ? value.sharedMaterials : null;
+                _shown = value != null ? (Material[])_baseMaterials.Clone() : null;
+                _hidden.Clear();
             }
         }
 
         /// <summary>Back to the model's own color for a region (gear taken off).</summary>
-        public void ResetTint(string region)
+        public void ResetTint(string region) => Recolor(region, null);
+
+        /// <summary>
+        /// Recolors one gear region of this model only: the body material named <paramref name="region"/>,
+        /// its darker "Trim" second tone, and for "Hair" also the beard and brows.
+        /// </summary>
+        public void Tint(string region, Color color) => Recolor(region, color);
+
+        /// <summary>Hides a region (a body material), like the hair under a helmet, or shows it again.</summary>
+        public void SetHidden(string region, bool hidden)
+        {
+            if (hidden ? _hidden.Add(region) : _hidden.Remove(region)) ApplyMaterials();
+        }
+
+        private void Recolor(string region, Color? color)
         {
             if (_body == null) return;
-            var materials = _body.sharedMaterials;
-            for (int i = 0; i < materials.Length; i++)
-                if (_baseMaterials[i] != null && _baseMaterials[i].name == region) materials[i] = _baseMaterials[i];
+            for (int i = 0; i < _baseMaterials.Length; i++)
+            {
+                var source = _baseMaterials[i];
+                if (source == null) continue;
+                float shade;
+                if (source.name == region || (region == "Hair" && source.name == "Beard")) shade = 1f;
+                else if (source.name == region + "Trim") shade = TrimShade;
+                else continue;
+                _shown[i] = color.HasValue ? TintedCopy(source, new Color(color.Value.r * shade, color.Value.g * shade, color.Value.b * shade, 1f)) : source;
+            }
+            ApplyMaterials();
+        }
+
+        private static Material TintedCopy(Material source, Color color)
+        {
+            if (!Tinted.TryGetValue((source, color), out var tinted))
+            {
+                tinted = new Material(source) { name = source.name + " (tinted)" };
+                tinted.SetColor("_BaseColor", color);
+                Tinted.Add((source, color), tinted);
+            }
+            return tinted;
+        }
+
+        private void ApplyMaterials()
+        {
+            var materials = (Material[])_shown.Clone();
+            if (_hidden.Count > 0 && Invisible != null)
+                for (int i = 0; i < materials.Length; i++)
+                    if (_baseMaterials[i] != null && _hidden.Contains(_baseMaterials[i].name)) materials[i] = Invisible;
             _body.sharedMaterials = materials;
         }
 
-        /// <summary>Recolors one gear region (a material of the body) of this model only.</summary>
-        public void Tint(string region, Color color)
+        private static Material Invisible
         {
-            if (_body == null) return;
-            var materials = _body.sharedMaterials;
-            for (int i = 0; i < materials.Length; i++)
+            get
             {
-                var source = _baseMaterials[i];
-                if (source == null || source.name != region) continue;
-                if (!Tinted.TryGetValue((source, color), out var tinted))
+                if (!_invisibleLoaded)
                 {
-                    tinted = new Material(source) { name = region + " (tinted)" };
-                    tinted.SetColor("_BaseColor", color);
-                    Tinted.Add((source, color), tinted);
+                    _invisibleLoaded = true;
+                    var shader = Resources.Load<Shader>("Invisible");
+                    if (shader != null) _invisible = new Material(shader) { name = "Invisible" };
+                    else Debug.LogWarning("[EntityVisuals] Resources/Invisible shader missing: hidden regions stay visible");
                 }
-                materials[i] = tinted;
+                return _invisible;
             }
-            _body.sharedMaterials = materials;
         }
 
         /// <summary>The bone transform with this name (null if the model has none).</summary>
@@ -192,6 +238,7 @@ namespace Madlands.Client
                     model.Tint("Legs", Hex("#3b3230"));
                     model.Tint("Hair", Hex("#2a2422"));
                     model.Tint("Feet", Hex("#2e2622"));
+                    model.SetHidden("Hair", true);
                     model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.74f, -0.03f), new Vector3(0.27f, 0.26f, 0.3f), Hex("#2f2a28"));
                     model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.32f, 0.13f), new Vector3(0.07f, 0.12f, 0.04f), new Color(0.4f, 0.95f, 1f), new Vector3(0f, 0f, 45f), glow: true);
                     return shape;
@@ -222,6 +269,7 @@ namespace Madlands.Client
                     model.Tint("Hands", Hex("#6d7480"));
                     model.Tint("Legs", Hex("#2f3d66"));
                     model.Tint("Feet", Hex("#4a4f58"));
+                    model.SetHidden("Hair", true);
                     model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.76f, 0f), new Vector3(0.27f, 0.2f, 0.29f), steel);
                     model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.69f, 0f), new Vector3(0.29f, 0.03f, 0.31f), Hex("#6d7480"));
                     model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.0f, -0.15f), new Vector3(0.46f, 0.95f, 0.03f), Hex("#27428a"), new Vector3(-6f, 0f, 0f));
@@ -281,6 +329,7 @@ namespace Madlands.Client
                     shape = Humanoid(parent, "Korrin", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#5c616b", arms: "#5c616b", legs: "#4a3a2a", hair: "#3a2a1e");
+                    model.SetHidden("Hair", true);
                     model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.42f, 0f), new Vector3(0.3f, 0.2f, 0.31f), Hex("#7d8490"));
                     model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.44f, 0.15f), new Vector3(0.06f, 0.06f, 0.04f), Hex("#ffd27a"), glow: true);
                     return shape;
@@ -289,6 +338,7 @@ namespace Madlands.Client
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#3d5a35", arms: "#3d5a35", legs: "#3a3428", hair: "#2a2420");
+                    model.SetHidden("Hair", true);
                     model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.74f, -0.03f), new Vector3(0.28f, 0.27f, 0.31f), Hex("#2f4a2a"));
                     model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.05f, -0.14f), new Vector3(0.42f, 0.9f, 0.03f), Hex("#2f4a2a"), new Vector3(-6f, 0f, 0f));
                     return shape;
@@ -297,6 +347,7 @@ namespace Madlands.Client
                     shape = Humanoid(parent, "Korrin", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#4a6a8a", arms: "#4a6a8a", legs: "#4a4438", hair: "#d0ccc4");
+                    model.SetHidden("Hair", true);
                     model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.47f, -0.02f), new Vector3(0.42f, 0.012f, 0.42f), Hex("#c9a640"));
                     model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.49f, 0f), new Vector3(0.27f, 0.14f, 0.27f), Hex("#c9a640"));
                     return shape;
@@ -307,9 +358,11 @@ namespace Madlands.Client
                     Dress(model, chest: "#ddd5bd", arms: "#ddd5bd", legs: "#cfc6ac", hair: "#7a6a5a", waist: "#c9a23e");
                     return shape;
                 case SmithDisplay:
-                    // Gerta Hask: bare arms, a leather apron.
+                    // Gerta Hask: bare arms, a leather apron, her hair in a topknot (and no beard).
                     shape = Humanoid(parent, "Korrin", out model);
                     if (model == null) return shape;
+                    model.SetHidden("Beard", true);
+                    model.SetHidden("BeardMetal", true);
                     Dress(model, chest: "#6a4a3a", arms: "#d49a78", legs: "#4a3a2a", hair: "#c86a30");
                     model.Attach("Spine", PrimitiveType.Cube, new Vector3(0f, 0.86f, 0.17f), new Vector3(0.42f, 0.6f, 0.03f), Hex("#5a3a22"));
                     return shape;
@@ -322,9 +375,11 @@ namespace Madlands.Client
                     var scales = displayId == MirelingOracleDisplay ? "#5a7a9a" : "#4f8a7a";
                     Dress(model, chest: scales, arms: scales, legs: "#6a9a80", hair: "#2f5a4a", waist: displayId == MirelingOracleDisplay ? "#7a4a8a" : "#5a6a30",
                         skin: scales, hands: scales, feet: "#3f6a5a");
+                    foreach (var region in new[] { "Hair", "Beard", "BeardMetal" })
+                        model.SetHidden(region, true);
                     model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.48f, -0.02f), new Vector3(0.03f, 0.2f, 0.3f), Hex("#2f5a4a"));
-                    foreach (var x in new[] { -0.07f, 0.07f })
-                        model.Attach("Head", PrimitiveType.Sphere, new Vector3(x, 1.39f, 0.13f), Vector3.one * 0.07f, Hex("#f0e070"), glow: true);
+                    foreach (var x in new[] { -0.06f, 0.06f })
+                        model.Attach("Head", PrimitiveType.Sphere, new Vector3(x, 1.37f, 0.12f), Vector3.one * 0.07f, Hex("#f0e070"), glow: true);
                     if (displayId == MirelingOracleDisplay)
                         model.Attach("Chest", PrimitiveType.Sphere, new Vector3(0f, 1.0f, 0.17f), Vector3.one * 0.08f, Hex("#c8f0ff"), glow: true);
                     return shape;
@@ -334,8 +389,8 @@ namespace Madlands.Client
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#3a4038", arms: "#8a9a8a", legs: "#2f352f", hair: "#2a3a2a", skin: "#8a9a8a", hands: "#8a9a8a", feet: "#2a2a2a");
-                    foreach (var x in new[] { -0.045f, 0.045f })
-                        model.Attach("Head", PrimitiveType.Cube, new Vector3(x, 1.72f, 0.126f), new Vector3(0.035f, 0.018f, 0.01f), Hex("#7ff2ff"), glow: true);
+                    foreach (var x in new[] { -0.044f, 0.044f })
+                        model.Attach("Head", PrimitiveType.Cube, new Vector3(x, 1.706f, 0.121f), new Vector3(0.036f, 0.02f, 0.01f), Hex("#7ff2ff"), glow: true);
                     return shape;
                 case LieutenantDisplay:
                 {
@@ -344,6 +399,7 @@ namespace Madlands.Client
                     if (model == null) return shape;
                     var dark = Hex("#2a2a2c");
                     Dress(model, chest: "#5a1a1a", arms: "#2a2a2c", legs: "#2a2a2c", hair: "#1a1a1a", hands: "#2a2a2c");
+                    model.SetHidden("Hair", true);
                     model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.77f, 0f), new Vector3(0.28f, 0.22f, 0.3f), Hex("#3a3c42"));
                     foreach (var x in new[] { -0.23f, 0.23f })
                         model.Attach("Chest", PrimitiveType.Sphere, new Vector3(x, 1.46f, 0f), new Vector3(0.22f, 0.14f, 0.24f), dark);

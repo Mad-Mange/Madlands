@@ -26,8 +26,8 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 | File | What |
 |---|---|
 | `blender/build.py` | The asset list (name, Unity folder, builder) and the build entry point. |
-| `blender/lowpoly.py` | Helpers: flat-colored materials, boxes, tubes, spheres, convex hulls, armatures, keyframed actions, FBX export. |
-| `blender/humanoid.py` | The humanoid races (proportions, body, colors) and all humanoid animations. |
+| `blender/lowpoly.py` | Helpers: flat-colored materials, boxes, tubes, spheres, convex hulls, lofts through cross-sections (`loft`, `ring`), limbs along a path (`tube`), armatures, keyframed actions, FBX export. |
+| `blender/humanoid.py` | The humanoid races (proportions, body cross-sections, face, hair, beard, colors) and all humanoid animations. Stylized and heroic: big deltoids, a tapering torso, chunky fists and boots, a strong brow. |
 | `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, frog, training dummy. |
 | `blender/items.py` | Held items: origin at the grip, pointing along +Z, edge along X; shields face +X. |
 | `blender/preview.py` | The preview renders. |
@@ -41,10 +41,15 @@ public repo). Use them for the feel, then build our own shapes.
 
 - Meters, +Z up, the model faces -Y (Blender's front view), feet at the origin.
 - Flat shading, no textures. Material names matter: the client recolors the gear regions of characters by name
-  (`Skin`, `Hair`, `Eyes`, `Chest`, `Arms`, `Hands`, `Waist`, `Legs`, `Feet`). A name with `Metal` is metallic,
-  with `Glow` emissive.
+  (`Skin`, `Hair`, `Eyes`, `Chest`, `Arms`, `Hands`, `Waist`, `Legs`, `Feet`). A region's `Trim` material
+  (`ChestTrim`, `ArmsTrim`, `FeetTrim`: collars, cuffs, soles) gets a darker tone of the same color. `Hair` is the
+  hair on the scalp, which the client hides under helmets and hoods; `Beard` (beard and brows) is tinted with it and
+  stays visible. Some NPCs hide `Beard` and `BeardMetal` (the braid rings). A name with `Metal` is metallic, with
+  `Glow` emissive.
 - Humanoids use Unity's humanoid bone names (`Hips`, `Spine`, `Chest`, `LeftUpperArm`, ...) in a T-pose, plus
-  `MainHandGrip` and `OffHandGrip` where held items go. Rigged parts follow one bone each.
+  `MainHandGrip` and `OffHandGrip` where held items go and `HeadTop` at the top of the skull (helmets are sized
+  from it). Rigged parts follow one bone each. `ArtImporter` maps every humanoid bone by name and measures the
+  avatar again when a race's proportions change.
 - Humanoid animations exist once, in `HumanoidAnimations` (Brightvale skeleton); Unity retargets them to every race.
 - Animation rotations in the scripts are given about the armature's rest axes: X = the model's left, -Y = forward,
   Z = up, relative to the rest pose (`lowpoly.keyframe_action`). `lowpoly.mirror` gives the other side.

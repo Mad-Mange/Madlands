@@ -18,24 +18,26 @@ namespace Madlands.Client.Editor
         public const string ArtRoot = "Assets/Madlands/Art/";
         public const string CatalogPath = "Assets/Madlands/Resources/ArtCatalog.asset";
 
-        /// <summary>
-        /// Animation-only files and the model they were animated on: they use that model's avatar, so
-        /// Unity measures the clips against the real T-pose (the file's own pose is the first frame).
-        /// </summary>
-        public static readonly Dictionary<string, string> AnimationSkeletons = new Dictionary<string, string>
-        {
-            { "HumanoidAnimations", "BrightvaleHuman" },
-        };
-
         /// <summary>Clips that repeat; everything else plays once.</summary>
         public static readonly HashSet<string> LoopingClips = new HashSet<string>
         {
             "Idle", "Walk", "Run", "RunBack", "StrafeLeft", "StrafeRight", "Fall", "CastLoop", "Sit", "Swim",
         };
 
+        /// <summary>The humanoid bones every race has, under Unity's own names.</summary>
+        private static readonly string[] HumanBones =
+        {
+            "Hips", "Spine", "Chest", "Neck", "Head",
+            "LeftShoulder", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightShoulder", "RightUpperArm", "RightLowerArm", "RightHand",
+            "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftToes", "RightUpperLeg", "RightLowerLeg", "RightFoot", "RightToes",
+        };
+
         private bool IsArt => assetPath.StartsWith(ArtRoot, System.StringComparison.Ordinal);
 
         public override int GetPostprocessOrder() => 10; // after URP's own material conversion
+
+        /// <summary>Raise when the import rules change: Unity then imports the art again with them.</summary>
+        public override uint GetVersion() => 11;
 
         /// <summary>Icons/ are interface pictures (art/blender/icons.py): kept sharp and transparent when drawn small.</summary>
         private void OnPreprocessTexture()
@@ -76,17 +78,16 @@ namespace Madlands.Client.Editor
             {
                 importer.animationType = character ? ModelImporterAnimationType.Human : ModelImporterAnimationType.Generic;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-                if (AnimationSkeletons.TryGetValue(Path.GetFileNameWithoutExtension(assetPath), out var skeleton))
+                if (character)
                 {
-                    string skeletonPath = Path.GetDirectoryName(assetPath).Replace('\\', '/') + "/" + skeleton + ".fbx";
-                    context.DependsOnArtifact(skeletonPath);
-                    var avatar = AssetDatabase.LoadAllAssetsAtPath(skeletonPath).OfType<Avatar>().FirstOrDefault();
-                    if (avatar != null)
-                    {
-                        importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
-                        importer.sourceAvatar = avatar;
-                    }
-                    else Debug.LogWarning($"[ArtImporter] {assetPath}: no avatar in {skeletonPath} yet");
+                    // Our bones carry Unity's humanoid names (art/blender/humanoid.py): map every one of them.
+                    // Unity's own guess leaves out the chest and shoulders, and their rotations in the clips are
+                    // then dropped. The skeleton (the T-pose) is the one measured last: RemeasureSkeletons measures
+                    // it again when the proportions change. The animation-only file gets its own avatar too: it
+                    // is exported in the rest pose of the skeleton it was made on (lowpoly.export_fbx).
+                    var description = importer.humanDescription;
+                    description.human = HumanMapping();
+                    importer.humanDescription = description;
                 }
                 importer.importAnimation = true;
                 importer.animationCompression = ModelImporterAnimationCompression.KeyframeReduction;
@@ -106,6 +107,61 @@ namespace Madlands.Client.Editor
         {
             if (!IsArt) return;
             root.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * root.transform.localRotation;
+            if (assetPath.Contains("/Characters/"))
+            {
+                EditorApplication.delayCall -= RemeasureSkeletons;
+                EditorApplication.delayCall += RemeasureSkeletons;
+            }
+        }
+
+        private static HumanBone[] HumanMapping() => HumanBones.Select(name => new HumanBone
+        {
+            boneName = name,
+            humanName = name,
+            limit = new HumanLimit { useDefaultValues = true },
+        }).ToArray();
+
+        /// <summary>
+        /// A character's avatar is measured from the skeleton stored with its importer. When a model's bones
+        /// moved (new proportions in Blender), stores the new skeleton and imports the model again, so the avatar
+        /// fits. The editor runs this after importing characters; builds run it first (batch mode may never
+        /// get to the editor's delayed calls).
+        /// </summary>
+        public static void RemeasureSkeletons()
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:Model", new[] { ArtRoot + "Characters" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (!(AssetImporter.GetAtPath(path) is ModelImporter importer) || model == null) continue;
+
+                var stored = importer.humanDescription.skeleton ?? new SkeletonBone[0];
+                var measured = new List<SkeletonBone>
+                {
+                    stored.Length > 0 ? stored[0] : new SkeletonBone { name = model.name, rotation = Quaternion.identity, scale = Vector3.one },
+                };
+                string changed = stored.Length == 0 ? "no skeleton yet" : null;
+                foreach (var t in model.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t == model.transform) continue;
+                    // Positions only: Unity keeps its own T-pose rotations in the stored skeleton.
+                    int i = System.Array.FindIndex(stored, b => b.name == t.name);
+                    var rotation = i >= 0 ? stored[i].rotation : t.localRotation;
+                    measured.Add(new SkeletonBone { name = t.name, position = t.localPosition, rotation = rotation, scale = t.localScale });
+                    if (changed != null) continue;
+                    if (i < 0) changed = t.name + " is new";
+                    else if ((stored[i].position - t.localPosition).magnitude > 0.001f)
+                        changed = $"{t.name} moved from {stored[i].position:F3} to {t.localPosition:F3}";
+                }
+                if (changed == null) continue;
+
+                Debug.Log($"[ArtImporter] {path}: the skeleton changed ({changed}), measuring the avatar again");
+                var description = importer.humanDescription;
+                description.human = HumanMapping();
+                description.skeleton = measured.ToArray();
+                importer.humanDescription = description;
+                importer.SaveAndReimport();
+            }
         }
 
         private void OnPreprocessAnimation()
@@ -202,6 +258,7 @@ namespace Madlands.Client.Editor
         [MenuItem("Madlands/Art Report")]
         public static void Report()
         {
+            RemeasureSkeletons();
             RefreshCatalog();
             var catalog = AssetDatabase.LoadAssetAtPath<ArtCatalog>(CatalogPath);
             var text = new System.Text.StringBuilder("[ArtImporter] Report\n");
@@ -214,7 +271,8 @@ namespace Madlands.Client.Editor
                 var animator = model.Prefab.GetComponent<Animator>();
                 var avatar = animator != null ? animator.avatar : null;
                 text.AppendLine($"{model.Name}: rot {root.localRotation.eulerAngles} scale {root.localScale} bounds {bounds.min:F2}..{bounds.max:F2}" +
-                                (avatar != null ? $" avatar valid={avatar.isValid} human={avatar.isHuman}" : ""));
+                                (avatar != null ? $" avatar valid={avatar.isValid} human={avatar.isHuman}" : "") +
+                                (avatar != null && avatar.isHuman ? $" bones={string.Join(",", avatar.humanDescription.human.Select(b => b.humanName))}" : ""));
                 foreach (var t in model.Prefab.GetComponentsInChildren<Transform>())
                     if (t.name == "Hips" || t.name == "Head" || t.name == "LeftHand" || t.name == "MainHandGrip" || t.name == "LeftFoot")
                         text.AppendLine($"  {t.name} at {t.position:F2} rot {t.rotation.eulerAngles:F0}");
@@ -229,7 +287,12 @@ namespace Madlands.Client.Editor
             {
                 var animator = model.Prefab.GetComponent<Animator>();
                 if (animator == null || animator.avatar == null || !animator.avatar.isHuman || !idle.TryGetValue("Idle", out var clip)) continue;
-                var instance = Object.Instantiate(model.Prefab);
+                // Under a holder, as in the game (EntityVisuals): the holder faces +Z, its model faces the same way.
+                var holder = new GameObject("Holder").transform;
+                var instance = Object.Instantiate(model.Prefab, holder, false);
+                var grip = instance.GetComponentsInChildren<Transform>().FirstOrDefault(t => t.name == "MainHandGrip");
+                var gripRest = grip != null ? grip.rotation : Quaternion.identity;
+                var rootRest = instance.transform.rotation;
                 AnimationMode.StartAnimationMode();
                 AnimationMode.BeginSampling();
                 AnimationMode.SampleAnimationClip(instance, clip, 0f);
@@ -237,8 +300,15 @@ namespace Madlands.Client.Editor
                 foreach (var t in instance.GetComponentsInChildren<Transform>())
                     if (t.name == "MainHandGrip" || t.name == "RightHand" || t.name == "RightLowerArm")
                         text.AppendLine($"  idle {model.Name} {t.name} at {t.position:F2} forward {t.forward:F2} up {t.up:F2}");
+                // Where a held weapon points, as seen from the holder (+Z forward, +X right, +Y up): it points
+                // forward in the rest pose. Sampling moves the root, so the pose is taken relative to it.
+                if (grip != null)
+                {
+                    var weapon = rootRest * Quaternion.Inverse(instance.transform.rotation) * grip.rotation * Quaternion.Inverse(gripRest) * Vector3.forward;
+                    text.AppendLine($"  idle {model.Name} weapon points {weapon:F2} (forward +Z, right +X, up +Y)");
+                }
                 AnimationMode.StopAnimationMode();
-                Object.DestroyImmediate(instance);
+                Object.DestroyImmediate(holder.gameObject);
             }
             Debug.Log(text.ToString());
         }

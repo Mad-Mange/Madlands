@@ -5,8 +5,13 @@ Every race uses the same bone names (Unity's humanoid names, so Unity maps the a
 T-pose. Animations are made once on the Brightvale Human skeleton and exported on their own
 (HumanoidAnimations.fbx); Unity retargets them to every race.
 
-Material names are the gear regions the client tints: Skin, Hair, Eyes, Chest (torso and sleeves),
-Arms (forearms), Hands, Waist, Legs and Feet.
+Material names are the gear regions the client tints: Skin, Hair (the hair on the scalp, hidden under
+helmets and hoods), Beard (beard and brows, tinted with the hair), Eyes, Chest (torso and sleeves), Arms
+(forearms), Hands, Waist, Legs and Feet. A region's "Trim" material (ChestTrim, FeetTrim ...) is its
+darker second tone: collars, cuffs, soles. BuckleMetal keeps its color.
+
+The style is stylized and heroic, after classic fantasy MMOs: broad shoulders from big deltoids, a
+tapering torso, chunky fists and boots, a strong brow and a big nose.
 """
 
 import math
@@ -14,29 +19,81 @@ import math
 import lowpoly as lp
 
 # Joint heights and widths in meters. Z up, the model faces -Y, +X is its left.
+# Body cross-sections are (z, width, depth[, front, back]), bottom to top (see lp.ring).
 RACES = {
     "BrightvaleHuman": dict(
         ankle=0.09, knee=0.5, hip=0.93, spine=1.06, chest=1.24, neck=1.47, head=1.57, top=1.84,
-        leg_x=0.1, shoulder_z=1.43, clavicle_x=0.05, shoulder_x=0.19, elbow_x=0.46, wrist_x=0.7, hand=0.12,
-        chest_w=0.4, chest_d=0.23, waist_w=0.32, hips_w=0.33, head_size=(0.22, 0.24, 0.28),
-        upper_arm_r=0.06, forearm_r=0.05, thigh_r=0.085, shin_r=0.062, foot=(0.12, 0.25, 0.09),
-        colors=dict(Skin="#e3b08a", Hair="#5b3920", Eyes="#1d1b22", Chest="#8c6e4b", Arms="#8c6e4b",
-                    Hands="#e3b08a", Waist="#4b3424", Legs="#4e5868", Feet="#3e2c20"),
-        beard=False,
+        leg_x=0.105, shoulder_z=1.43, clavicle_x=0.05, shoulder_x=0.215, elbow_x=0.48, wrist_x=0.72, hand=0.14,
+        foot=(0.13, 0.27, 0.1),
+        pelvis=[(0.83, 0.22, 0.17), (0.91, 0.31, 0.215), (0.99, 0.31, 0.215), (1.05, 0.29, 0.205)],
+        belly=[(0.99, 0.29, 0.205), (1.11, 0.30, 0.215), (1.22, 0.31, 0.225)],
+        torso=[(1.16, 0.31, 0.22), (1.26, 0.33, 0.235, 1.15), (1.36, 0.335, 0.235, 1.1), (1.445, 0.31, 0.205), (1.505, 0.19, 0.15)],
+        collar=[(1.47, 0.205, 0.17), (1.52, 0.16, 0.135)],
+        tunic=[(0.9, 0.4, 0.27), (1.0, 0.315, 0.225)],
+        belt=[(0.995, 0.325, 0.235), (1.065, 0.32, 0.23)],
+        buckle=(0.06, 0.05),
+        neck_r=0.07, deltoid=0.074, upper_arm=(0.07, 0.076, 0.058), forearm=(0.057, 0.064, 0.05),
+        thigh=(0.108, 0.1, 0.075), shin=(0.072, 0.08, 0.06), boot=(0.077, 0.093), boot_top=0.31,
+        head_shape=dict(w=1.0, d=1.0, h=1.0, nose=1.0, brow=1.0, ear=1.0, jaw=1.0),
+        hair="swept", beard=False,
+        colors=dict(Skin="#e3b08a", Eyes="#1d1b22", EyeWhite="#e6dccb", Chest="#8c6e4b", ChestTrim="#5e4832", Arms="#6e5238",
+                    ArmsTrim="#4a3624", Hands="#e3b08a", Waist="#4b3424", BuckleMetal="#c9a24a", Legs="#4e5868",
+                    Feet="#3e2c20", FeetTrim="#2a1e16", Beard="#5b3920", Hair="#5b3920"),
     ),
-    # Stocky mountain folk: short legs, broad shoulders, big hands and a beard.
+    # Stocky mountain folk: short legs, a barrel chest, huge fists and a braided beard.
     "Korrin": dict(
         ankle=0.08, knee=0.35, hip=0.66, spine=0.78, chest=0.95, neck=1.15, head=1.22, top=1.5,
-        leg_x=0.13, shoulder_z=1.1, clavicle_x=0.06, shoulder_x=0.25, elbow_x=0.5, wrist_x=0.72, hand=0.14,
-        chest_w=0.56, chest_d=0.32, waist_w=0.48, hips_w=0.44, head_size=(0.26, 0.27, 0.29),
-        upper_arm_r=0.08, forearm_r=0.07, thigh_r=0.1, shin_r=0.08, foot=(0.15, 0.27, 0.1),
-        colors=dict(Skin="#d49a78", Hair="#a4512a", Eyes="#1d1b22", Chest="#6f7a5a", Arms="#6f7a5a",
-                    Hands="#d49a78", Waist="#4b3424", Legs="#5e4a3a", Feet="#3e2c20"),
-        beard=True,
+        leg_x=0.13, shoulder_z=1.1, clavicle_x=0.06, shoulder_x=0.28, elbow_x=0.53, wrist_x=0.75, hand=0.155,
+        foot=(0.16, 0.29, 0.11),
+        pelvis=[(0.56, 0.3, 0.22), (0.63, 0.42, 0.29), (0.72, 0.44, 0.31), (0.79, 0.42, 0.31)],
+        belly=[(0.74, 0.44, 0.31), (0.84, 0.47, 0.34, 1.15), (0.96, 0.46, 0.34)],
+        torso=[(0.92, 0.44, 0.33), (1.0, 0.45, 0.35, 1.1), (1.07, 0.42, 0.32), (1.13, 0.34, 0.26), (1.18, 0.2, 0.17)],
+        collar=[(1.14, 0.24, 0.2), (1.19, 0.18, 0.15)],
+        tunic=[(0.6, 0.5, 0.37), (0.73, 0.455, 0.33)],
+        belt=[(0.725, 0.465, 0.345), (0.815, 0.455, 0.335)],
+        buckle=(0.09, 0.075),
+        neck_r=0.085, deltoid=0.094, upper_arm=(0.088, 0.094, 0.075), forearm=(0.076, 0.084, 0.066),
+        thigh=(0.12, 0.112, 0.085), shin=(0.085, 0.09, 0.072), boot=(0.092, 0.11), boot_top=0.24,
+        head_shape=dict(w=1.16, d=1.08, h=1.04, nose=1.55, brow=1.5, ear=1.25, jaw=1.12),
+        hair="topknot", beard=True,
+        colors=dict(Skin="#d49a78", Eyes="#1d1b22", EyeWhite="#e6dccb", Chest="#6f7a5a", ChestTrim="#4a5240", Arms="#5a4632",
+                    ArmsTrim="#3e3022", Hands="#d49a78", Waist="#4b3424", BuckleMetal="#c9a24a", BeardMetal="#d0a848", Legs="#5e4a3a",
+                    Feet="#3e2c20", FeetTrim="#2a1e16", Beard="#a4512a", Hair="#a4512a"),
     ),
 }
 
 SIDES = (("Left", 1.0), ("Right", -1.0))
+
+# The head, relative to the head joint (x >= 0 half, mirrored): skull, jaw (widened by `jaw`) and nose.
+SKULL = [(0, 0.0, 0.255), (0.075, -0.03, 0.25), (0.075, 0.07, 0.245), (0, 0.11, 0.23), (0, 0.135, 0.15),
+         (0.09, 0.1, 0.16), (0, 0.095, 0.025), (0.072, 0.075, 0.035), (0.112, 0.01, 0.19), (0.112, 0.04, 0.12),
+         (0.07, -0.105, 0.22), (0, -0.115, 0.21), (0.09, -0.112, 0.165), (0, -0.122, 0.165), (0.1, -0.075, 0.115)]
+JAW = [(0.086, -0.06, 0.05), (0.092, 0.02, 0.05), (0.035, -0.1, 0.005), (0, -0.106, 0.01), (0.03, -0.075, -0.012),
+       (0.05, 0.0, 0.015)]
+NOSE = [(0, -0.118, 0.155), (0.012, -0.118, 0.145), (0, -0.158, 0.095), (0.022, -0.128, 0.09), (0, -0.13, 0.085),
+        (0.016, -0.142, 0.105)]
+# Hair: a cap over the skull (the front hairline per style), and locks as (root, tip, width).
+HAIR_CAP = [(0, 0.0, 0.268), (0.08, -0.04, 0.262), (0.082, 0.07, 0.256), (0, 0.12, 0.243), (0, 0.146, 0.15),
+            (0.097, 0.108, 0.16), (0, 0.108, 0.03), (0.078, 0.086, 0.04), (0.119, 0.01, 0.19), (0.118, 0.045, 0.12)]
+HAIRLINE = {
+    "swept": [(0.116, -0.05, 0.175), (0.085, -0.11, 0.21), (0, -0.12, 0.22)],
+    "topknot": [(0.112, -0.03, 0.2), (0.07, -0.08, 0.245), (0, -0.09, 0.255)],
+}
+SWEPT_LOCKS = [((0.0, -0.112, 0.232), (0.012, 0.0, 0.292), 0.09), ((0.058, -0.1, 0.228), (0.078, 0.02, 0.278), 0.075),
+               ((-0.055, -0.102, 0.23), (-0.075, 0.015, 0.28), 0.075), ((0.025, -0.04, 0.262), (0.03, 0.11, 0.272), 0.085),
+               ((-0.04, -0.035, 0.262), (-0.05, 0.115, 0.268), 0.085), ((0.075, 0.04, 0.245), (0.092, 0.155, 0.18), 0.07),
+               ((-0.07, 0.045, 0.246), (-0.088, 0.16, 0.176), 0.07), ((0.0, 0.08, 0.25), (0.0, 0.178, 0.15), 0.085),
+               ((0.105, -0.02, 0.21), (0.126, 0.08, 0.16), 0.055), ((-0.105, -0.02, 0.21), (-0.126, 0.085, 0.158), 0.055)]
+BEARD = [(0.112, 0.0, 0.15), (0.112, 0.035, 0.1), (0.104, -0.07, 0.1), (0.1, -0.03, 0.03), (0.098, -0.095, 0.035),
+         (0.05, -0.13, 0.06), (0, -0.15, 0.0), (0.065, -0.145, -0.02), (0.085, -0.135, -0.1), (0, -0.18, -0.12),
+         (0.05, -0.18, -0.22), (0, -0.19, -0.26), (0.06, -0.02, -0.03), (0.0, -0.07, -0.12), (0.03, -0.12, -0.22)]
+MUSTACHE = [(0.075, -0.13, 0.075), (0.02, -0.148, 0.092), (0, -0.152, 0.09), (0.095, -0.13, 0.03), (0.03, -0.142, 0.066)]
+# A loose fist around a handle along Y (the weapon grip), the left hand, from the wrist outward (+X).
+FIST = [(0, 0.032, 0.024), (0, -0.032, 0.024), (0, 0.032, -0.024), (0, -0.032, -0.024), (0.06, -0.044, 0.03),
+        (0.06, 0.04, 0.028), (0.095, -0.042, 0.022), (0.095, 0.038, 0.02), (0.105, -0.04, -0.01), (0.105, 0.036, -0.01),
+        (0.09, -0.04, -0.042), (0.09, 0.034, -0.04), (0.05, -0.038, -0.045), (0.05, 0.032, -0.043),
+        (0.025, -0.035, -0.035), (0.025, 0.035, -0.035)]
+THUMB = [(0.02, -0.034, 0.004), (0.05, -0.058, 0.014), (0.076, -0.056, 0.0), (0.07, -0.05, -0.02), (0.03, -0.044, -0.018)]
 
 
 def skeleton(r):
@@ -67,57 +124,160 @@ def skeleton(r):
         ("MainHandGrip", (-grip_x, -0.01, z), (-grip_x, -0.11, z), "RightHand"),
         ("OffHandGrip", (grip_x, -0.01, z), (grip_x, -0.11, z), "LeftHand"),
     ]
+    # The top of the skull (under the hair): helmets and hoods are sized from it.
+    skull_top = r["head"] + SKULL[0][2] * r["head_shape"]["h"]
+    bones.append(("HeadTop", (0, 0, skull_top), (0, 0, skull_top + 0.05), "Head"))
     return bones
+
+
+def _rings(sections, sides=8, square=0.3):
+    """lp.ring for each (z, width, depth[, front, back]) section."""
+    out = []
+    for section in sections:
+        z, w, d = section[:3]
+        front = section[3] if len(section) > 3 else 1.0
+        back = section[4] if len(section) > 4 else 1.0
+        out.append(lp.ring(z, w, d, sides, front, back, square=square))
+    return out
+
+
+def _torso(mb, r, m):
+    """Pelvis (Legs), belly and chest (Chest), the collar, the tunic's hem, the belt and its buckle."""
+    mb.loft(_rings(r["pelvis"]), m["Legs"], "Hips")
+    mb.loft(_rings(r["belly"]), m["Chest"], "Spine")
+    mb.loft(_rings(r["torso"], sides=10), m["Chest"], "Chest")
+    mb.loft(_rings(r["collar"], sides=10), m["ChestTrim"], "Chest")
+    mb.loft(_rings(r["tunic"], sides=10, square=0.15), m["Chest"], "Hips")
+    belt = _rings(r["belt"], sides=10, square=0.35)
+    mb.loft(belt, m["Waist"], "Hips")
+    bw, bh = r["buckle"]
+    z = (r["belt"][0][0] + r["belt"][1][0]) / 2
+    front = min(p[1] for p in belt[0])
+    mb.box((0, front - 0.008, z), (bw, 0.02, bh), m["BuckleMetal"], "Hips", top=(0.85, 1.0))
+    # A pouch on the belt, at the back of the left hip.
+    pw = r["belt"][0][1] / 2
+    mb.box((pw * 0.72, r["belt"][0][2] * 0.32, z - bh * 0.3), (bw * 0.9, bw * 0.7, bh * 1.3), m["Waist"], "Hips",
+           top=(0.9, 0.8), rotation=(0, 0, 30))
+
+
+def _head(mb, r, m):
+    """Skull and jaw, nose, brow, eyes, mouth and ears; the neck below."""
+    s = r["head_shape"]
+    w, d, h = s["w"], s["d"], s["h"]
+
+    def at(x, y, z):
+        return (x * w, y * d, r["head"] + z * h)
+
+    mb.tube([((0, 0.006, r["neck"] - 0.04), r["neck_r"]), ((0, 0.012, r["head"] + 0.06), r["neck_r"] * 0.9)],
+            m["Skin"], "Neck", sides=7)
+    points = [at(*p) for p in lp.mirrored(SKULL)] + [at(x * s["jaw"], y, z) for x, y, z in lp.mirrored(JAW)]
+    mb.hull(points, m["Skin"], "Head")
+    nose, root = s["nose"], (0, -0.12, 0.15)
+    mb.hull([at(root[0] + (x - root[0]) * nose * s.get("nose_w", 1.0), root[1] + (y - root[1]) * nose, root[2] + (z - root[2]) * nose)
+             for x, y, z in lp.mirrored(NOSE)], m["Skin"], "Head")
+    brow = s["brow"]
+    mb.box(at(0, -0.121, 0.165), (0.19 * w, 0.026 * d, 0.024 * brow), m["Skin"], "Head", top=(0.9, 0.7))
+    for side in (1, -1):
+        mb.box(at(side * 0.046, -0.131, 0.177), (0.056 * w, 0.016 * brow, 0.014 * brow), m["Beard"], "Head",
+               rotation=(0, -side * 14, 0))
+        mb.box(at(side * 0.044, -0.112, 0.136), (0.036 * w, 0.014, 0.02), m["EyeWhite"], "Head", top=(0.8, 1.0))
+        mb.box(at(side * 0.041, -0.118, 0.135), (0.015 * w, 0.006, 0.018), m["Eyes"], "Head")
+        e = s["ear"]
+        mb.hull([at(side * 0.104, 0.0, 0.145), at(side * (0.104 + 0.022 * e), 0.03, 0.165),
+                 at(side * (0.104 + 0.018 * e), 0.045, 0.1), at(side * 0.102, 0.03, 0.09), at(side * 0.1, 0.012, 0.12)],
+                m["Skin"], "Head")
+    mb.box(at(0, -0.1, 0.045), (0.036 * w, 0.008, 0.006), m["Eyes"], "Head")
+    if r["beard"]:
+        mb.hull([at(*p) for p in lp.mirrored(BEARD)], m["Beard"], "Head")
+        mb.hull([at(*p) for p in lp.mirrored(MUSTACHE)], m["Beard"], "Head")
+        # Two braids from the beard's tip, bound with metal rings.
+        for side in (1, -1):
+            top, bottom = at(side * 0.035, -0.17, -0.2), at(side * 0.04, -0.17, -0.36)
+            mb.tube([(top, 0.026), (bottom, 0.018)], m["Beard"], "Head", sides=5)
+            ring_z = bottom[2] + 0.03
+            mb.tube([((bottom[0], bottom[1], ring_z + 0.018), 0.024), ((bottom[0], bottom[1], ring_z - 0.018), 0.024)],
+                    m["BeardMetal"], "Head", sides=6)
+
+
+def _hair(mb, r, m):
+    """The hair on the scalp (material Hair: the client hides it under helmets and hoods)."""
+    s = r["head_shape"]
+    w, d, h = s["w"], s["d"], s["h"]
+
+    def at(x, y, z):
+        return (x * w, y * d, r["head"] + z * h)
+
+    mb.hull([at(*p) for p in lp.mirrored(HAIR_CAP + HAIRLINE[r["hair"]])], m["Hair"], "Head")
+    if r["hair"] == "swept":
+        for root, tip, width in SWEPT_LOCKS:
+            rx, ry, rz = root
+            mb.hull([at(rx - width / 2, ry, rz - 0.01), at(rx + width / 2, ry, rz - 0.01), at(rx, ry - width * 0.35, rz - 0.012),
+                     at(rx, ry + width * 0.4, rz - 0.015), at(rx, ry, rz + 0.012), at(*tip)], m["Hair"], "Head")
+        for side in (1, -1):
+            mb.box(at(side * 0.111, -0.03, 0.135), (0.016, 0.032 * d, 0.065 * h), m["Hair"], "Head")
+    elif r["hair"] == "topknot":
+        mb.sphere(at(0, 0.03, 0.29), (0.05 * w, 0.05 * d, 0.045 * h), m["Hair"], "Head", segments=7, rings=4)
+        mb.tube([(at(0, 0.03, 0.262), 0.035 * w), (at(0, 0.03, 0.28), 0.033 * w)], m["Hair"], "Head", sides=6)
+
+
+def _arm(mb, r, m, side, s):
+    """Deltoid and sleeve (Chest, a ChestTrim cuff), forearm with a flared bracer (Arms), the fist (Hands)."""
+    z, sx, ex, wx = r["shoulder_z"], r["shoulder_x"], r["elbow_x"], r["wrist_x"]
+    ua, fa = r["upper_arm"], r["forearm"]
+    upper, lower, hand = side + "UpperArm", side + "LowerArm", side + "Hand"
+    dl = r["deltoid"]
+    mb.sphere((s * (sx + dl * 0.15), 0, z + 0.004), (dl * 1.15, dl * 0.95, dl * 0.85), m["Chest"], upper, segments=8, rings=6)
+    mb.tube([((s * (sx + 0.01), 0, z), ua[0]), ((s * (sx + (ex - sx) * 0.45), 0, z), (ua[1] * 0.95, ua[1])),
+             ((s * (ex - 0.005), 0, z), ua[2])], m["Chest"], upper, sides=7)
+    mb.tube([((s * (ex - 0.045), 0, z), ua[2] * 1.12), ((s * (ex + 0.002), 0, z), ua[2] * 1.12)], m["ChestTrim"], upper, sides=7)
+    mb.tube([((s * (ex - 0.02), 0, z), fa[0]), ((s * (ex + (wx - ex) * 0.3), 0, z), (fa[1], fa[1] * 0.95)),
+             ((s * (wx - 0.07), 0, z), fa[2])], m["Arms"], lower, sides=7)
+    mb.tube([((s * (wx - 0.09), 0, z), fa[2] * 1.06), ((s * (wx - 0.005), 0, z), fa[2] * 1.32)], m["Arms"], lower, sides=7)
+    mb.tube([((s * (wx - 0.022), 0, z), fa[2] * 1.38), ((s * (wx + 0.004), 0, z), fa[2] * 1.38)], m["ArmsTrim"], lower, sides=7)
+    k = r["hand"] / 0.13
+    for points in (FIST, THUMB):
+        mb.hull([(s * (wx + x * k), y * k, z + zz * k) for x, y, zz in points], m["Hands"], hand)
+
+
+def _leg(mb, r, m, side, s):
+    """Thigh, knee and shin (Legs); the boot with a folded cuff (FeetTrim), foot and toe cap on soles."""
+    x = s * r["leg_x"]
+    hip, knee, ankle, top = r["hip"], r["knee"], r["ankle"], r["boot_top"]
+    th, sh, bt = r["thigh"], r["shin"], r["boot"]
+    mb.tube([((x, 0, hip + 0.03), (th[0], th[0] * 1.05)), ((x, 0, hip - (hip - knee) * 0.35), (th[1], th[1] * 1.06)),
+             ((x, 0, knee + 0.04), (th[2], th[2] * 1.05)), ((x, 0, knee - 0.02), th[2] * 0.95)], m["Legs"], side + "UpperLeg", sides=7)
+    mb.sphere((x, -th[2] * 0.6, knee), (th[2] * 0.72, th[2] * 0.5, th[2] * 0.8), m["Legs"], side + "LowerLeg", segments=6, rings=4)
+    mb.tube([((x, 0, knee + 0.01), sh[0]), ((x, 0.012, knee - (knee - ankle) * 0.3), (sh[1], sh[1] * 1.1)),
+             ((x, 0, top), sh[2])], m["Legs"], side + "LowerLeg", sides=7)
+    mb.tube([((x, 0, top + 0.01), bt[0]), ((x, 0.004, ankle + 0.06), bt[0] * 0.94), ((x, 0, ankle - 0.03), bt[0] * 0.96)],
+            m["Feet"], side + "LowerLeg", sides=7)
+    mb.tube([((x, 0, top + 0.055), bt[1]), ((x, 0, top - 0.012), bt[1] * 0.92)], m["FeetTrim"], side + "LowerLeg", sides=7)
+
+    fw, fl, fh = r["foot"]
+    ball = -fl * 0.55
+    hw = fw / 2
+    sole = 0.022
+    foot = [(hw * 0.84, fl * 0.18, sole), (hw * 0.84, fl * 0.18, fh * 0.9), (hw * 0.96, -fl * 0.1, fh * 1.05),
+            (hw, ball, sole), (hw * 0.92, ball, fh * 0.7)]
+    toe = [(hw, ball, sole), (hw * 0.92, ball, fh * 0.7), (hw * 0.82, -fl * 0.84, sole), (hw * 0.66, -fl * 0.86, fh * 0.55),
+           (0, -fl * 0.96, fh * 0.28), (0, -fl * 0.95, sole + 0.01)]
+    for points, bone in ((foot, side + "Foot"), (toe, side + "Toes")):
+        mb.hull([(x + px, py, pz) for px, py, pz in lp.mirrored(points)], m["Feet"], bone)
+        outline = [(px * 1.04, py * (1.02 if py < 0 else 1.06), 0.0) for px, py, pz in points if pz <= sole + 0.011]
+        mb.hull([(x + px, py, pz) for px, py, _ in lp.mirrored(outline) for pz in (0.0, sole + 0.004)], m["FeetTrim"], bone)
 
 
 def body(name, r):
     """The body mesh in T-pose, every part bound to one bone."""
-    mats = {k: lp.material(k, v) for k, v in r["colors"].items()}
+    mats = {k: lp.material(k, v, metallic=0.6 if "Metal" in k else 0.0, roughness=0.5 if "Metal" in k else 0.85)
+            for k, v in r["colors"].items()}
     mb = lp.MeshBuilder(name)
-
-    # Pelvis and belt, belly, chest (wider at the shoulders).
-    pelvis_h = r["spine"] - (r["hip"] - 0.1)
-    mb.box((0, 0, r["hip"] - 0.1 + pelvis_h / 2), (r["hips_w"], r["chest_d"] * 0.9, pelvis_h), mats["Legs"], "Hips", top=(0.95, 1.0))
-    mb.box((0, 0, r["spine"]), (r["waist_w"] + 0.03, r["chest_d"] * 0.95, 0.07), mats["Waist"], "Hips")
-    belly_h = r["chest"] - r["spine"] + 0.04
-    mb.box((0, 0, r["spine"] + belly_h / 2), (r["waist_w"], r["chest_d"] * 0.88, belly_h), mats["Chest"], "Spine", top=(1.08, 1.05))
-    chest_h = r["neck"] - r["chest"]
-    mb.box((0, -0.005, r["chest"] + chest_h / 2), (r["chest_w"] * 0.86, r["chest_d"], chest_h), mats["Chest"], "Chest", top=(1.16, 0.92))
-
-    # Neck and head: a faceted block, nose, eyes and hair.
-    mb.frustum((0, 0, r["neck"] - 0.03), (0, 0, r["head"] + 0.04), 0.06 * r["head_size"][0] / 0.22, 0.055 * r["head_size"][0] / 0.22, mats["Skin"], "Neck", sides=6)
-    hx, hy, hz = r["head_size"]
-    head_c = (0, -0.01, r["head"] + hz * 0.47)
-    mb.sphere(head_c, (hx / 2, hy / 2, hz / 2), mats["Skin"], "Head", segments=8, rings=5)
-    mb.box((0, head_c[1] - hy * 0.52, head_c[2] - hz * 0.04), (hx * 0.16, hy * 0.18, hz * 0.2), mats["Skin"], "Head", top=(0.6, 0.5))
-    for s in (1, -1):
-        mb.box((s * hx * 0.2, head_c[1] - hy * 0.47, head_c[2] + hz * 0.08), (hx * 0.14, 0.02, hz * 0.07), mats["Eyes"], "Head")
-    # Hair: a cap over the top and the back of the head.
-    mb.sphere((0, head_c[1] + hy * 0.07, head_c[2] + hz * 0.1), (hx * 0.55, hy * 0.53, hz * 0.47), mats["Hair"], "Head", segments=8, rings=5)
-    if r["beard"]:
-        mb.hull([(s * hx * 0.45, head_c[1] - hy * 0.3, head_c[2] - hz * 0.05) for s in (1, -1)]
-                + [(s * hx * 0.35, head_c[1] - hy * 0.52, head_c[2] - hz * 0.25) for s in (1, -1)]
-                + [(0, head_c[1] - hy * 0.55, head_c[2] - hz * 0.62), (0, head_c[1] - hy * 0.2, head_c[2] - hz * 0.5)],
-                mats["Hair"], "Head")
-
+    _torso(mb, r, mats)
+    _head(mb, r, mats)
     for side, s in SIDES:
-        z = r["shoulder_z"]
-        # Shoulder ball, sleeve (Chest), forearm (Arms), hand with a thumb.
-        mb.sphere((s * r["shoulder_x"], 0, z - 0.01), r["upper_arm_r"] * 1.35, mats["Chest"], side + "UpperArm", segments=6, rings=4)
-        mb.frustum((s * (r["shoulder_x"] - 0.02), 0, z), (s * (r["elbow_x"] + 0.02), 0, z), r["upper_arm_r"], r["upper_arm_r"] * 0.85, mats["Chest"], side + "UpperArm")
-        mb.frustum((s * (r["elbow_x"] - 0.02), 0, z), (s * r["wrist_x"], 0, z), r["forearm_r"], r["forearm_r"] * 0.8, mats["Arms"], side + "LowerArm")
-        hand_len = r["hand"]
-        mb.box((s * (r["wrist_x"] + hand_len * 0.5), -0.005, z - 0.005), (hand_len, r["forearm_r"] * 1.7, r["forearm_r"] * 1.9), mats["Hands"], side + "Hand")
-        mb.box((s * (r["wrist_x"] + hand_len * 0.3), -r["forearm_r"] * 1.0, z - 0.01), (hand_len * 0.45, r["forearm_r"] * 0.7, r["forearm_r"] * 0.8), mats["Hands"], side + "Hand")
-
-        # Thigh and shin (Legs), boot shaft, foot and toe cap (Feet).
-        x = s * r["leg_x"]
-        mb.frustum((x, 0, r["hip"] + 0.03), (x, 0, r["knee"] - 0.02), r["thigh_r"], r["thigh_r"] * 0.78, mats["Legs"], side + "UpperLeg")
-        mb.frustum((x, 0, r["knee"] + 0.02), (x, 0, r["ankle"] + 0.12), r["shin_r"], r["shin_r"] * 0.85, mats["Legs"], side + "LowerLeg")
-        mb.frustum((x, 0, r["ankle"] + 0.16), (x, 0, r["ankle"] - 0.02), r["shin_r"] * 1.12, r["shin_r"] * 1.05, mats["Feet"], side + "LowerLeg")
-        fw, fl, fh = r["foot"]
-        mb.box((x, -fl * 0.22, fh * 0.5), (fw, fl * 0.62, fh), mats["Feet"], side + "Foot", top=(0.9, 0.8))
-        mb.box((x, -fl * 0.66, fh * 0.32), (fw * 0.95, fl * 0.3, fh * 0.64), mats["Feet"], side + "Toes", top=(0.9, 0.7))
+        _arm(mb, r, mats, side, s)
+        _leg(mb, r, mats, side, s)
+    _hair(mb, r, mats)
     return mb.finish()
 
 

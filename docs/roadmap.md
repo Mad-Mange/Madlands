@@ -104,7 +104,11 @@ Every phase ends in something playable and tested. Architectural decisions are i
   death), the beasts of Hollowmere (boar, bear, crocodile, the world boss, spider, shardling), all nine weapons and
   shields, and 40 props (trees, rocks, reeds, cottages, an inn, watchtowers, palisades, tents, stalls, ruins...).
   Worn gear is visible on characters (protocol v8): body armor recolors the gear regions, robes cover the legs,
-  helmets, hoods, hats, shoulder pads and cloaks are shapes sized from each race's skeleton
+  helmets, hoods, hats, shoulder pads and cloaks are shapes sized from each race's skeleton.
+  The two races were remodeled after classic fantasy MMOs (2026-10-20): heroic proportions with big deltoids and a
+  tapering torso, faces with brows, eyes and a strong nose, swept hair, the Korrin's braided beard and topknot,
+  fists, cuffed boots, belts with buckles, and darker trims that follow the gear colors. Hair hides under helmets
+  and hoods; the avatar now maps the chest and shoulders, so the clips' torso twists play
 - [x] Localization, English first ([ADR 0013](adr/0013-localization.md)): every interface text comes from a string table
   (`Resources/Localization/en.json`, 278 keys) through `Loc.T` or `#key` in UXML, with a language setting. Our own
   tables instead of Unity's package (no Addressables). Game content from the server is still English
