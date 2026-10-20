@@ -22,7 +22,7 @@ namespace Madlands.Client
     [RequireComponent(typeof(UIDocument))]
     public sealed class HudController : MonoBehaviour
     {
-        private const int SlotCount = 12;
+        private const int SlotCount = ActionBarLayout.SlotCount;
         private const float ErrorSeconds = 2f;
         private const float NoticeSeconds = 3f;
 
@@ -34,7 +34,12 @@ namespace Madlands.Client
             public VisualElement Shade;
             public Label Cooldown;
             public Label Key;
+            /// <summary>How many of the slot's item are in the bags.</summary>
+            public Label Count;
+            public int Index;
+            /// <summary>What the slot holds: a spell, or an item to use (0 for neither).</summary>
             public uint SpellId;
+            public uint ItemId;
         }
 
         private sealed class AuraIcon
@@ -375,7 +380,7 @@ namespace Madlands.Client
             if (KeyBindings.WasPressed(GameAction.ToggleSpellbook)) _spellbook.Toggle();
             if (KeyBindings.WasPressed(GameAction.ToggleMap)) _map.ToggleWorldMap();
             for (int i = 0; i < SlotCount; i++)
-                if (KeyBindings.WasPressed(KeyBindings.ActionButton(i))) UseSpell(_slots[i].SpellId);
+                if (KeyBindings.WasPressed(KeyBindings.ActionButton(i))) UseSlot(_slots[i]);
         }
 
         /// <summary>Esc: closes the chat line or clears the target. False if nothing was there (the menu may open).</summary>
@@ -506,9 +511,17 @@ namespace Madlands.Client
 
         // ------------------------------------------------------------------ action bar
 
+        /// <summary>Two rows of buttons: slots 0-11 at the bottom (keys 1 to =), 12-23 in the row above.</summary>
         private void BuildActionBar()
         {
             _actionBar.Clear();
+            var rows = new VisualElement[SlotCount / ActionBarLayout.RowLength];
+            for (int r = rows.Length - 1; r >= 0; r--)
+            {
+                rows[r] = new VisualElement { pickingMode = PickingMode.Ignore };
+                rows[r].AddToClassList("action-row");
+                _actionBar.Add(rows[r]);
+            }
             for (int i = 0; i < SlotCount; i++)
             {
                 var root = new VisualElement { pickingMode = PickingMode.Position };
@@ -530,18 +543,63 @@ namespace Madlands.Client
                     glow.AddToClassList(ring);
                     root.Add(glow);
                 }
+                var count = new Label { pickingMode = PickingMode.Ignore };
+                count.AddToClassList("action-count");
                 root.Add(icon);
                 root.Add(shade);
                 root.Add(cooldown);
                 root.Add(key);
-                var slot = new Slot { Root = root, Icon = icon, Shade = shade, Cooldown = cooldown, Key = key };
-                // Click to cast; Shift-drag onto another slot to swap, or off the bar to take the spell off.
-                _spellDrag.Attach(root, () => slot.SpellId, i, () => UseSpell(slot.SpellId), shiftToDrag: true);
-                root.RegisterCallback<PointerEnterEvent>(_ => ShowTooltip(slot.SpellId, root, 0));
-                root.RegisterCallback<PointerLeaveEvent>(_ => HideTooltip());
+                root.Add(count);
+                var slot = new Slot { Root = root, Icon = icon, Shade = shade, Cooldown = cooldown, Key = key, Count = count, Index = i };
+                // Click to use; Shift-drag onto another slot to swap, or off the bar to take it off.
+                _spellDrag.Attach(root, () => slot.SpellId != 0 ? slot.SpellId : slot.ItemId, i, () => UseSlot(slot), shiftToDrag: true,
+                    ghost: _ => slot.ItemId != 0 ? ItemIcons.Create(Client.Data.GetItem(slot.ItemId)) : SpellIcons.Create(Client.Data.GetSpell(slot.SpellId)));
+                // An item picked up in the bags goes onto the button: clicked onto it, or dragged and let go over it.
+                root.RegisterCallback<PointerDownEvent>(e =>
+                {
+                    if (e.button == 0 && PlaceHeldItem(slot.Index)) e.StopImmediatePropagation();
+                }, TrickleDown.TrickleDown);
+                root.RegisterCallback<PointerUpEvent>(e =>
+                {
+                    if (e.button == 0) PlaceHeldItem(slot.Index);
+                });
+                root.RegisterCallback<PointerEnterEvent>(_ =>
+                {
+                    if (slot.ItemId != 0 && Client.Data.TryGetItem(slot.ItemId, out var item))
+                        _itemTooltip.Show(item, Client.Inventory.Count(slot.ItemId), root, Client, compare: false);
+                    else ShowTooltip(slot.SpellId, root, 0);
+                });
+                root.RegisterCallback<PointerLeaveEvent>(_ =>
+                {
+                    HideTooltip();
+                    _itemTooltip.Hide();
+                });
                 _slots[i] = slot;
-                _actionBar.Add(root);
+                rows[i / ActionBarLayout.RowLength].Add(root);
             }
+        }
+
+        /// <summary>Puts an item onto a button, as if dragged there from the bags (scripted checks: -baritems).</summary>
+        public void PutItemOnBar(int index, uint itemId)
+        {
+            if (_layout == null) return;
+            _layout.SetItem(index, itemId);
+            SaveLayout();
+            RefreshActionBar();
+        }
+
+        /// <summary>Puts the item on the cursor (picked up in the bags) into a slot. False if no item was held.</summary>
+        private bool PlaceHeldItem(int index)
+        {
+            if (_layout == null || !_inventory.IsHolding) return false;
+            if (!_inventory.TryTakeHeld(out uint itemId)) return true;
+            if (!Client.Data.TryGetItem(itemId, out var item) || item.UseSpell == 0)
+            {
+                ShowError(Loc.T("error.notForActionBar"));
+                return true;
+            }
+            PutItemOnBar(index, itemId);
+            return true;
         }
 
         /// <summary>
@@ -560,9 +618,12 @@ namespace Madlands.Client
                 var slot = _slots[i];
                 uint id = _layout[i];
                 var spell = id != 0 && Client.KnownSpells.Contains(id) ? Client.Data.GetSpell(id) : null;
+                var item = _layout.ItemAt(i) != 0 ? Client.Data.GetItem(_layout.ItemAt(i)) : null;
                 slot.SpellId = spell?.Id ?? 0;
-                slot.Root.EnableInClassList("empty", spell == null);
+                slot.ItemId = item?.Id ?? 0;
+                slot.Root.EnableInClassList("empty", spell == null && item == null);
                 if (spell != null) SpellIcons.Apply(slot.Icon, spell);
+                else if (item != null) ItemIcons.Apply(slot.Icon, item);
             }
         }
 
@@ -592,6 +653,12 @@ namespace Madlands.Client
             var self = Client.Self;
             foreach (var slot in _slots)
             {
+                if (slot.ItemId != 0)
+                {
+                    UpdateItemSlot(slot);
+                    continue;
+                }
+                slot.Count.text = "";
                 if (slot.SpellId == 0 || !Client.Data.TryGetSpell(slot.SpellId, out var spell))
                 {
                     slot.Shade.style.display = DisplayStyle.None;
@@ -633,6 +700,76 @@ namespace Madlands.Client
                 slot.Root.EnableInClassList("busy", busy);
                 slot.Root.EnableInClassList("ready", ready);
             }
+        }
+
+        /// <summary>
+        /// A button holding an item: how many are left (grayed out at none), and the cooldown of its use spell (the
+        /// global cooldown too, if the spell triggers it).
+        /// </summary>
+        private void UpdateItemSlot(Slot slot)
+        {
+            int count = Client.Inventory.Count(slot.ItemId);
+            slot.Count.text = count.ToString(CultureInfo.InvariantCulture);
+            double remaining = 0, duration = 0;
+            bool global = false;
+            if (Client.Data.TryGetItem(slot.ItemId, out var item) && item.UseSpell != 0)
+            {
+                if (Client.TryGetCooldown(item.UseSpell, out var left, out var total))
+                {
+                    remaining = left;
+                    duration = total;
+                }
+                if (Client.Data.TryGetSpell(item.UseSpell, out var use) && use.GcdMs > 0 && Client.GcdRemainingMs > remaining)
+                {
+                    remaining = Client.GcdRemainingMs;
+                    duration = Client.GcdDurationMs;
+                    global = true;
+                }
+            }
+            slot.Shade.style.display = remaining > 0 && duration > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            slot.Shade.style.height = Length.Percent(duration > 0 ? (float)(remaining / duration) * 100f : 0f);
+            slot.Shade.EnableInClassList("global", global);
+            slot.Cooldown.text = !global && remaining > 0 ? Seconds(remaining) : "";
+            slot.Root.EnableInClassList("counting", slot.Cooldown.text.Length > 0);
+            slot.Root.EnableInClassList("unusable", count == 0 || Client.Self.Values.IsDead);
+            slot.Root.EnableInClassList("out-of-range", false);
+            slot.Root.EnableInClassList("active", false);
+            slot.Root.EnableInClassList("busy", remaining > 0);
+            slot.Root.EnableInClassList("ready", false);
+        }
+
+        /// <summary>Presses an action bar button (0-23) as its key would (scripted checks: -pressbar).</summary>
+        public void PressButton(int index)
+        {
+            if (index >= 0 && index < SlotCount) UseSlot(_slots[index]);
+        }
+
+        /// <summary>A button press: its spell, or its item.</summary>
+        private void UseSlot(Slot slot)
+        {
+            if (slot.ItemId != 0) UseItem(slot.ItemId);
+            else UseSpell(slot.SpellId);
+        }
+
+        /// <summary>
+        /// Uses the first stack of an item in the bags (the server checks the rest). A use spell for friends goes to a
+        /// friendly target, else to oneself; one against enemies goes to the target.
+        /// </summary>
+        private void UseItem(uint itemId)
+        {
+            if (!Client.Inventory.TryFindInBags(itemId, out var pos))
+            {
+                ShowError(Loc.T("error.noneLeft"));
+                return;
+            }
+            var target = Client.Target.IsEmpty ? Client.LocalGuid : Client.Target;
+            if (Client.Data.TryGetItem(itemId, out var item) && Client.Data.TryGetSpell(item.UseSpell, out var spell))
+            {
+                bool friendlyTarget = !Client.Target.IsEmpty && Client.GetReaction(Client.Target) == Reaction.Friendly;
+                target = spell.Target == SpellTarget.Enemy ? Client.Target
+                    : spell.Target == SpellTarget.Friend && friendlyTarget ? Client.Target : Client.LocalGuid;
+            }
+            Client.UseItem(pos, target);
         }
 
         /// <summary>Uses a spell the way a key press does: checks what the client can, then asks the server.</summary>

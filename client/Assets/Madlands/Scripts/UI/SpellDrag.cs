@@ -6,8 +6,8 @@ using UnityEngine.UIElements;
 namespace Madlands.Client
 {
     /// <summary>
-    /// Dragging a spell with the mouse onto the action bar: from the spellbook or from another slot. A press that
-    /// does not move is a click (cast). The spell's icon follows the pointer while it is dragged.
+    /// Dragging a spell with the mouse onto the action bar: from the spellbook or from another slot (which may hold an
+    /// item). A press that does not move is a click (cast). The icon follows the pointer while it is dragged.
     /// </summary>
     public sealed class SpellDrag
     {
@@ -31,9 +31,10 @@ namespace Madlands.Client
         /// Lets the mouse drag what <paramref name="source"/> holds (<paramref name="spell"/>, read when the drag
         /// starts); <paramref name="slot"/> is its action bar slot or -1; <paramref name="click"/> runs on a press
         /// that does not drag. With <paramref name="shiftToDrag"/> a drag only starts while Shift is held (the
-        /// action bar: no spell moves by accident in a fight).
+        /// action bar: no spell moves by accident in a fight). <paramref name="ghost"/> makes the icon that follows the
+        /// pointer (default: the spell's icon).
         /// </summary>
-        public void Attach(VisualElement source, Func<uint> spell, int slot, Action click, bool shiftToDrag = false)
+        public void Attach(VisualElement source, Func<uint> spell, int slot, Action click, bool shiftToDrag = false, Func<uint, VisualElement> ghost = null)
         {
             bool pressed = false, dragging = false;
             uint held = 0;
@@ -53,7 +54,7 @@ namespace Madlands.Client
                 if (!dragging && (!shiftToDrag || e.shiftKey) && Vector2.Distance(e.position, start) > StartPixels && (held = spell()) != 0)
                 {
                     dragging = true;
-                    ShowGhost(held);
+                    ShowGhost(ghost != null ? ghost(held) : SpellIcons.Create(_client.Data.GetSpell(held)));
                 }
                 if (dragging) MoveGhost(e.position);
             });
@@ -78,10 +79,10 @@ namespace Madlands.Client
             });
         }
 
-        private void ShowGhost(uint spellId)
+        private void ShowGhost(VisualElement icon)
         {
             HideGhost();
-            _ghost = SpellIcons.Create(_client.Data.GetSpell(spellId));
+            _ghost = icon;
             _ghost.AddToClassList("spell-drag");
             _layer.Add(_ghost);
         }

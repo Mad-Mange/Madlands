@@ -105,6 +105,18 @@ namespace Madlands.Client
         public bool CharacterOpen => _character.IsOpen;
         public bool IsHolding => _held != null;
 
+        /// <summary>
+        /// Lets go of the item on the cursor and says which item it was (it stays where it is in the bags): an action
+        /// bar button took it.
+        /// </summary>
+        public bool TryTakeHeld(out uint itemId)
+        {
+            itemId = _held != null ? _client.Inventory.Get(_held.Value).ItemId : 0;
+            CancelHeld();
+            Refresh();
+            return itemId != 0;
+        }
+
         public void ToggleBags()
         {
             _bags.Toggle();
@@ -384,7 +396,7 @@ namespace Madlands.Client
             _pendingDestroy = pos;
             var item = _client.Data.GetItem(stack.ItemId);
             _confirmText.text = Loc.T("destroy.confirm", ItemTooltip.Describe(_client.Data, stack.ItemId, stack.Count));
-            if (item != null && item.Class == ItemClass.Quest) _confirmText.text += " It is needed for a quest.";
+            if (item != null && item.Class == ItemClass.Quest) _confirmText.text += " " + Loc.T("destroy.questItem");
             _confirm.Open();
             Refresh();
         }

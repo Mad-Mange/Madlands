@@ -69,6 +69,19 @@ namespace Madlands.ClientCore
             return n;
         }
 
+        /// <summary>The first bag position holding an item (in fill order), the stack an action bar button uses.</summary>
+        public bool TryFindInBags(uint itemId, out ItemPos position)
+        {
+            foreach (var pos in BagPositions())
+            {
+                if (Get(pos).ItemId != itemId) continue;
+                position = pos;
+                return true;
+            }
+            position = default;
+            return false;
+        }
+
         public int FreeSlots()
         {
             int n = 0;

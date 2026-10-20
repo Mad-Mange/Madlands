@@ -40,6 +40,19 @@ namespace Madlands.Client
         Action10,
         Action11,
         Action12,
+        // The second action bar row (no keys by default, as in WoW; bound in Settings).
+        Action13,
+        Action14,
+        Action15,
+        Action16,
+        Action17,
+        Action18,
+        Action19,
+        Action20,
+        Action21,
+        Action22,
+        Action23,
+        Action24,
     }
 
     /// <summary>
@@ -84,6 +97,18 @@ namespace Madlands.Client
             { GameAction.Action10, new[] { Key.Digit0, Key.None } },
             { GameAction.Action11, new[] { Key.Minus, Key.None } },
             { GameAction.Action12, new[] { Key.Equals, Key.None } },
+            { GameAction.Action13, new[] { Key.None, Key.None } },
+            { GameAction.Action14, new[] { Key.None, Key.None } },
+            { GameAction.Action15, new[] { Key.None, Key.None } },
+            { GameAction.Action16, new[] { Key.None, Key.None } },
+            { GameAction.Action17, new[] { Key.None, Key.None } },
+            { GameAction.Action18, new[] { Key.None, Key.None } },
+            { GameAction.Action19, new[] { Key.None, Key.None } },
+            { GameAction.Action20, new[] { Key.None, Key.None } },
+            { GameAction.Action21, new[] { Key.None, Key.None } },
+            { GameAction.Action22, new[] { Key.None, Key.None } },
+            { GameAction.Action23, new[] { Key.None, Key.None } },
+            { GameAction.Action24, new[] { Key.None, Key.None } },
         };
 
         private static readonly Dictionary<GameAction, Key[]> Bindings = new Dictionary<GameAction, Key[]>();

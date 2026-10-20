@@ -135,7 +135,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] Gatherable objects: glowcap mushrooms at the feet of the Greywood's trees shine while Old Tamsin's quest "Glowcaps
   for a Salve" needs them; right-click to pick, they grow back after 45 s (`content/objects.json`, protocol v13)
 - [x] Action bar arranged by the player: Shift-drag buttons between slots or off the bar, drag spells from the spellbook (P)
-  onto it; newly learned spells go into the first empty slot. Saved per character (`ActionBarLayout`)
+  onto it; newly learned spells go into the first empty slot. Saved per character (`ActionBarLayout`). Two rows of
+  twelve (the upper row has no keys by default: bound in Settings). Potions, food, drink and elixirs go on it too:
+  drag or click them there from the bags; a button shows how many are left and the cooldown, and uses the first stack
 - [x] Long buffs, as in WoW: the Warden's Oakheart (Stamina, so health) and the Shardmage's Shard Insight (Intellect,
   so mana) last 30 minutes and can be cast on others; Holt sells elixirs (Stamina, Intellect) and tonics that restore
   health or mana every 5 seconds for 10 minutes. Long buffs survive logging out
@@ -209,7 +211,7 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - **Items have no per-instance ids or properties** (durability, enchantments). Trade and mail (Phase 6) need instance ids
   and transactional transfers (ADR 0010).
 - **No buyback at vendors:** a mis-sold item is gone.
-- **Consumables cannot go on the action bar.** The bar is player-arranged now; items need a slot type of their own.
+- ~~**Consumables cannot go on the action bar**~~ (done 2026-10-20): items share the slots with spells.
 - **Quests:** no quest-starting items, escort, timed, repeatable or daily quests yet (ADR 0011).
 - ~~**Only weapons and shields are visible on characters**~~ (done 2026-10-19): armor shows as recolored regions and
   simple shapes (`GearVisuals`). Modeled armor pieces (Blender) can replace the shapes later; the display ids stay.

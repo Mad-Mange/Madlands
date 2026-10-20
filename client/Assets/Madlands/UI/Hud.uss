@@ -261,13 +261,18 @@
     align-items: center;
 }
 
+/* Two rows: the second (slots 13-24) above the first (keys 1 to =). */
 .action-bar {
-    flex-direction: row;
+    flex-direction: column;
     padding: 5px;
     background-color: rgba(14, 18, 28, 0.82);
     border-width: 1px;
     border-color: rgb(122, 98, 48);
     border-radius: 6px;
+}
+
+.action-row {
+    flex-direction: row;
 }
 
 .action-button {
@@ -355,6 +360,18 @@
 .action-button.active {
     border-color: rgb(255, 214, 90);
     border-width: 2px;
+}
+
+/* How many of a button's item are left in the bags. */
+.action-count {
+    position: absolute;
+    right: 3px;
+    bottom: 1px;
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
 }
 
 .action-key {
@@ -456,7 +473,7 @@
 
 .cast-bar.player {
     position: absolute;
-    bottom: 190px;
+    bottom: 255px;
     left: 50%;
     width: 360px;
     margin-left: -180px;

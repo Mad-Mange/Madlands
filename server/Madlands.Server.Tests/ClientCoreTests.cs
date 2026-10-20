@@ -212,6 +212,33 @@ public class ActionBarLayoutTests
     }
 
     [Fact]
+    public void Items_share_the_slots_with_spells()
+    {
+        var layout = ActionBarLayout.Load(null);
+        layout.AddNew(new uint[] { 1, 100 });
+        layout.SetItem(2, 1501);     // a healing draught from the bags
+        layout.SetItem(1, 1502);     // replaces Heroic Strike
+        Assert.Equal((0u, 1502u), (layout[1], layout.ItemAt(1)));
+        Assert.Equal((0u, 1501u), (layout[2], layout.ItemAt(2)));
+
+        // Saved and loaded; the old twelve-slot text still loads into the bottom row.
+        var again = ActionBarLayout.Load(layout.Save());
+        Assert.Equal((1u, 1502u, 1501u), (again[0], again.ItemAt(1), again.ItemAt(2)));
+        Assert.Equal(1u, ActionBarLayout.Load("1,100,103|1,100,103")[0]);
+        Assert.Equal(24, ActionBarLayout.SlotCount);
+
+        // A new spell skips slots holding items; swapping moves items too; setting a spell clears the item.
+        Assert.True(again.AddNew(new uint[] { 1, 100, 101 }));
+        Assert.Equal(101u, again[3]);
+        again.Swap(2, 20);
+        Assert.Equal((0u, 1501u), (again.ItemAt(2), again.ItemAt(20)));
+        again.Set(20, 103);
+        Assert.Equal((103u, 0u), (again[20], again.ItemAt(20)));
+        again.Clear(1);
+        Assert.Equal((0u, 0u), (again[1], again.ItemAt(1)));
+    }
+
+    [Fact]
     public void Broken_text_loads_as_an_empty_layout()
     {
         var layout = ActionBarLayout.Load("x,y|z");

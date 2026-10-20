@@ -27,6 +27,9 @@ namespace Madlands.Client
         private int _spellCursor;
         private bool _windowsOpened;
         private int _equipped;
+        private int _pressed;
+        private bool _faced;
+        private float _nextPressAt;
         private bool _talked;
         private float _nextTalkAt;
         private float _nextGatherAt;
@@ -46,12 +49,12 @@ namespace Madlands.Client
             var settings = network.Settings;
             if (settings == null || (settings.Exec.Length == 0 && !settings.AutoFight && settings.OpenWindows.Length == 0
                                      && settings.TalkTo == null && !settings.AutoLoot && !settings.AutoGather && settings.TooltipItem == 0
-                                     && settings.Equip.Length == 0)) return;
+                                     && settings.Equip.Length == 0 && settings.BarItems.Length == 0 && settings.PressBar.Length == 0 && settings.FaceYaw == null)) return;
             if (!network.InWorld)
             {
                 _enteredAt = -1f;
-                _windowsOpened = _talked = false;
-                _equipped = 0;
+                _windowsOpened = _talked = _faced = false;
+                _equipped = _pressed = 0;
                 return;
             }
             if (_enteredAt < 0f)
@@ -71,10 +74,23 @@ namespace Madlands.Client
             }
 
             if (_equipped < settings.Equip.Length) EquipNext(settings.Equip[_equipped]);
+            if (settings.FaceYaw != null && !_faced && network.LocalPlayer != null)
+            {
+                _faced = true;
+                float yaw = settings.FaceYaw.Value * Mathf.Deg2Rad;
+                network.LocalPlayer.FaceTowards(network.LocalPlayer.transform.position + new Vector3(Mathf.Sin(yaw), 0f, Mathf.Cos(yaw)));
+            }
             if (!_windowsOpened && Time.time > _enteredAt + 1.5f)
             {
                 _windowsOpened = true;
                 foreach (var window in settings.OpenWindows) hud.OpenWindow(window);
+                foreach (var (button, item) in settings.BarItems) hud.PutItemOnBar(button - 1, item);
+                _nextPressAt = Time.time + 1f;
+            }
+            if (_windowsOpened && _pressed < settings.PressBar.Length && Time.time >= _nextPressAt)
+            {
+                hud.PressButton(settings.PressBar[_pressed++] - 1);
+                _nextPressAt = Time.time + 1f;
             }
             if (settings.TalkTo != null && !_talked && Time.time >= _nextTalkAt) TalkTo(settings);
             if (settings.TooltipItem != 0 && _windowsOpened && Time.time > _enteredAt + 3f) hud.ShowItemTooltip(settings.TooltipItem);

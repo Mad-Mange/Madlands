@@ -11,13 +11,16 @@ namespace Madlands.Client
     ///   Madlands.exe -server 192.168.1.10 -httpport 7780
     ///   Madlands.exe -autoconnect -stopat charselect     (stop at the character screen)
     ///   Madlands.exe -autoconnect -screenshot shot.png -screenshotdelay 6 -quitafter 10
-    ///   Framing for screenshots: -campitch 30 -camdistance 25 -camyaw 40 -hidedebug
+    ///   Framing for screenshots: -campitch 30 -camdistance 25 -camyaw 40 -hidedebug, -face 180 (turns the character
+    ///   to that compass direction once in the world: 0 north, 90 east)
     ///   Combat checks: -class shardmage (new characters), -exec ".level 5;.spawn 2" (chat lines
     ///   sent after entering the world), -autofight (targets the nearest enemy and fights it)
     ///   Item and quest checks: -open bags,character,questlog (windows), -talkto "Old Tamsin" (opens
     ///   that NPC's dialog), -quest 1 (with -talkto: shows that quest's page), -loot (opens the loot
     ///   of nearby corpses), -tooltip 1224 (shows the tooltip of that item in the open bags),
     ///   -equip 1020,1210 (equips those items from the bags), -gather (gathers objects in reach, like mushrooms)
+    ///   Action bar checks: -baritems 2=4003,13=4008 (puts items onto buttons 1-24, as if dragged from the bags),
+    ///   -pressbar 13,2 (presses those buttons once, a second apart)
     /// </summary>
     public sealed class ClientSettings
     {
@@ -45,6 +48,8 @@ namespace Madlands.Client
         public float? CameraDistance;
         public float? CameraYawOffset;
         public bool HideDebug;
+        /// <summary>A compass direction (degrees) to turn the character to once in the world (-face).</summary>
+        public float? FaceYaw;
         /// <summary>No HUD at all (-hidehud): for pictures of the world.</summary>
         public bool HideHud;
         /// <summary>Test runs: run forward from the start (-autorun), holding sprint (-sprint).</summary>
@@ -71,6 +76,10 @@ namespace Madlands.Client
         public uint TooltipItem;
         /// <summary>Item ids to equip from the bags once the -exec lines ran.</summary>
         public uint[] Equip = new uint[0];
+        /// <summary>Items to put onto action bar buttons (button 1-24, item id) once in the world.</summary>
+        public (int Button, uint Item)[] BarItems = new (int, uint)[0];
+        /// <summary>Action bar buttons (1-24) to press once each, after the -baritems are placed.</summary>
+        public int[] PressBar = new int[0];
 
         public string AccountApiUrl => "http://" + Server + ":" + HttpPort;
 
@@ -138,6 +147,10 @@ namespace Madlands.Client
                         s.CameraYawOffset = float.Parse(next, CultureInfo.InvariantCulture);
                         i++;
                         break;
+                    case "-face" when next != null:
+                        s.FaceYaw = float.Parse(next, CultureInfo.InvariantCulture);
+                        i++;
+                        break;
                     case "-hidedebug":
                         s.HideDebug = true;
                         break;
@@ -186,6 +199,18 @@ namespace Madlands.Client
                     case "-equip" when next != null:
                         s.Equip = Array.ConvertAll(next.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                             id => uint.Parse(id, NumberStyles.Integer, CultureInfo.InvariantCulture));
+                        i++;
+                        break;
+                    case "-baritems" when next != null:
+                        s.BarItems = Array.ConvertAll(next.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries), entry =>
+                        {
+                            var parts = entry.Split('=');
+                            return (int.Parse(parts[0], CultureInfo.InvariantCulture), uint.Parse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture));
+                        });
+                        i++;
+                        break;
+                    case "-pressbar" when next != null:
+                        s.PressBar = Array.ConvertAll(next.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries), b => int.Parse(b, CultureInfo.InvariantCulture));
                         i++;
                         break;
                     case "-tooltip" when next != null:

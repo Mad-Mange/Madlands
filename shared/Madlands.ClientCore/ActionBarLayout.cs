@@ -6,39 +6,63 @@ using System.Text;
 namespace Madlands.ClientCore
 {
     /// <summary>
-    /// Which spell sits in which action bar slot, as the player arranged it. Spells learned since the layout was
-    /// saved go into the first empty slots (as in WoW); a spell the player took off the bar stays off. Saved as
-    /// text per character by the client.
+    /// What sits in which action bar slot, as the player arranged it: a spell, or an item to use (a potion, food, an
+    /// elixir: the slot stands for every stack of that item in the bags, as in WoW). Spells learned since the layout
+    /// was saved go into the first empty slots; a spell the player took off the bar stays off. Saved as text per
+    /// character by the client.
     /// </summary>
     public sealed class ActionBarLayout
     {
-        public const int SlotCount = 12;
+        /// <summary>Two rows of twelve: 0-11 the bottom row (keys 1 to =), 12-23 the row above it.</summary>
+        public const int SlotCount = 24;
+        public const int RowLength = 12;
 
-        private readonly uint[] _slots = new uint[SlotCount];
+        /// <summary>Saved item slots start with this letter ("i1501"); spell slots are plain numbers.</summary>
+        private const char ItemPrefix = 'i';
+
+        private readonly uint[] _spells = new uint[SlotCount];
+        private readonly uint[] _items = new uint[SlotCount];
         /// <summary>Spells the layout has already seen (placed once): not added again on their own.</summary>
         private readonly HashSet<uint> _seen = new HashSet<uint>();
 
-        public uint this[int slot] => slot >= 0 && slot < SlotCount ? _slots[slot] : 0;
+        /// <summary>The spell in a slot (0 if it is empty or holds an item).</summary>
+        public uint this[int slot] => Valid(slot) ? _spells[slot] : 0;
+
+        /// <summary>The item in a slot (0 if it is empty or holds a spell).</summary>
+        public uint ItemAt(int slot) => Valid(slot) ? _items[slot] : 0;
 
         public void Swap(int a, int b)
         {
             if (!Valid(a) || !Valid(b) || a == b) return;
-            uint t = _slots[a];
-            _slots[a] = _slots[b];
-            _slots[b] = t;
+            uint spell = _spells[a], item = _items[a];
+            _spells[a] = _spells[b];
+            _items[a] = _items[b];
+            _spells[b] = spell;
+            _items[b] = item;
         }
 
         /// <summary>Puts a spell into a slot (from the spellbook), replacing what was there.</summary>
         public void Set(int slot, uint spellId)
         {
             if (!Valid(slot)) return;
-            _slots[slot] = spellId;
+            _spells[slot] = spellId;
+            _items[slot] = 0;
             if (spellId != 0) _seen.Add(spellId);
+        }
+
+        /// <summary>Puts an item into a slot (from the bags), replacing what was there.</summary>
+        public void SetItem(int slot, uint itemId)
+        {
+            if (!Valid(slot)) return;
+            _items[slot] = itemId;
+            _spells[slot] = 0;
         }
 
         public void Clear(int slot)
         {
-            if (Valid(slot)) _slots[slot] = 0;
+            if (!Valid(slot)) return;
+            _spells[slot] = 0;
+            _items[slot] = 0;
         }
 
         /// <summary>Places spells it has not seen yet into the first empty slots, in the given order. True if anything changed.</summary>
@@ -49,20 +73,25 @@ namespace Madlands.ClientCore
             {
                 if (spell == 0 || !_seen.Add(spell)) continue;
                 changed = true;
-                int free = Array.IndexOf(_slots, 0u);
-                if (free >= 0) _slots[free] = spell;
+                for (int i = 0; i < SlotCount; i++)
+                {
+                    if (_spells[i] != 0 || _items[i] != 0) continue;
+                    _spells[i] = spell;
+                    break;
+                }
             }
             return changed;
         }
 
-        /// <summary>"slots|seen": twelve spell ids, then the spells seen, comma separated.</summary>
+        /// <summary>"slots|seen": the slots (a spell id, or "i" and an item id), then the spells seen, comma separated.</summary>
         public string Save()
         {
             var sb = new StringBuilder();
             for (int i = 0; i < SlotCount; i++)
             {
                 if (i > 0) sb.Append(',');
-                sb.Append(_slots[i].ToString(CultureInfo.InvariantCulture));
+                if (_items[i] != 0) sb.Append(ItemPrefix).Append(_items[i].ToString(CultureInfo.InvariantCulture));
+                else sb.Append(_spells[i].ToString(CultureInfo.InvariantCulture));
             }
             sb.Append('|');
             bool first = true;
@@ -83,11 +112,21 @@ namespace Madlands.ClientCore
             var parts = text.Split('|');
             var slots = parts[0].Split(',');
             for (int i = 0; i < SlotCount && i < slots.Length; i++)
-                if (uint.TryParse(slots[i], NumberStyles.None, CultureInfo.InvariantCulture, out uint spell)) layout._slots[i] = spell;
+            {
+                string s = slots[i];
+                if (s.Length > 1 && s[0] == ItemPrefix)
+                {
+                    if (uint.TryParse(s.Substring(1), NumberStyles.None, CultureInfo.InvariantCulture, out uint item)) layout._items[i] = item;
+                }
+                else if (uint.TryParse(s, NumberStyles.None, CultureInfo.InvariantCulture, out uint spell))
+                {
+                    layout._spells[i] = spell;
+                }
+            }
             if (parts.Length > 1)
                 foreach (var s in parts[1].Split(','))
                     if (uint.TryParse(s, NumberStyles.None, CultureInfo.InvariantCulture, out uint spell)) layout._seen.Add(spell);
-            foreach (var spell in layout._slots)
+            foreach (var spell in layout._spells)
                 if (spell != 0) layout._seen.Add(spell);
             return layout;
         }

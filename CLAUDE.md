@@ -64,7 +64,8 @@ builds/client/Madlands.exe -screen-fullscreen 0 -screenshot builds/screenshots/l
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 3;.tele -60 -62" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
 # Items and quests: -open bags,character,questlog,spellbook,map opens windows, -talkto "Old Tamsin" (+ -quest 1) opens an NPC dialog,
 # -loot opens loot of corpses in reach, -gather gathers objects in reach (mushrooms), -tooltip <item id> shows a bag item's
-# tooltip, -equip 1020,1210 equips from the bags.
+# tooltip, -equip 1020,1210 equips from the bags, -baritems "7=4003,13=4008" puts items onto action buttons 1-24 and
+# -pressbar 13,7 presses buttons (a second apart). -face 180 turns the character to a compass direction (framing).
 # -autorun runs forward from the start, -sprint holds the sprint key (test sprint and stamina against the server).
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Shopper -exec ".money 5000;.tele 10 -142" -talkto "Quartermaster Holt" -screenshot builds/screenshots/vendor.png -screenshotdelay 9 -quitafter 13
 ```
