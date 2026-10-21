@@ -107,7 +107,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
   (`art/blender/gear.py`, 2026-10-21) show the rest: helmets, hoods, hats, shoulder pads, mantles, cloaks, robe
   skirts with bell sleeves, breastplates and aprons. Every race's model carries each piece, built from its own
   proportions and skinned to its skeleton (a robe's skirt follows the thighs, a cloak's hem swings back when
-  running); the NPCs wear them too.
+  running); the NPCs wear them too. The same day the mirelings got a model of their own, the frog, wolf, boar,
+  bear, spider and shardling were remodeled, and so were Mirewatch (gates, palisade, inn, cottages, well, stalls,
+  watchtowers), the trees, rocks and clutter of the valley, and the weapons.
   The two races were remodeled after classic fantasy MMOs (2026-10-20): heroic proportions with big deltoids and a
   tapering torso, faces with brows, eyes and a strong nose, swept hair, the Korrin's braided beard and topknot,
   fists, cuffed boots, belts with buckles, and darker trims that follow the gear colors. Hair hides under helmets
