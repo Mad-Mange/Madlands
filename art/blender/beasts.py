@@ -418,26 +418,54 @@ def spider_skeleton():
 
 
 def spider_body():
+    """
+    A big forest spider: a hairy cephalothorax with a cluster of glowing eyes and curved fangs, a swollen
+    abdomen with a red marking and bristles, and jointed legs with knobbly knees, banded shins and claws.
+    """
     body = lp.material("Chitin", "#2e2b33")
     light = lp.material("ChitinLight", "#57505e")
     mark = lp.material("Marking", "#a8332a")
     eyes = lp.material("EyesGlow", "#ff5a3a", emission=1.5)
+    rng = random.Random(13)
     mb = lp.MeshBuilder("SpiderBody")
-    mb.sphere((0, -0.1, 0.5), (0.24, 0.3, 0.17), body, "Body", segments=8, rings=5)
-    mb.sphere((0, 0.48, 0.62), (0.36, 0.45, 0.3), body, "Abdomen", segments=8, rings=6)
-    mb.hull([(0.09, 0.4, 0.92), (-0.09, 0.4, 0.92), (0, 0.62, 0.9), (0, 0.3, 0.88), (0, 0.48, 0.95)], mark, "Abdomen")
+    trunk(mb, [(-0.4, 0.5, 0.1, 0.07), (-0.32, 0.52, 0.2, 0.13), (-0.12, 0.54, 0.25, 0.16), (0.08, 0.53, 0.2, 0.13), (0.14, 0.52, 0.1, 0.08)],
+          lambda q: {"Body": 1.0}, body, light, n=10, belly_cols=2)
+    trunk(mb, [(0.12, 0.56, 0.1, 0.1), (0.22, 0.6, 0.3, 0.26), (0.45, 0.66, 0.38, 0.33), (0.7, 0.66, 0.3, 0.28), (0.86, 0.62, 0.12, 0.12)],
+          lambda q: {"Abdomen": 1.0}, body, light, n=12, belly_cols=2)
+    # The marking: a red hourglass on the back of the abdomen.
+    for y0, y1, w0, w1 in ((0.28, 0.45, 0.13, 0.03), (0.45, 0.62, 0.03, 0.13)):
+        mb.hull([(sx * w, y, 0.995 - 0.25 * ((y - 0.45) / 0.45) ** 2) for sx in (1, -1) for y, w in ((y0, w0), (y1, w1))]
+                + [(0, (y0 + y1) / 2, 1.005)], mark, "Abdomen")
+    for _ in range(16):
+        t = rng.uniform(0.2, math.pi - 0.2)
+        y = rng.uniform(0.25, 0.8)
+        r = 0.36 * math.sqrt(max(0.0, 1 - ((y - 0.47) / 0.42) ** 2))
+        base = (math.cos(t) * r, y, 0.66 + math.sin(t) * r * 0.9)
+        tufts(mb, [base], light, "Abdomen", rng, size=0.07, sweep=(math.cos(t) * 0.3, 0.8, math.sin(t) * 0.4))
+    # Eyes: two big, four small, glowing; fangs curving down.
     for sx in (1, -1):
-        mb.box((sx * 0.07, -0.38, 0.56), (0.05, 0.03, 0.04), eyes, "Body")
-        mb.box((sx * 0.12, -0.34, 0.6), (0.035, 0.03, 0.03), eyes, "Body")
-        mb.hull([(sx * 0.05, -0.3, 0.45), (sx * 0.09, -0.3, 0.45), (sx * 0.07, -0.33, 0.48), (sx * 0.05, -0.4, 0.3)], light, "Fangs")
+        mb.sphere((sx * 0.06, -0.39, 0.58), 0.04, eyes, "Body", segments=6, rings=4)
+        mb.sphere((sx * 0.12, -0.35, 0.61), 0.026, eyes, "Body", segments=5, rings=3)
+        mb.sphere((sx * 0.04, -0.37, 0.64), 0.022, eyes, "Body", segments=5, rings=3)
+        mb.tube([((sx * 0.06, -0.38, 0.47), 0.035), ((sx * 0.05, -0.47, 0.4), 0.026), ((sx * 0.03, -0.45, 0.31), 0.004)], light, "Fangs", sides=5)
+        mb.tube([((sx * 0.1, -0.36, 0.5), 0.025), ((sx * 0.16, -0.48, 0.46), 0.02), ((sx * 0.13, -0.55, 0.38), 0.012)], body, "Body", sides=4)
     for i, (y, sweep) in enumerate(SPIDER_LEGS, start=1):
-        a = math.radians(sweep)
+        ang = math.radians(sweep)
         for side, sx in (("L", 1), ("R", -1)):
             root = (sx * 0.16, y, 0.5)
-            knee = (sx * (0.16 + 0.42 * math.cos(a)), y + 0.42 * math.sin(a), 0.85)
-            foot = (sx * (0.16 + 0.95 * math.cos(a)), y + 0.95 * math.sin(a), 0.02)
-            mb.frustum(root, knee, 0.045, 0.035, body, "LegUpper%d.%s" % (i, side), sides=4)
-            mb.frustum(knee, foot, 0.035, 0.012, light, "LegLower%d.%s" % (i, side), sides=4)
+            knee = (sx * (0.16 + 0.42 * math.cos(ang)), y + 0.42 * math.sin(ang), 0.85)
+            foot = (sx * (0.16 + 0.95 * math.cos(ang)), y + 0.95 * math.sin(ang), 0.02)
+            upper, lower = "LegUpper%d.%s" % (i, side), "LegLower%d.%s" % (i, side)
+            mid = tuple(a + (b - a) * 0.5 for a, b in zip(root, knee))
+            mb.tube([(root, 0.05), (mid, 0.055), (knee, 0.04)], body, upper, sides=5)
+            mb.sphere(knee, 0.055, light, upper, segments=6, rings=4)
+            shin = [tuple(a + (b - a) * f for a, b in zip(knee, foot)) for f in (0.0, 0.35, 0.36, 0.42, 0.43, 0.8, 1.0)]
+            mats_ = [body, body, light, light, body, body]
+            for k in range(len(shin) - 1):
+                ra = 0.04 * (1 - 0.7 * k / 6)
+                rb = 0.04 * (1 - 0.7 * (k + 1) / 6)
+                mb.tube([(shin[k], ra), (shin[k + 1], rb)], mats_[k], lower, sides=5)
+            tufts(mb, [tuple(a + (b - a) * 0.2 for a, b in zip(knee, foot))], light, lower, rng, size=0.05, sweep=(sx * 0.5, 0, 0.6))
     return mb.finish()
 
 
