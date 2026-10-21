@@ -10,7 +10,7 @@ import lowpoly as lp
 
 PALETTE = {
     "Bark": "#6b4a2f", "BarkGray": "#7d7468", "Leaves": "#46752f", "LeavesDark": "#335a26", "LeavesLight": "#6a9a3c",
-    "Pine": "#2f5a36", "PineDark": "#244a2c", "Stone": "#8d8a83", "StoneDark": "#6c6a64", "Moss": "#5b7a3c",
+    "Pine": "#2f5a36", "PineDark": "#244a2c", "PineLight": "#3d6e3e", "Blossom": "#e8e0c0", "Stone": "#8d8a83", "StoneDark": "#6c6a64", "Moss": "#5b7a3c",
     "Wood": "#8a6238", "WoodDark": "#5e4128", "Plank": "#a57d4c", "Thatch": "#b99a54", "Plaster": "#ddd2b6",
     "Canvas": "#cbb68b", "CanvasRed": "#9a3b2e", "Banner": "#2f4f9a", "Metal": "#8f959d", "Reed": "#8a9a4a",
     "ReedTop": "#6b5232", "MushroomCap": "#b5442e", "MushroomStem": "#e6dcc0", "Water": "#3d6a7a",
@@ -41,37 +41,79 @@ def blob(mb, center, radius, mat, rng, points=14, squash=1.0):
 # ---------------------------------------------------------------- nature
 
 def tree_oak(seed):
+    """
+    A broad oak: a bending trunk flaring into roots, a few heavy branches, and a crown of leafy clumps
+    built in layers: darker underneath, lighter where the sun falls on top.
+    """
     def build():
         rng = random.Random(seed)
         m = mats()
         mb = lp.MeshBuilder("TreeOak%d" % seed)
         h = rng.uniform(3.2, 4.0)
-        mb.frustum((0, 0, -0.3), (0, 0, h), 0.42, 0.26, m["Bark"], sides=6)
-        for angle in (rng.uniform(0, 360), rng.uniform(0, 360)):
-            a = math.radians(angle)
-            mb.frustum((0, 0, h * 0.7), (math.cos(a) * 1.4, math.sin(a) * 1.4, h + 1.0), 0.16, 0.08, m["Bark"], sides=5)
-        leaves = [m["Leaves"], m["LeavesDark"], m["LeavesLight"]]
-        mb.hull([(0, 0, h + 3.0)] + [(math.cos(i) * 2.6, math.sin(i) * 2.6, h + 1.6) for i in range(6)] + [(0, 0, h + 0.4)], leaves[0])
+        lean = (rng.uniform(-0.25, 0.25), rng.uniform(-0.25, 0.25))
+        path = [(lean[0] * t * t, lean[1] * t * t, -0.3 + (h + 0.3) * t) for t in (0.0, 0.3, 0.6, 1.0)]
+        mb.tube([(path[0], 0.5), (path[1], 0.36), (path[2], 0.31), (path[3], 0.26)], m["Bark"], sides=8)
+        for i in range(5):
+            a = 2 * math.pi * i / 5 + rng.uniform(-0.3, 0.3)
+            out = rng.uniform(0.75, 1.0)
+            mb.tube([((math.cos(a) * 0.2, math.sin(a) * 0.2, 0.7), 0.17), ((math.cos(a) * 0.5, math.sin(a) * 0.5, 0.15), 0.14),
+                     ((math.cos(a) * out, math.sin(a) * out, -0.15), 0.04)], m["Bark"], sides=5)
+        top = path[-1]
+        tips = []
         for i in range(4):
-            a = rng.uniform(0, 2 * math.pi)
-            d = rng.uniform(1.2, 2.0)
-            blob(mb, (math.cos(a) * d, math.sin(a) * d, h + rng.uniform(1.2, 2.6)), rng.uniform(1.3, 1.8), leaves[i % 3], rng)
+            a = 2 * math.pi * i / 4 + rng.uniform(0, 1.2)
+            start = (top[0] * 0.7, top[1] * 0.7, h * rng.uniform(0.55, 0.8))
+            reach = rng.uniform(1.9, 2.5)
+            tip = (math.cos(a) * reach + top[0], math.sin(a) * reach + top[1], h + rng.uniform(0.4, 0.9))
+            mid = ((start[0] + tip[0]) / 2, (start[1] + tip[1]) / 2, (start[2] + tip[2]) / 2 - 0.15)
+            mb.tube([(start, 0.17), (mid, 0.12), (tip, 0.06)], m["Bark"], sides=5)
+            tips.append(tip)
+        cx, cy = top[0], top[1]
+        # Clumps: a dark under-layer, the body, and light sunlit tops.
+        blob(mb, (cx, cy, h + 1.3), 2.5, m["LeavesDark"], rng, points=24, squash=0.55)
+        for tip in tips:
+            blob(mb, (tip[0], tip[1], tip[2] + 0.45), rng.uniform(1.4, 1.7), m["Leaves"], rng, points=20, squash=0.7)
+        for i in range(3):
+            a = 2 * math.pi * i / 3 + rng.uniform(0, 1)
+            d = rng.uniform(0.8, 1.4)
+            blob(mb, (cx + math.cos(a) * d, cy + math.sin(a) * d, h + rng.uniform(2.0, 2.4)), rng.uniform(1.2, 1.5), m["LeavesLight"], rng,
+                 points=20, squash=0.65)
+        blob(mb, (cx, cy, h + 2.7), 1.1, m["LeavesLight"], rng, points=16, squash=0.65)
         return mb.finish()
     return build
 
 
 def tree_pine(seed):
+    """
+    A pine: a straight trunk under tiers of drooping boughs, each a skirt with a jagged, sagging rim,
+    lighter on top and darker underneath, narrowing to a spire.
+    """
     def build():
         rng = random.Random(seed)
         m = mats()
         mb = lp.MeshBuilder("TreePine%d" % seed)
         h = rng.uniform(8.5, 11.0)
-        mb.frustum((0, 0, -0.3), (0, 0, h * 0.5), 0.32, 0.22, m["Bark"], sides=6)
-        tiers = 4
+        mb.tube([((0, 0, -0.3), 0.36), ((0, 0, 0.4), 0.27), ((0, 0, h * 0.85), 0.1)], m["Bark"], sides=7)
+        tiers = 6
+        n = 14
         for i in range(tiers):
-            base = 1.6 + i * (h - 2.4) / tiers
-            radius = 2.4 * (1 - i / (tiers + 0.6))
-            mb.frustum((0, 0, base), (0, 0, base + 3.2 - i * 0.35), radius, 0.05, m["Pine"] if i % 2 == 0 else m["PineDark"], sides=7, twist=rng.uniform(0, 1))
+            f = i / (tiers - 1)
+            base = 1.5 + f * (h - 3.6)
+            radius = 2.5 * (1 - f * 0.78) * rng.uniform(0.92, 1.05)
+            height = 2.4 - f * 0.9
+            twist = rng.uniform(0, 1)
+            top = [(0, 0, base + height)]
+            mid = [(math.cos(2 * math.pi * k / n + twist) * radius * 0.55, math.sin(2 * math.pi * k / n + twist) * radius * 0.55,
+                    base + height * 0.42) for k in range(n)]
+            rim = []
+            for k in range(n):
+                a = 2 * math.pi * k / n + twist
+                r = radius * (1.0 if k % 2 == 0 else 0.78) * rng.uniform(0.95, 1.05)
+                rim.append((math.cos(a) * r, math.sin(a) * r, base - (0.28 if k % 2 == 0 else 0.0) * (1 - f * 0.5)))
+            inside = lambda q, base=base: (0, 0, base + 0.3)
+            mb.grid([top, mid, rim], m["Pine"] if i % 2 else m["PineLight"], None, inside, closed=True)
+            mb.grid([rim, [(0, 0, base + 0.25)]], m["PineDark"], None, lambda q, base=base: (0, 0, base + 1.0), closed=True)
+        mb.tube([((0, 0, h - 0.4), 0.18), ((0, 0, h + 0.9), 0.01)], m["PineLight"], sides=6)
         return mb.finish()
     return build
 
@@ -89,13 +131,23 @@ def tree_dead():
 
 
 def bush(seed):
+    """A round bush of leafy clumps: dark at the bottom, lighter tops, a few blossoms or berries."""
     def build():
         rng = random.Random(seed)
         m = mats()
         mb = lp.MeshBuilder("Bush%d" % seed)
-        for i in range(3):
-            blob(mb, (rng.uniform(-0.5, 0.5), rng.uniform(-0.5, 0.5), 0.5 + rng.uniform(0, 0.3)), rng.uniform(0.6, 0.9),
-                 [m["Leaves"], m["LeavesDark"], m["LeavesLight"]][i], rng, squash=0.8)
+        blob(mb, (0, 0, 0.45), 0.95, m["LeavesDark"], rng, points=20, squash=0.65)
+        for i in range(4):
+            a = 2 * math.pi * i / 4 + rng.uniform(0, 0.8)
+            d = rng.uniform(0.35, 0.55)
+            blob(mb, (math.cos(a) * d, math.sin(a) * d, 0.55 + rng.uniform(0, 0.15)), rng.uniform(0.5, 0.65), m["Leaves"], rng, points=16, squash=0.8)
+        blob(mb, (rng.uniform(-0.15, 0.15), rng.uniform(-0.15, 0.15), 0.95), 0.5, m["LeavesLight"], rng, points=14, squash=0.75)
+        dots = m["MushroomCap"] if seed % 2 else m["Blossom"]
+        for _ in range(6):
+            a = rng.uniform(0, 2 * math.pi)
+            z = rng.uniform(0.55, 1.05)
+            r = 0.95 * math.sqrt(max(0.0, 1 - ((z - 0.55) / 0.65) ** 2)) + 0.02
+            mb.sphere((math.cos(a) * r * 0.85, math.sin(a) * r * 0.85, z), 0.055, dots, segments=5, rings=3)
         return mb.finish()
     return build
 
