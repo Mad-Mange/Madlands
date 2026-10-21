@@ -172,27 +172,68 @@ def frog_skeleton():
 
 
 def frog_body():
+    """
+    A fat swamp frog: a squat warty body with a pale throat and belly, a wide mouth, bulging eyes on top,
+    muscled hind legs folded at its sides, and splayed webbed toes.
+    """
     skin = lp.material("Skin", "#5b8a3a")
     belly = lp.material("Belly", "#cfc47e")
     spots = lp.material("Spots", "#3d6127")
     eyes = lp.material("Eyes", "#e6d36a")
     pupil = lp.material("Pupil", "#151515")
+    rng = random.Random(8)
     mb = lp.MeshBuilder("FrogBody")
-    mb.sphere((0, 0.02, 0.3), (0.3, 0.38, 0.2), skin, "Body", segments=8, rings=5)
-    mb.sphere((0, 0.0, 0.2), (0.26, 0.32, 0.1), belly, "Body", segments=8, rings=4)
-    for x, y in ((0.12, 0.1), (-0.1, 0.18), (0.02, -0.02)):
-        mb.box((x, y, 0.48), (0.08, 0.08, 0.04), spots, "Body")
-    mb.sphere((0, -0.26, 0.36), (0.25, 0.18, 0.12), skin, "Head", segments=8, rings=4)
-    for s in (1, -1):
-        mb.sphere((s * 0.13, -0.24, 0.47), 0.075, eyes, "Head", segments=6, rings=4)
-        mb.box((s * 0.15, -0.31, 0.49), (0.03, 0.02, 0.05), pupil, "Head")
-    mb.sphere((0, -0.27, 0.27), (0.21, 0.14, 0.05), belly, "Jaw", segments=8, rings=3)
-    for side, s in (("L", 1), ("R", -1)):
-        mb.frustum((s * 0.18, -0.12, 0.26), (s * 0.24, -0.2, 0.05), 0.05, 0.035, skin, "FrontLeg." + side, sides=5)
-        mb.box((s * 0.25, -0.24, 0.02), (0.1, 0.1, 0.03), skin, "FrontLeg." + side)
-        mb.frustum((s * 0.2, 0.12, 0.24), (s * 0.34, -0.04, 0.18), 0.09, 0.06, skin, "BackThigh." + side, sides=5)
-        mb.frustum((s * 0.34, -0.04, 0.18), (s * 0.31, 0.2, 0.08), 0.055, 0.04, skin, "BackShin." + side, sides=5)
-        mb.box((s * 0.34, 0.08, 0.025), (0.12, 0.24, 0.035), skin, "BackFoot." + side)
+    # Body: a lumpy hull, heavier at the back, the belly a flat pale hull underneath.
+    body = []
+    for z, rx, ry, y0 in ((0.12, 0.24, 0.3, 0.04), (0.22, 0.32, 0.38, 0.03), (0.34, 0.3, 0.34, 0.04), (0.44, 0.2, 0.24, 0.06), (0.49, 0.1, 0.12, 0.08)):
+        for k in range(10):
+            t = 2 * math.pi * k / 10
+            body.append((math.cos(t) * rx, y0 + math.sin(t) * ry * (1.12 if math.sin(t) > 0 else 1.0), z))
+    mb.hull(body, skin, "Body")
+    mb.hull([(math.cos(t) * 0.25, 0.04 + math.sin(t) * 0.31, z) for t in (2 * math.pi * k / 10 for k in range(10)) for z in (0.1, 0.16)],
+            belly, "Body")
+    # Warts and dark spots on the back.
+    for _ in range(12):
+        t = rng.uniform(0, 2 * math.pi)
+        r = rng.uniform(0.05, 0.24)
+        x, y = math.cos(t) * r, 0.05 + math.sin(t) * r * 1.2
+        z = 0.48 - (r / 0.3) ** 2 * 0.2
+        mb.sphere((x, y, z), rng.uniform(0.025, 0.045), spots if rng.random() < 0.6 else skin, "Body", segments=5, rings=3)
+    # Head: a wide flat skull with a broad mouth line, a pale throat on the jaw, bulging eyes.
+    head = [(sx * x, y, z) for sx in (1, -1) for x, y, z in
+            ((0.24, -0.1, 0.28), (0.25, -0.14, 0.4), (0.18, -0.34, 0.33), (0.1, -0.42, 0.3), (0.0, -0.44, 0.31), (0.12, -0.14, 0.46),
+             (0.2, -0.3, 0.27), (0.08, -0.4, 0.27))]
+    mb.hull(head, skin, "Head")
+    mb.hull([(sx * x, y, z) for sx in (1, -1) for x, y, z in
+             ((0.23, -0.12, 0.26), (0.19, -0.3, 0.26), (0.08, -0.41, 0.26), (0.0, -0.43, 0.26), (0.2, -0.12, 0.17), (0.14, -0.28, 0.17),
+              (0.05, -0.36, 0.19))], belly, "Jaw")
+    mouth = [(0.245, -0.12, 0.272), (0.2, -0.3, 0.272), (0.09, -0.415, 0.272), (0.0, -0.44, 0.272), (-0.09, -0.415, 0.272), (-0.2, -0.3, 0.272),
+             (-0.245, -0.12, 0.272)]
+    mb.tube([(pt, 0.008) for pt in mouth], pupil, "Head", sides=4)
+    for sx in (1, -1):
+        mb.sphere((sx * 0.14, -0.2, 0.47), 0.085, skin, "Head", segments=7, rings=4)
+        mb.sphere((sx * 0.15, -0.22, 0.49), 0.07, eyes, "Head", segments=7, rings=5)
+        mb.box((sx * 0.155, -0.29, 0.5), (0.04, 0.012, 0.022), pupil, "Head")
+        mb.sphere((sx * 0.05, -0.43, 0.33), 0.012, pupil, "Head", segments=4, rings=3)
+    # Legs.
+    for side, sx in (("L", 1), ("R", -1)):
+        mb.tube([((sx * 0.18, -0.12, 0.26), 0.055), ((sx * 0.22, -0.17, 0.14), 0.045), ((sx * 0.24, -0.2, 0.05), 0.035)], skin, "FrontLeg." + side, sides=6)
+        for k in range(3):
+            a = math.radians(-40 + 40 * k)
+            tip = (sx * 0.24 + sx * math.sin(a) * 0.1, -0.2 - math.cos(a) * 0.1, 0.012)
+            mb.tube([((sx * 0.24, -0.2, 0.03), 0.02), (tip, 0.012)], skin, "FrontLeg." + side, sides=4)
+            mb.sphere(tip, 0.018, belly, "FrontLeg." + side, segments=4, rings=3)
+        mb.tube([((sx * 0.18, 0.14, 0.26), 0.11), ((sx * 0.28, 0.04, 0.22), 0.1), ((sx * 0.34, -0.04, 0.18), 0.065)], skin, "BackThigh." + side, sides=7)
+        mb.tube([((sx * 0.34, -0.04, 0.18), 0.06), ((sx * 0.33, 0.08, 0.13), 0.05), ((sx * 0.31, 0.2, 0.08), 0.035)], skin, "BackShin." + side, sides=6)
+        # A long webbed foot with four toes.
+        heel = (sx * 0.31, 0.2, 0.05)
+        toes = []
+        for k in range(4):
+            a = math.radians(-30 + 20 * k)
+            toes.append((sx * 0.33 + sx * math.sin(a) * 0.13, 0.0 - math.cos(a) * 0.08, 0.015))
+        mb.add([heel] + toes, [(0, 1, 2), (0, 2, 3), (0, 3, 4)], skin, "BackFoot." + side, double_sided=True)
+        for tip in toes:
+            mb.sphere(tip, 0.02, belly, "BackFoot." + side, segments=4, rings=3)
     return mb.finish()
 
 
