@@ -204,28 +204,55 @@ def rock(seed, size):
 
 
 def reeds():
+    """A clump of reeds: leaning stems, a few long blade-like leaves, and cattail heads on some of them."""
     rng = random.Random(3)
     m = mats()
     mb = lp.MeshBuilder("Reeds")
-    for _ in range(14):
-        x, y = rng.uniform(-0.8, 0.8), rng.uniform(-0.8, 0.8)
+    for _ in range(16):
+        x, y = rng.uniform(-0.7, 0.7), rng.uniform(-0.7, 0.7)
         h = rng.uniform(1.2, 2.0)
-        lean = (rng.uniform(-0.2, 0.2), rng.uniform(-0.2, 0.2))
-        mb.frustum((x, y, -0.1), (x + lean[0], y + lean[1], h), 0.025, 0.01, m["Reed"], sides=4)
+        lean = (rng.uniform(-0.25, 0.25), rng.uniform(-0.25, 0.25))
+        mid = (x + lean[0] * 0.35, y + lean[1] * 0.35, h * 0.5)
+        top = (x + lean[0], y + lean[1], h)
+        mb.tube([((x, y, -0.1), 0.022), (mid, 0.018), (top, 0.006)], m["Reed"], sides=4)
         if rng.random() < 0.5:
-            mb.frustum((x + lean[0] * 0.8, y + lean[1] * 0.8, h * 0.8), (x + lean[0] * 0.95, y + lean[1] * 0.95, h * 0.95), 0.045, 0.045, m["ReedTop"], sides=5)
+            c0 = tuple(a + (b - a) * 0.78 for a, b in zip((x, y, 0), top))
+            c1 = tuple(a + (b - a) * 0.93 for a, b in zip((x, y, 0), top))
+            mb.tube([(c0, 0.035), (c1, 0.035)], m["ReedTop"], sides=6)
+    for _ in range(7):
+        x, y = rng.uniform(-0.5, 0.5), rng.uniform(-0.5, 0.5)
+        a = rng.uniform(0, 2 * math.pi)
+        d = (math.cos(a), math.sin(a))
+        h = rng.uniform(0.6, 1.1)
+        tip = (x + d[0] * h * 0.6, y + d[1] * h * 0.6, h)
+        mid = (x + d[0] * h * 0.15, y + d[1] * h * 0.15, h * 0.65)
+        w = 0.035
+        mb.add([(x - d[1] * w, y + d[0] * w, 0.0), (x + d[1] * w, y - d[0] * w, 0.0), (mid[0] + d[1] * w * 0.8, mid[1] - d[0] * w * 0.8, mid[2]),
+                tip, (mid[0] - d[1] * w * 0.8, mid[1] + d[0] * w * 0.8, mid[2])], [(0, 1, 2, 3, 4)], m["Leaves"], double_sided=True)
     return mb.finish()
 
 
 def mushrooms():
+    """A cluster of red-capped mushrooms: domed caps with pale spots and gills underneath, curved stems with a ring."""
     rng = random.Random(5)
     m = mats()
     mb = lp.MeshBuilder("Mushrooms")
-    for _ in range(5):
-        x, y = rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4)
-        h = rng.uniform(0.15, 0.4)
-        mb.frustum((x, y, 0), (x, y, h), 0.04, 0.035, m["MushroomStem"], sides=5)
-        mb.frustum((x, y, h - 0.02), (x, y, h + 0.1), h * 0.45, 0.02, m["MushroomCap"], sides=6)
+    for _ in range(6):
+        x, y = rng.uniform(-0.35, 0.35), rng.uniform(-0.35, 0.35)
+        h = rng.uniform(0.12, 0.38)
+        r = h * rng.uniform(0.4, 0.55)
+        lean = (rng.uniform(-0.04, 0.04), rng.uniform(-0.04, 0.04))
+        top = (x + lean[0], y + lean[1], h)
+        mb.tube([((x, y, 0), r * 0.25), ((x + lean[0] * 0.5, y + lean[1] * 0.5, h * 0.5), r * 0.2), (top, r * 0.18)], m["MushroomStem"], sides=6)
+        mb.frustum((top[0], top[1], h * 0.62), (top[0], top[1], h * 0.66), r * 0.3, r * 0.3, m["MushroomStem"], sides=6)
+        cap = [[(top[0] + math.cos(t) * r * f, top[1] + math.sin(t) * r * f, h + dz) for t in (2 * math.pi * k / 9 for k in range(9))]
+               for f, dz in ((1.0, -0.01), (0.85, r * 0.35), (0.5, r * 0.6))]
+        cap.append([(top[0], top[1], h + r * 0.7)])
+        mb.grid(cap, m["MushroomCap"], None, lambda q, t=top: (t[0], t[1], h - 0.05), closed=True)
+        mb.grid([cap[0], [(top[0], top[1], h - r * 0.15)]], m["MushroomStem"], None, lambda q, t=top: (t[0], t[1], h + 0.2), closed=True)
+        for k in range(3):
+            a = rng.uniform(0, 2 * math.pi)
+            mb.sphere((top[0] + math.cos(a) * r * 0.55, top[1] + math.sin(a) * r * 0.55, h + r * 0.42), r * 0.12, m["MushroomStem"], segments=4, rings=3)
     return mb.finish()
 
 
@@ -491,12 +518,21 @@ def signpost():
 
 
 def fence():
+    """A split-rail fence: two leaning posts, rough rails resting in notches, one rail sagging, a tuft of grass at a post."""
     m = mats()
+    rng = random.Random(16)
     mb = lp.MeshBuilder("Fence")
     for x in (-1.5, 1.5):
-        mb.box((x, 0, 0.5), (0.14, 0.14, 1.3), m["Wood"])
-    for z in (0.45, 0.9):
-        mb.box((0, 0, z), (3.1, 0.07, 0.12), m["Plank"])
+        lean = rng.uniform(-0.04, 0.04)
+        mb.tube([((x, 0, -0.2), 0.08), ((x + lean, 0, 1.15), 0.07)], m["WoodDark"], sides=6)
+        mb.frustum((x + lean, 0, 1.15), (x + lean, 0, 1.22), 0.07, 0.04, m["WoodDark"], sides=6)
+        for k in range(4):
+            a = 2 * math.pi * k / 4 + 0.3
+            mb.tube([((x + math.cos(a) * 0.08, math.sin(a) * 0.08, 0.0), 0.012), ((x + math.cos(a) * 0.15, math.sin(a) * 0.15, 0.25), 0.003)],
+                    m["Leaves"], sides=3)
+    for z, sag in ((0.45, 0.0), (0.92, 0.06)):
+        path = [(-1.65, 0.07, z), (0.0, 0.07 + rng.uniform(-0.01, 0.01), z - sag), (1.65, 0.07, z)]
+        mb.tube([(q, (0.05, 0.04)) for q in path], m["Plank"] if z < 0.5 else m["Wood"], sides=5)
     return mb.finish()
 
 
@@ -598,13 +634,27 @@ def campfire():
     return mb.finish()
 
 def banner_pole():
+    """A banner pole: a post with a finial, a crossbar from which a long swallow-tailed banner hangs with a sigil and a fringe."""
     m = mats()
     mb = lp.MeshBuilder("BannerPole")
-    mb.frustum((0, 0, -0.3), (0, 0, 5.0), 0.09, 0.07, m["Wood"], sides=6)
-    mb.frustum((0, 0, 4.7), (0.0, -1.2, 4.7), 0.04, 0.04, m["WoodDark"], sides=5)
-    mb.add([(0, -0.1, 4.65), (0, -1.15, 4.65), (0, -1.15, 3.0), (0, -0.62, 3.3), (0, -0.1, 3.0)],
-           [(0, 1, 2, 3, 4)], m["Banner"], double_sided=True)
-    mb.sphere((0, 0, 5.05), 0.1, m["Metal"], segments=6, rings=4)
+    gold = lp.material("GoldMetal", "#d6a740")
+    mb.tube([((0, 0, -0.3), 0.1), ((0, 0, 5.0), 0.07)], m["WoodDark"], sides=7)
+    mb.frustum((0, 0, 5.0), (0, 0, 5.08), 0.09, 0.09, gold, sides=7)
+    mb.hull([(math.cos(t) * 0.05, math.sin(t) * 0.05, 5.08) for t in (2 * math.pi * k / 6 for k in range(6))] + [(0, 0, 5.4)], gold)
+    mb.tube([((0, 0.02, 4.75), 0.04), ((0, -1.25, 4.75), 0.04)], m["WoodDark"], sides=5)
+    for y in (-1.25,):
+        mb.sphere((0, y, 4.75), 0.06, gold, segments=6, rings=4)
+    # The banner: a cloth with a slight wave, cut into a swallow tail at the bottom.
+    rows = []
+    for k, z in enumerate((4.7, 4.1, 3.5, 2.95)):
+        wave = 0.05 * math.sin(k * 1.3)
+        rows.append([(wave + 0.02 * math.sin(y * 4), y, z) for y in (-0.1, -0.45, -0.8, -1.15)])
+    rows.append([(0.03, -0.1, 2.5), (0.0, -0.45, 2.85), (0.0, -0.8, 2.85), (0.03, -1.15, 2.5)])
+    mb.grid(rows, m["Banner"], None, lambda q: (q[0] - 1, q[1], q[2]))
+    mb.grid(rows, m["Banner"], None, lambda q: (q[0] + 1, q[1], q[2]))
+    for side in (1, -1):
+        mb.hull([(side * 0.03, y, z) for y, z in ((-0.625, 4.35), (-0.4, 3.95), (-0.625, 3.5), (-0.85, 3.95))], gold)
+    mb.tube([((0.0, -0.08, 4.7), 0.02), ((0.0, -1.17, 4.7), 0.02)], gold, sides=4)
     return mb.finish()
 
 
