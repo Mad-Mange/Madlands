@@ -99,7 +99,7 @@ namespace Madlands.Client
                 return;
             }
             if (HidesHair.Contains(piece)) model.SetHidden("Hair", true);
-            if (piece == "RobeSkirt") model.SetHidden("Legs", true);
+            if (piece == "RobeSkirt" || piece == "Rags") model.SetHidden("Legs", true);
         }
 
         private static void Tint(DisplayModel model, uint display, string region)

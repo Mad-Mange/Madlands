@@ -153,6 +153,11 @@ namespace Madlands.Client.Editor
                     else if ((stored[i].position - t.localPosition).magnitude > 0.001f)
                         changed = $"{t.name} moved from {stored[i].position:F3} to {t.localPosition:F3}";
                 }
+                // A new model's first import has no skeleton to map with: Unity then guesses the mapping itself
+                // (without the chest and shoulders).
+                var mapped = importer.humanDescription.human ?? new HumanBone[0];
+                if (changed == null && HumanBones.Any(name => !mapped.Any(b => b.humanName == name && b.boneName == name)))
+                    changed = "not every bone is mapped by name";
                 if (changed == null) continue;
 
                 Debug.Log($"[ArtImporter] {path}: the skeleton changed ({changed}), measuring the avatar again");

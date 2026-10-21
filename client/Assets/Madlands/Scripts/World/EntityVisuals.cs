@@ -449,19 +449,19 @@ namespace Madlands.Client
                 case MirelingDisplay:
                 case MirelingOracleDisplay:
                 {
-                    // Fish-folk: a hunched Korrin body in teal scales, a fin crest and big glowing eyes.
-                    shape = Humanoid(parent, "Korrin", out model);
+                    // Fish-folk in teal scales with glowing eyes and fins (their fins take the hair color); the
+                    // oracles wear a robe and carry a light on the chest.
+                    shape = Humanoid(parent, "Mireling", out model);
                     if (model == null) return shape;
-                    var scales = displayId == MirelingOracleDisplay ? "#5a7a9a" : "#4f8a7a";
-                    Dress(model, chest: scales, arms: scales, legs: "#6a9a80", hair: "#2f5a4a", waist: displayId == MirelingOracleDisplay ? "#7a4a8a" : "#5a6a30",
+                    bool oracle = displayId == MirelingOracleDisplay;
+                    var scales = oracle ? "#5a7a9a" : "#4f8a7a";
+                    Dress(model, chest: scales, arms: scales, legs: "#6a9a80", hair: oracle ? "#3a4a6a" : "#2f5a4a", waist: oracle ? "#7a4a8a" : "#5a6a30",
                         skin: scales, hands: scales, feet: "#3f6a5a");
-                    foreach (var region in new[] { "Hair", "Beard", "BeardMetal" })
-                        model.SetHidden(region, true);
-                    model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.48f, -0.02f), new Vector3(0.03f, 0.2f, 0.3f), Hex("#2f5a4a"));
-                    foreach (var x in new[] { -0.06f, 0.06f })
-                        model.Attach("Head", PrimitiveType.Sphere, new Vector3(x, 1.37f, 0.12f), Vector3.one * 0.07f, Hex("#f0e070"), glow: true);
-                    if (displayId == MirelingOracleDisplay)
-                        model.Attach("Chest", PrimitiveType.Sphere, new Vector3(0f, 1.0f, 0.17f), Vector3.one * 0.08f, Hex("#c8f0ff"), glow: true);
+                    if (oracle)
+                    {
+                        Wear(model, "#4a3a6a", "RobeSkirt", "RobeCuffs");
+                        model.Attach("Chest", PrimitiveType.Sphere, new Vector3(0f, 0.98f, 0.19f), Vector3.one * 0.08f, Hex("#c8f0ff"), glow: true);
+                    }
                     return shape;
                 }
                 case DrownedDisplay:
@@ -469,6 +469,7 @@ namespace Madlands.Client
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#3a4038", arms: "#8a9a8a", legs: "#2f352f", hair: "#2a3a2a", skin: "#8a9a8a", hands: "#8a9a8a", feet: "#2a2a2a");
+                    Wear(model, "#4a4a3a", "Rags");
                     foreach (var x in new[] { -0.044f, 0.044f })
                         model.Attach("Head", PrimitiveType.Cube, new Vector3(x, 1.706f, 0.121f), new Vector3(0.036f, 0.02f, 0.01f), Hex("#7ff2ff"), glow: true);
                     return shape;

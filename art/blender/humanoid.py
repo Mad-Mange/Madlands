@@ -17,6 +17,8 @@ tapering torso, chunky fists and boots, a strong brow and a big nose.
 
 import math
 
+from mathutils import Vector
+
 import lowpoly as lp
 
 # Joint heights and widths in meters. Z up, the model faces -Y, +X is its left.
@@ -62,6 +64,27 @@ RACES = {
                     LegsLower="#5e4a3a",
                     Feet="#3e2c20", FeetTrim="#2a1e16", Beard="#a4512a", Hair="#a4512a"),
     ),
+    # The fish-folk of the Reedfen: a broad fish head with bulging, glowing eyes and a fin crest, long arms,
+    # webbed bare feet, fins down the back and on the forearms. Their fins use the Hair material (tinted with it).
+    "Mireling": dict(
+        ankle=0.07, knee=0.34, hip=0.64, spine=0.76, chest=0.92, neck=1.1, head=1.15, top=1.42,
+        leg_x=0.12, shoulder_z=1.06, clavicle_x=0.055, shoulder_x=0.25, elbow_x=0.51, wrist_x=0.77, hand=0.15,
+        foot=(0.19, 0.3, 0.07),
+        pelvis=[(0.54, 0.26, 0.2), (0.61, 0.37, 0.27), (0.7, 0.39, 0.29), (0.77, 0.38, 0.29)],
+        belly=[(0.72, 0.39, 0.29), (0.82, 0.42, 0.33, 1.2), (0.94, 0.41, 0.31)],
+        torso=[(0.9, 0.39, 0.3), (0.98, 0.41, 0.31, 1.1), (1.04, 0.38, 0.29), (1.09, 0.3, 0.24), (1.14, 0.19, 0.17)],
+        collar=[(1.1, 0.21, 0.19), (1.15, 0.17, 0.15)],
+        tunic=[(0.58, 0.42, 0.32), (0.71, 0.4, 0.3)],
+        belt=[(0.705, 0.41, 0.31), (0.765, 0.4, 0.305)],
+        buckle=(0.06, 0.05),
+        neck_r=0.08, deltoid=0.078, upper_arm=(0.072, 0.078, 0.06), forearm=(0.062, 0.068, 0.054),
+        thigh=(0.11, 0.1, 0.076), shin=(0.075, 0.08, 0.06), boot=(0.08, 0.09), boot_top=0.2,
+        head_shape=dict(w=1.3, d=1.25, h=1.15, nose=1.0, brow=1.0, ear=1.0, jaw=1.0),
+        hair="none", beard=False, head_style="fish", barefoot=True, fins=True, gear=("RobeSkirt", "RobeCuffs"),
+        colors=dict(Skin="#4f8a7a", Eyes="#141814", EyeGlow="#f0e070", Belly="#b8c99a", Chest="#4f8a7a", ChestTrim="#3a6a5c",
+                    Arms="#4f8a7a", ArmsTrim="#3a6a5c", Hands="#4f8a7a", Waist="#5a6a30", BuckleMetal="#c9c2a0",
+                    Legs="#6a9a80", LegsLower="#4f8a7a", Feet="#3f6a5a", FeetTrim="#2f5048", Hair="#2f5a4a"),
+    ),
 }
 
 SIDES = (("Left", 1.0), ("Right", -1.0))
@@ -90,6 +113,18 @@ BEARD = [(0.112, 0.0, 0.15), (0.112, 0.035, 0.1), (0.104, -0.07, 0.1), (0.1, -0.
          (0.05, -0.13, 0.06), (0, -0.15, 0.0), (0.065, -0.145, -0.02), (0.085, -0.135, -0.1), (0, -0.18, -0.12),
          (0.05, -0.18, -0.22), (0, -0.19, -0.26), (0.06, -0.02, -0.03), (0.0, -0.07, -0.12), (0.03, -0.12, -0.22)]
 MUSTACHE = [(0.075, -0.13, 0.075), (0.02, -0.148, 0.092), (0, -0.152, 0.09), (0.095, -0.13, 0.03), (0.03, -0.142, 0.066)]
+# The fish head (head_style "fish"): a broad skull drawn into a snout with a wide mouth, a pale lower jaw.
+FISH_SKULL = [(0, 0.02, 0.2), (0.085, -0.02, 0.19), (0.1, 0.07, 0.17), (0, 0.13, 0.13), (0.08, 0.11, 0.06),
+              (0, 0.09, -0.01), (0.125, 0.0, 0.11), (0.12, 0.03, 0.03), (0, -0.1, 0.17), (0.075, -0.12, 0.145),
+              (0, -0.165, 0.1), (0.06, -0.16, 0.085), (0, -0.185, 0.052), (0.1, -0.13, 0.048), (0.115, -0.07, 0.05)]
+FISH_JAW = [(0, -0.178, 0.036), (0.098, -0.128, 0.036), (0.112, -0.06, 0.034), (0, -0.16, -0.008), (0.07, -0.1, -0.04),
+            (0, -0.07, -0.058), (0.08, 0.0, -0.025)]
+FISH_MOUTH = [(0.1, -0.128, 0.042), (0.06, -0.162, 0.042), (0.0, -0.181, 0.043)]
+# The crest from the brow over the crown to the nape: (base point, spine length), between spines a lower notch.
+FISH_CREST = [((0, -0.09, 0.172), 0.06), ((0, -0.04, 0.198), 0.12), ((0, 0.02, 0.205), 0.09), ((0, 0.07, 0.186), 0.13),
+              ((0, 0.11, 0.142), 0.085), ((0, 0.13, 0.082), 0.1), ((0, 0.11, 0.02), 0.05)]
+FISH_GILLS = [((0.112, -0.045, 0.085), 0.05), ((0.12, -0.005, 0.065), 0.085), ((0.118, 0.035, 0.035), 0.06),
+              ((0.108, 0.07, 0.005), 0.075), ((0.09, 0.09, -0.02), 0.04)]
 # A loose fist around a handle along Y (the weapon grip), the left hand, from the wrist outward (+X).
 FIST = [(0, 0.032, 0.024), (0, -0.032, 0.024), (0, 0.032, -0.024), (0, -0.032, -0.024), (0.06, -0.044, 0.03),
         (0.06, 0.04, 0.028), (0.095, -0.042, 0.022), (0.095, 0.038, 0.02), (0.105, -0.04, -0.01), (0.105, 0.036, -0.01),
@@ -176,6 +211,9 @@ def _head(mb, r, m):
 
     mb.tube([((0, 0.006, r["neck"] - 0.04), r["neck_r"]), ((0, 0.012, r["head"] + 0.06), r["neck_r"] * 0.9)],
             m["Skin"], "Neck", sides=7)
+    if r.get("head_style") == "fish":
+        _fish_head(mb, r, m, at)
+        return
     points = [at(*p) for p in lp.mirrored(SKULL)] + [at(x * s["jaw"], y, z) for x, y, z in lp.mirrored(JAW)]
     mb.hull(points, m["Skin"], "Head")
     nose, root = s["nose"], (0, -0.12, 0.15)
@@ -200,6 +238,66 @@ def _head(mb, r, m):
             ring_z = bottom[2] + 0.03
             mb.tube([((bottom[0], bottom[1], ring_z + 0.018), 0.024), ((bottom[0], bottom[1], ring_z - 0.018), 0.024)],
                     m["BeardMetal"], "Head", sides=6)
+
+
+def fin(mb, spines, center, mat, bone, sweep=(0, 0, 0), notch=0.45):
+    """
+    A spiny fin (both sides): `spines` are (base, length) along its root; each spine points away from
+    `center`, swept by `sweep`, with a notch between neighbours (`notch` of the shorter one's length).
+    """
+    def tip(base, length):
+        d = (Vector(base) - Vector(center)).normalized() + Vector(sweep)
+        return Vector(base) + d.normalized() * length
+
+    roots, edge = [], []
+    for k, (base, length) in enumerate(spines):
+        roots.append(Vector(base))
+        edge.append(tip(base, length))
+        if k + 1 < len(spines):
+            nb, nl = spines[k + 1]
+            mid = (Vector(base) + Vector(nb)) / 2
+            roots.append(mid)
+            edge.append(tip(mid, min(length, nl) * notch))
+    n = len(roots)
+    faces = [(i, i + 1, n + i + 1, n + i) for i in range(n - 1)]
+    mb.add(roots + edge, faces, mat, bone, double_sided=True)
+
+
+def _fish_head(mb, r, m, at):
+    """A mireling's head: snout and wide mouth, a pale jaw, bulging glowing eyes, a crest and gill fins."""
+    mb.hull([at(*p) for p in lp.mirrored(FISH_SKULL)], m["Skin"], "Head")
+    mb.hull([at(*p) for p in lp.mirrored(FISH_JAW)], m["Belly"], "Head")
+    mouth = [at(*p) for p in FISH_MOUTH] + [at(-x, y, z) for x, y, z in reversed(FISH_MOUTH[:-1])]
+    mb.tube([(p, 0.007) for p in mouth], m["Eyes"], "Head", sides=4)
+    w = r["head_shape"]["w"]
+    for side in (1, -1):
+        eye = at(side * 0.09, -0.105, 0.135)
+        mb.sphere(eye, 0.038 * w, m["EyeGlow"], "Head", segments=8, rings=5)
+        mb.box(Vector(eye) + Vector((side * 0.012, -0.033 * w, 0)), (0.009, 0.006, 0.034), m["Eyes"], "Head")
+        mb.hull([at(side * x, y, z) for x, y, z in ((0.05, -0.125, 0.165), (0.125, -0.1, 0.16), (0.11, -0.08, 0.185),
+                                                    (0.06, -0.11, 0.185), (0.09, -0.13, 0.17))], m["Skin"], "Head")
+        fin(mb, [(at(side * x, y, z), l) for (x, y, z), l in FISH_GILLS], at(0, 0.0, 0.06), m["Hair"], "Head", sweep=(0, 0.9, 0.1))
+    fin(mb, [(at(*p), l) for p, l in FISH_CREST], at(0, 0.0, 0.07), m["Hair"], "Head", sweep=(0, 0.5, 0))
+
+
+def _body_fins(mb, r, m):
+    """A mireling's fins down the back and along the back of the forearms (material Hair)."""
+    z = r["shoulder_z"]
+    spines = []
+    for k in range(7):
+        zz = z + 0.02 - (z - r["spine"]) * k / 6
+        back = extent(r, zz)[2]
+        spines.append(((0, back - 0.01, zz), 0.1 - 0.008 * k if k % 2 == 0 else 0.07 - 0.005 * k))
+
+    def weigh(p):
+        t = max(0.0, min(1.0, (p.z - r["chest"] + 0.03) / 0.06))
+        return {"Chest": t, "Spine": 1.0 - t}
+
+    fin(mb, spines, (0, -0.2, r["chest"]), m["Hair"], weigh, sweep=(0, 0.2, -0.5))
+    ex, wx, fa = r["elbow_x"], r["wrist_x"], r["forearm"]
+    for side, s in SIDES:
+        spines = [((s * (ex + (wx - ex) * f), fa[1] * 0.8, z + 0.01), l) for f, l in ((0.1, 0.05), (0.35, 0.08), (0.6, 0.06), (0.82, 0.04))]
+        fin(mb, spines, (s * (ex + wx) / 2, 0, z), m["Hair"], side + "LowerArm", sweep=(-s * 0.6, 0, 0))
 
 
 def head_at(r):
@@ -239,6 +337,8 @@ def _hair(mb, r, m):
     def at(x, y, z):
         return (x * w, y * d, r["head"] + z * h)
 
+    if r["hair"] == "none":
+        return
     mb.hull([at(*p) for p in lp.mirrored(HAIR_CAP + HAIRLINE[r["hair"]])], m["Hair"], "Head")
     if r["hair"] == "swept":
         for root, tip, width in SWEPT_LOCKS:
@@ -261,11 +361,16 @@ def _arm(mb, r, m, side, s):
     mb.sphere((s * (sx + dl * 0.15), 0, z + 0.004), (dl * 1.15, dl * 0.95, dl * 0.85), m["Chest"], upper, segments=8, rings=6)
     mb.tube([((s * (sx + 0.01), 0, z), ua[0]), ((s * (sx + (ex - sx) * 0.45), 0, z), (ua[1] * 0.95, ua[1])),
              ((s * (ex - 0.005), 0, z), ua[2])], m["Chest"], upper, sides=7)
-    mb.tube([((s * (ex - 0.045), 0, z), ua[2] * 1.12), ((s * (ex + 0.002), 0, z), ua[2] * 1.12)], m["ChestTrim"], upper, sides=7)
-    mb.tube([((s * (ex - 0.02), 0, z), fa[0]), ((s * (ex + (wx - ex) * 0.3), 0, z), (fa[1], fa[1] * 0.95)),
-             ((s * (wx - 0.07), 0, z), fa[2])], m["Arms"], lower, sides=7)
-    mb.tube([((s * (wx - 0.09), 0, z), fa[2] * 1.06), ((s * (wx - 0.005), 0, z), fa[2] * 1.32)], m["Arms"], lower, sides=7)
-    mb.tube([((s * (wx - 0.022), 0, z), fa[2] * 1.38), ((s * (wx + 0.004), 0, z), fa[2] * 1.38)], m["ArmsTrim"], lower, sides=7)
+    if r.get("fins"):
+        # Bare scaled arms: no cuffs or bracers.
+        mb.tube([((s * (ex - 0.02), 0, z), fa[0]), ((s * (ex + (wx - ex) * 0.3), 0, z), (fa[1], fa[1] * 0.95)),
+                 ((s * (wx + 0.005), 0, z), fa[2])], m["Arms"], lower, sides=7)
+    else:
+        mb.tube([((s * (ex - 0.045), 0, z), ua[2] * 1.12), ((s * (ex + 0.002), 0, z), ua[2] * 1.12)], m["ChestTrim"], upper, sides=7)
+        mb.tube([((s * (ex - 0.02), 0, z), fa[0]), ((s * (ex + (wx - ex) * 0.3), 0, z), (fa[1], fa[1] * 0.95)),
+                 ((s * (wx - 0.07), 0, z), fa[2])], m["Arms"], lower, sides=7)
+        mb.tube([((s * (wx - 0.09), 0, z), fa[2] * 1.06), ((s * (wx - 0.005), 0, z), fa[2] * 1.32)], m["Arms"], lower, sides=7)
+        mb.tube([((s * (wx - 0.022), 0, z), fa[2] * 1.38), ((s * (wx + 0.004), 0, z), fa[2] * 1.38)], m["ArmsTrim"], lower, sides=7)
     k = r["hand"] / 0.13
     for points in (FIST, THUMB):
         mb.hull([(s * (wx + x * k), y * k, z + zz * k) for x, y, zz in points], m["Hands"], hand)
@@ -282,6 +387,9 @@ def _leg(mb, r, m, side, s):
     mb.tube([((x, 0, hip + 0.03), (th[0], th[0] * 1.05)), ((x, 0, hip - (hip - knee) * 0.35), (th[1], th[1] * 1.06)),
              ((x, 0, knee + 0.04), (th[2], th[2] * 1.05)), ((x, 0, knee - 0.02), th[2] * 0.95)], m["Legs"], side + "UpperLeg", sides=7)
     mb.sphere((x, -th[2] * 0.6, knee), (th[2] * 0.72, th[2] * 0.5, th[2] * 0.8), m["LegsLower"], side + "LowerLeg", segments=6, rings=4)
+    if r.get("barefoot"):
+        _webbed_foot(mb, r, m, side, x)
+        return
     mb.tube([((x, 0, knee + 0.01), sh[0]), ((x, 0.012, knee - (knee - ankle) * 0.3), (sh[1], sh[1] * 1.1)),
              ((x, 0, top), sh[2])], m["LegsLower"], side + "LowerLeg", sides=7)
     mb.tube([((x, 0, top + 0.01), bt[0]), ((x, 0.004, ankle + 0.06), bt[0] * 0.94), ((x, 0, ankle - 0.03), bt[0] * 0.96)],
@@ -302,9 +410,27 @@ def _leg(mb, r, m, side, s):
         mb.hull([(x + px, py, pz) for px, py, _ in lp.mirrored(outline) for pz in (0.0, sole + 0.004)], m["FeetTrim"], bone)
 
 
+def _webbed_foot(mb, r, m, side, x):
+    """A bare shin down to a flat webbed foot with three clawed toes (Feet; claws FeetTrim)."""
+    knee, ankle, sh = r["knee"], r["ankle"], r["shin"]
+    fw, fl, fh = r["foot"]
+    mb.tube([((x, 0, knee + 0.01), sh[0]), ((x, 0.012, knee - (knee - ankle) * 0.3), (sh[1], sh[1] * 1.1)),
+             ((x, 0.01, ankle + 0.03), sh[2] * 0.85), ((x, 0.01, ankle - 0.02), sh[2] * 0.75)], m["LegsLower"], side + "LowerLeg", sides=7)
+    hw, ball = fw / 2, -fl * 0.5
+    heel = [(0.035, 0.06, 0.0), (0.035, 0.05, fh), (0.045, -0.02, fh * 1.2), (hw * 0.6, ball, 0.0), (hw * 0.55, ball, fh * 0.8)]
+    mb.hull([(x + px, py, pz) for px, py, pz in lp.mirrored(heel)], m["Feet"], side + "Foot")
+    web = [(hw * 0.6, ball, 0.0), (hw * 0.55, ball, fh * 0.8), (hw, -fl * 0.82, 0.0), (hw * 0.9, -fl * 0.8, 0.02),
+           (0, -fl * 0.92, 0.0), (0, -fl * 0.9, 0.025)]
+    mb.hull([(x + px, py, pz) for px, py, pz in lp.mirrored(web)], m["Feet"], side + "Toes")
+    for tx in (-hw * 0.85, 0.0, hw * 0.85):
+        base = (x + tx, -fl * (0.86 if tx else 0.9), 0.012)
+        mb.tube([(base, 0.014), ((base[0] + tx * 0.15, base[1] - 0.045, 0.004), 0.003)], m["FeetTrim"], side + "Toes", sides=4)
+
+
 def body(name, r):
     """The body mesh in T-pose, every part bound to one bone."""
-    mats = {k: lp.material(k, v, metallic=0.6 if "Metal" in k else 0.0, roughness=0.5 if "Metal" in k else 0.85)
+    mats = {k: lp.material(k, v, metallic=0.6 if "Metal" in k else 0.0, roughness=0.5 if "Metal" in k else 0.85,
+                           emission=2.0 if "Glow" in k else None)
             for k, v in r["colors"].items()}
     mb = lp.MeshBuilder(name)
     _torso(mb, r, mats)
@@ -313,6 +439,8 @@ def body(name, r):
         _arm(mb, r, mats, side, s)
         _leg(mb, r, mats, side, s)
     _hair(mb, r, mats)
+    if r.get("fins"):
+        _body_fins(mb, r, mats)
     return mb.finish()
 
 
@@ -324,7 +452,7 @@ def build_race(race):
     arm = lp.armature("Armature", skeleton(r))
     mesh = body(race + "Body", r)
     lp.bind(mesh, arm)
-    for piece in gear.build_all(r):
+    for piece in gear.build_all(r, r.get("gear")):
         lp.bind(piece, arm)
     return arm
 

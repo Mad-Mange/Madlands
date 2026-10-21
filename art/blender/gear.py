@@ -11,7 +11,7 @@ it back while the unit runs).
 
 Materials: "Gear" takes the item's color, "GearTrim" a darker and "GearDark" a much darker tone of it
 (linings, the inside of a hood); "GearMetal" and "GearMetalTrim" the same, metallic. Everything else
-keeps its own color: BuckleMetal (rivets, buckles, clasps), Bone, LampGlow.
+keeps its own color: BuckleMetal (rivets, buckles, clasps), Bone, LampGlow, Seaweed.
 """
 
 import math
@@ -686,10 +686,8 @@ def skirt_weights(r):
     return weigh
 
 
-def robe_skirt(r, m):
-    """A robe's flared skirt from under the belt to the shins, a band down the front and a rolled hem."""
-    mb = lp.MeshBuilder("GearRobeSkirt")
-    cols = 18
+def _skirt_rows(r, cols):
+    """A flared skirt's rings from under the belt down to the shins."""
     belt_z = r["belt"][0][0] + 0.015
     tunic_z = r["tunic"][0][0]
     hem = (r["knee"] + r["ankle"]) / 2 - 0.02
@@ -703,12 +701,46 @@ def robe_skirt(r, m):
             f = (tunic_z - zz) / (tunic_z - hem)
             half, front, back = half0 * (1.04 + 0.26 * f), -front0 * (1.05 + 0.32 * f), back0 * (1.05 + 0.38 * f)
         rows.append(arc(zz, half, front, back, 0, TAU * (cols - 1) / cols, cols, square=0.2))
+    return rows
+
+
+def robe_skirt(r, m):
+    """A robe's flared skirt from under the belt to the shins, a band down the front and a rolled hem."""
+    mb = lp.MeshBuilder("GearRobeSkirt")
+    rows = _skirt_rows(r, 18)
     weigh = skirt_weights(r)
     mb.shell(rows, 0, m["Gear"], m["GearDark"], lambda p: Vector((0, 0.0, p.z + 0.2)), weigh, closed=True)
     loop_tube(mb, rows[-1], 0.012, m["GearTrim"], weigh, sides=5)
     # The band down the front.
     band = [row[0] + Vector((0, -0.006, 0)) for row in rows]
     mb.tube([(p, (0.03, 0.005)) for p in band], m["GearTrim"], weigh, sides=4)
+    return mb.finish()
+
+
+def rags(r, m):
+    """Rotten clothes: a skirt torn into ragged strips, tatters over the shoulders, strands of weed (Seaweed)."""
+    mb = lp.MeshBuilder("GearRags")
+    cols = 20
+    rows = _skirt_rows(r, cols)
+    # Torn: every column ends at its own length, some strips hang long, some are torn short.
+    lengths = [0.5, 1.0, 0.25, 0.85, 0.6, 0.15, 0.95, 0.4, 0.75, 0.3, 1.0, 0.55, 0.2, 0.9, 0.45, 0.7, 0.1, 0.8, 0.35, 0.65]
+    knee_row = rows[-2]
+    rows[-1] = [k + (h - k) * f for k, h, f in zip(knee_row, rows[-1], lengths)]
+    weigh = skirt_weights(r)
+    mb.shell(rows, 0, m["Gear"], m["GearDark"], lambda p: Vector((0, 0.0, p.z + 0.2)), weigh, closed=True)
+    z, sx = r["shoulder_z"], r["shoulder_x"]
+    for s in (1, -1):
+        sh = _Shoulder(r, s)
+        mus = [-110 + 220 * i / 7 for i in range(8)]
+        tatter = sh.rows([lambda mu: 20, lambda mu: 50, lambda mu: 70 + 22 * ((int(mu) // 10) % 3) / 2], mus, lambda th, mu: 0.012)
+        mb.shell(tatter, 0, m["GearTrim"], m["GearDark"], lambda p: sh.center, sh.bone)
+    weed = lp.material("Seaweed", "#3f5a2a")
+    for s, x0 in ((1, 0.05), (-1, 0.09)):
+        front = hu.extent(r, r["chest"])[1]
+        top = Vector((s * (sx - 0.02), -0.02, z + 0.07))
+        path = [top, Vector((s * x0, front - 0.03, z - 0.12)), Vector((s * x0 * 0.6, front - 0.04, r["chest"] - 0.1)),
+                Vector((s * x0 * 0.9, front - 0.035, r["spine"] - 0.02))]
+        mb.tube([(p, (0.012, 0.022)) for p in path], weed, by_height("Spine", "Chest", r["chest"] - 0.05, r["chest"] + 0.05), sides=4)
     return mb.finish()
 
 
@@ -808,12 +840,13 @@ PIECES = {
     "Cloak": cloak,
     "RobeSkirt": robe_skirt,
     "RobeCuffs": robe_cuffs,
+    "Rags": rags,
     "Breastplate": breastplate,
     "Apron": apron,
 }
 
 
-def build_all(r):
-    """Every gear piece for a race, each its own mesh object (bind them to the race's armature)."""
+def build_all(r, names=None):
+    """The gear pieces for a race (all, or those named), each its own mesh object to bind to the race's armature."""
     m = _materials()
-    return [build(r, m) for build in PIECES.values()]
+    return [build(r, m) for name, build in PIECES.items() if names is None or name in names]

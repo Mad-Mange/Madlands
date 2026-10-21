@@ -33,6 +33,7 @@ BLEND_DIR = os.path.join(ROOT, "art", "blend")
 ASSETS = {
     "BrightvaleHuman": ("Characters", lambda: humanoid.build_race("BrightvaleHuman"), False),
     "Korrin": ("Characters", lambda: humanoid.build_race("Korrin"), False),
+    "Mireling": ("Characters", lambda: humanoid.build_race("Mireling"), False),
     "HumanoidAnimations": ("Characters", humanoid.build_animations, True),
     "Wolf": ("Creatures", creatures.build_wolf, True),
     "Frog": ("Creatures", creatures.build_frog, True),
