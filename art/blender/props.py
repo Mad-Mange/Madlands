@@ -244,39 +244,6 @@ def crystal_cluster():
 
 # ---------------------------------------------------------------- village
 
-def roof(mb, width, depth, base, height, mat, overhang=0.35):
-    """A gable roof along X (ridge along X), as a prism."""
-    w, d = width / 2 + overhang, depth / 2 + overhang
-    verts = [(-w, -d, base), (w, -d, base), (w, d, base), (-w, d, base), (-w, 0, base + height), (w, 0, base + height)]
-    faces = [(0, 1, 5, 4), (2, 3, 4, 5), (0, 4, 3), (1, 2, 5), (0, 3, 2, 1)]
-    mb.add(verts, faces, mat, closed=True)
-
-
-def watchtower():
-    m = mats()
-    mb = lp.MeshBuilder("Watchtower")
-    s, top = 1.5, 6.5
-    for x in (-s, s):
-        for y in (-s, s):
-            mb.frustum((x, y, -0.3), (x * 0.8, y * 0.8, top + 2.4), 0.2, 0.17, m["Wood"], sides=6)
-    mb.box((0, 0, top), (s * 2.0, s * 2.0, 0.25), m["Plank"])
-    for y in (-1, 1):
-        mb.box((0, y * s * 0.95, top + 0.6), (s * 2.0, 0.1, 0.12), m["WoodDark"])
-    for x in (-1, 1):
-        mb.box((x * s * 0.95, 0, top + 0.6), (0.1, s * 2.0, 0.12), m["WoodDark"])
-    # Cross braces and a ladder.
-    for z in (1.5, 4.0):
-        mb.box((0, -s * 0.9, z), (s * 2.0, 0.1, 0.12), m["WoodDark"])
-        mb.box((0, s * 0.9, z), (s * 2.0, 0.1, 0.12), m["WoodDark"])
-    for x in (-0.3, 0.3):
-        mb.box((x, -s - 0.15, top / 2), (0.08, 0.08, top), m["WoodDark"])
-    for z in range(1, 13):
-        mb.box((0, -s - 0.15, z * 0.5), (0.6, 0.06, 0.05), m["WoodDark"])
-    mb.hull([(-s - 0.3, -s - 0.3, top + 2.3), (s + 0.3, -s - 0.3, top + 2.3), (s + 0.3, s + 0.3, top + 2.3),
-             (-s - 0.3, s + 0.3, top + 2.3), (0, 0, top + 3.8)], m["Thatch"])
-    return mb.finish()
-
-
 def palisade():
     m = mats()
     mb = lp.MeshBuilder("Palisade")
@@ -353,35 +320,6 @@ def tent():
             mb.frustum((u, side * (hd + 0.45), -0.1), (u, side * (hd + 0.45), 0.15), 0.025, 0.035, m["WoodDark"], sides=4)
             mb.tube([((u, side * (hd + 0.05), 0.05), 0.01), ((u, side * (hd + 0.45), 0.12), 0.01)], m["Plank"], None, sides=4)
     return mb.finish()
-
-def market_stall():
-    m = mats()
-    mb = lp.MeshBuilder("MarketStall")
-    w, d = 3.0, 2.0
-    for x in (-w / 2, w / 2):
-        mb.frustum((x, -d / 2, 0), (x, -d / 2, 2.6), 0.08, 0.07, m["Wood"], sides=5)
-        mb.frustum((x, d / 2, 0), (x, d / 2, 2.2), 0.08, 0.07, m["Wood"], sides=5)
-    mb.box((0, -d / 2 + 0.3, 0.95), (w, 0.7, 0.12), m["Plank"])
-    mb.box((0, -d / 2 + 0.3, 0.45), (w - 0.2, 0.6, 0.9), m["WoodDark"])
-    mb.add([(-w / 2 - 0.2, -d / 2 - 0.5, 2.6), (w / 2 + 0.2, -d / 2 - 0.5, 2.6), (w / 2 + 0.2, d / 2 + 0.2, 2.15), (-w / 2 - 0.2, d / 2 + 0.2, 2.15)],
-           [(0, 1, 2, 3)], m["CanvasRed"], double_sided=True)
-    for i, c in enumerate(("MushroomCap", "Leaves", "Thatch")):
-        mb.box((-0.9 + i * 0.9, -d / 2 + 0.3, 1.1), (0.6, 0.45, 0.2), m[c])
-    return mb.finish()
-
-
-def well():
-    m = mats()
-    mb = lp.MeshBuilder("Well")
-    mb.frustum((0, 0, -0.2), (0, 0, 0.9), 1.0, 0.95, m["Stone"], sides=8)
-    mb.frustum((0, 0, 0.88), (0, 0, 0.9), 0.75, 0.75, m["Water"], sides=8)
-    for x in (-0.9, 0.9):
-        mb.box((x, 0, 1.4), (0.15, 0.15, 2.0), m["Wood"])
-    mb.frustum((-1.0, 0, 2.1), (1.0, 0, 2.1), 0.06, 0.06, m["WoodDark"], sides=5)
-    roof(mb, 2.3, 1.6, 2.3, 0.8, m["Thatch"], overhang=0.1)
-    mb.frustum((0, 0, 1.2), (0, 0, 1.5), 0.15, 0.17, m["WoodDark"], sides=6)
-    return mb.finish()
-
 
 def signpost():
     m = mats()
@@ -552,8 +490,8 @@ PROPS = {
     "TreeDead": tree_dead, "Bush1": bush(1), "Bush2": bush(2),
     "Rock1": rock(1, 1.0), "Rock2": rock(2, 1.4), "Boulder": rock(3, 3.2),
     "Reeds": reeds, "Mushrooms": mushrooms, "Log": log, "Stump": stump, "CrystalCluster": crystal_cluster,
-    "Watchtower": watchtower, "Palisade": palisade, "Gate": gate,
-    "Tent": tent, "MarketStall": market_stall, "Well": well, "Signpost": signpost, "Fence": fence,
+    "Palisade": palisade, "Gate": gate,
+    "Tent": tent, "Signpost": signpost, "Fence": fence,
     "Crate": crate, "Barrel": barrel, "Sacks": sacks, "Campfire": campfire, "BannerPole": banner_pole,
     "Cauldron": cauldron, "Bridge": bridge, "Dock": dock, "LanternPost": lantern_post,
     "RuinPillar": ruin_pillar, "RuinWall": ruin_wall,

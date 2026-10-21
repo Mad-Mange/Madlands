@@ -23,6 +23,9 @@ PALETTE = {
     "ThatchDark": "#9a7f42", "Stone": "#8d8a83", "StoneDark": "#6c6a64", "Shutter": "#5a7a5a", "Firewood": "#8a6238",
     # The inn's red shingles and its sign.
     "RoofRed": "#7e3328", "RoofRedLight": "#8f3d30", "RoofRedDark": "#6a2b22", "SignBoard": "#a57d4c", "Leather": "#4a2e1c",
+    # The square: the well's water and rope, the stalls' canvas and goods.
+    "Water": "#3d6a7a", "Rope": "#a88a5a", "Canvas": "#e0d2a8", "CanvasRed": "#9a3b2e", "Apple": "#b5442e",
+    "Cabbage": "#6a9a3c", "Bread": "#c99a54", "Wicker": "#9a7a48", "Sack": "#c8b48a", "Log": "#6b4a2f",
 }
 
 
@@ -586,8 +589,188 @@ def inn():
     return mb.finish()
 
 
+# ---------------------------------------------------------------- the square
+
+
+def pyramid_roof(mb, half, base, apex, courses, materials, rng, overhang=0.0, thickness=0.08):
+    """A four-sided roof of shingle courses from a square of `half` (plus overhang) at `base` up to a point at `apex`."""
+    h = half + overhang
+    for k_side in range(4):
+        turn = Matrix.Rotation(math.radians(90 * k_side), 4, "Z")
+        normal = (turn @ Vector((0, -(apex - base), h))).normalized()
+        for k in range(courses):
+            t0 = k / courses
+            t1 = min(1.0, (k + 1) / courses + 0.1)
+            j0, j1 = rng.uniform(-0.02, 0.02), rng.uniform(-0.02, 0.02)
+            upper = [turn @ Vector((x * h * t0, -h * t0, apex - (apex - base) * t0 + j0)) for x in (-1, 0, 1)]
+            lower = [turn @ Vector((x * h * t1, -h * t1, apex - (apex - base) * t1 - 0.03 + j1)) for x in (-1, 0, 1)]
+            slab(mb, upper, lower, [normal] * 3, thickness, materials[k % len(materials)])
+
+
+def well():
+    """
+    Mirewatch's well: a ring of fitted stones in courses under capstones, dark water, two posts with braces
+    holding a winch with a crank, a rope down to a bucket, under a little roof of slate shingles.
+    """
+    m = mats()
+    rng = random.Random(31)
+    mb = lp.MeshBuilder("Well")
+    radius, height = 0.95, 0.85
+    stones = 11
+    for course in range(3):
+        z0, z1 = -0.2 + course * (height + 0.2) / 3, -0.2 + (course + 1) * (height + 0.2) / 3
+        shift = math.pi / stones * (course % 2)
+        for i in range(stones):
+            a0 = 2 * math.pi * i / stones + shift + 0.025
+            a1 = 2 * math.pi * (i + 1) / stones + shift - 0.025
+            r_in, r_out = radius - 0.28, radius + rng.uniform(-0.02, 0.03)
+            pts = [(math.cos(a) * r, math.sin(a) * r, z) for a in (a0, a1) for r in (r_in, r_out) for z in (z0 + 0.015, z1 - 0.015)]
+            mb.hull(pts, m["Stone"] if (i + course) % 3 else m["Plinth"])
+    for i in range(stones):
+        a0, a1 = 2 * math.pi * i / stones + 0.02, 2 * math.pi * (i + 1) / stones - 0.02
+        pts = [(math.cos(a) * r, math.sin(a) * r, z) for a in (a0, a1) for r in (radius - 0.32, radius + 0.06) for z in (height, height + 0.1)]
+        mb.hull(pts, m["StepStone"])
+    mb.frustum((0, 0, height - 0.2), (0, 0, height - 0.18), radius - 0.28, radius - 0.28, m["Water"], sides=12)
+    # Posts, braces and the winch.
+    for x in (-0.95, 0.95):
+        mb.box((x, 0, 1.3), (0.16, 0.16, 2.4), m["Timber"])
+        for side in (-1, 1):
+            mb.box((x, side * 0.28, 2.1), (0.08, 0.5, 0.08), m["Timber"], rotation=(side * 40, 0, 0))
+    mb.frustum((-1.1, 0, 1.55), (1.15, 0, 1.55), 0.07, 0.07, m["Log"], sides=7)
+    mb.frustum((-0.4, 0, 1.55), (0.4, 0, 1.55), 0.11, 0.11, m["Rope"], sides=8)
+    mb.box((1.2, 0, 1.4), (0.05, 0.05, 0.35), m["Iron"])
+    mb.frustum((1.2, 0, 1.25), (1.35, 0, 1.25), 0.025, 0.025, m["Timber"], sides=5)
+    mb.frustum((0.1, -0.1, 1.5), (0.1, -0.1, 1.0), 0.015, 0.015, m["Rope"], sides=4)
+    mb.frustum((0.1, -0.1, 0.72), (0.1, -0.1, 1.0), 0.15, 0.17, m["Planks"], sides=8)
+    mb.frustum((0.1, -0.1, 0.92), (0.1, -0.1, 0.95), 0.175, 0.175, m["Iron"], sides=8)
+    # The roof: a ridge along X, shingles over the winch.
+    ridge = lambda u: 2.75
+    eave = lambda u: 2.2
+    shingled_roof(mb, -1.25, 1.25, 0.85, ridge, eave, 3, [m["Slate"], m["SlateLight"], m["SlateDark"]], rng, segments=4, thickness=0.07)
+    beam(mb, [(-1.3, 0, 2.82), (1.3, 0, 2.82)], 0.08, m["Timber"], taper=1.0)
+    for x in (-0.95, 0.95):
+        mb.add([(x, -0.75, 2.25), (x, 0.75, 2.25), (x, 0, 2.72)], [(0, 1, 2)], m["PlanksDark"], double_sided=True)
+    return mb.finish()
+
+
+def market_stall():
+    """
+    A market stall: a plank counter on trestles with boards in front, posts and a striped canvas awning
+    with a scalloped valance, crates of apples and cabbages, loaves, a basket and sacks.
+    """
+    m = mats()
+    rng = random.Random(5)
+    mb = lp.MeshBuilder("MarketStall")
+    w, d = 3.0, 2.0
+    hw, hd = w / 2, d / 2
+    front, back = -hd, hd
+    for x in (-hw, hw):
+        mb.frustum((x, front, 0), (x, front, 2.6), 0.08, 0.07, m["Log"], sides=6)
+        mb.frustum((x, back, 0), (x, back, 2.2), 0.08, 0.07, m["Log"], sides=6)
+        mb.box((x, 0, 1.95), (0.08, d, 0.08), m["Timber"])
+    for y, z in ((front, 2.5), (back, 2.12)):
+        mb.box((0, y, z), (w + 0.1, 0.08, 0.1), m["Timber"])
+    # The counter: a top of boards, a front of boards, trestles.
+    cy = front + 0.35
+    for i in range(6):
+        x = -hw + 0.1 + (w - 0.2) * (i + 0.5) / 6
+        mb.box((x, cy, 0.97), ((w - 0.2) / 6 - 0.02, 0.75, 0.07), m["Planks"] if i % 2 else m["PlanksDark"])
+    for i in range(9):
+        x = -hw + 0.15 + (w - 0.3) * (i + 0.5) / 9
+        mb.box((x, cy - 0.33, 0.48), ((w - 0.3) / 9 - 0.02, 0.05, 0.9), m["PorchPlanks"] if i % 2 else m["Planks"])
+    mb.box((0, cy - 0.37, 0.75), (w - 0.2, 0.06, 0.08), m["Timber"])
+    # The awning: strips of red and cream canvas, sloping back, with a scalloped valance in front.
+    strips = 8
+    for i in range(strips):
+        x0 = -hw - 0.2 + (w + 0.4) * i / strips
+        x1 = -hw - 0.2 + (w + 0.4) * (i + 1) / strips
+        mat = m["CanvasRed"] if i % 2 == 0 else m["Canvas"]
+        sag = 0.05
+        mb.add([(x0, front - 0.5, 2.62), (x1, front - 0.5, 2.62), (x1, 0, 2.42 - sag), (x0, 0, 2.42 - sag)], [(0, 1, 2, 3)], mat, double_sided=True)
+        mb.add([(x0, 0, 2.42 - sag), (x1, 0, 2.42 - sag), (x1, back + 0.2, 2.2), (x0, back + 0.2, 2.2)], [(0, 1, 2, 3)], mat, double_sided=True)
+        xm = (x0 + x1) / 2
+        mb.add([(x0, front - 0.5, 2.62), (x1, front - 0.5, 2.62), (x1, front - 0.52, 2.45), (xm, front - 0.52, 2.36), (x0, front - 0.52, 2.45)],
+               [(0, 1, 2, 3, 4)], mat, double_sided=True)
+    # Goods: a crate of apples, a crate of cabbages, loaves on a board, a basket.
+    for cx, fruit, size, count in ((-0.95, m["Apple"], 0.06, 9), (0.0, m["Cabbage"], 0.1, 4)):
+        mb.box((cx, cy, 1.1), (0.62, 0.48, 0.2), m["Planks"])
+        mb.box((cx, cy, 1.18), (0.56, 0.42, 0.06), m["PlanksDark"])
+        for k in range(count):
+            gx = cx - 0.2 + 0.4 * (k % 3) / 2 + rng.uniform(-0.02, 0.02)
+            gy = cy - 0.14 + 0.28 * (k // 3) / max(1, (count - 1) // 3) + rng.uniform(-0.02, 0.02)
+            mb.sphere((gx, gy, 1.22 + size * 0.6), size, fruit, segments=6, rings=4)
+    for k in range(3):
+        mb.sphere((0.75 + 0.18 * k, cy + rng.uniform(-0.1, 0.1), 1.08), (0.1, 0.06, 0.05), m["Bread"], segments=7, rings=4,
+                  rotation=(0, 0, rng.uniform(-30, 30)))
+    mb.frustum((1.25, cy + 0.15, 1.0), (1.25, cy + 0.15, 1.22), 0.12, 0.17, m["Wicker"], sides=8)
+    # Sacks and a crate behind the counter.
+    for x, y in ((-1.0, back - 0.3), (-0.5, back - 0.25)):
+        mb.sphere((x, y, 0.32), (0.25, 0.22, 0.34), m["Sack"], segments=7, rings=5)
+        mb.frustum((x, y, 0.62), (x, y, 0.72), 0.06, 0.03, m["Rope"], sides=5)
+    mb.box((0.8, back - 0.35, 0.3), (0.6, 0.5, 0.6), m["Planks"])
+    mb.box((0.8, back - 0.35, 0.3), (0.62, 0.52, 0.08), m["Timber"])
+    return mb.finish()
+
+
+def watchtower():
+    """
+    A watchtower of logs: four posts leaning in, cross braces on every side, a plank platform with a railing,
+    a ladder, and a four-sided shingled roof on corner posts.
+    """
+    m = mats()
+    rng = random.Random(17)
+    mb = lp.MeshBuilder("Watchtower")
+    s, top = 1.5, 6.5
+    lean = 0.8
+    corner = lambda x, y, z: (x * (1 - (1 - lean) * z / (top + 2.4)), y * (1 - (1 - lean) * z / (top + 2.4)), z)
+    for x in (-s, s):
+        for y in (-s, s):
+            mb.frustum(corner(x, y, -0.3), corner(x, y, top + 0.1), 0.2, 0.18, m["Log"], sides=7)
+    # Braces: a ring of beams at each level and an X in every side between them.
+    levels = (0.6, 3.3, top - 0.15)
+    for z in levels:
+        for (xa, ya), (xb, yb) in (((-s, -s), (s, -s)), ((s, -s), (s, s)), ((s, s), (-s, s)), ((-s, s), (-s, -s))):
+            mb.frustum(corner(xa, ya, z), corner(xb, yb, z), 0.09, 0.09, m["Timber"], sides=5)
+    for z0, z1 in zip(levels, levels[1:]):
+        for (xa, ya), (xb, yb) in (((-s, -s), (s, -s)), ((s, -s), (s, s)), ((s, s), (-s, s)), ((-s, s), (-s, -s))):
+            mb.frustum(corner(xa, ya, z0), corner(xb, yb, z1), 0.06, 0.06, m["Timber"], sides=4)
+            mb.frustum(corner(xb, yb, z0), corner(xa, ya, z1), 0.06, 0.06, m["Timber"], sides=4)
+    # The platform: boards over the top, overhanging, a railing of posts and rails.
+    p = s * 1.12
+    boards = 9
+    for i in range(boards):
+        x = -p + 2 * p * (i + 0.5) / boards
+        mb.box((x, 0, top), (2 * p / boards - 0.03, 2 * p, 0.12), m["Planks"] if i % 2 else m["PlanksDark"])
+    for k in range(9):
+        t = -1 + 2 * k / 8
+        for x, y in ((t * p, -p), (t * p, p), (-p, t * p), (p, t * p)):
+            mb.box((x, y, top + 0.5), (0.07, 0.07, 0.9), m["Timber"])
+    for z in (top + 0.45, top + 0.95):
+        for (xa, ya), (xb, yb) in (((-p, -p), (p, -p)), ((p, -p), (p, p)), ((p, p), (-p, p)), ((-p, p), (-p, -p))):
+            mb.frustum((xa, ya, z), (xb, yb, z), 0.045, 0.045, m["Log"], sides=5)
+    # The ladder up the front.
+    for x in (-0.3, 0.3):
+        mb.frustum((x, -s - 0.35, -0.1), (x, -s * lean - 0.05, top), 0.045, 0.045, m["Log"], sides=5)
+    for k in range(1, 13):
+        z = k * 0.5
+        f = z / top
+        y = (-s - 0.35) * (1 - f) + (-s * lean - 0.05) * f
+        mb.frustum((-0.32, y, z), (0.32, y, z), 0.03, 0.03, m["Timber"], sides=4)
+    # The roof on four corner posts: shingle courses up to a point, with a finial.
+    for x in (-p, p):
+        for y in (-p, p):
+            mb.frustum((x, y, top), (x, y, top + 2.3), 0.09, 0.09, m["Log"], sides=6)
+    pyramid_roof(mb, p, top + 2.25, top + 3.9, 4, [m["Thatch"], m["ThatchLight"], m["ThatchDark"]], rng, overhang=0.35, thickness=0.12)
+    mb.frustum((0, 0, top + 3.8), (0, 0, top + 4.3), 0.06, 0.02, m["Timber"], sides=5)
+    lantern(mb, (p - 0.1, -p + 0.1, top + 2.15), m, drop=0.25)
+    return mb.finish()
+
+
 BUILDINGS = {
     "GroveHouse": grove_house,
     "Cottage": cottage,
     "Longhouse": inn,
+    "Well": well,
+    "MarketStall": market_stall,
+    "Watchtower": watchtower,
 }
