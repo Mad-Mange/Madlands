@@ -252,50 +252,6 @@ def roof(mb, width, depth, base, height, mat, overhang=0.35):
     mb.add(verts, faces, mat, closed=True)
 
 
-def cottage():
-    m = mats()
-    mb = lp.MeshBuilder("Cottage")
-    w, d, h = 6.0, 4.6, 2.8
-    mb.box((0, 0, -0.2), (w + 0.3, d + 0.3, 0.5), m["Stone"])
-    mb.box((0, 0, h / 2), (w, d, h), m["Plaster"])
-    # Timber frame: corner posts, a beam under the roof, a door, two windows.
-    for x in (-w / 2, w / 2):
-        for y in (-d / 2, d / 2):
-            mb.box((x, y, h / 2), (0.22, 0.22, h + 0.05), m["WoodDark"])
-    mb.box((0, -d / 2 - 0.02, h - 0.1), (w + 0.1, 0.12, 0.2), m["WoodDark"])
-    mb.box((0, d / 2 + 0.02, h - 0.1), (w + 0.1, 0.12, 0.2), m["WoodDark"])
-    mb.box((0.8, -d / 2 - 0.04, 1.0), (1.0, 0.1, 2.0), m["Wood"])
-    for x in (-1.6, 2.2):
-        mb.box((x, -d / 2 - 0.04, 1.6), (0.8, 0.08, 0.7), m["WoodDark"])
-    # Gable ends filled with plaster, then the thatch.
-    mb.add([(-w / 2, -d / 2, h), (-w / 2, d / 2, h), (-w / 2, 0, h + 1.9)], [(0, 1, 2)], m["Plaster"], double_sided=True)
-    mb.add([(w / 2, -d / 2, h), (w / 2, 0, h + 1.9), (w / 2, d / 2, h)], [(0, 1, 2)], m["Plaster"], double_sided=True)
-    roof(mb, w, d, h - 0.1, 2.1, m["Thatch"])
-    mb.box((-1.8, 1.0, h + 1.6), (0.7, 0.7, 2.4), m["Stone"])
-    return mb.finish()
-
-
-def longhouse():
-    m = mats()
-    mb = lp.MeshBuilder("Longhouse")
-    w, d, h = 11.0, 6.5, 3.4
-    mb.box((0, 0, -0.2), (w + 0.4, d + 0.4, 0.6), m["Stone"])
-    mb.box((0, 0, h / 2), (w, d, h), m["Plank"])
-    for x in [-w / 2 + i * w / 4 for i in range(5)]:
-        for y in (-d / 2, d / 2):
-            mb.box((x, y, h / 2), (0.3, 0.3, h + 0.1), m["WoodDark"])
-    mb.box((0, -d / 2 - 0.05, 1.2), (1.8, 0.12, 2.4), m["WoodDark"])
-    mb.box((0, -d / 2 - 0.6, 2.7), (3.0, 1.2, 0.15), m["WoodDark"])
-    for x in (-3.5, 3.5):
-        mb.box((x, -d / 2 - 0.05, 1.8), (1.0, 0.1, 0.8), m["LanternGlow"])
-    mb.add([(-w / 2, -d / 2, h), (-w / 2, d / 2, h), (-w / 2, 0, h + 2.6)], [(0, 1, 2)], m["Plank"], double_sided=True)
-    mb.add([(w / 2, -d / 2, h), (w / 2, 0, h + 2.6), (w / 2, d / 2, h)], [(0, 1, 2)], m["Plank"], double_sided=True)
-    roof(mb, w, d, h - 0.1, 2.8, m["CanvasRed"], overhang=0.5)
-    # A sign over the door.
-    mb.box((0, -d / 2 - 1.15, 3.3), (1.4, 0.08, 0.7), m["Wood"])
-    return mb.finish()
-
-
 def watchtower():
     m = mats()
     mb = lp.MeshBuilder("Watchtower")
@@ -546,7 +502,7 @@ PROPS = {
     "TreeDead": tree_dead, "Bush1": bush(1), "Bush2": bush(2),
     "Rock1": rock(1, 1.0), "Rock2": rock(2, 1.4), "Boulder": rock(3, 3.2),
     "Reeds": reeds, "Mushrooms": mushrooms, "Log": log, "Stump": stump, "CrystalCluster": crystal_cluster,
-    "Cottage": cottage, "Longhouse": longhouse, "Watchtower": watchtower, "Palisade": palisade, "Gate": gate,
+    "Watchtower": watchtower, "Palisade": palisade, "Gate": gate,
     "Tent": tent, "MarketStall": market_stall, "Well": well, "Signpost": signpost, "Fence": fence,
     "Crate": crate, "Barrel": barrel, "Sacks": sacks, "Campfire": campfire, "BannerPole": banner_pole,
     "Cauldron": cauldron, "Bridge": bridge, "Dock": dock, "LanternPost": lantern_post,

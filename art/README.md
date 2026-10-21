@@ -32,7 +32,7 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 | `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, frog, training dummy. |
 | `blender/items.py` | Held items: origin at the grip, pointing along +Z, edge along X; shields face +X. |
 | `blender/preview.py` | The preview renders. |
-| `blender/buildings.py` | Detailed buildings built from shingle courses, planks and beams (`GroveHouse`: dark timber, a swaybacked slate roof, cross gables with horned bargeboards and lanterns). |
+| `blender/buildings.py` | Detailed buildings built from shingle courses, planks and beams: `GroveHouse` (dark timber, a swaybacked slate roof, cross gables with horned bargeboards and lanterns), `Cottage` (a half-timbered farmhouse under thick thatch, with shutters, flower boxes and a stone chimney) and `Longhouse` (the Muddy Boot inn: red shingles, dormers, a porch and a hanging sign). |
 | `blender/icons.py` | Interface symbols (what an NPC is: general goods, innkeeper, weaponsmith), modelled like everything else and rendered to transparent PNGs with a dark rim in `client/Assets/Madlands/Art/Icons/`: `blender -b --factory-startup -P art/blender/icons.py -- [icon ...]`. |
 
 Reference pictures for modelling go in `art/inspiration/` (git-ignored: screenshots of other games must never reach the
