@@ -143,21 +143,6 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 07c3e833ababa7d4bae8a8375afce81d, type: 3}
   Clips:
   - Set: HumanoidAnimations
-    Name: RunBack
-    Clip: {fileID: -5876635091893636579, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Sit
-    Clip: {fileID: 4724887770959480615, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: StrafeLeft
-    Clip: {fileID: 5222996160109349777, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: StrafeRight
-    Clip: {fileID: 8061675120238250040, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Walk
-    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
     Name: Attack1H
     Clip: {fileID: 8394281637225282446, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
@@ -190,6 +175,21 @@ MonoBehaviour:
   - Set: HumanoidAnimations
     Name: Run
     Clip: {fileID: -7551964380084998518, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: RunBack
+    Clip: {fileID: -5876635091893636579, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Sit
+    Clip: {fileID: 4724887770959480615, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: StrafeLeft
+    Clip: {fileID: 5222996160109349777, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: StrafeRight
+    Clip: {fileID: 8061675120238250040, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: Bear
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
