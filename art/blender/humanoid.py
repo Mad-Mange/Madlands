@@ -7,8 +7,9 @@ T-pose. Animations are made once on the Brightvale Human skeleton and exported o
 
 Material names are the gear regions the client tints: Skin, Hair (the hair on the scalp, hidden under
 helmets and hoods), Beard (beard and brows, tinted with the hair), Eyes, Chest (torso and sleeves), Arms
-(forearms), Hands, Waist, Legs and Feet. A region's "Trim" material (ChestTrim, FeetTrim ...) is its
-darker second tone: collars, cuffs, soles. BuckleMetal keeps its color.
+(forearms), Hands, Waist, Legs (hips and thighs: hidden under robes) with LegsLower (knees and shins) and
+Feet. A region's "Trim" material (ChestTrim, FeetTrim ...) is its darker second tone: collars, cuffs, soles.
+BuckleMetal keeps its color.
 
 The style is stylized and heroic, after classic fantasy MMOs: broad shoulders from big deltoids, a
 tapering torso, chunky fists and boots, a strong brow and a big nose.
@@ -37,7 +38,7 @@ RACES = {
         head_shape=dict(w=1.0, d=1.0, h=1.0, nose=1.0, brow=1.0, ear=1.0, jaw=1.0),
         hair="swept", beard=False,
         colors=dict(Skin="#e3b08a", Eyes="#1d1b22", EyeWhite="#e6dccb", Chest="#8c6e4b", ChestTrim="#5e4832", Arms="#6e5238",
-                    ArmsTrim="#4a3624", Hands="#e3b08a", Waist="#4b3424", BuckleMetal="#c9a24a", Legs="#4e5868",
+                    ArmsTrim="#4a3624", Hands="#e3b08a", Waist="#4b3424", BuckleMetal="#c9a24a", Legs="#4e5868", LegsLower="#4e5868",
                     Feet="#3e2c20", FeetTrim="#2a1e16", Beard="#5b3920", Hair="#5b3920"),
     ),
     # Stocky mountain folk: short legs, a barrel chest, huge fists and a braided beard.
@@ -58,6 +59,7 @@ RACES = {
         hair="topknot", beard=True,
         colors=dict(Skin="#d49a78", Eyes="#1d1b22", EyeWhite="#e6dccb", Chest="#6f7a5a", ChestTrim="#4a5240", Arms="#5a4632",
                     ArmsTrim="#3e3022", Hands="#d49a78", Waist="#4b3424", BuckleMetal="#c9a24a", BeardMetal="#d0a848", Legs="#5e4a3a",
+                    LegsLower="#5e4a3a",
                     Feet="#3e2c20", FeetTrim="#2a1e16", Beard="#a4512a", Hair="#a4512a"),
     ),
 }
@@ -124,9 +126,13 @@ def skeleton(r):
         ("MainHandGrip", (-grip_x, -0.01, z), (-grip_x, -0.11, z), "RightHand"),
         ("OffHandGrip", (grip_x, -0.01, z), (grip_x, -0.11, z), "LeftHand"),
     ]
-    # The top of the skull (under the hair): helmets and hoods are sized from it.
+    # The top of the skull (under the hair): a marker for things worn on the head.
     skull_top = r["head"] + SKULL[0][2] * r["head_shape"]["h"]
     bones.append(("HeadTop", (0, 0, skull_top), (0, 0, skull_top + 0.05), "Head"))
+    # A cloak's hem hangs from this bone, behind the shoulders: the client swings it back while running.
+    z = r["shoulder_z"]
+    back = extent(r, z - 0.06)[2] + 0.03
+    bones.append(("Cloak", (0, back, z), (0, back, z - 0.3), "Chest"))
     return bones
 
 
@@ -182,10 +188,7 @@ def _head(mb, r, m):
                rotation=(0, -side * 14, 0))
         mb.box(at(side * 0.044, -0.112, 0.136), (0.036 * w, 0.014, 0.02), m["EyeWhite"], "Head", top=(0.8, 1.0))
         mb.box(at(side * 0.041, -0.118, 0.135), (0.015 * w, 0.006, 0.018), m["Eyes"], "Head")
-        e = s["ear"]
-        mb.hull([at(side * 0.104, 0.0, 0.145), at(side * (0.104 + 0.022 * e), 0.03, 0.165),
-                 at(side * (0.104 + 0.018 * e), 0.045, 0.1), at(side * 0.102, 0.03, 0.09), at(side * 0.1, 0.012, 0.12)],
-                m["Skin"], "Head")
+        mb.hull(ear(r, side), m["Skin"], "Head")
     mb.box(at(0, -0.1, 0.045), (0.036 * w, 0.008, 0.006), m["Eyes"], "Head")
     if r["beard"]:
         mb.hull([at(*p) for p in lp.mirrored(BEARD)], m["Beard"], "Head")
@@ -197,6 +200,35 @@ def _head(mb, r, m):
             ring_z = bottom[2] + 0.03
             mb.tube([((bottom[0], bottom[1], ring_z + 0.018), 0.024), ((bottom[0], bottom[1], ring_z - 0.018), 0.024)],
                     m["BeardMetal"], "Head", sides=6)
+
+
+def head_at(r):
+    """Head-relative coordinates (the tables above) to model space for a race."""
+    s = r["head_shape"]
+    return lambda x, y, z: (x * s["w"], y * s["d"], r["head"] + z * s["h"])
+
+
+def ear(r, side):
+    """The points of one ear (side 1 = left), in model space."""
+    at, e = head_at(r), r["head_shape"]["ear"]
+    return [at(side * x, y, z) for x, y, z in ((0.104, 0.0, 0.145), (0.104 + 0.022 * e, 0.03, 0.165),
+                                               (0.104 + 0.018 * e, 0.045, 0.1), (0.102, 0.03, 0.09), (0.1, 0.012, 0.12))]
+
+
+def extent(r, z):
+    """The trunk at height z over all its sections: (half width, front, back); the front is negative Y."""
+    half, front, back = 0.0, 0.0, 0.0
+    for key in ("pelvis", "belly", "torso", "collar", "tunic", "belt"):
+        sections = r[key]
+        for a, b in zip(sections, sections[1:]):
+            if not a[0] <= z <= b[0]:
+                continue
+            t = (z - a[0]) / (b[0] - a[0])
+            lerp = [p + (q - p) * t for p, q in zip(a + (1.0, 1.0)[len(a) - 3:], b + (1.0, 1.0)[len(b) - 3:])]
+            half = max(half, lerp[1] / 2)
+            front = min(front, -lerp[2] / 2 * lerp[3])
+            back = max(back, lerp[2] / 2 * lerp[4])
+    return half, front, back
 
 
 def _hair(mb, r, m):
@@ -240,15 +272,18 @@ def _arm(mb, r, m, side, s):
 
 
 def _leg(mb, r, m, side, s):
-    """Thigh, knee and shin (Legs); the boot with a folded cuff (FeetTrim), foot and toe cap on soles."""
+    """
+    Thigh (Legs), knee and shin (LegsLower: tinted with the legs, but stays when a robe hides the thighs),
+    the boot with a folded cuff (FeetTrim), foot and toe cap on soles.
+    """
     x = s * r["leg_x"]
     hip, knee, ankle, top = r["hip"], r["knee"], r["ankle"], r["boot_top"]
     th, sh, bt = r["thigh"], r["shin"], r["boot"]
     mb.tube([((x, 0, hip + 0.03), (th[0], th[0] * 1.05)), ((x, 0, hip - (hip - knee) * 0.35), (th[1], th[1] * 1.06)),
              ((x, 0, knee + 0.04), (th[2], th[2] * 1.05)), ((x, 0, knee - 0.02), th[2] * 0.95)], m["Legs"], side + "UpperLeg", sides=7)
-    mb.sphere((x, -th[2] * 0.6, knee), (th[2] * 0.72, th[2] * 0.5, th[2] * 0.8), m["Legs"], side + "LowerLeg", segments=6, rings=4)
+    mb.sphere((x, -th[2] * 0.6, knee), (th[2] * 0.72, th[2] * 0.5, th[2] * 0.8), m["LegsLower"], side + "LowerLeg", segments=6, rings=4)
     mb.tube([((x, 0, knee + 0.01), sh[0]), ((x, 0.012, knee - (knee - ankle) * 0.3), (sh[1], sh[1] * 1.1)),
-             ((x, 0, top), sh[2])], m["Legs"], side + "LowerLeg", sides=7)
+             ((x, 0, top), sh[2])], m["LegsLower"], side + "LowerLeg", sides=7)
     mb.tube([((x, 0, top + 0.01), bt[0]), ((x, 0.004, ankle + 0.06), bt[0] * 0.94), ((x, 0, ankle - 0.03), bt[0] * 0.96)],
             m["Feet"], side + "LowerLeg", sides=7)
     mb.tube([((x, 0, top + 0.055), bt[1]), ((x, 0, top - 0.012), bt[1] * 0.92)], m["FeetTrim"], side + "LowerLeg", sides=7)
@@ -282,11 +317,15 @@ def body(name, r):
 
 
 def build_race(race):
-    """Armature + body for one race (no animations)."""
+    """Armature, body and the gear pieces (gear.py) for one race (no animations)."""
+    import gear  # gear.py builds on this module's tables
+
     r = RACES[race]
     arm = lp.armature("Armature", skeleton(r))
     mesh = body(race + "Body", r)
     lp.bind(mesh, arm)
+    for piece in gear.build_all(r):
+        lp.bind(piece, arm)
     return arm
 
 

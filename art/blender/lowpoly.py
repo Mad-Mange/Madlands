@@ -6,7 +6,9 @@ Conventions (see art/README.md):
 - Flat shading, no textures: every part has a named material with a plain color. Unity tints some
   materials at runtime by name (the gear regions of characters), so material names are part of the
   contract with the client.
-- Rigged parts follow exactly one bone (rigid skinning), the classic low-poly look.
+- Rigged parts follow exactly one bone (rigid skinning), the classic low-poly look. Cloth that has to
+  bend with the body (robe skirts, cloaks) passes a function instead of a bone name: it gives each
+  vertex its bone weights.
 """
 
 import math
@@ -60,7 +62,10 @@ def material(name, color, metallic=0.0, roughness=0.85, emission=None):
 
 
 class MeshBuilder:
-    """Collects primitive parts into one mesh. Each part has a material and optionally a bone."""
+    """
+    Collects primitive parts into one mesh. Each part has a material and optionally a bone: a bone
+    name, or a function from a vertex position to {bone: weight} (weights are normalized).
+    """
 
     def __init__(self, name):
         self.name = name
@@ -89,7 +94,13 @@ class MeshBuilder:
         if matrix is not None:
             verts = [matrix @ Vector(v) for v in verts]
         bm_verts = [self.bm.verts.new(Vector(v)) for v in verts]
-        if bone is not None:
+        if callable(bone):
+            for v in bm_verts:
+                weights = {b: w for b, w in bone(v.co).items() if w > 1e-4}
+                total = sum(weights.values())
+                for b, w in weights.items():
+                    v[self.deform][self._group_index(b)] = w / total
+        elif bone is not None:
             group = self._group_index(bone)
             for v in bm_verts:
                 v[self.deform][group] = 1.0
@@ -218,6 +229,74 @@ class MeshBuilder:
         bm.free()
         return self.add(verts, faces, mat, bone)
 
+    def grid(self, rows, mat, bone=None, inside=None, closed=False, facing_in=False):
+        """
+        A surface through rows of points (cloth, plates). A row of one point is a pole: a fan of
+        triangles to the next row. `closed` joins each row's last point to its first. Faces point away
+        from `inside(p)`, a point inside the shape near p (toward it with `facing_in`: linings).
+        """
+        flat, index = [], []
+        for row in rows:
+            index.append(list(range(len(flat), len(flat) + len(row))))
+            flat.extend(Vector(p) for p in row)
+        faces = []
+        for k in range(len(rows) - 1):
+            a, b = index[k], index[k + 1]
+            if len(a) == 1 or len(b) == 1:
+                pole, ring = (a[0], b) if len(a) == 1 else (b[0], a)
+                for i in range(len(ring) - (0 if closed else 1)):
+                    faces.append((pole, ring[i], ring[(i + 1) % len(ring)]))
+                continue
+            for i in range(len(a) - (0 if closed else 1)):
+                j = (i + 1) % len(a)
+                faces.append((a[i], a[j], b[j], b[i]))
+        if inside is not None:
+            faces = [_away(flat, f, inside(_center(flat, f)), facing_in) for f in faces]
+        return self.add(flat, faces, mat, bone)
+
+    def shell(self, rows, thickness, mat, inner_mat, inside, bone=None, closed=False, rim_mat=None):
+        """
+        A grid with a thickness: the surface through `rows`, a lining `thickness` closer to `inside(p)`
+        and a rim between the two along the open borders (hood openings, hems, plate edges). Thickness 0
+        gives cloth: the lining's faces lie on the surface's, facing the other way. Cloth that bends
+        between bones needs that; with a thickness, shearing tips the surface through its lining.
+        """
+        def inward(p):
+            p = Vector(p)
+            return p + (Vector(inside(p)) - p).normalized() * thickness
+
+        if thickness <= 0:
+            self.grid(rows, mat, bone, inside, closed)
+            self.grid(rows, inner_mat, bone, inside, closed, facing_in=True)
+            return rows
+        inner = [[inward(p) for p in row] for row in rows]
+        if callable(bone):
+            # The lining moves exactly like the surface over it, or the two cross when the body bends.
+            surface = {_key(q): Vector(p) for row, inner_row in zip(rows, inner) for p, q in zip(row, inner_row)}
+            weigh = bone
+            bone = lambda p: weigh(surface.get(_key(p), p))
+        self.grid(rows, mat, bone, inside, closed)
+        self.grid(inner, inner_mat, bone, inside, closed, facing_in=True)
+        rim_mat = rim_mat or mat
+        borders = []  # (outer edge, inner edge, a point on the shell's side of the edge)
+        for k, neighbour in ((0, 1), (len(rows) - 1, len(rows) - 2)):
+            if len(rows[k]) > 1:
+                count = len(rows[k]) - (0 if closed else 1)
+                for i in range(count):
+                    j = (i + 1) % len(rows[k])
+                    ref = rows[neighbour][min(i, len(rows[neighbour]) - 1)]
+                    borders.append(((rows[k][i], rows[k][j]), (inner[k][i], inner[k][j]), ref))
+        if not closed:
+            for i, neighbour in ((0, 1), (-1, -2)):
+                for k in range(len(rows) - 1):
+                    if len(rows[k]) == 1 or len(rows[k + 1]) == 1:
+                        continue
+                    borders.append(((rows[k][i], rows[k + 1][i]), (inner[k][i], inner[k + 1][i]), rows[k][neighbour]))
+        for (a, b), (ia, ib), ref in borders:
+            verts = [Vector(a), Vector(b), ib, ia]
+            self.add(verts, [_away(verts, (0, 1, 2, 3), Vector(ref), False)], rim_mat, bone)
+        return inner
+
     def _fix_normals(self, verts):
         faces = {f for v in verts for f in v.link_faces}
         bmesh.ops.recalc_face_normals(self.bm, faces=list(faces))
@@ -260,6 +339,24 @@ def mirrored(points):
         if abs(x) > 1e-6:
             out.append((-x, y, z))
     return out
+
+
+def _key(p):
+    return tuple(round(c, 4) for c in p)
+
+
+def _center(points, face):
+    return sum((Vector(points[i]) for i in face), Vector()) / len(face)
+
+
+def _away(points, face, ref, toward=False):
+    """`face` wound so its normal points away from `ref` (toward it if `toward`)."""
+    p = [Vector(points[i]) for i in face]
+    normal = (p[1] - p[0]).cross(p[2] - p[0])
+    if len(p) > 3:
+        normal += (p[2] - p[0]).cross(p[3] - p[0])
+    outward = normal.dot(_center(points, face) - Vector(ref)) >= 0
+    return face if outward != toward else tuple(reversed(face))
 
 
 def _placement(center, rotation):

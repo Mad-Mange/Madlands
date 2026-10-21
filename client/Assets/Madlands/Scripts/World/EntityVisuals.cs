@@ -14,8 +14,9 @@ namespace Madlands.Client
     }
 
     /// <summary>
-    /// A display built from a Blender model (art/README.md): its animator and clips, the weapon grips
-    /// and the gear regions that can be recolored (body materials named Chest, Legs, ...).
+    /// A display built from a Blender model (art/README.md): its animator and clips, the weapon grips,
+    /// the gear regions that can be recolored (body materials named Chest, Legs, ...) and the worn gear
+    /// pieces the model carries, hidden until shown (meshes named "Gear" + piece: art/blender/gear.py).
     /// </summary>
     public sealed class DisplayModel
     {
@@ -36,6 +37,9 @@ namespace Madlands.Client
 
         /// <summary>How much darker a region's second tone (its "Trim" material: collars, cuffs, soles) is.</summary>
         private const float TrimShade = 0.62f;
+        /// <summary>How much darker a gear piece's "Dark" material (linings, the inside of a hood) is.</summary>
+        private const float DarkShade = 0.38f;
+        private const string PiecePrefix = "Gear";
 
         private static readonly Dictionary<(Material, Color), Material> Tinted = new Dictionary<(Material, Color), Material>();
         private static Material _invisible;
@@ -45,6 +49,20 @@ namespace Madlands.Client
         /// <summary>Each body material as it is shown (the model's own or tinted), hidden or not.</summary>
         private Material[] _shown;
         private readonly HashSet<string> _hidden = new HashSet<string>();
+        private readonly Dictionary<string, Piece> _pieces = new Dictionary<string, Piece>();
+        private Transform _cloak;
+        private Quaternion _cloakRest;
+        private Vector3 _cloakRestPosition;
+        private Vector3 _cloakAxis;
+        private float _cloakAngle;
+
+        /// <summary>A gear piece: its renderer, its own materials and how high it reaches in the rest pose.</summary>
+        private sealed class Piece
+        {
+            public Renderer Renderer;
+            public Material[] Materials;
+            public float Top;
+        }
 
         public Renderer Body
         {
@@ -73,6 +91,77 @@ namespace Madlands.Client
             if (hidden ? _hidden.Add(region) : _hidden.Remove(region)) ApplyMaterials();
         }
 
+        /// <summary>
+        /// Takes a gear piece the model carries (art/blender/gear.py) and keeps it hidden until it is worn.
+        /// <paramref name="top"/> is how high it reaches in the rest pose.
+        /// </summary>
+        public void AddPiece(Renderer renderer, float top)
+        {
+            string name = renderer.gameObject.name.Substring(PiecePrefix.Length);
+            _pieces[name] = new Piece { Renderer = renderer, Materials = renderer.sharedMaterials, Top = top };
+            renderer.gameObject.SetActive(false);
+        }
+
+        public static bool IsPiece(Renderer renderer) => renderer.gameObject.name.StartsWith(PiecePrefix, System.StringComparison.Ordinal);
+
+        /// <summary>
+        /// Shows a gear piece in a color: its "Gear" materials take the color ("GearTrim" a darker tone,
+        /// "GearDark" a much darker one), the rest keep theirs (rivets, bone, a lamp). False if the model
+        /// has no such piece.
+        /// </summary>
+        public bool ShowPiece(string name, Color color)
+        {
+            if (!_pieces.TryGetValue(name, out var piece)) return false;
+            var shown = new Material[piece.Materials.Length];
+            for (int i = 0; i < shown.Length; i++)
+            {
+                var source = piece.Materials[i];
+                if (source == null || !source.name.StartsWith(PiecePrefix, System.StringComparison.Ordinal))
+                {
+                    shown[i] = source;
+                    continue;
+                }
+                float shade = source.name.EndsWith("Trim", System.StringComparison.Ordinal) ? TrimShade
+                    : source.name.EndsWith("Dark", System.StringComparison.Ordinal) ? DarkShade : 1f;
+                shown[i] = TintedCopy(source, new Color(color.r * shade, color.g * shade, color.b * shade, 1f));
+            }
+            piece.Renderer.sharedMaterials = shown;
+            piece.Renderer.gameObject.SetActive(true);
+            Height = Mathf.Max(Height, piece.Top * Root.localScale.y);
+            return true;
+        }
+
+        public void HidePieces()
+        {
+            foreach (var piece in _pieces.Values)
+                piece.Renderer.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Swings a cloak's hem (the Cloak bone) back with the speed the unit runs at, and out behind it
+        /// while it sits; called after the animation each frame.
+        /// </summary>
+        public void SwayCloak(float dt, float speed, bool sitting)
+        {
+            if (_cloak == null) return;
+            float target = sitting ? 55f : Mathf.Clamp(speed * 5.5f, 0f, 36f);
+            target += speed > 0.5f ? Mathf.Sin(Time.time * 9f) * 3f : Mathf.Sin(Time.time * 1.3f) * 1.5f;
+            _cloakAngle = Mathf.Lerp(_cloakAngle, target, 1f - Mathf.Exp(-dt * 6f));
+            _cloak.localPosition = _cloakRestPosition;
+            _cloak.localRotation = _cloakRest * Quaternion.AngleAxis(_cloakAngle, _cloakAxis);
+        }
+
+        /// <summary>Remembers the Cloak bone's rest pose (call with the rest pose captured).</summary>
+        public void FindCloak()
+        {
+            _cloak = Bone("Cloak");
+            if (_cloak == null || !_restFromModel.TryGetValue(_cloak.name, out var fromModel)) return;
+            _cloakRest = _cloak.localRotation;
+            _cloakRestPosition = _cloak.localPosition;
+            // The model's right (+X): turning about it by a positive angle moves the hem back (-Z).
+            _cloakAxis = fromModel.MultiplyVector(Vector3.right).normalized;
+        }
+
         private void Recolor(string region, Color? color)
         {
             if (_body == null) return;
@@ -81,7 +170,7 @@ namespace Madlands.Client
                 var source = _baseMaterials[i];
                 if (source == null) continue;
                 float shade;
-                if (source.name == region || (region == "Hair" && source.name == "Beard")) shade = 1f;
+                if (source.name == region || source.name == region + "Lower" || (region == "Hair" && source.name == "Beard")) shade = 1f;
                 else if (source.name == region + "Trim") shade = TrimShade;
                 else continue;
                 _shown[i] = color.HasValue ? TintedCopy(source, new Color(color.Value.r * shade, color.Value.g * shade, color.Value.b * shade, 1f)) : source;
@@ -221,6 +310,14 @@ namespace Madlands.Client
         /// </summary>
         public static DisplayShape Create(Transform parent, uint displayId, out DisplayModel model)
         {
+            var shape = Build(parent, displayId, out model);
+            // Hats and helmets make a head taller (nameplates, click targets).
+            if (model != null) shape.Height = Mathf.Max(shape.Height, model.Height);
+            return shape;
+        }
+
+        private static DisplayShape Build(Transform parent, uint displayId, out DisplayModel model)
+        {
             model = null;
             DisplayShape shape;
             switch (displayId)
@@ -238,8 +335,7 @@ namespace Madlands.Client
                     model.Tint("Legs", Hex("#3b3230"));
                     model.Tint("Hair", Hex("#2a2422"));
                     model.Tint("Feet", Hex("#2e2622"));
-                    model.SetHidden("Hair", true);
-                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.74f, -0.03f), new Vector3(0.27f, 0.26f, 0.3f), Hex("#2f2a28"));
+                    Wear(model, "#2f2a28", "Hood");
                     model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.32f, 0.13f), new Vector3(0.07f, 0.12f, 0.04f), new Color(0.4f, 0.95f, 1f), new Vector3(0f, 0f, 45f), glow: true);
                     return shape;
                 case ShardcasterDisplay:
@@ -252,6 +348,7 @@ namespace Madlands.Client
                     model.Tint("Legs", Hex("#3e2a5a"));
                     model.Tint("Waist", Hex("#c9a23e"));
                     model.Tint("Hair", Hex("#d8d4cc"));
+                    Wear(model, "#55357a", "RobeSkirt", "RobeCuffs");
                     var crystal = Glow(parent, new Vector3(0f, shape.Height + 0.45f, 0f), new Vector3(0.2f, 0.34f, 0.2f), new Color(0.45f, 1f, 1f));
                     crystal.localRotation = Quaternion.Euler(0f, 45f, 0f);
                     crystal.gameObject.AddComponent<Spinner>();
@@ -263,18 +360,9 @@ namespace Madlands.Client
                     // Steel armor, a helmet and a blue cloak: the outpost's commander.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
-                    var steel = Hex("#9aa3b2");
-                    model.Tint("Chest", steel);
-                    model.Tint("Arms", steel);
-                    model.Tint("Hands", Hex("#6d7480"));
-                    model.Tint("Legs", Hex("#2f3d66"));
-                    model.Tint("Feet", Hex("#4a4f58"));
-                    model.SetHidden("Hair", true);
-                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.76f, 0f), new Vector3(0.27f, 0.2f, 0.29f), steel);
-                    model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.69f, 0f), new Vector3(0.29f, 0.03f, 0.31f), Hex("#6d7480"));
-                    model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.0f, -0.15f), new Vector3(0.46f, 0.95f, 0.03f), Hex("#27428a"), new Vector3(-6f, 0f, 0f));
-                    foreach (var x in new[] { -0.22f, 0.22f })
-                        model.Attach("Chest", PrimitiveType.Sphere, new Vector3(x, 1.46f, 0f), new Vector3(0.2f, 0.12f, 0.22f), steel);
+                    Dress(model, chest: "#3a4a6e", arms: "#5d6676", legs: "#2f3d66", hands: "#6d7480", feet: "#4a4f58");
+                    Wear(model, "#9aa3b2", "Helm", "Pauldrons", "Breastplate");
+                    Wear(model, "#27428a", "Cloak");
                     return shape;
                 }
                 case HerbalistDisplay:
@@ -286,11 +374,8 @@ namespace Madlands.Client
                     model.Tint("Chest", Hex("#5a4370"));
                     model.Tint("Arms", Hex("#5a4370"));
                     model.Tint("Legs", Hex("#4a3a5c"));
-                    var hat = Hex("#2c2433");
-                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.8f, 0f), new Vector3(0.6f, 0.015f, 0.6f), hat);
-                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.92f, 0f), new Vector3(0.27f, 0.12f, 0.27f), hat);
-                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0.03f, 2.08f, 0f), new Vector3(0.16f, 0.06f, 0.16f), hat, new Vector3(0f, 0f, -12f));
-                    shape.Height += 0.3f;
+                    Wear(model, "#5a4370", "RobeSkirt", "RobeCuffs");
+                    Wear(model, "#2c2433", "WizardHat");
                     return shape;
                 }
                 case FrogDisplay:
@@ -307,55 +392,50 @@ namespace Madlands.Client
                     model.Tint("Chest", Hex("#7a5636"));
                     model.Tint("Arms", Hex("#7a5636"));
                     model.Tint("Hair", Hex("#6b6158"));
-                    model.Attach("Spine", PrimitiveType.Cube, new Vector3(0f, 0.86f, 0.17f), new Vector3(0.4f, 0.55f, 0.03f), Hex("#a88a62"));
+                    Wear(model, "#a88a62", "Apron");
                     return shape;
                 case InnkeeperDisplay:
                     // Marla Fenn of the Muddy Boot: a wine-red dress and a white apron.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#7a3242", arms: "#7a3242", legs: "#5a2a36", hair: "#a3602a");
-                    model.Attach("Spine", PrimitiveType.Cube, new Vector3(0f, 1.0f, 0.12f), new Vector3(0.3f, 0.6f, 0.02f), Hex("#e8e2d0"));
+                    Wear(model, "#7a3242", "RobeSkirt");
+                    Wear(model, "#e8e2d0", "Apron");
                     return shape;
                 case FarmerDisplay:
                     // Wil Tenney: work clothes and a straw hat.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#6b7a48", arms: "#6b7a48", legs: "#5a4a35", hair: "#8a7d6c");
-                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.81f, 0f), new Vector3(0.52f, 0.012f, 0.52f), Hex("#d8bf6a"));
-                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.87f, 0f), new Vector3(0.25f, 0.07f, 0.25f), Hex("#d8bf6a"));
+                    Wear(model, "#d8bf6a", "StrawHat");
                     return shape;
                 case ProspectorDisplay:
                     // Brannoc Ironvein: mail, a miner's helmet with a lamp.
                     shape = Humanoid(parent, "Korrin", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#5c616b", arms: "#5c616b", legs: "#4a3a2a", hair: "#3a2a1e");
-                    model.SetHidden("Hair", true);
-                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.42f, 0f), new Vector3(0.3f, 0.2f, 0.31f), Hex("#7d8490"));
-                    model.Attach("Head", PrimitiveType.Cube, new Vector3(0f, 1.44f, 0.15f), new Vector3(0.06f, 0.06f, 0.04f), Hex("#ffd27a"), glow: true);
+                    Wear(model, "#7d8490", "MinerHelm");
                     return shape;
                 case ScoutDisplay:
                     // Rennick: forest greens and a hood.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#3d5a35", arms: "#3d5a35", legs: "#3a3428", hair: "#2a2420");
-                    model.SetHidden("Hair", true);
-                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.74f, -0.03f), new Vector3(0.28f, 0.27f, 0.31f), Hex("#2f4a2a"));
-                    model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.05f, -0.14f), new Vector3(0.42f, 0.9f, 0.03f), Hex("#2f4a2a"), new Vector3(-6f, 0f, 0f));
+                    Wear(model, "#2f4a2a", "Hood", "Cloak");
                     return shape;
                 case FishermanDisplay:
                     // Old Pell: a Korrin in a blue jacket and an oilskin hat.
                     shape = Humanoid(parent, "Korrin", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#4a6a8a", arms: "#4a6a8a", legs: "#4a4438", hair: "#d0ccc4");
-                    model.SetHidden("Hair", true);
-                    model.Attach("Head", PrimitiveType.Cylinder, new Vector3(0f, 1.47f, -0.02f), new Vector3(0.42f, 0.012f, 0.42f), Hex("#c9a640"));
-                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.49f, 0f), new Vector3(0.27f, 0.14f, 0.27f), Hex("#c9a640"));
+                    Wear(model, "#c9a640", "OilskinHat");
                     return shape;
                 case PriestDisplay:
                     // Brother Aldous: a white robe with a gold sash.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
                     Dress(model, chest: "#ddd5bd", arms: "#ddd5bd", legs: "#cfc6ac", hair: "#7a6a5a", waist: "#c9a23e");
+                    Wear(model, "#ddd5bd", "RobeSkirt", "RobeCuffs");
                     return shape;
                 case SmithDisplay:
                     // Gerta Hask: bare arms, a leather apron, her hair in a topknot (and no beard).
@@ -364,7 +444,7 @@ namespace Madlands.Client
                     model.SetHidden("Beard", true);
                     model.SetHidden("BeardMetal", true);
                     Dress(model, chest: "#6a4a3a", arms: "#d49a78", legs: "#4a3a2a", hair: "#c86a30");
-                    model.Attach("Spine", PrimitiveType.Cube, new Vector3(0f, 0.86f, 0.17f), new Vector3(0.42f, 0.6f, 0.03f), Hex("#5a3a22"));
+                    Wear(model, "#5a3a22", "Apron");
                     return shape;
                 case MirelingDisplay:
                 case MirelingOracleDisplay:
@@ -397,12 +477,9 @@ namespace Madlands.Client
                     // Lieutenant Vorn: black and red, a dark helmet, a head taller than his bandits.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
-                    var dark = Hex("#2a2a2c");
                     Dress(model, chest: "#5a1a1a", arms: "#2a2a2c", legs: "#2a2a2c", hair: "#1a1a1a", hands: "#2a2a2c");
-                    model.SetHidden("Hair", true);
-                    model.Attach("Head", PrimitiveType.Sphere, new Vector3(0f, 1.77f, 0f), new Vector3(0.28f, 0.22f, 0.3f), Hex("#3a3c42"));
-                    foreach (var x in new[] { -0.23f, 0.23f })
-                        model.Attach("Chest", PrimitiveType.Sphere, new Vector3(x, 1.46f, 0f), new Vector3(0.22f, 0.14f, 0.24f), dark);
+                    Wear(model, "#3a3c42", "HornedHelm", "SpikedPauldrons");
+                    Wear(model, "#5a1a1a", "Cloak");
                     return Scaled(shape, model, 1.15f);
                 }
                 case GloomjawDisplay:
@@ -435,6 +512,12 @@ namespace Madlands.Client
                 default:
                     return Placeholder(parent, displayId);
             }
+        }
+
+        /// <summary>Gear pieces in one color (GearVisuals.Wear).</summary>
+        private static void Wear(DisplayModel model, string color, params string[] pieces)
+        {
+            foreach (var piece in pieces) GearVisuals.Wear(model, piece, Hex(color));
         }
 
         /// <summary>Recolors the gear regions of a humanoid (null keeps the model's color).</summary>
@@ -495,19 +578,28 @@ namespace Madlands.Client
                 Animator = root.GetComponent<Animator>(),
                 Clips = catalog.GetClips(clipSet),
                 Humanoid = humanoid,
-                Body = root.GetComponentInChildren<SkinnedMeshRenderer>(),
             };
             if (model.Animator != null) model.Animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
             model.CaptureRestPose();
             foreach (var r in root.GetComponentsInChildren<Renderer>())
-                model.Height = Mathf.Max(model.Height, r.bounds.max.y - root.position.y);
-            if (model.Body is SkinnedMeshRenderer skinned)
             {
-                // The bounds come from the rest pose; lying dead or swinging arms reach further.
-                var bounds = skinned.localBounds;
-                bounds.Expand(1f);
-                skinned.localBounds = bounds;
+                float top = r.bounds.max.y - root.position.y;
+                if (r is SkinnedMeshRenderer skinned)
+                {
+                    // The bounds come from the rest pose; lying dead, swinging arms or a cloak reach further.
+                    var bounds = skinned.localBounds;
+                    bounds.Expand(1f);
+                    skinned.localBounds = bounds;
+                }
+                if (DisplayModel.IsPiece(r))
+                {
+                    model.AddPiece(r, top);
+                    continue;
+                }
+                if (model.Body == null && r is SkinnedMeshRenderer) model.Body = r;
+                model.Height = Mathf.Max(model.Height, top);
             }
+            model.FindCloak();
             // Grips in the rest pose: a weapon's +Y points forward, its +X up (blade edge up).
             model.MainHandGrip = model.Bone("MainHandGrip");
             model.OffHandGrip = model.Bone("OffHandGrip");

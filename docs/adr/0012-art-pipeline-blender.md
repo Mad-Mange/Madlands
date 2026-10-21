@@ -63,4 +63,6 @@ its look. The project owner wants to use Blender and to start very low-poly, ref
 - Scripted models are easy to diff and to change everywhere at once (proportions, palette), but have a plain look.
   That is intended for now; individual models can move to hand editing without changing the pipeline.
 - Any modular gear shows as recolored regions first; extra meshes (helmets, shoulders) attach to bones later.
+  (2026-10-21: the pieces became meshes inside each race's model instead, built from the race's proportions and
+  skinned to its skeleton, hidden until worn: `art/blender/gear.py`.)
 - The player's model comes from the race (`races.json` `displayId`), sent in `Welcome` (protocol v7).

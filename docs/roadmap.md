@@ -103,8 +103,11 @@ Every phase ends in something playable and tested. Architectural decisions are i
   NPCs (recolored per display), the creatures (frog, wolf, training dummy, each with idle, walk, run, attack, hit and
   death), the beasts of Hollowmere (boar, bear, crocodile, the world boss, spider, shardling), all nine weapons and
   shields, and 40 props (trees, rocks, reeds, cottages, an inn, watchtowers, palisades, tents, stalls, ruins...).
-  Worn gear is visible on characters (protocol v8): body armor recolors the gear regions, robes cover the legs,
-  helmets, hoods, hats, shoulder pads and cloaks are shapes sized from each race's skeleton.
+  Worn gear is visible on characters (protocol v8): body armor recolors the gear regions, and modeled pieces
+  (`art/blender/gear.py`, 2026-10-21) show the rest: helmets, hoods, hats, shoulder pads, mantles, cloaks, robe
+  skirts with bell sleeves, breastplates and aprons. Every race's model carries each piece, built from its own
+  proportions and skinned to its skeleton (a robe's skirt follows the thighs, a cloak's hem swings back when
+  running); the NPCs wear them too.
   The two races were remodeled after classic fantasy MMOs (2026-10-20): heroic proportions with big deltoids and a
   tapering torso, faces with brows, eyes and a strong nose, swept hair, the Korrin's braided beard and topknot,
   fists, cuffed boots, belts with buckles, and darker trims that follow the gear colors. Hair hides under helmets
@@ -214,7 +217,8 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - ~~**Consumables cannot go on the action bar**~~ (done 2026-10-20): items share the slots with spells.
 - **Quests:** no quest-starting items, escort, timed, repeatable or daily quests yet (ADR 0011).
 - ~~**Only weapons and shields are visible on characters**~~ (done 2026-10-19): armor shows as recolored regions and
-  simple shapes (`GearVisuals`). Modeled armor pieces (Blender) can replace the shapes later; the display ids stay.
+  modeled pieces (`GearVisuals`, `art/blender/gear.py`, 2026-10-21). More pieces (gloves, boots, belts as meshes)
+  are a new function in `gear.py` each; the display ids stay.
 - **Tree crowns have no colliders**, so they block neither line of sight nor the camera.
 
 - ~~**Bandwidth**~~ (done 2026-10-18): `EntityMoves` entries are packed (guid as type + varint, ~2 mm positions, 16-bit

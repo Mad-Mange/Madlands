@@ -41,7 +41,7 @@ namespace Madlands.Client
         private bool _moving;
         private float _stepTimer;
         private readonly uint[] _gear = new uint[VisibleGear.Count];
-        private readonly System.Collections.Generic.List<GameObject> _gearParts = new System.Collections.Generic.List<GameObject>();
+        private bool _backward;
 
         public EntityGuid Guid { get; private set; }
         public uint DisplayId { get; private set; }
@@ -135,6 +135,7 @@ namespace Madlands.Client
             if (forward || backward || left || right) _sitting = false;
             _moving = !airborne && (forward || backward || left || right) && speed > 0.5f;
             _speed = speed;
+            _backward = backward;
 
             Locomotion loco;
             _turnTarget = 0f;
@@ -197,7 +198,7 @@ namespace Madlands.Client
                 _gear[i] = gear[i];
                 changed = true;
             }
-            if (changed) GearVisuals.Apply(_model, _gear, _gearParts);
+            if (changed) GearVisuals.Apply(_model, _gear);
         }
 
         /// <summary>A golden halo, sparkles and a gem over a corpse the local player may loot.</summary>
@@ -264,6 +265,9 @@ namespace Madlands.Client
                 _animator.Update(Time.deltaTime);
                 _turn = Mathf.MoveTowards(_turn, _dead ? 0f : _turnTarget, Time.deltaTime * 240f);
                 _visual.localRotation = Quaternion.Euler(0f, _turn, 0f);
+                // A cloak trails behind a running unit (less when it backs up), airborne too.
+                float drift = _dead ? 0f : _airborne ? 4f : _moving ? (_backward ? 1.5f : _speed) : 0f;
+                _model.SwayCloak(Time.deltaTime, drift, _sitting && !_moving && !_dead);
                 return;
             }
 
