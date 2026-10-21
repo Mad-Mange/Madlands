@@ -70,7 +70,8 @@ builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -cla
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Shopper -exec ".money 5000;.tele 10 -142" -talkto "Quartermaster Holt" -screenshot builds/screenshots/vendor.png -screenshotdelay 9 -quitafter 13
 ```
 Then read the PNG to verify (`-screenshotdelay` counts from entering the world, `-quitafter` from startup: leave
-room for logging in and the `-exec` lines, sent 0.7 s apart). Use `-logFile` for the player log. The server keeps characters between client runs:
+room for logging in and the `-exec` lines, sent 0.7 s apart; character names are letters only, so a `-name` with a
+digit never gets into the world). Use `-logFile` for the player log. The server keeps characters between client runs:
 use a new `-name` per screenshot run, or `.additem` lines add up. From PowerShell `Start-Process`, quote arguments
 that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unquoted. A running Release server locks
 `artifacts/bin/*/release`; build and test with `-c Debug` meanwhile (or run a second realm on other ports:
@@ -107,6 +108,8 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   nothing there.
 - A MonoBehaviour method named `Start` (or another Unity message) with parameters logs "Script error ... can not take
   parameters" in player builds: name helpers differently.
+- Props with mesh colliders become navmesh obstacles (Madlands > Export Map). Anything hanging lower than the 2 m agent
+  height over a path (a gate's banner, a beam) closes it for creatures; `NavigationTests` walks out of Mirewatch's gates.
 
 ## Rules
 
