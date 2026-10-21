@@ -304,17 +304,55 @@ def gate():
 
 
 def tent():
+    """
+    A canvas ridge tent: the cloth sags between the poles and flares at the hem, the front flaps are tied
+    back from a dark opening, a seam runs down each slope, guy ropes run out to stakes.
+    """
     m = mats()
     mb = lp.MeshBuilder("Tent")
     w, d, h = 3.6, 2.8, 2.4
-    verts = [(-w / 2, -d / 2, 0), (w / 2, -d / 2, 0), (w / 2, d / 2, 0), (-w / 2, d / 2, 0), (-w / 2, 0, h), (w / 2, 0, h)]
-    mb.add(verts, [(0, 1, 5, 4), (2, 3, 4, 5), (3, 0, 4), (1, 2, 5)], m["Canvas"], double_sided=True)
-    mb.add([(-w / 2 - 0.02, -0.5, 0), (-w / 2 - 0.02, 0.5, 0), (-w / 2 - 0.02, 0, 1.3)], [(0, 1, 2)], m["WoodDark"], double_sided=True)
-    for x in (-w / 2, w / 2):
-        mb.frustum((x, 0, 0), (x, 0, h + 0.3), 0.06, 0.05, m["Wood"], sides=5)
-    mb.frustum((-w / 2 - 0.1, 0, h + 0.1), (w / 2 + 0.1, 0, h + 0.1), 0.05, 0.05, m["Wood"], sides=5)
+    hw, hd = w / 2, d / 2
+    inside = lambda p: (p[0] * 0.5, 0.0, 0.4)
+    seam = lp.material("CanvasSeam", "#a8936a")
+    shade = lp.material("CanvasShade", "#7f6e4f")
+    # Each slope: rows along X (front end to back end), from the ridge down to the hem; the ridge sags a little.
+    for side in (-1, 1):
+        rows = []
+        for k, t in enumerate((0.0, 0.35, 0.7, 1.0)):
+            row = []
+            for i in range(7):
+                u = -hw + w * i / 6
+                sag = 0.12 * (1 - (2 * i / 6 - 1) ** 2)
+                z = (h - sag) * (1 - t) + 0.02 * t
+                y = side * (hd * t + 0.08 * t * t)
+                bulge = 0.06 * math.sin(math.pi * t) * (1 - (2 * i / 6 - 1) ** 2)
+                row.append((u, y + side * bulge, z - bulge * 0.5))
+            rows.append(row)
+        mb.grid(rows, m["Canvas"], None, inside)
+        mb.grid(rows, shade, None, inside, facing_in=True)
+        for i in (2, 4):
+            mb.tube([((rows[k][i][0], rows[k][i][1] * 1.01, rows[k][i][2] + 0.01), 0.018) for k in range(4)], seam, None, sides=4)
+    # The back end closed, the front open with its flaps tied back.
+    mb.add([(hw, -hd, 0.02), (hw, hd, 0.02), (hw, 0, h - 0.02)], [(0, 1, 2)], m["Canvas"], double_sided=True)
+    mb.add([(-hw + 0.3, -hd * 0.6, 0.02), (-hw + 0.3, hd * 0.6, 0.02), (-hw + 0.3, 0, h * 0.8)], [(0, 1, 2)], m["WoodDark"], double_sided=True)
+    for side in (-1, 1):
+        mb.add([(-hw, side * hd, 0.02), (-hw, side * hd * 0.25, h * 0.35), (-hw, 0, h - 0.05), (-hw - 0.05, side * hd * 0.55, h * 0.45)],
+               [(0, 3, 2, 1)], m["Canvas"], double_sided=True)
+        mb.tube([((-hw - 0.06, side * hd * 0.5, h * 0.42), 0.02), ((-hw - 0.06, side * hd * 0.42, h * 0.48), 0.02)], m["Wood"], None, sides=4)
+    # Poles, the ridge pole, guy ropes and stakes.
+    for x in (-hw, hw):
+        mb.frustum((x, 0, 0), (x, 0, h + 0.35), 0.06, 0.05, m["Wood"], sides=6)
+        for side in (-1, 1):
+            stake = (x + (-0.9 if x < 0 else 0.9), side * 0.5, 0.0)
+            mb.tube([((x, 0, h + 0.25), 0.012), ((stake[0], stake[1], 0.12), 0.012)], m["Plank"], None, sides=4)
+            mb.frustum((stake[0], stake[1], -0.1), (stake[0], stake[1], 0.18), 0.03, 0.04, m["WoodDark"], sides=4)
+    mb.frustum((-hw - 0.12, 0, h + 0.1), (hw + 0.12, 0, h + 0.1), 0.05, 0.05, m["Wood"], sides=6)
+    for side in (-1, 1):
+        for i in range(5):
+            u = -hw + w * (i + 0.5) / 5
+            mb.frustum((u, side * (hd + 0.45), -0.1), (u, side * (hd + 0.45), 0.15), 0.025, 0.035, m["WoodDark"], sides=4)
+            mb.tube([((u, side * (hd + 0.05), 0.05), 0.01), ((u, side * (hd + 0.45), 0.12), 0.01)], m["Plank"], None, sides=4)
     return mb.finish()
-
 
 def market_stall():
     m = mats()
@@ -395,18 +433,30 @@ def sacks():
 
 
 def campfire():
+    """A ring of rounded stones around crossed logs, embers, and flames in layers: a bright core in tongues of fire."""
     m = mats()
+    rng = random.Random(9)
     mb = lp.MeshBuilder("Campfire")
-    for i in range(8):
-        a = i * math.pi / 4
-        mb.box((math.cos(a) * 0.75, math.sin(a) * 0.75, 0.12), (0.3, 0.25, 0.25), m["StoneDark"], rotation=(0, 0, math.degrees(a)))
-    for i in range(4):
-        a = i * math.pi / 2 + 0.4
-        mb.frustum((math.cos(a) * 0.5, math.sin(a) * 0.5, 0.05), (math.cos(a) * -0.1, math.sin(a) * -0.1, 0.45), 0.07, 0.06, m["WoodDark"], sides=5)
-    mb.frustum((0, 0, 0.05), (0, 0, 1.0), 0.35, 0.02, m["FireGlow"], sides=6)
-    mb.frustum((0.12, 0.08, 0.05), (0.15, 0.1, 0.7), 0.2, 0.02, m["FireGlow"], sides=5)
+    for i in range(10):
+        a = i * 2 * math.pi / 10 + rng.uniform(-0.1, 0.1)
+        blob(mb, (math.cos(a) * 0.75, math.sin(a) * 0.75, 0.1), 0.17, m["Stone"] if i % 2 else m["StoneDark"], rng, points=9, squash=0.75)
+    for i in range(5):
+        a = i * 2 * math.pi / 5 + 0.3
+        mb.tube([((math.cos(a) * 0.62, math.sin(a) * 0.62, 0.06), 0.075), ((math.cos(a) * -0.05, math.sin(a) * -0.05, 0.42), 0.06)],
+                m["WoodDark"] if i % 2 else m["Wood"], None, sides=6)
+        mb.sphere((math.cos(a) * 0.12, math.sin(a) * 0.12, 0.3), 0.065, m["FireGlow"], segments=5, rings=3)
+    ember = lp.material("EmberGlow", "#c8461e", emission=2.0)
+    mb.hull([(math.cos(a) * 0.42, math.sin(a) * 0.42, 0.02) for a in (i * math.pi / 4 for i in range(8))] + [(0, 0, 0.12)], ember)
+    core = lp.material("FlameCoreGlow", "#ffe39a", emission=4.0)
+    for i in range(5):
+        a = i * 2 * math.pi / 5
+        r = 0.16
+        base = (math.cos(a) * r, math.sin(a) * r, 0.15)
+        tip = (math.cos(a) * r * 0.4 + rng.uniform(-0.05, 0.05), math.sin(a) * r * 0.4, 0.75 + rng.uniform(0, 0.3))
+        mb.hull([(base[0] + dx, base[1] + dy, base[2]) for dx, dy in ((0.12, 0), (-0.12, 0), (0, 0.12), (0, -0.12))]
+                + [((base[0] + tip[0]) / 2, (base[1] + tip[1]) / 2, (base[2] + tip[2]) / 2 + 0.05), tip], m["FireGlow"])
+    mb.hull([(0.1, 0, 0.15), (-0.1, 0, 0.15), (0, 0.1, 0.15), (0, -0.1, 0.15), (0.03, 0.02, 1.15), (0, 0, 0.55)], core)
     return mb.finish()
-
 
 def banner_pole():
     m = mats()
