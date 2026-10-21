@@ -298,15 +298,50 @@ def build_dummy():
     straw = lp.material("Straw", "#d2b56a")
     sack = lp.material("Sack", "#dccb8e")
     rope = lp.material("Rope", "#8a6f45")
+    paint = lp.material("Paint", "#9a2e26")
+    rng = random.Random(6)
     mb = lp.MeshBuilder("DummyBody")
-    mb.frustum((0, 0, 0), (0, 0, 0.1), 0.45, 0.4, dark, "Base", sides=8)
-    mb.frustum((0, 0, 0.08), (0, 0, 1.9), 0.08, 0.07, wood, "Post", sides=6)
-    mb.box((0, 0, 1.45), (1.3, 0.1, 0.1), wood, "Post")
-    mb.frustum((0, 0, 0.95), (0, 0, 1.6), 0.26, 0.3, straw, "Post", sides=8)
-    mb.frustum((0, 0, 1.1), (0, 0, 1.16), 0.28, 0.28, rope, "Post", sides=8)
-    mb.sphere((0, 0, 1.85), (0.2, 0.2, 0.22), sack, "Post", segments=8, rings=5)
-    for s in (1, -1):
-        mb.frustum((s * 0.62, 0, 1.45), (s * 0.7, 0, 1.45), 0.08, 0.1, straw, "Post", sides=6)
+    # A cross foot of beams with braces, the post, the crossbar for arms.
+    for yaw in (0, 90):
+        mb.box((0, 0, 0.07), (1.0 if yaw == 0 else 0.14, 0.14 if yaw == 0 else 1.0, 0.14), dark, "Base")
+    for k in range(4):
+        ang = math.pi / 2 * k
+        mb.tube([((math.cos(ang) * 0.38, math.sin(ang) * 0.38, 0.12), 0.035), ((math.cos(ang) * 0.06, math.sin(ang) * 0.06, 0.55), 0.035)], dark, "Post", sides=4)
+    mb.tube([((0, 0, 0.08), 0.085), ((0, 0, 1.95), 0.07)], wood, "Post", sides=7)
+    mb.tube([((-0.68, 0, 1.45), 0.05), ((0.68, 0, 1.45), 0.05)], wood, "Post", sides=6)
+    # A body of burlap stuffed with straw, bound with rope, a painted target on the chest.
+    rings = []
+    for z, r in ((0.92, 0.2), (1.0, 0.27), (1.2, 0.3), (1.42, 0.31), (1.58, 0.26), (1.64, 0.14)):
+        rings.append([(math.cos(t) * r * rng.uniform(0.95, 1.05), math.sin(t) * r * 0.85, z) for t in (2 * math.pi * k / 10 for k in range(10))])
+    mb.loft(rings, sack, "Post")
+    for z in (1.08, 1.5):
+        mb.frustum((0, 0, z - 0.03), (0, 0, z + 0.03), 0.31, 0.31, rope, "Post", sides=10)
+    for r, mat, dy in ((0.15, paint, 0.0), (0.1, sack, 0.004), (0.05, paint, 0.008)):
+        mb.frustum((0, -0.255 - dy, 1.3), (0, -0.265 - dy, 1.3), r, r, mat, "Post", sides=10)
+    for _ in range(14):
+        z = rng.uniform(0.9, 1.0)
+        t = rng.uniform(0, 2 * math.pi)
+        base = (math.cos(t) * 0.2, math.sin(t) * 0.17, z)
+        mb.tube([(base, 0.012), ((base[0] * 1.5, base[1] * 1.5, z - rng.uniform(0.08, 0.16)), 0.004)], straw, "Post", sides=3)
+    # Straw sleeves on the crossbar, tied at the ends.
+    for sx in (1, -1):
+        mb.tube([((sx * 0.25, 0, 1.45), 0.1), ((sx * 0.5, 0, 1.45), 0.09), ((sx * 0.62, 0, 1.45), 0.07)], sack, "Post", sides=7)
+        mb.frustum((sx * 0.6, 0, 1.45), (sx * 0.63, 0, 1.45), 0.075, 0.075, rope, "Post", sides=7)
+        for k in range(5):
+            t = 2 * math.pi * k / 5
+            mb.tube([((sx * 0.64, math.cos(t) * 0.04, 1.45 + math.sin(t) * 0.04), 0.012), ((sx * 0.75, math.cos(t) * 0.07, 1.45 + math.sin(t) * 0.06), 0.004)],
+                    straw, "Post", sides=3)
+    # A sack head with a painted face, tied at the neck, straw poking out on top.
+    mb.sphere((0, 0, 1.86), (0.19, 0.18, 0.21), sack, "Post", segments=9, rings=6)
+    mb.frustum((0, 0, 1.68), (0, 0, 1.72), 0.1, 0.1, rope, "Post", sides=8)
+    for sx in (1, -1):
+        mb.box((sx * 0.065, -0.17, 1.9), (0.045, 0.02, 0.03), dark, "Post", rotation=(0, sx * 45, 0))
+        mb.box((sx * 0.065, -0.17, 1.9), (0.045, 0.02, 0.03), dark, "Post", rotation=(0, -sx * 45, 0))
+    mb.box((0, -0.175, 1.79), (0.12, 0.02, 0.02), dark, "Post")
+    for k in range(7):
+        t = 2 * math.pi * k / 7
+        mb.tube([((math.cos(t) * 0.05, math.sin(t) * 0.05, 2.04), 0.014), ((math.cos(t) * 0.12, math.sin(t) * 0.1, 2.14 + rng.uniform(0, 0.05)), 0.004)],
+                straw, "Post", sides=3)
     return arm, mb.finish()
 
 

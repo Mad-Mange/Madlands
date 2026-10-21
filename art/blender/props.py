@@ -22,7 +22,7 @@ def mats():
     m = {name: lp.material(name, color) for name, color in PALETTE.items()}
     m["FireGlow"] = lp.material("FireGlow", "#ffa03a", emission=3.0)
     m["LanternGlow"] = lp.material("LanternGlow", "#ffd27a", emission=2.5)
-    m["CrystalGlow"] = lp.material("CrystalGlow", "#7ff2ff", emission=2.0)
+    m["CrystalGlow"] = lp.material("CrystalGlow", "#30c8ec", emission=2.0)
     return m
 
 

@@ -246,7 +246,7 @@ def quad_body(name, s):
             p = (math.cos(a) * W * 0.48, cy + 0.12 * L + rng.uniform(-0.06, 0.06), H - 0.05 + math.sin(a) * depth * 0.5 * hump)
             tufts(mb, [p], m["Fur"], "Chest", rng, size=0.11, sweep=(math.cos(a) * 0.5, 0.6, 0.3))
     if s.get("crystals"):
-        glow = lp.material("CrystalGlow", "#7ff2ff", emission=2.0)
+        glow = lp.material("CrystalGlow", "#30c8ec", emission=2.0)
         rng = random.Random(4)
         spots = [("Hips", hy - L * 0.2, Hh), ("Spine", 0.0, (H + Hh) / 2), ("Chest", cy + L * 0.15, H), ("Tail1", hy + tl * 0.25, Hh - tdrop * 0.2)]
         for bone, y, z in spots:
@@ -526,20 +526,70 @@ def build_shardling():
     ])
     rock = lp.material("StoneDark", "#4f4c58")
     rock2 = lp.material("Stone", "#6e6a78")
-    glow = lp.material("CrystalGlow", "#7ff2ff", emission=2.5)
+    glow = lp.material("CrystalGlow", "#30c8ec", emission=2.5)
+    core = lp.material("CoreGlow", "#d8ffff", emission=4.0)
     rng = random.Random(21)
     mb = lp.MeshBuilder("ShardlingBody")
-    mb.hull([(rng.uniform(-0.4, 0.4), rng.uniform(-0.28, 0.28), rng.uniform(0.75, 1.4)) for _ in range(14)], rock, "Body")
-    mb.hull([(0.0, 0.0, 0.15), (0.16, 0.05, 0.75), (-0.14, 0.08, 0.75), (0.02, -0.15, 0.75)], glow, "Base")
-    mb.hull([(rng.uniform(-0.17, 0.17), rng.uniform(-0.15, 0.15), rng.uniform(1.38, 1.7)) for _ in range(10)], rock2, "Head")
-    mb.box((0, -0.15, 1.55), (0.2, 0.03, 0.04), glow, "Head")
+
+    def shard(base, tip, width, mat, bone, facets=5):
+        """A crystal: a prism from `base` widening a little, then to a point at `tip`."""
+        base, tip = Vector(base), Vector(tip)
+        axis = (tip - base).normalized()
+        ref = Vector((0, 0, 1)) if abs(axis.z) < 0.9 else Vector((0, 1, 0))
+        u = axis.cross(ref).normalized()
+        v = axis.cross(u)
+        shoulder = base + (tip - base) * 0.7
+        pts = [tip]
+        for k in range(facets):
+            t = 2 * math.pi * k / facets
+            d = u * math.cos(t) + v * math.sin(t)
+            pts += [base + d * width * 0.8, shoulder + d * width]
+        mb.hull(pts, mat, bone)
+
+    # The heart: a bright core crystal in a cage of rock slabs, open at the front.
+    shard((0, 0, 0.85), (0, -0.02, 1.25), 0.11, core, "Body", facets=6)
+    shard((0, 0, 1.0), (0, -0.02, 0.62), 0.09, core, "Body", facets=6)
+    for k in range(8):
+        t = 2 * math.pi * k / 8
+        if math.cos(t) > 0.5:
+            continue  # open at the front (t = 0 is -Y)
+        out = Vector((math.sin(t), -math.cos(t), 0))
+        c = Vector((0, 0, 1.0)) + out * 0.3
+        pts = [c + out * dx + Vector((0, 0, dz)) + Vector((-out.y, out.x, 0)) * dy
+               for dx in (-0.05, 0.07) for dy in (-0.07, 0.07) for dz in (-0.24, 0.28)]
+        pts = [p + Vector((rng.uniform(-0.03, 0.03), rng.uniform(-0.03, 0.03), rng.uniform(-0.05, 0.05))) for p in pts]
+        mb.hull(pts, rock if k % 2 else rock2, "Body")
+    # Shoulders of rock with crystals breaking out, and a crown of crystals for a head over a stone brow.
+    for sx in (1, -1):
+        mb.hull([(sx * x, y, z) for x, y, z in ((0.22, 0.1, 1.3), (0.5, 0.05, 1.35), (0.48, -0.12, 1.2), (0.3, -0.15, 1.15), (0.36, 0.12, 1.1),
+                                                (0.42, 0.0, 1.45))], rock, "Body")
+        for k in range(3):
+            shard((sx * (0.32 + 0.06 * k), 0.02 * k, 1.38), (sx * (0.42 + 0.12 * k), 0.1 + 0.08 * k, 1.7 + 0.12 * (1 - k)), 0.05, glow, "Body")
+    mb.hull([(x, y, z) for x, y, z in ((0.14, -0.12, 1.4), (-0.14, -0.12, 1.4), (0.12, 0.1, 1.38), (-0.12, 0.1, 1.38), (0.0, -0.17, 1.52),
+                                     (0.1, 0.0, 1.55), (-0.1, 0.0, 1.55))], rock2, "Head")
+    mb.box((0, -0.16, 1.47), (0.18, 0.03, 0.04), core, "Head")
+    for k in range(5):
+        t = math.pi * (0.15 + 0.7 * k / 4)
+        shard((math.cos(t) * 0.08, 0.02, 1.52), (math.cos(t) * 0.22, 0.06, 1.72 + 0.12 * math.sin(t)), 0.04, glow, "Head")
+    # Arms: chunks of rock hanging below the shoulders, crystal fists.
     for sx in (1, -1):
         side = "L" if sx > 0 else "R"
-        mb.hull([(sx * 0.38, 0, 1.25), (sx * 0.5, 0.1, 1.15), (sx * 0.62, -0.05, 0.9), (sx * 0.5, -0.12, 1.1), (sx * 0.45, 0.05, 0.95)], rock2, "ArmUpper." + side)
-        mb.hull([(sx * 0.62, -0.05, 0.9), (sx * 0.75, 0.05, 0.6), (sx * 0.55, 0.05, 0.62), (sx * 0.7, -0.2, 0.42), (sx * 0.6, -0.15, 0.5)], rock, "ArmLower." + side)
-        for z in (1.3, 1.1):
-            x = sx * rng.uniform(0.15, 0.32)
-            mb.hull([(x + 0.05, 0.1, z), (x - 0.05, 0.1, z), (x, 0.18, z), (x + sx * 0.15, 0.35, z + 0.35)], glow, "Body")
+        mb.hull([(sx * x, y, z) for x, y, z in ((0.42, 0.06, 1.22), (0.6, 0.1, 1.1), (0.64, -0.08, 0.9), (0.5, -0.1, 1.05), (0.56, 0.05, 0.92))],
+                rock2, "ArmUpper." + side)
+        mb.hull([(sx * x, y, z) for x, y, z in ((0.6, -0.02, 0.9), (0.74, 0.06, 0.66), (0.58, 0.06, 0.66), (0.66, -0.14, 0.62), (0.68, -0.08, 0.8))],
+                rock, "ArmLower." + side)
+        for k in range(3):
+            shard((sx * 0.66, -0.1 + 0.06 * k, 0.6), (sx * (0.66 + 0.04 * (k - 1)), -0.2 + 0.08 * k, 0.4), 0.04, glow, "ArmLower." + side)
+    # Below: a tail of shards tapering to a point over the ground, small stones floating around it.
+    shard((0, 0, 0.7), (0, 0.02, 0.12), 0.15, glow, "Base", facets=6)
+    for k in range(3):
+        t = 2 * math.pi * k / 3 + 0.4
+        shard((math.cos(t) * 0.12, math.sin(t) * 0.12, 0.72), (math.cos(t) * 0.22, math.sin(t) * 0.22, 0.35), 0.06, rock, "Base")
+    for k in range(4):
+        t = 2 * math.pi * k / 4 + 0.8
+        blob_pts = [(math.cos(t) * 0.42 + rng.uniform(-0.05, 0.05), math.sin(t) * 0.42 + rng.uniform(-0.05, 0.05), 0.55 + rng.uniform(-0.05, 0.05))
+                    for _ in range(7)]
+        mb.hull(blob_pts, rock2, "Base")
     lp.bind(mb.finish(), arm)
 
     def float_pose(t, lean, speed_bob):

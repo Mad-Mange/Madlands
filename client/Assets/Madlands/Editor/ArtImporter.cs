@@ -37,7 +37,7 @@ namespace Madlands.Client.Editor
         public override int GetPostprocessOrder() => 10; // after URP's own material conversion
 
         /// <summary>Raise when the import rules change: Unity then imports the art again with them.</summary>
-        public override uint GetVersion() => 11;
+        public override uint GetVersion() => 12;
 
         /// <summary>Icons/ are interface pictures (art/blender/icons.py): kept sharp and transparent when drawn small.</summary>
         private void OnPreprocessTexture()
@@ -206,8 +206,10 @@ namespace Madlands.Client.Editor
             material.SetFloat("_Metallic", description.materialName.Contains("Metal") ? 0.6f : 0f);
             if (description.materialName.Contains("Glow"))
             {
+                // The light comes from the emission; a bright lit base on top of it washes the color out to white.
+                material.SetColor("_BaseColor", color * 0.25f);
                 material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", color * 1.5f);
+                material.SetColor("_EmissionColor", color * 1.1f);
                 material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
             }
         }

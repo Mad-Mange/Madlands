@@ -58,7 +58,7 @@ def crystal_rod():
     mb = lp.MeshBuilder("CrystalRod")
     dark = lp.material("DarkMetal", "#454a55")
     metal = lp.material("Metal", METAL)
-    crystal = lp.material("CrystalGlow", "#7ff2ff", emission=2.0)
+    crystal = lp.material("CrystalGlow", "#30c8ec", emission=2.0)
     mb.frustum((0, 0, -0.5), (0, 0, 1.15), 0.022, 0.026, dark, sides=6)
     mb.frustum((0, 0, 1.14), (0, 0, 1.2), 0.055, 0.035, metal, sides=6)
     for x, y in ((0.045, 0), (-0.045, 0), (0, 0.045), (0, -0.045)):
