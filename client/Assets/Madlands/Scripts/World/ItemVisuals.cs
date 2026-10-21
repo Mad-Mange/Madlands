@@ -26,6 +26,9 @@ namespace Madlands.Client
         private static readonly Color DarkSteel = new Color(0.4f, 0.42f, 0.46f);
         private static readonly Color Gold = new Color(0.86f, 0.68f, 0.25f);
 
+        /// <summary>Degrees a shield turns about its grip (the anchor's +Y), see Create.</summary>
+        private const float ShieldTurn = 90f;
+
         /// <summary>Held in both hands: swings with the two-handed attack.</summary>
         public static bool IsTwoHanded(uint displayId) => displayId == Staff || displayId == CrystalRod || displayId == GreatAxe || displayId == Cleaver;
 
@@ -46,7 +49,10 @@ namespace Madlands.Client
             var prefab = catalog != null && Models.TryGetValue(displayId, out var name) ? catalog.GetModel(name) : null;
             if (prefab != null)
             {
-                Object.Instantiate(prefab, hand, false);
+                var item = Object.Instantiate(prefab, hand, false).transform;
+                // A shield's face looks along the arm in the T-pose, so a hanging arm held it flat like a tray:
+                // turned about the grip, it faces out from the forearm.
+                if (displayId == Buckler) item.localRotation = Quaternion.AngleAxis(ShieldTurn, Vector3.up) * item.localRotation;
                 return;
             }
             switch (displayId)
