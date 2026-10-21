@@ -231,8 +231,38 @@ def quad_body(name, s):
         paw(mb, ankle, tip, r * 2.1, m["Dark"] if hoof else m["Fur"], part + "Paw." + side, claws=None if hoof else m["Dark"], hoof=hoof)
     tl, tdrop = s["tail"]
     tr = depth * (0.3 if tl > 1 else 0.08)
-    mb.tube([((0, hy - 0.05, Hh), tr), ((0, hy + tl * 0.5, Hh - tdrop * 0.5), tr * 0.75)], m["Fur"], "Tail1", sides=6)
-    mb.tube([((0, hy + tl * 0.5, Hh - tdrop * 0.5), tr * 0.75), ((0, hy + tl, Hh - tdrop), 0.02)], m["Fur"], "Tail2", sides=6)
+    if s["head"] == "croc":
+        # A crocodile's tail: tall and flat, thick at the base, with two rows of scutes down to a single crest.
+        def tail_at(t):
+            return (0, hy - 0.05 + (tl + 0.05) * t, Hh - tdrop * t)
+
+        weigh = along_y([("Hips", hy - 0.05), ("Tail1", hy + tl * 0.15), ("Tail2", hy + tl * 0.55)])
+        sections = [(tail_at(t), (W * 0.42 * (1 - t) + 0.015, depth * 0.45 * (1 - t * 0.85) + 0.02)) for t in (0.0, 0.2, 0.45, 0.7, 0.9, 1.0)]
+        mb.tube(sections, m["Fur"], weigh, sides=8)
+        for k in range(14):
+            t = k / 13
+            x0, y0, z0 = tail_at(t * 0.95)
+            half_h = depth * 0.45 * (1 - t * 0.95 * 0.85) + 0.02
+            rows = (-1, 1) if t < 0.45 else (0,)
+            for sx in rows:
+                x = sx * W * 0.12 * (1 - t)
+                base = (x, y0, z0 + half_h * 0.92)
+                size = 0.05 * (1 - t * 0.6)
+                mb.hull([(base[0] + dx, base[1] + dy, base[2]) for dx in (-size * 0.6, size * 0.6) for dy in (-size, size)] + [(x, y0 + size * 0.3, base[2] + size * 1.1)],
+                        m["Dark"], weigh)
+        # Scutes down the back too, in four rows.
+        for k in range(12):
+            y = cy + 0.1 + (hy - cy - 0.1) * k / 11
+            z = (H + Hh) / 2 + depth * 0.46
+            for sx in (-1.5, -0.5, 0.5, 1.5):
+                x = sx * W * 0.1
+                size = 0.045 if abs(sx) < 1 else 0.035
+                bone = "Chest" if y < cy + 0.2 * L else ("Spine" if y < hy - 0.25 * L else "Hips")
+                mb.hull([(x + dx, y + dy, z - 0.02) for dx in (-size * 0.6, size * 0.6) for dy in (-size, size)] + [(x, y + size * 0.3, z + size * 0.8)],
+                        m["Dark"], bone)
+    else:
+        mb.tube([((0, hy - 0.05, Hh), tr), ((0, hy + tl * 0.5, Hh - tdrop * 0.5), tr * 0.75)], m["Fur"], "Tail1", sides=6)
+        mb.tube([((0, hy + tl * 0.5, Hh - tdrop * 0.5), tr * 0.75), ((0, hy + tl, Hh - tdrop), 0.02)], m["Fur"], "Tail2", sides=6)
     if s["head"] == "boar":
         # A bristly dark ridge down the back.
         ridge = [(0, y, (H if y < 0 else Hh) + depth * 0.45 * (hump if y < 0 else 1.0) - 0.02) for y in [cy + 0.05 + (hy - cy) * 0.6 * i / 9 for i in range(10)]]
@@ -299,11 +329,22 @@ def head_croc(mb, m, s, base):
             + [(sx * 0.16, y0 - 0.05, z0 - 0.14) for sx in (1, -1)] + [(sx * 0.06, y0 - l + 0.04, z0 - 0.11) for sx in (1, -1)],
             m["FurLight"], "Jaw")
     for sx in (1, -1):
-        mb.sphere((sx * 0.11, y0 - 0.08, z0 + 0.1), (0.05, 0.06, 0.04), m["Fur"], "Head", segments=6, rings=4)
-        mb.box((sx * 0.12, y0 - 0.12, z0 + 0.11), (0.03, 0.02, 0.02), m["Tusk"], "Head")
-        for i in range(4):
-            mb.hull([(sx * 0.075, y0 - l * (0.3 + i * 0.17), z0 - 0.065), (sx * 0.075, y0 - l * (0.3 + i * 0.17) - 0.04, z0 - 0.065),
-                     (sx * 0.08, y0 - l * (0.3 + i * 0.17) - 0.02, z0 - 0.11)], m["Tusk"], "Head")
+        # Eyes up on bony knobs, nostrils on a bump at the tip, teeth along both jaws.
+        mb.sphere((sx * 0.11, y0 - 0.08, z0 + 0.1), (0.05, 0.06, 0.045), m["Fur"], "Head", segments=6, rings=4)
+        mb.sphere((sx * 0.12, y0 - 0.115, z0 + 0.115), (0.022, 0.012, 0.016), m["Tusk"], "Head", segments=6, rings=4)
+        mb.box((sx * 0.122, y0 - 0.126, z0 + 0.116), (0.008, 0.006, 0.018), m["Dark"], "Head")
+        mb.sphere((sx * 0.03, y0 - l + 0.04, z0 + 0.02), 0.022, m["Fur"], "Head", segments=5, rings=3)
+        mb.sphere((sx * 0.03, y0 - l + 0.035, z0 + 0.035), 0.008, m["Dark"], "Head", segments=4, rings=3)
+        for i in range(7):
+            f = 0.2 + i * 0.11
+            w = 0.075 + (0.19 - 0.075) * (1 - f) * 0.3
+            mb.hull([(sx * w, y0 - l * f, z0 - 0.06), (sx * w, y0 - l * f - 0.03, z0 - 0.06), (sx * (w + 0.006), y0 - l * f - 0.015, z0 - 0.1)],
+                    m["Tusk"], "Head")
+            mb.hull([(sx * (w - 0.01), y0 - l * f - 0.05, z0 - 0.075), (sx * (w - 0.01), y0 - l * f - 0.075, z0 - 0.075),
+                     (sx * (w - 0.004), y0 - l * f - 0.062, z0 - 0.04)], m["Tusk"], "Jaw")
+        for k in range(3):
+            y = y0 - l * (0.15 + 0.12 * k)
+            mb.sphere((sx * 0.06, y, z0 + 0.05 - 0.02 * k), 0.025, m["Dark"], "Head", segments=5, rings=3)
 
 
 HEADS = {"boar": head_boar, "bear": head_bear, "croc": head_croc}
