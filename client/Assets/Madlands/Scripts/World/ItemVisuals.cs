@@ -29,6 +29,9 @@ namespace Madlands.Client
         /// <summary>Held in both hands: swings with the two-handed attack.</summary>
         public static bool IsTwoHanded(uint displayId) => displayId == Staff || displayId == CrystalRod || displayId == GreatAxe || displayId == Cleaver;
 
+        /// <summary>A staff: stands upright in the hand while the holder is idle or moving (UnitView).</summary>
+        public static bool IsStaff(uint displayId) => displayId == Staff || displayId == CrystalRod;
+
         /// <summary>The Blender model of each display (art/blender/items.py).</summary>
         private static readonly System.Collections.Generic.Dictionary<uint, string> Models = new System.Collections.Generic.Dictionary<uint, string>
         {

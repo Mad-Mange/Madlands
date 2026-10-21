@@ -69,7 +69,8 @@ builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -cla
 # -autorun runs forward from the start, -sprint holds the sprint key (test sprint and stamina against the server).
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Shopper -exec ".money 5000;.tele 10 -142" -talkto "Quartermaster Holt" -screenshot builds/screenshots/vendor.png -screenshotdelay 9 -quitafter 13
 ```
-Then read the PNG to verify. Use `-logFile` for the player log. The server keeps characters between client runs:
+Then read the PNG to verify (`-screenshotdelay` counts from entering the world, `-quitafter` from startup: leave
+room for logging in and the `-exec` lines, sent 0.7 s apart). Use `-logFile` for the player log. The server keeps characters between client runs:
 use a new `-name` per screenshot run, or `.additem` lines add up. From PowerShell `Start-Process`, quote arguments
 that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unquoted. A running Release server locks
 `artifacts/bin/*/release`; build and test with `-c Debug` meanwhile (or run a second realm on other ports:

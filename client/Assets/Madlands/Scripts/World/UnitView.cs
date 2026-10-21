@@ -17,6 +17,12 @@ namespace Madlands.Client
         private const float LungeSeconds = 0.25f;
         /// <summary>How far the body turns toward a diagonal run (WoW turns the legs, we turn the model).</summary>
         private const float DiagonalTurn = 40f;
+        /// <summary>
+        /// A staff out of a cast or swing: turned up from the hand's line (degrees) and held this far up its
+        /// length (meters), so it stands like a walking staff instead of pointing at the ground.
+        /// </summary>
+        private const float StaffUpright = 110f;
+        private const float StaffSlide = 0.5f;
 
         private Transform _visual;
         private DisplayModel _model;
@@ -42,6 +48,7 @@ namespace Madlands.Client
         private float _stepTimer;
         private readonly uint[] _gear = new uint[VisibleGear.Count];
         private bool _backward;
+        private float _staffUpright;
 
         public EntityGuid Guid { get; private set; }
         public uint DisplayId { get; private set; }
@@ -187,6 +194,20 @@ namespace Madlands.Client
             ItemVisuals.Create(hand, displayId);
         }
 
+        /// <summary>Stands a held staff upright, and brings it into the hands' line for casts and swings.</summary>
+        private void HoldStaff()
+        {
+            if (_mainHand == null || _model?.MainHandGrip == null || !ItemVisuals.IsStaff(_mainDisplay)) return;
+            bool upright = !_dead && !_animator.ActionPlaying;
+            _staffUpright = Mathf.MoveTowards(_staffUpright, upright ? 1f : 0f, Time.deltaTime * 5f);
+            float t = Mathf.SmoothStep(0f, 1f, _staffUpright);
+            // The weapon's +Y runs along it and its +Z along the arm (down while the arm hangs): turning about
+            // its +X lifts it.
+            var rotation = _model.MainHandOffset * Quaternion.AngleAxis(-StaffUpright * t, Vector3.right);
+            _mainHand.localRotation = rotation;
+            _mainHand.localPosition = rotation * Vector3.down * (StaffSlide * t);
+        }
+
         /// <summary>Shows the worn armor others can see (humanoid models only).</summary>
         public void SetGear(uint[] gear)
         {
@@ -265,6 +286,7 @@ namespace Madlands.Client
                 _animator.Update(Time.deltaTime);
                 _turn = Mathf.MoveTowards(_turn, _dead ? 0f : _turnTarget, Time.deltaTime * 240f);
                 _visual.localRotation = Quaternion.Euler(0f, _turn, 0f);
+                HoldStaff();
                 // A cloak trails behind a running unit (less when it backs up), airborne too.
                 float drift = _dead ? 0f : _airborne ? 4f : _moving ? (_backward ? 1.5f : _speed) : 0f;
                 _model.SwayCloak(Time.deltaTime, drift, _sitting && !_moving && !_dead);

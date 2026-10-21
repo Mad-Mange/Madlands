@@ -465,13 +465,19 @@ def side_pose(pose, bone, left_rotations):
     pose["Right" + bone] = lp.mirror(left_rotations)
 
 
+def grip(pose, degrees):
+    """Bends the main hand's wrist so a held weapon points down: 0 leaves it level with the forearm's bend."""
+    pose["RightHand"] = lp.mirror([("Z", degrees)])
+
+
 def stance(arm_down=74.0, elbow=14.0):
-    """Relaxed standing: arms down, elbows a little bent, feet a little apart."""
+    """Relaxed standing: arms down, elbows a little bent, feet a little apart, a weapon pointing forward and down."""
     pose = {}
     side_pose(pose, "UpperArm", [("Y", arm_down)])
     side_pose(pose, "LowerArm", [("Z", -elbow)])
     side_pose(pose, "UpperLeg", [("Y", -3)])
     side_pose(pose, "Foot", [("Y", 3)])
+    grip(pose, 45)
     return pose
 
 
@@ -495,9 +501,10 @@ def cycle(t, phase=0.0):
     return math.sin(2 * math.pi * (t + phase))
 
 
-def gait(t, swing, knee_swing, knee_stance, arm_swing, elbow, lean, bob, bounce_height):
-    """A two-step cycle; at t = 0 the left foot lands in front."""
+def gait(t, swing, knee_swing, knee_stance, arm_swing, elbow, lean, bob, bounce_height, wrist=58):
+    """A two-step cycle; at t = 0 the left foot lands in front. `wrist`: see grip."""
     pose = {}
+    grip(pose, wrist)
     for side, phase in (("Left", 0.0), ("Right", 0.5)):
         c = math.cos(2 * math.pi * (t + phase))          # 1 = leg in front
         lift = max(0.0, math.sin(2 * math.pi * (t + phase - 0.5)))  # swing phase: leg moves forward
@@ -532,7 +539,7 @@ def walk(t):
 
 
 def run(t):
-    return gait(t, swing=40, knee_swing=85, knee_stance=18, arm_swing=38, elbow=75, lean=11, bob=0.09, bounce_height=0.07)
+    return gait(t, swing=40, knee_swing=85, knee_stance=18, arm_swing=38, elbow=75, lean=11, bob=0.09, bounce_height=0.07, wrist=64)
 
 
 def run_back(t):
