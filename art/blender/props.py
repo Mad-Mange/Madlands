@@ -119,14 +119,26 @@ def tree_pine(seed):
 
 
 def tree_dead():
+    """A dead tree: a gnarled grey trunk splitting into crooked, broken limbs, roots gripping the ground."""
     rng = random.Random(7)
     m = mats()
     mb = lp.MeshBuilder("TreeDead")
-    mb.frustum((0, 0, -0.3), (0, 0, 5.5), 0.36, 0.12, m["BarkGray"], sides=6)
+    mb.tube([((0, 0, -0.3), 0.42), ((0.05, 0.02, 1.2), 0.3), ((0.15, -0.05, 3.0), 0.22), ((0.1, 0.05, 4.6), 0.14), ((0.25, 0.1, 5.6), 0.04)],
+            m["BarkGray"], sides=7)
     for i in range(4):
+        a = 2 * math.pi * i / 4 + rng.uniform(-0.3, 0.3)
+        mb.tube([((math.cos(a) * 0.15, math.sin(a) * 0.15, 0.6), 0.16), ((math.cos(a) * 0.5, math.sin(a) * 0.5, 0.1), 0.11),
+                 ((math.cos(a) * 0.95, math.sin(a) * 0.95, -0.15), 0.03)], m["BarkGray"], sides=5)
+    for i in range(5):
         a = rng.uniform(0, 2 * math.pi)
-        z = rng.uniform(2.2, 4.8)
-        mb.frustum((0, 0, z), (math.cos(a) * 1.8, math.sin(a) * 1.8, z + rng.uniform(0.8, 1.6)), 0.1, 0.03, m["BarkGray"], sides=4)
+        z = rng.uniform(2.0, 4.6)
+        reach = rng.uniform(1.2, 2.0)
+        start = (0.1, 0, z)
+        bend = (math.cos(a) * reach * 0.5, math.sin(a) * reach * 0.5, z + rng.uniform(0.2, 0.7))
+        tip = (math.cos(a + rng.uniform(-0.5, 0.5)) * reach, math.sin(a + rng.uniform(-0.5, 0.5)) * reach, z + rng.uniform(0.6, 1.6))
+        mb.tube([(start, 0.11), (bend, 0.07), (tip, 0.015)], m["BarkGray"], sides=5)
+        twig = (bend[0] * 1.3, bend[1] * 1.3, bend[2] + 0.9)
+        mb.tube([(bend, 0.04), (twig, 0.01)], m["BarkGray"], sides=4)
     return mb.finish()
 
 
@@ -198,19 +210,33 @@ def mushrooms():
 
 
 def log():
+    """A fallen log: bark, cut ends with rings, a broken branch and moss along the top."""
     m = mats()
     mb = lp.MeshBuilder("Log")
-    mb.frustum((-2.0, 0, 0.32), (2.0, 0, 0.3), 0.34, 0.3, m["Bark"], sides=7)
-    mb.frustum((-2.02, 0, 0.32), (-1.98, 0, 0.32), 0.3, 0.3, m["Plank"], sides=7)
-    mb.frustum((0.6, 0, 0.5), (1.0, 0.4, 1.0), 0.08, 0.04, m["Bark"], sides=4)
+    mb.tube([((-2.0, 0, 0.33), 0.34), ((-0.6, 0.03, 0.32), 0.32), ((0.8, -0.02, 0.31), 0.31), ((2.0, 0, 0.3), 0.29)], m["Bark"], sides=8)
+    for x, r, f in ((-2.01, 0.31, -1), (2.01, 0.27, 1)):
+        for i, rr in enumerate((r, r * 0.66, r * 0.33)):
+            mb.frustum((x, 0, 0.33 - (0.03 if f > 0 else 0)), (x + f * (0.012 + 0.004 * i), 0, 0.33 - (0.03 if f > 0 else 0)), rr, rr,
+                       m["Plank"] if i % 2 == 0 else m["Wood"], sides=8)
+    mb.tube([((0.6, 0.05, 0.55), 0.09), ((0.85, 0.3, 0.95), 0.05), ((0.95, 0.4, 1.15), 0.02)], m["Bark"], sides=5)
+    mb.tube([((-1.6, 0, 0.62), (0.02, 0.12)), ((-0.2, 0.02, 0.62), (0.02, 0.16)), ((1.2, -0.02, 0.6), (0.02, 0.1))], m["Moss"], sides=4)
     return mb.finish()
 
 
 def stump():
+    """A cut stump with roots, bark and growth rings on top, a few mushrooms at its foot."""
     m = mats()
     mb = lp.MeshBuilder("Stump")
-    mb.frustum((0, 0, -0.2), (0, 0, 0.6), 0.55, 0.45, m["Bark"], sides=7)
-    mb.frustum((0, 0, 0.59), (0, 0, 0.62), 0.42, 0.42, m["Plank"], sides=7)
+    mb.tube([((0, 0, -0.2), 0.58), ((0, 0, 0.25), 0.48), ((0, 0, 0.6), 0.45)], m["Bark"], sides=9)
+    for i, r in enumerate((0.42, 0.3, 0.18, 0.07)):
+        mb.frustum((0, 0, 0.6), (0, 0, 0.615 + 0.004 * i), r, r, m["Plank"] if i % 2 == 0 else m["Wood"], sides=9)
+    for i in range(5):
+        a = 2 * math.pi * i / 5 + 0.3
+        mb.tube([((math.cos(a) * 0.35, math.sin(a) * 0.35, 0.3), 0.16), ((math.cos(a) * 0.7, math.sin(a) * 0.7, 0.05), 0.1),
+                 ((math.cos(a) * 0.95, math.sin(a) * 0.95, -0.12), 0.03)], m["Bark"], sides=5)
+    for x, y, h in ((0.5, -0.35, 0.18), (0.6, -0.15, 0.12)):
+        mb.frustum((x, y, 0), (x, y, h), 0.025, 0.02, m["MushroomStem"], sides=5)
+        mb.frustum((x, y, h - 0.02), (x, y, h + 0.06), 0.08, 0.01, m["MushroomCap"], sides=6)
     return mb.finish()
 
 
@@ -393,13 +419,31 @@ def fence():
 
 
 def crate():
+    """A crate of boards in a frame of darker battens, braced across each side, with iron corners."""
     m = mats()
     mb = lp.MeshBuilder("Crate")
-    mb.box((0, 0, 0.45), (0.9, 0.9, 0.9), m["Plank"])
-    for y in (-0.46, 0.46):
-        mb.box((0, y, 0.45), (0.95, 0.04, 0.12), m["WoodDark"], rotation=(0, 45, 0))
-    for x in (-0.46, 0.46):
-        mb.box((x, 0, 0.45), (0.04, 0.95, 0.12), m["WoodDark"], rotation=(45, 0, 0))
+    w = 0.9
+    h = w / 2
+    mb.box((0, 0, h), (w - 0.04, w - 0.04, w - 0.04), m["WoodDark"])
+    for k in range(4):
+        turn = k * 90
+        for i in range(4):
+            u = -h + 0.06 + (w - 0.12) * (i + 0.5) / 4
+            x, y = (u, -h) if k % 2 == 0 else (h, u)
+            x, y = (x, y) if k < 2 else (-x, -y)
+            mb.box((x, y, h), (0.19 if k % 2 == 0 else 0.03, 0.03 if k % 2 == 0 else 0.19, w - 0.16), m["Plank"] if i % 2 else m["Wood"])
+    for z in (0.06, w - 0.06):
+        for k in range(4):
+            a = math.radians(90 * k)
+            mb.box((math.sin(a) * (h + 0.01), -math.cos(a) * (h + 0.01), z), (w + 0.02, 0.05, 0.1), m["WoodDark"], rotation=(0, 0, 90 * k))
+    for k in range(4):
+        a = math.radians(90 * k)
+        mb.box((math.sin(a) * (h + 0.025), -math.cos(a) * (h + 0.025), h), (w * 1.18, 0.04, 0.09), m["WoodDark"], rotation=(0, 45 if k % 2 else -45, 90 * k))
+        for x in (-1, 1):
+            for z in (0.06, w - 0.06):
+                c = (math.sin(a) * (h + 0.03) + math.cos(a) * x * (h - 0.03), -math.cos(a) * (h + 0.03) + math.sin(a) * x * (h - 0.03), z)
+                mb.box(c, (0.09, 0.03, 0.12), m["Metal"], rotation=(0, 0, 90 * k))
+    mb.box((0, 0, w + 0.005), (w - 0.02, w - 0.02, 0.03), m["Plank"])
     return mb.finish()
 
 
@@ -414,11 +458,23 @@ def barrel():
 
 
 def sacks():
+    """Three grain sacks slumped against each other, tied at the neck, one spilling a little grain."""
     m = mats()
     mb = lp.MeshBuilder("Sacks")
     rng = random.Random(4)
-    for x, y, z in ((-0.35, 0, 0.3), (0.35, 0.05, 0.3), (0, 0, 0.75)):
-        blob(mb, (x, y, z), 0.38, m["Canvas"], rng, squash=0.75)
+    grain = lp.material("Grain", "#d8b85a")
+    for x, y, z, lean in ((-0.35, 0, 0.0, 12), (0.35, 0.05, 0.0, -10), (0.0, -0.05, 0.42, 4)):
+        rings = []
+        for h, r in ((0.0, 0.28), (0.08, 0.34), (0.3, 0.37), (0.5, 0.32), (0.62, 0.18), (0.68, 0.08)):
+            rings.append([(x + math.cos(t) * r * rng.uniform(0.94, 1.04) + math.radians(lean) * h, y + math.sin(t) * r * 0.85, z + h + 0.02)
+                          for t in (2 * math.pi * k / 9 for k in range(9))])
+        mb.loft(rings, m["Canvas"])
+        top = (x + math.radians(lean) * 0.7, y, z + 0.72)
+        mb.tube([((top[0], top[1], top[2] - 0.05), 0.09), (top, 0.09)], m["ReedTop"])
+        mb.hull([(top[0] + dx, top[1] + dy, top[2] + dz) for dx, dy, dz in
+                 ((0.1, 0, 0.0), (-0.1, 0, 0.0), (0, 0.08, 0.0), (0, -0.08, 0.0), (0.06, 0.03, 0.12), (-0.05, -0.02, 0.1))], m["Canvas"])
+    for _ in range(9):
+        mb.sphere((rng.uniform(0.6, 0.9), rng.uniform(-0.3, 0.3), 0.02), 0.03, grain, segments=4, rings=3)
     return mb.finish()
 
 
@@ -460,14 +516,29 @@ def banner_pole():
 
 
 def cauldron():
+    """An iron cauldron on three legs over a few glowing coals, a thick rim, ring handles, a green brew."""
     m = mats()
     mb = lp.MeshBuilder("Cauldron")
-    mb.frustum((0, 0, 0.15), (0, 0, 0.45), 0.35, 0.55, m["Metal"], sides=8)
-    mb.frustum((0, 0, 0.45), (0, 0, 0.8), 0.55, 0.45, m["Metal"], sides=8)
-    mb.frustum((0, 0, 0.74), (0, 0, 0.76), 0.42, 0.42, m["Leaves"], sides=8)
+    iron = lp.material("Iron", "#3b3a3e")
+    brew = lp.material("BrewGlow", "#7ac24a", emission=0.8)
+    rings = []
+    for z, r in ((0.15, 0.2), (0.22, 0.38), (0.36, 0.52), (0.52, 0.56), (0.68, 0.5), (0.78, 0.44)):
+        rings.append([(math.cos(t) * r, math.sin(t) * r, z) for t in (2 * math.pi * k / 12 for k in range(12))])
+    mb.loft(rings, iron, cap_b=False)
+    mb.tube([((math.cos(t) * 0.46, math.sin(t) * 0.46, 0.8), 0.045) for t in (2 * math.pi * k / 12 for k in range(13))], iron, sides=5)
+    mb.frustum((0, 0, 0.7), (0, 0, 0.72), 0.43, 0.43, brew, sides=12)
+    for t in (0.0, math.pi):
+        mb.tube([((math.cos(t) * 0.54, math.sin(t) * 0.0 + 0.0, 0.66), 0.02), ((math.cos(t) * 0.64, 0, 0.6), 0.02), ((math.cos(t) * 0.6, 0, 0.5), 0.02),
+                 ((math.cos(t) * 0.53, 0, 0.5), 0.02)], m["Metal"], sides=4)
     for i in range(3):
-        a = i * 2 * math.pi / 3
-        mb.frustum((math.cos(a) * 0.35, math.sin(a) * 0.35, 0.3), (math.cos(a) * 0.45, math.sin(a) * 0.45, 0.0), 0.05, 0.04, m["Metal"], sides=4)
+        a = i * 2 * math.pi / 3 + 0.5
+        mb.tube([((math.cos(a) * 0.3, math.sin(a) * 0.3, 0.25), 0.05), ((math.cos(a) * 0.42, math.sin(a) * 0.42, 0.1), 0.04),
+                 ((math.cos(a) * 0.44, math.sin(a) * 0.44, 0.0), 0.05)], iron, sides=5)
+    rng = random.Random(3)
+    for i in range(7):
+        a = rng.uniform(0, 2 * math.pi)
+        r = rng.uniform(0.0, 0.25)
+        mb.sphere((math.cos(a) * r, math.sin(a) * r, 0.03), rng.uniform(0.05, 0.08), m["FireGlow"] if i % 2 else m["StoneDark"], segments=5, rings=3)
     return mb.finish()
 
 
@@ -506,34 +577,74 @@ def dock():
 
 
 def lantern_post():
+    """A carved post with an iron bracket and a hanging lantern: a glowing glass in an iron cage under a cap."""
     m = mats()
     mb = lp.MeshBuilder("LanternPost")
-    mb.frustum((0, 0, -0.3), (0, 0, 3.0), 0.09, 0.07, m["WoodDark"], sides=6)
-    mb.box((0, -0.35, 2.9), (0.06, 0.8, 0.06), m["WoodDark"])
-    mb.box((0, -0.7, 2.55), (0.22, 0.22, 0.32), m["LanternGlow"])
-    mb.hull([(-0.15, -0.85, 2.72), (0.15, -0.85, 2.72), (0.15, -0.55, 2.72), (-0.15, -0.55, 2.72), (0, -0.7, 2.9)], m["Metal"])
+    iron = lp.material("Iron", "#2d2a28")
+    mb.tube([((0, 0, -0.3), 0.11), ((0, 0, 0.3), 0.1), ((0, 0, 3.0), 0.075)], m["WoodDark"], sides=6)
+    mb.frustum((0, 0, 3.0), (0, 0, 3.15), 0.09, 0.02, m["WoodDark"], sides=6)
+    for z in (0.35, 2.5):
+        mb.frustum((0, 0, z), (0, 0, z + 0.06), 0.12, 0.12, iron, sides=6)
+    mb.tube([((0, 0, 2.9), 0.03), ((0, -0.4, 2.9), 0.03), ((0, -0.72, 2.88), 0.03)], iron, sides=4)
+    mb.tube([((0, -0.05, 2.6), 0.02), ((0, -0.35, 2.88), 0.02)], iron, sides=4)
+    x, y, top = 0, -0.7, 2.8
+    mb.frustum((x, y, top), (x, y, top - 0.12), 0.05, 0.15, iron, sides=6)
+    mb.box((x, y, top - 0.3), (0.2, 0.2, 0.3), m["LanternGlow"])
+    for dx in (-0.1, 0.1):
+        for dy in (-0.1, 0.1):
+            mb.box((x + dx, y + dy, top - 0.3), (0.03, 0.03, 0.32), iron)
+    mb.frustum((x, y, top - 0.46), (x, y, top - 0.52), 0.13, 0.05, iron, sides=6)
     return mb.finish()
 
 
 def ruin_pillar():
+    """A broken pillar of drums on a stepped base, its top snapped off, a fallen drum and moss in the joints."""
     m = mats()
+    rng = random.Random(12)
     mb = lp.MeshBuilder("RuinPillar")
-    mb.box((0, 0, 0.2), (1.3, 1.3, 0.4), m["StoneDark"])
-    mb.frustum((0, 0, 0.4), (0, 0, 2.6), 0.42, 0.4, m["Stone"], sides=8)
-    mb.hull([(0.42 * math.cos(i * math.pi / 4), 0.42 * math.sin(i * math.pi / 4), 2.6) for i in range(8)]
-            + [(0.3, 0.1, 3.2), (-0.2, 0.3, 2.9), (0.1, -0.35, 3.05)], m["Stone"])
-    mb.box((0.9, 0.4, 0.2), (0.8, 0.5, 0.4), m["Stone"], rotation=(0, 0, 25))
+    mb.box((0, 0, 0.12), (1.4, 1.4, 0.24), m["StoneDark"])
+    mb.box((0, 0, 0.32), (1.1, 1.1, 0.18), m["Stone"])
+    z = 0.41
+    for i in range(4):
+        h = rng.uniform(0.48, 0.58)
+        mb.frustum((rng.uniform(-0.02, 0.02), rng.uniform(-0.02, 0.02), z), (0, 0, z + h - 0.03), 0.42 - 0.01 * i, 0.41 - 0.01 * i,
+                   m["Stone"] if i % 2 == 0 else m["StoneDark"], sides=10)
+        mb.frustum((0, 0, z + h - 0.03), (0, 0, z + h), 0.38, 0.38, m["Moss"] if i in (1, 2) else m["StoneDark"], sides=10)
+        z += h
+    mb.hull([(0.4 * math.cos(i * math.pi / 5), 0.4 * math.sin(i * math.pi / 5), z) for i in range(10)]
+            + [(0.3, 0.1, z + 0.6), (-0.2, 0.3, z + 0.3), (0.1, -0.35, z + 0.45)], m["Stone"])
+    mb.frustum((0.9, 0.5, 0.2), (1.25, 1.0, 0.2), 0.36, 0.36, m["Stone"], sides=10)
+    blob(mb, (-0.8, -0.5, 0.1), 0.25, m["StoneDark"], rng, squash=0.6)
+    blob(mb, (0.35, -0.75, 0.05), 0.4, m["Moss"], rng, squash=0.25)
     return mb.finish()
 
 
 def ruin_wall():
+    """A broken wall of fitted stone blocks in courses, crumbling to a jagged top, with moss and fallen stones."""
     m = mats()
     mb = lp.MeshBuilder("RuinWall")
     rng = random.Random(9)
-    for i in range(6):
-        h = rng.uniform(0.8, 2.6)
-        mb.box((-2.5 + i, 0, h / 2), (0.98, 0.7, h), m["Stone"] if i % 2 else m["StoneDark"])
-    blob(mb, (1.5, -0.8, 0.2), 0.45, m["Stone"], rng, squash=0.6)
+    tops = [2.5, 2.2, 1.6, 1.2, 1.9, 2.6, 2.3, 1.4, 0.9, 1.3, 0.7, 0.5]
+    length, depth = 6.0, 0.7
+    course_h = 0.32
+    for c in range(int(2.6 / course_h) + 1):
+        z0 = c * course_h
+        offset = 0.25 if c % 2 else 0.0
+        x = -length / 2 - offset
+        while x < length / 2:
+            w = rng.uniform(0.45, 0.7)
+            x1 = min(x + w, length / 2)
+            x0 = max(x, -length / 2)
+            col = int((x0 + x1) / 2 / length * len(tops) + len(tops) / 2)
+            if x1 - x0 > 0.15 and z0 + course_h <= tops[max(0, min(len(tops) - 1, col))]:
+                mb.box(((x0 + x1) / 2, rng.uniform(-0.02, 0.02), z0 + course_h / 2), (x1 - x0 - 0.03, depth - rng.uniform(0, 0.06), course_h - 0.03),
+                       m["Stone"] if rng.random() < 0.6 else m["StoneDark"], rotation=(0, 0, rng.uniform(-2, 2)))
+            x = x1
+    mb.box((0, 0, -0.1), (length + 0.2, depth + 0.1, 0.2), m["StoneDark"])
+    for x in (-2.4, -0.5, 1.7):
+        blob(mb, (x, rng.uniform(-0.3, 0.3), tops[int((x / length + 0.5) * len(tops))] - 0.05), 0.3, m["Moss"], rng, squash=0.35)
+    for _ in range(4):
+        blob(mb, (rng.uniform(-2.5, 2.5), rng.choice((-1, 1)) * rng.uniform(0.7, 1.3), 0.12), rng.uniform(0.18, 0.3), m["Stone"], rng, points=10, squash=0.7)
     return mb.finish()
 
 
