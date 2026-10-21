@@ -14,15 +14,21 @@ namespace Madlands.Client
     {
         private struct Look
         {
+            /// <summary>The color of the item's gear region (and of its pieces, unless they have their own).</summary>
             public Color Color;
-            /// <summary>Gear pieces shown in the color (none: only the region is tinted).</summary>
+            public Color PieceColor;
+            /// <summary>Gear pieces shown (none: only the region is tinted).</summary>
             public string[] Pieces;
 
             public Look(string color, params string[] pieces)
             {
-                Color = EntityVisuals.Hex(color);
+                Color = PieceColor = EntityVisuals.Hex(color);
                 Pieces = pieces;
             }
+
+            /// <summary>Pieces in a color of their own, like steel greaves over green trousers.</summary>
+            public static Look Plated(string color, string pieceColor, params string[] pieces) =>
+                new Look(color, pieces) { PieceColor = EntityVisuals.Hex(pieceColor) };
         }
 
         private static readonly string[] Robe = { "RobeSkirt", "RobeCuffs" };
@@ -34,14 +40,15 @@ namespace Madlands.Client
             { 3004, new Look("#6a5444") }, { 3005, new Look("#4a3a6a", Robe) }, { 3006, new Look("#4a7a6a") },
             { 3007, new Look("#5a6a7a", Robe) }, { 3008, new Look("#8a96a0", "Breastplate") },
             // Legs
-            { 3101, new Look("#5a4a38") }, { 3102, new Look("#6a5a40") }, { 3103, new Look("#4a6a7a") }, { 3104, new Look("#3d5a35") },
+            { 3101, new Look("#5a4a38") }, { 3102, new Look("#6a5a40") }, { 3103, new Look("#4a6a7a") },
+            { 3104, Look.Plated("#3d5a35", "#8a9098", "Greaves") },
             // Feet
             { 3201, new Look("#4a3424") }, { 3202, new Look("#5b7a3a") }, { 3203, new Look("#6a4a2a") },
             // Hands
             { 3301, new Look("#c8b894") }, { 3302, new Look("#4a6a3a") }, { 3303, new Look("#7a6a5a") }, { 3304, new Look("#6a6a7a") },
-            { 3305, new Look("#6a7a8a") },
+            { 3305, new Look("#6a7a8a", "Gauntlets") },
             // Waist
-            { 3401, new Look("#3a2a1a") }, { 3402, new Look("#c8a840") }, { 3403, new Look("#8a6a4a") },
+            { 3401, new Look("#3a2a1a") }, { 3402, new Look("#c8a840", "Sash") }, { 3403, new Look("#8a6a4a") },
             // Head
             { 3501, new Look("#3a3a3a", "Hood") }, { 3502, new Look("#d8bf6a", "StrawHat") }, { 3503, new Look("#8a96a0", "Helm") },
             { 3504, new Look("#3d3546", "BoneHood") },
@@ -57,6 +64,12 @@ namespace Madlands.Client
 
         private static readonly string[] TintedRegions = { "Chest", "Arms", "Hands", "Waist", "Legs", "Feet" };
 
+        /// <summary>Slots whose item colors one gear region of the body.</summary>
+        private static readonly (EquipSlot Slot, string Region)[] RegionSlots =
+        {
+            (EquipSlot.Legs, "Legs"), (EquipSlot.Feet, "Feet"), (EquipSlot.Hands, "Hands"), (EquipSlot.Waist, "Waist"),
+        };
+
         private static int SlotOf(EquipSlot slot) => System.Array.IndexOf(VisibleGear.Slots, slot);
 
         /// <summary>
@@ -70,21 +83,23 @@ namespace Madlands.Client
             model.SetHidden("Hair", false);
             model.SetHidden("Legs", false);
 
-            Tint(model, gear[SlotOf(EquipSlot.Legs)], "Legs");
-            Tint(model, gear[SlotOf(EquipSlot.Feet)], "Feet");
-            Tint(model, gear[SlotOf(EquipSlot.Hands)], "Hands");
-            Tint(model, gear[SlotOf(EquipSlot.Waist)], "Waist");
+            foreach (var (slot, region) in RegionSlots)
+            {
+                if (!Looks.TryGetValue(gear[SlotOf(slot)], out var look)) continue;
+                model.Tint(region, look.Color);
+                foreach (var piece in look.Pieces) Wear(model, piece, look.PieceColor);
+            }
             if (Looks.TryGetValue(gear[SlotOf(EquipSlot.Chest)], out var chest))
             {
                 // Under a breastplate the shirt is a darker padding.
                 var cloth = chest.Pieces.Length > 0 && chest.Pieces[0] == "Breastplate" ? chest.Color * 0.6f : chest.Color;
                 model.Tint("Chest", cloth);
                 model.Tint("Arms", cloth * 0.92f);
-                foreach (var piece in chest.Pieces) Wear(model, piece, chest.Color);
+                foreach (var piece in chest.Pieces) Wear(model, piece, chest.PieceColor);
             }
             foreach (var slot in new[] { EquipSlot.Head, EquipSlot.Shoulders, EquipSlot.Back })
                 if (Looks.TryGetValue(gear[SlotOf(slot)], out var look))
-                    foreach (var piece in look.Pieces) Wear(model, piece, look.Color);
+                    foreach (var piece in look.Pieces) Wear(model, piece, look.PieceColor);
         }
 
         /// <summary>
@@ -100,11 +115,6 @@ namespace Madlands.Client
             }
             if (HidesHair.Contains(piece)) model.SetHidden("Hair", true);
             if (piece == "RobeSkirt" || piece == "Rags") model.SetHidden("Legs", true);
-        }
-
-        private static void Tint(DisplayModel model, uint display, string region)
-        {
-            if (Looks.TryGetValue(display, out var look)) model.Tint(region, look.Color);
         }
     }
 }

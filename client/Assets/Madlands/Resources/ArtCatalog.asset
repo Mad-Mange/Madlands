@@ -308,6 +308,9 @@ MonoBehaviour:
     Name: CastLoop
     Clip: {fileID: -8265580086071612076, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
   - Set: Slagborn
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+  - Set: Slagborn
     Name: Death
     Clip: {fileID: -982115091633673366, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
   - Set: Slagborn
@@ -319,9 +322,12 @@ MonoBehaviour:
   - Set: Slagborn
     Name: CastRelease
     Clip: {fileID: -1534196613224196608, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
-  - Set: Slagborn
+  - Set: Spider
     Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
+    Clip: {fileID: -5578746458225771231, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
+  - Set: Spider
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Set: Spider
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
@@ -329,17 +335,11 @@ MonoBehaviour:
     Name: Death
     Clip: {fileID: -982115091633673366, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Set: Spider
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
-  - Set: Spider
     Name: Idle
     Clip: {fileID: -8945691123924629249, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Set: Spider
     Name: Run
     Clip: {fileID: -7551964380084998518, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
-  - Set: Spider
-    Name: Walk
-    Clip: {fileID: 8349542763059015795, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Set: TrainingDummy
     Name: Idle
     Clip: {fileID: -8945691123924629249, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}

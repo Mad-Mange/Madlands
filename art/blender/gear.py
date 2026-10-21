@@ -744,6 +744,92 @@ def rags(r, m):
     return mb.finish()
 
 
+def gauntlets(r, m):
+    """Plate gauntlets: flared cuffs over the forearms with a rolled rim, and riveted plates over the fists."""
+    mb = lp.MeshBuilder("GearGauntlets")
+    z, ex, wx, k = r["shoulder_z"], r["elbow_x"], r["wrist_x"], r["hand"] / 0.13
+    fa = r["forearm"]
+    for side, s in hu.SIDES:
+        lower, hand = side + "LowerArm", side + "Hand"
+        rows = []
+        for x, radius in ((ex + (wx - ex) * 0.45, fa[1] * 1.15), (ex + (wx - ex) * 0.75, fa[2] * 1.3), (wx - 0.005, fa[2] * 1.75)):
+            rows.append([Vector((s * x, math.cos(t) * radius, z + math.sin(t) * radius)) for t in (TAU * i / 10 for i in range(10))])
+        mb.shell(rows, 0.008, m["GearMetal"], m["GearMetalTrim"], lambda p: Vector((p.x, 0, z)), lower, closed=True)
+        loop_tube(mb, rows[-1], 0.009, m["GearMetalTrim"], lower, sides=4)
+        loop_tube(mb, rows[0], 0.007, m["GearMetalTrim"], lower, sides=4)
+        # Plates over the back of the fist, in two rows, with rivets.
+        for x0, x1 in ((0.0, 0.055), (0.05, 0.1)):
+            pts = []
+            for x in (x0, x1):
+                for y in (-0.046, 0.042):
+                    pts += [(s * (wx + x * k), y * k, z + 0.03 * k), (s * (wx + x * k), y * k, z + 0.042 * k)]
+            pts += [(s * (wx + (x0 + x1) / 2 * k), 0, z + 0.05 * k)]
+            mb.hull(pts, m["GearMetal"], hand)
+        for y in (-0.03, 0.026):
+            stud(mb, (s * (wx + 0.02 * k), y * k, z + 0.044 * k), (0, 0, 1), 0.006, m["BuckleMetal"], hand)
+    return mb.finish()
+
+
+def greaves(r, m):
+    """Plate greaves: a cop over each knee with a fan at its side, a plate down the front of the shin, straps."""
+    mb = lp.MeshBuilder("GearGreaves")
+    knee, top = r["knee"], r["boot_top"]
+    th, sh = r["thigh"], r["shin"]
+    for side, s in hu.SIDES:
+        bone = side + "LowerLeg"
+        x = s * r["leg_x"]
+        center = Vector((x, 0, knee))
+        # The knee cop: a shell over the front of the knee.
+        rows = []
+        for dz in (0.07, 0.025, -0.02, -0.06):
+            rows.append([center + Vector((math.sin(a) * th[2] * 1.2, -math.cos(a) * th[2] * 1.15 - 0.03, dz)) for a in
+                         (math.radians(d) for d in (-80, -40, 0, 40, 80))])
+        rows[1] = [p + (p - Vector((x, 0, p.z))).normalized() * 0.012 for p in rows[1]]
+        rows[2] = [p + (p - Vector((x, 0, p.z))).normalized() * 0.012 for p in rows[2]]
+        mb.shell(rows, 0.008, m["GearMetal"], m["GearMetalTrim"], lambda p: Vector((x, 0, p.z)), bone)
+        stud(mb, rows[1][2] + Vector((0, -0.006, -0.02)), (0, -1, 0), 0.01, m["BuckleMetal"], bone)
+        # The fan on the outer side of the knee.
+        fan = Vector((x + s * th[2] * 0.95, -0.01, knee))
+        mb.hull([fan + Vector((0, dy, dz)) for dy, dz in ((-0.04, 0.04), (0.04, 0.04), (0.0, -0.05), (-0.03, -0.03))]
+                + [fan + Vector((s * 0.015, 0, 0))], m["GearMetal"], bone)
+        # The shin plate, curving round the front of the shin down to the boot.
+        rows = []
+        for z, rad in ((knee - 0.08, sh[0] * 1.15), ((knee + top) / 2, sh[1] * 1.2), (top + 0.04, sh[2] * 1.2)):
+            rows.append([Vector((x + math.sin(a) * rad, -math.cos(a) * rad - 0.004, z)) for a in (math.radians(d) for d in (-70, -35, 0, 35, 70))])
+        mb.shell(rows, 0.008, m["GearMetal"], m["GearMetalTrim"], lambda p: Vector((x, 0, p.z)), bone)
+        mb.tube([(p + Vector((0, -0.008, 0)), (0.006, 0.006)) for p in [row[2] for row in rows]], m["GearMetalTrim"], bone, sides=4)
+        for z in ((knee + top) / 2 + 0.06, top + 0.09):
+            mb.tube([((x + s * 0.0, 0, z), (sh[1] * 1.22, sh[1] * 1.22)), ((x + s * 0.0, 0, z - 0.022), (sh[1] * 1.22, sh[1] * 1.22))],
+                    m["GearDark"], bone, sides=7)
+    return mb.finish()
+
+
+def sash(r, m):
+    """A cloth sash over the belt, knotted at the left hip, its two ends hanging down the thigh."""
+    mb = lp.MeshBuilder("GearSash")
+    z0, z1 = r["belt"][0][0] - 0.005, r["belt"][1][0] + 0.005
+    rows = []
+    for zz in (z0, z1):
+        half, front, back = hu.extent(r, zz)
+        rows.append(arc(zz, half + 0.016, -front + 0.016, back + 0.016, 0, TAU * 15 / 16, 16, square=0.35))
+    mb.shell(rows, 0, m["Gear"], m["GearDark"], lambda p: Vector((0, 0, p.z)), "Hips", closed=True)
+    for row in rows:
+        loop_tube(mb, row, 0.006, m["GearTrim"], "Hips", sides=4)
+    half, front, _ = hu.extent(r, (z0 + z1) / 2)
+    knot = Vector((half * 0.72, front * 0.75 - 0.025, (z0 + z1) / 2))
+    mb.sphere(knot, (0.045, 0.03, 0.04), m["Gear"], "Hips", segments=6, rings=4)
+    weigh = skirt_weights(r)
+    for dx, length, swing in ((-0.02, 0.3, -0.02), (0.035, 0.24, 0.03)):
+        top = knot + Vector((dx, -0.005, -0.02))
+        bottom = top + Vector((swing, -0.02, -length))
+        strip = [[top + Vector((-0.03, 0, 0)), top + Vector((0.03, 0, 0))],
+                 [(top + bottom) / 2 + Vector((-0.032, -0.01, 0)), (top + bottom) / 2 + Vector((0.032, -0.01, 0))],
+                 [bottom + Vector((-0.036, 0, 0)), bottom + Vector((0.036, 0, 0.015))]]
+        mb.shell(strip, 0, m["Gear"], m["GearDark"], lambda p: Vector((p.x, 0.2, p.z)), weigh)
+        mb.tube([(bottom + Vector((-0.036, 0, 0)), 0.006), (bottom + Vector((0.036, 0, 0.015)), 0.006)], m["GearTrim"], weigh, sides=4)
+    return mb.finish()
+
+
 def robe_cuffs(r, m):
     """Wide bell sleeves flaring over the forearms of a robe."""
     mb = lp.MeshBuilder("GearRobeCuffs")
@@ -842,6 +928,9 @@ PIECES = {
     "RobeCuffs": robe_cuffs,
     "Rags": rags,
     "Breastplate": breastplate,
+    "Gauntlets": gauntlets,
+    "Greaves": greaves,
+    "Sash": sash,
     "Apron": apron,
 }
 
