@@ -107,5 +107,22 @@ public class NavigationTests
         Assert.True(Vec3.HorizontalDistance(nearest, map.SpawnPosition) < 1f);
         var corners = new List<Vec3>();
         Assert.Equal(PathResult.Complete, query.FindPath(map.SpawnPosition, map.SpawnPosition + new Vec3(60, 0, 60), corners));
+        // Out through each of Mirewatch's three gates (village center (0, -140), palisade radius 50: HollowmereBuilder),
+        // the short way: art hanging too low in a gate (a banner, a beam) closes it for creatures without anything else
+        // noticing, and the path then goes round through another gate.
+        foreach (var (x, z) in new[] { (0f, -80f), (60f, -140f), (-60f, -140f) })
+        {
+            var outside = new Vec3(x, map.HeightMap.GetHeight(x, z), z);
+            Assert.True(query.TryGetNearest(outside, out var target), $"no navmesh at {outside}");
+            Assert.True(PathResult.Complete == query.FindPath(map.SpawnPosition, target, corners), $"no path out of Mirewatch to {outside}");
+            float length = 0f;
+            var from = map.SpawnPosition;
+            foreach (var corner in corners)
+            {
+                length += Vec3.HorizontalDistance(from, corner);
+                from = corner;
+            }
+            Assert.True(length < Vec3.HorizontalDistance(map.SpawnPosition, target) * 1.3f + 5f, $"the way to {outside} goes round ({length:F0} m): is its gate closed?");
+        }
     }
 }

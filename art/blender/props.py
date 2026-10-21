@@ -323,28 +323,78 @@ def crystal_cluster():
 # ---------------------------------------------------------------- village
 
 def palisade():
+    """
+    A stretch of palisade: stakes of barked logs of uneven height with pale sharpened tips, lashed with rope
+    to two rails behind them, braced by props leaning against the inside.
+    """
     m = mats()
     mb = lp.MeshBuilder("Palisade")
     rng = random.Random(2)
+    rope = lp.material("Rope", "#a88a5a")
     n = 9
     for i in range(n):
-        x = -2.0 + i * 4.0 / (n - 1)
-        h = 3.2 + rng.uniform(-0.25, 0.25)
-        mb.frustum((x, 0, -0.5), (x, 0, h), 0.24, 0.22, m["Wood"], sides=6)
-        mb.frustum((x, 0, h), (x, 0, h + 0.45), 0.22, 0.01, m["Wood"], sides=6)
-    mb.box((0, 0.22, 2.2), (4.3, 0.12, 0.25), m["WoodDark"])
-    mb.box((0, 0.22, 0.8), (4.3, 0.12, 0.25), m["WoodDark"])
+        x = -2.0 + i * 4.0 / (n - 1) + rng.uniform(-0.03, 0.03)
+        h = 3.2 + rng.uniform(-0.3, 0.3)
+        r = 0.23 + rng.uniform(-0.02, 0.02)
+        lean = rng.uniform(-0.04, 0.04)
+        mb.tube([((x, 0, -0.5), r), ((x + lean * 0.5, 0, h * 0.5), r * 0.98), ((x + lean, 0, h), r * 0.95)], m["Wood"] if i % 3 else m["WoodDark"], sides=7)
+        mb.frustum((x + lean, 0, h), (x + lean * 1.1, 0, h + 0.55), r * 0.95, 0.01, m["Plank"], sides=7)
+        for z in (0.8, 2.2):
+            mb.frustum((x, 0, z - 0.06), (x, 0, z + 0.06), r + 0.015, r + 0.015, rope, sides=7)
+    for z in (0.8, 2.2):
+        mb.tube([((-2.2, 0.3, z), 0.1), ((2.2, 0.3, z), 0.1)], m["WoodDark"], sides=6)
+    for x in (-1.0, 1.0):
+        mb.tube([((x, 1.4, -0.1), 0.08), ((x, 0.36, 2.2), 0.07)], m["WoodDark"], sides=5)
     return mb.finish()
 
 
 def gate():
+    """
+    Mirewatch's gate: two towers of three bound logs, a double lintel under a little shingled roof whose
+    bargeboards curl into horns like the grove houses', the banner of the village, and two lanterns.
+    """
     m = mats()
     mb = lp.MeshBuilder("Gate")
+    rope = lp.material("Rope", "#a88a5a")
+    slate = lp.material("Slate", "#4f6a65")
+    slate_light = lp.material("SlateLight", "#5d7a74")
+    iron = lp.material("Iron", "#2d2a28")
     for x in (-2.2, 2.2):
-        mb.frustum((x, 0, -0.5), (x, 0, 4.6), 0.32, 0.3, m["Wood"], sides=6)
-        mb.frustum((x, 0, 4.6), (x, 0, 5.1), 0.3, 0.02, m["Wood"], sides=6)
-    mb.box((0, 0, 4.1), (4.9, 0.45, 0.4), m["WoodDark"])
-    mb.box((0, -0.25, 4.1), (1.6, 0.06, 0.9), m["Banner"])
+        for dx, dy, h in ((0.0, 0.0, 4.45), (0.3 if x > 0 else -0.3, -0.18, 4.0), (0.3 if x > 0 else -0.3, 0.18, 4.15)):
+            r = 0.3 if dx == 0 else 0.2
+            mb.tube([((x + dx, dy, -0.5), r), ((x + dx, dy, h), r * 0.93)], m["Wood"] if dx == 0 else m["WoodDark"], sides=7)
+            mb.frustum((x + dx, dy, h), (x + dx, dy, h + 0.5), r * 0.93, 0.01, m["Plank"], sides=7)
+        for z in (0.6, 2.4, 3.6):
+            mb.tube([((x + (0.15 if x > 0 else -0.15), 0, z), (0.36, 0.38)), ((x + (0.15 if x > 0 else -0.15), 0, z + 0.12), (0.36, 0.38))], rope, sides=8)
+    for z, r in ((3.85, 0.2), (4.3, 0.18)):
+        mb.tube([((-2.75, 0, z), r), ((2.75, 0, z), r)], m["WoodDark"], sides=7)
+    for side in (-1, 1):
+        mb.tube([((side * 2.0, -0.05, 3.0), 0.09), ((side * 1.2, -0.05, 3.8), 0.08)], m["WoodDark"], sides=5)
+    # The roof over the lintel, its bargeboards curling up at both ends.
+    for side in (-1, 1):
+        for k in range(3):
+            t0, t1 = k / 3, min(1.0, (k + 1) / 3 + 0.08)
+            z0, z1 = 5.15 - 0.6 * t0, 5.15 - 0.6 * t1
+            y0, y1 = side * 0.75 * t0, side * 0.75 * t1
+            mb.box((0, (y0 + y1) / 2, (z0 + z1) / 2 + 0.02), (6.0 - 0.15 * k, abs(y1 - y0) + 0.04, 0.09), slate if k % 2 == 0 else slate_light,
+                   rotation=(side * -math.degrees(math.atan2(0.6, 0.75)), 0, 0))
+    mb.tube([((-3.05, 0, 5.2), 0.1), ((3.05, 0, 5.2), 0.1)], m["WoodDark"], sides=6)
+    for x in (-3.05, 3.05):
+        f = 1 if x > 0 else -1
+        for side in (-1, 1):
+            mb.tube([((x, side * 0.8, 4.5), 0.1), ((x, 0, 5.25), 0.09), ((x + f * 0.25, -side * 0.3, 5.8), 0.06), ((x + f * 0.45, -side * 0.35, 6.1), 0.02)],
+                    m["WoodDark"], sides=5)
+    # The banner hanging from the lintel (above the path: the navmesh needs 2 m of headroom under it, scaled and
+    # sunk as HollowmereBuilder places the gate), and the lanterns.
+    mb.add([(-0.8, -0.24, 4.1), (0.8, -0.24, 4.1), (0.8, -0.24, 3.35), (0.0, -0.24, 3.1), (-0.8, -0.24, 3.35)], [(0, 1, 2, 3, 4)], m["Banner"], double_sided=True)
+    mb.tube([((-0.85, -0.25, 4.12), 0.035), ((0.85, -0.25, 4.12), 0.035)], m["WoodDark"], sides=5)
+    mb.hull([(x, -0.26, z) for x, z in ((0, 3.9), (0.2, 3.7), (0, 3.45), (-0.2, 3.7))] + [(0, -0.29, 3.7)], m["Thatch"])
+    for x in (-2.2, 2.2):
+        top = (x, -0.45, 3.2)
+        mb.tube([((x, -0.25, 3.3), 0.025), (top, 0.025)], iron, sides=4)
+        mb.frustum(top, (top[0], top[1], top[2] - 0.1), 0.04, 0.12, iron, sides=6)
+        mb.box((top[0], top[1], top[2] - 0.26), (0.17, 0.17, 0.24), m["LanternGlow"])
+        mb.frustum((top[0], top[1], top[2] - 0.38), (top[0], top[1], top[2] - 0.44), 0.11, 0.04, iron, sides=6)
     return mb.finish()
 
 
@@ -400,11 +450,23 @@ def tent():
     return mb.finish()
 
 def signpost():
+    """A signpost: a post under a little peaked cap, three pointed boards nailed on at different heights."""
     m = mats()
     mb = lp.MeshBuilder("Signpost")
-    mb.frustum((0, 0, -0.3), (0, 0, 2.6), 0.08, 0.07, m["Wood"], sides=5)
-    mb.hull([(0.05, -0.04, 2.15), (0.05, 0.04, 2.15), (0.05, -0.04, 2.4), (0.05, 0.04, 2.4), (1.1, 0, 2.275), (0.9, -0.04, 2.15), (0.9, 0.04, 2.4)], m["Plank"])
-    mb.hull([(-0.05, -0.04, 1.75), (-0.05, 0.04, 1.75), (-0.05, -0.04, 2.0), (-0.05, 0.04, 2.0), (-1.0, 0, 1.875), (-0.8, 0.04, 1.75), (-0.8, -0.04, 2.0)], m["Plank"])
+    mb.tube([((0, 0, -0.3), 0.09), ((0, 0, 2.6), 0.075)], m["WoodDark"], sides=6)
+    mb.hull([(x, y, 2.62) for x in (-0.14, 0.14) for y in (-0.14, 0.14)] + [(0, 0, 2.85)], m["Thatch"])
+    for z, length, yaw in ((2.3, 1.1, 0), (1.92, 1.0, 180), (1.58, 0.85, 35)):
+        a = math.radians(yaw)
+        d = (math.cos(a), math.sin(a))
+        def at(u, v, w, d=d):
+            return (d[0] * u - d[1] * v, d[1] * u + d[0] * v, w)
+        board = [at(0.06, y, z + dz) for y in (-0.03, 0.03) for dz in (-0.12, 0.12)]
+        board += [at(length - 0.2, y, z + dz) for y in (-0.03, 0.03) for dz in (-0.12, 0.12)] + [at(length, y, z) for y in (-0.03, 0.03)]
+        mb.hull(board, m["Plank"])
+        mb.hull([at(0.12, y, z + dz) for y in (-0.035, 0.035) for dz in (-0.07, 0.07)]
+                + [at(length - 0.3, y, z + dz) for y in (-0.035, 0.035) for dz in (-0.07, 0.07)], m["Wood"])
+        for u in (0.12, length - 0.3):
+            mb.box(at(u, 0.04, z), (0.03, 0.02, 0.03), m["Metal"], rotation=(0, 0, yaw))
     return mb.finish()
 
 
@@ -448,12 +510,23 @@ def crate():
 
 
 def barrel():
+    """A barrel of staves in two tones, bellied, with three iron hoops and a lid of boards."""
     m = mats()
     mb = lp.MeshBuilder("Barrel")
-    mb.frustum((0, 0, 0), (0, 0, 0.5), 0.36, 0.43, m["Wood"], sides=8)
-    mb.frustum((0, 0, 0.5), (0, 0, 1.0), 0.43, 0.36, m["Wood"], sides=8)
-    for z in (0.15, 0.85):
-        mb.frustum((0, 0, z - 0.04), (0, 0, z + 0.04), 0.42, 0.42, m["Metal"], sides=8, cap_a=False, cap_b=False)
+    n = 12
+    profile = [(0.0, 0.34), (0.25, 0.41), (0.5, 0.44), (0.75, 0.41), (1.0, 0.34)]
+    for k in range(n):
+        a0, a1 = 2 * math.pi * k / n, 2 * math.pi * (k + 1) / n
+        rings = [[(math.cos(a) * r, math.sin(a) * r, z) for a in (a0 + 0.01, a1 - 0.01)] + [(math.cos(a) * (r - 0.04), math.sin(a) * (r - 0.04), z) for a in (a1 - 0.01, a0 + 0.01)]
+                 for z, r in profile]
+        mb.loft(rings, m["Wood"] if k % 2 else m["Plank"])
+    for z in (0.12, 0.5, 0.88):
+        r = 0.34 + 0.1 * math.sin(math.pi * z) + 0.012
+        mb.frustum((0, 0, z - 0.035), (0, 0, z + 0.035), r, r, m["Metal"], sides=n, cap_a=False, cap_b=False)
+    mb.frustum((0, 0, 0.93), (0, 0, 0.945), 0.31, 0.31, m["WoodDark"], sides=n)
+    for i in range(4):
+        x = -0.27 + 0.18 * i
+        mb.box((x, 0, 0.955), (0.16, 0.62 - abs(x) * 0.9, 0.03), m["WoodDark"] if i % 2 else m["Wood"])
     return mb.finish()
 
 
