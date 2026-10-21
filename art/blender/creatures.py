@@ -6,7 +6,9 @@ Z = up). Material names can be recolored per display by the client (Fur, FurLigh
 """
 
 import math
+import random
 
+import beasts
 import lowpoly as lp
 
 
@@ -45,18 +47,24 @@ def wolf_skeleton():
 
 
 def wolf_body():
+    """A lean wolf: deep chest and tucked belly, a ruff of fur, long legs with paws, a bushy tail."""
     fur = lp.material("Fur", "#5f6268")
     light = lp.material("FurLight", "#9a9ca0")
     dark = lp.material("Dark", "#26262a")
     eyes = lp.material("EyesGlow", "#e8c84a", emission=0.6)
+    rng = random.Random(3)
     mb = lp.MeshBuilder("WolfBody")
-    mb.box((0, 0.27, 0.79), (0.28, 0.36, 0.32), fur, "Hips", top=(1.0, 0.9))
-    mb.box((0, -0.07, 0.82), (0.32, 0.42, 0.36), fur, "Spine", top=(1.05, 1.0))
-    mb.box((0, -0.06, 0.66), (0.24, 0.36, 0.06), light, "Spine")
-    mb.box((0, -0.36, 0.86), (0.36, 0.3, 0.44), fur, "Chest", top=(0.95, 0.85))
-    mb.box((0, -0.47, 0.78), (0.24, 0.1, 0.26), light, "Chest")
-    # Ruff around the neck, then the head: skull, snout, nose, ears, eyes and a jaw.
-    mb.frustum((0, -0.42, 0.93), (0, -0.66, 1.12), 0.17, 0.12, fur, "Neck", sides=6)
+    sections = [(-0.5, 0.92, 0.12, 0.15), (-0.42, 0.89, 0.16, 0.2), (-0.28, 0.86, 0.17, 0.21), (-0.1, 0.83, 0.15, 0.18, 1.0, 0.95),
+                (0.1, 0.81, 0.12, 0.13, 1.0, 0.75), (0.28, 0.8, 0.14, 0.16), (0.42, 0.8, 0.12, 0.14), (0.5, 0.81, 0.06, 0.07)]
+    beasts.trunk(mb, sections, beasts.along_y([("Chest", -0.3), ("Spine", -0.05), ("Hips", 0.22)]), fur, light)
+    beasts.trunk(mb, [(-0.7, 1.1, 0.09, 0.1), (-0.6, 1.03, 0.11, 0.13), (-0.48, 0.95, 0.13, 0.16)],
+                 beasts.along_y([("Neck", -0.62), ("Chest", -0.47)]), fur, light, n=10, belly_cols=1)
+    # A ruff of fur around the neck.
+    for i in range(12):
+        a = math.pi * (-0.1 + 1.2 * i / 11)
+        p = (math.cos(a) * 0.15, -0.5 + rng.uniform(-0.03, 0.03), 0.95 + math.sin(a) * 0.16)
+        beasts.tufts(mb, [p], light if math.sin(a) < 0.2 else fur, "Chest", rng, size=0.09, sweep=(math.cos(a) * 0.6, 0.7, 0.2 + math.sin(a) * 0.4))
+    # The head: skull, snout, nose, ears, eyes and a jaw.
     mb.hull([(x * s, y, z) for s in (1, -1) for x, y, z in
              ((0.11, -0.62, 1.06), (0.12, -0.66, 1.24), (0.08, -0.82, 1.22), (0.1, -0.82, 1.06), (0.04, -1.0, 1.12), (0.05, -1.0, 1.05))],
             fur, "Head")
@@ -64,16 +72,17 @@ def wolf_body():
     for s in (1, -1):
         mb.hull([(s * 0.05, -0.66, 1.22), (s * 0.12, -0.7, 1.22), (s * 0.08, -0.64, 1.36), (s * 0.08, -0.72, 1.22)], fur, "Head")
         mb.box((s * 0.075, -0.83, 1.17), (0.03, 0.02, 0.02), eyes, "Head")
+        mb.hull([(s * 0.1, -0.66, 1.05), (s * 0.15, -0.64, 1.12), (s * 0.13, -0.6, 1.02), (s * 0.12, -0.7, 1.08)], light, "Head")
     mb.box((0, -0.86, 1.01), (0.08, 0.22, 0.04), light, "Jaw")
-    # Legs: upper, lower, paw.
+    # Legs: a thick thigh or shoulder, a lean shank, a paw with claws.
     for leg, (top, mid, low, tip, _) in WOLF_LEGS.items():
-        thick = 1.25 if leg == "Back" else 1.0
+        back = leg == "Back"
         for side, x in (("L", 0.14), ("R", -0.14)):
-            mb.frustum((x, top[0], top[1] + 0.03), (x, mid[0], mid[1]), 0.07 * thick, 0.05, fur, leg + "UpperLeg." + side, sides=5)
-            mb.frustum((x, mid[0], mid[1] + 0.02), (x, low[0], low[1]), 0.045, 0.038, fur, leg + "LowerLeg." + side, sides=5)
-            mb.box((x, (low[0] + tip[0]) / 2, 0.035), (0.08, 0.13, 0.07), light if leg == "Front" else fur, leg + "Paw." + side, top=(0.9, 0.8))
-    mb.frustum((0, 0.42, 0.85), (0, 0.72, 0.72), 0.05, 0.075, fur, "Tail1", sides=5)
-    mb.frustum((0, 0.72, 0.72), (0, 0.94, 0.5), 0.075, 0.02, light, "Tail2", sides=5)
+            beasts.leg(mb, [(x, top[0], top[1] + 0.03), (x, mid[0], mid[1]), (x, low[0], low[1] + 0.02)],
+                       (0.1 if back else 0.08, 0.05, 0.035), fur, (leg + "UpperLeg." + side, leg + "LowerLeg." + side))
+            beasts.paw(mb, (x, low[0], low[1]), (x, tip[0], 0.0), 0.085, light if not back else fur, leg + "Paw." + side, claws=dark)
+    mb.tube([((0, 0.45, 0.84), 0.05), ((0, 0.6, 0.79), 0.08), ((0, 0.72, 0.72), 0.085)], fur, "Tail1", sides=7)
+    mb.tube([((0, 0.72, 0.72), 0.085), ((0, 0.84, 0.62), 0.075), ((0, 0.95, 0.48), 0.02)], light, "Tail2", sides=7)
     return mb.finish()
 
 

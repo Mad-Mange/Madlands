@@ -7,6 +7,8 @@ conventions as creatures.py.
 import math
 import random
 
+from mathutils import Vector
+
 import lowpoly as lp
 
 
@@ -14,18 +16,122 @@ def cycle(t, phase=0.0):
     return math.sin(2 * math.pi * (t + phase))
 
 
+# ---------------------------------------------------------------- bodies of beasts
+
+
+def smooth(a, b, x):
+    """0 at a, 1 at b, smooth in between (a may be greater than b)."""
+    t = max(0.0, min(1.0, (x - a) / (b - a)))
+    return t * t * (3 - 2 * t)
+
+
+def across(y, z, half_w, half_h, top=1.0, bottom=1.0, n=12, square=0.25):
+    """A ring of points around the Y axis at y, centered at height z: index 0 on top, then the left side."""
+    e = 2.0 / (2.0 + 3.0 * square)
+    out = []
+    for i in range(n):
+        t = 2 * math.pi * i / n
+        s, c = math.sin(t), math.cos(t)
+        out.append(Vector((math.copysign(abs(s) ** e, s) * half_w, y,
+                           z + math.copysign(abs(c) ** e, c) * half_h * (top if c > 0 else bottom))))
+    return out
+
+
+def trunk(mb, sections, weigh, fur, belly, n=12, belly_cols=2):
+    """
+    A body along Y through cross-sections (y, z, half width, half height[, top, bottom]), closed at both
+    ends; the underside (`belly_cols` columns to each side of the bottom) in the belly material.
+    """
+    rings = [across(*sec, n=n) for sec in sections]
+    ys = [sec[0] for sec in sections]
+    lo, hi = min(ys), max(ys)
+    margin = (hi - lo) * 0.15
+
+    def center_z(y):
+        pts = sorted(sections, key=lambda sec: sec[0])
+        for a, b in zip(pts, pts[1:]):
+            if a[0] <= y <= b[0]:
+                return a[1] + (b[1] - a[1]) * (y - a[0]) / (b[0] - a[0])
+        return pts[0][1] if y < pts[0][0] else pts[-1][1]
+
+    def inside(p):
+        y = max(lo + margin, min(hi - margin, p.y))
+        return Vector((0, y, center_z(y)))
+
+    first, last = sections[0], sections[-1]
+    step0 = (sections[1][0] - first[0]) * 0.25
+    step1 = (last[0] - sections[-2][0]) * 0.25
+    pole0 = [Vector((0, first[0] - step0, first[1]))]
+    pole1 = [Vector((0, last[0] + step1, last[1]))]
+    bottom = n // 2
+    lower = list(range(bottom - belly_cols, bottom + belly_cols + 1))
+    upper = list(range(bottom + belly_cols, n)) + list(range(0, bottom - belly_cols + 1))
+    for cols, mat in ((upper, fur), (lower, belly)):
+        rows = [pole0] + [[ring[i] for i in cols] for ring in rings] + [pole1]
+        mb.grid(rows, mat, weigh, inside)
+
+
+def along_y(bones):
+    """Bone weights that hand a body over from one bone to the next along Y: [(bone, y), ...] in order of y."""
+    def weigh(p):
+        if p.y <= bones[0][1]:
+            return {bones[0][0]: 1.0}
+        for (a, ya), (b, yb) in zip(bones, bones[1:]):
+            if p.y <= yb:
+                t = smooth(ya, yb, p.y)
+                return {a: 1.0 - t, b: t}
+        return {bones[-1][0]: 1.0}
+    return weigh
+
+
+def leg(mb, points, radii, mat, bones, sides=7):
+    """A leg through `points` (hip, knee, ankle) with a radius at each; each segment follows its bone."""
+    for (a, b), (ra, rb), bone in zip(zip(points, points[1:]), zip(radii, radii[1:]), bones):
+        mid = (Vector(a) + Vector(b)) / 2
+        mb.tube([(a, ra), (mid, (ra + rb) / 2 * 1.04), (b, rb)], mat, bone, sides=sides)
+
+
+def paw(mb, ankle, tip, width, mat, bone, claws=None, hoof=False):
+    """A rounded paw (or a split hoof) from the ankle to the toe tip on the ground, with claws."""
+    ax, ay, az = ankle
+    tx, ty, _ = tip
+    w = width / 2
+    if hoof:
+        for s in (1, -1):
+            mb.hull([(ax + s * w * 0.1, ay, az + 0.02), (ax + s * w, ay, 0.06), (ax + s * w * 0.9, ty, 0.0), (ax + s * w * 0.15, ty + 0.01, 0.0),
+                     (ax + s * w, ay + 0.02, 0.0), (ax + s * w * 0.1, ay + 0.02, 0.0)], mat, bone)
+        return
+    mb.hull([(ax + s * w * 0.8, ay + 0.02, 0.0) for s in (1, -1)] + [(ax + s * w * 0.7, ay, az * 0.8) for s in (1, -1)]
+            + [(tx + s * w, (ay + ty) / 2, 0.0) for s in (1, -1)] + [(tx + s * w * 0.8, (ay + ty) / 2, w * 0.9) for s in (1, -1)]
+            + [(tx + s * w * 0.6, ty, 0.0) for s in (1, -1)] + [(tx + s * w * 0.5, ty, w * 0.6) for s in (1, -1)], mat, bone)
+    if claws is not None:
+        for s in (-0.6, 0.0, 0.6):
+            base = Vector((tx + s * w, ty + 0.01, w * 0.35))
+            mb.tube([(base, w * 0.22), (base + Vector((s * w * 0.15, -w * 0.7, -w * 0.3)), 0.004)], claws, bone, sides=4)
+
+
+def tufts(mb, points, mat, bone, rng, size=0.08, sweep=(0, 0.6, 0.4)):
+    """Shaggy tufts of fur: a jagged little spike at each point, swept back and up."""
+    for p in points:
+        p = Vector(p)
+        d = Vector(sweep).normalized()
+        tip = p + d * size * rng.uniform(0.8, 1.3) + Vector((rng.uniform(-0.02, 0.02), 0, rng.uniform(-0.01, 0.02)))
+        r = size * 0.35
+        mb.hull([p + Vector((r, 0, 0)), p + Vector((-r, 0, 0)), p + Vector((0, -r, 0)), p + Vector((0, r * 0.5, -r * 0.6)), tip], mat, bone)
+
+
 # ---------------------------------------------------------------- quadrupeds
 
 QUADS = {
     "Boar": dict(
         height=0.74, hip=0.7, length=0.95, width=0.44, depth=0.5, leg_x=0.15, leg_r=0.07, sprawl=0.0,
-        neck=(0.14, 0.0), head_len=0.42, head_drop=0.12, jaw_drop=0.1, tail=(0.22, 0.12), head="boar",
+        neck=(0.14, 0.0), head_len=0.42, head_drop=0.12, jaw_drop=0.1, tail=(0.22, 0.12), head="boar", hump=1.12,
         colors=dict(Fur="#5b4436", FurLight="#7d6553", Dark="#2a2420", Tusk="#ebe2c8"),
         walk=(18, 30, 2, 0.02), run=(30, 55, 6, 0.05), walk_speed=1.1, run_speed=3.8,
     ),
     "Bear": dict(
         height=1.2, hip=1.1, length=1.35, width=0.72, depth=0.78, leg_x=0.26, leg_r=0.13, sprawl=0.0,
-        neck=(0.22, 0.05), head_len=0.5, head_drop=0.12, jaw_drop=0.14, tail=(0.12, 0.05), head="bear",
+        neck=(0.22, 0.05), head_len=0.5, head_drop=0.12, jaw_drop=0.14, tail=(0.12, 0.05), head="bear", hump=1.28,
         colors=dict(Fur="#4a3a2c", FurLight="#6e5844", Dark="#1f1a16", Tusk="#e6dcc4"),
         walk=(16, 30, 3, 0.03), run=(28, 50, 7, 0.07), walk_speed=1.4, run_speed=4.5,
     ),
@@ -88,27 +194,57 @@ def quad_skeleton(s):
 
 
 def quad_body(name, s):
+    """
+    A rounded body through cross-sections (rump, haunch, a tucked belly, the shoulders with an optional
+    hump, the chest) with a pale belly, a neck, muscled legs, paws or hooves, a tail and the head.
+    """
     m = {k: lp.material(k, v) for k, v in s["colors"].items()}
     mb = lp.MeshBuilder(name + "Body")
     L, H, Hh, W, depth = s["length"], s["height"], s["hip"], s["width"], s["depth"]
     hy, cy, legs = quad_points(s)
-    mb.box((0, hy - L * 0.2, Hh), (W * 0.9, L * 0.45, depth * 0.9), m["Fur"], "Hips", top=(0.95, 0.9))
-    mb.box((0, 0, (H + Hh) / 2), (W, L * 0.5, depth), m["Fur"], "Spine", top=(1.0, 1.0))
-    mb.box((0, 0, (H + Hh) / 2 - depth * 0.48), (W * 0.75, L * 0.45, depth * 0.08), m["FurLight"], "Spine")
-    mb.box((0, cy + L * 0.15, H - depth * 0.05), (W * 1.05, L * 0.4, depth * 1.05), m["Fur"], "Chest", top=(0.95, 0.9))
+    hump = s.get("hump", 1.0)
+    rng = random.Random(len(name))
+    sections = [
+        (cy - 0.04 * L, H, 0.3 * W, 0.33 * depth),
+        (cy + 0.08 * L, H - 0.03, 0.47 * W, 0.48 * depth),
+        (cy + 0.28 * L, H - 0.05, 0.5 * W, 0.5 * depth, hump, 1.0),
+        (0.0, (H + Hh) / 2 - 0.03, 0.46 * W, 0.44 * depth, 1.0, 0.86),
+        (hy - 0.22 * L, Hh - 0.02, 0.48 * W, 0.47 * depth),
+        (hy - 0.04 * L, Hh, 0.42 * W, 0.42 * depth),
+        (hy + 0.06 * L, Hh - 0.02, 0.18 * W, 0.18 * depth),
+    ]
+    trunk(mb, sections, along_y([("Chest", cy + 0.18 * L), ("Spine", 0.0), ("Hips", hy - 0.28 * L)]), m["Fur"], m["FurLight"])
     nl, rise = s["neck"]
-    mb.frustum((0, cy + 0.05, H), (0, cy - nl, H + rise), depth * 0.45, depth * 0.38, m["Fur"], "Neck", sides=6)
-    HEADS[s["head"]](mb, m, s, (0, cy - nl, H + rise))
+    neck_end = (0, cy - nl, H + rise)
+    trunk(mb, [(neck_end[1] - 0.04, neck_end[2] - 0.02, 0.27 * W, 0.3 * depth), ((neck_end[1] + cy) / 2, (neck_end[2] + H) / 2, 0.3 * W, 0.34 * depth),
+               (cy + 0.04, H - 0.02, 0.32 * W, 0.36 * depth)],
+          along_y([("Neck", neck_end[1] + nl * 0.3), ("Chest", cy)]), m["Fur"], m["FurLight"], n=10, belly_cols=1)
+    HEADS[s["head"]](mb, m, s, neck_end)
+    hoof = s["head"] == "boar"
     for leg_name, (top, knee, ankle, tip) in legs.items():
-        leg, side = leg_name.split(".")
-        r = s["leg_r"] * (1.15 if leg == "Back" else 1.0)
-        mb.frustum((top[0], top[1], top[2] + 0.05), knee, r, r * 0.8, m["Fur"], leg + "UpperLeg." + side, sides=5)
-        mb.frustum(knee, ankle, r * 0.75, r * 0.65, m["Fur"], leg + "LowerLeg." + side, sides=5)
-        mb.box(((ankle[0] + tip[0]) / 2, (ankle[1] + tip[1]) / 2, 0.035), (r * 1.6, r * 2.2 + 0.05, 0.07), m["Dark"], leg + "Paw." + side, top=(0.9, 0.8))
+        part, side = leg_name.split(".")
+        r = s["leg_r"]
+        radii = (r * 1.7, r * 1.1, r * 0.85) if part == "Back" else (r * 1.5, r * 1.0, r * 0.85)
+        bones = (part + "UpperLeg." + side, part + "LowerLeg." + side)
+        inset = 0.0 if s["sprawl"] else (abs(top[0]) - max(0.0, W * 0.46 - radii[0])) * (1 if top[0] > 0 else -1)
+        leg(mb, [(top[0] - inset, top[1], top[2] + 0.04), knee, (ankle[0], ankle[1], ankle[2] + r * 0.4)], radii, m["Fur"], bones)
+        paw(mb, ankle, tip, r * 2.1, m["Dark"] if hoof else m["Fur"], part + "Paw." + side, claws=None if hoof else m["Dark"], hoof=hoof)
     tl, tdrop = s["tail"]
     tr = depth * (0.3 if tl > 1 else 0.08)
-    mb.frustum((0, hy - 0.05, Hh), (0, hy + tl * 0.5, Hh - tdrop * 0.5), tr, tr * 0.7, m["Fur"], "Tail1", sides=5)
-    mb.frustum((0, hy + tl * 0.5, Hh - tdrop * 0.5), (0, hy + tl, Hh - tdrop), tr * 0.7, 0.02, m["Fur"], "Tail2", sides=5)
+    mb.tube([((0, hy - 0.05, Hh), tr), ((0, hy + tl * 0.5, Hh - tdrop * 0.5), tr * 0.75)], m["Fur"], "Tail1", sides=6)
+    mb.tube([((0, hy + tl * 0.5, Hh - tdrop * 0.5), tr * 0.75), ((0, hy + tl, Hh - tdrop), 0.02)], m["Fur"], "Tail2", sides=6)
+    if s["head"] == "boar":
+        # A bristly dark ridge down the back.
+        ridge = [(0, y, (H if y < 0 else Hh) + depth * 0.45 * (hump if y < 0 else 1.0) - 0.02) for y in [cy + 0.05 + (hy - cy) * 0.6 * i / 9 for i in range(10)]]
+        for i, p in enumerate(ridge):
+            bone = "Chest" if p[1] < cy + 0.25 * L else "Spine"
+            tufts(mb, [p], m["Dark"], bone, rng, size=0.09 - 0.004 * i, sweep=(0, 0.7, 0.7))
+    if s["head"] == "bear":
+        # Shaggy fur over the hump and around the neck.
+        for i in range(14):
+            a = math.pi * (0.15 + 0.7 * i / 13)
+            p = (math.cos(a) * W * 0.48, cy + 0.12 * L + rng.uniform(-0.06, 0.06), H - 0.05 + math.sin(a) * depth * 0.5 * hump)
+            tufts(mb, [p], m["Fur"], "Chest", rng, size=0.11, sweep=(math.cos(a) * 0.5, 0.6, 0.3))
     if s.get("crystals"):
         glow = lp.material("CrystalGlow", "#7ff2ff", emission=2.0)
         rng = random.Random(4)
@@ -117,7 +253,7 @@ def quad_body(name, s):
             for _ in range(3):
                 x = rng.uniform(-W * 0.3, W * 0.3)
                 yy = y + rng.uniform(-0.15, 0.15)
-                top = z + depth * 0.5
+                top = z + depth * 0.4
                 h = rng.uniform(0.25, 0.5)
                 mb.hull([(x + 0.06, yy, top - 0.05), (x - 0.06, yy, top - 0.05), (x, yy + 0.06, top - 0.05), (x, yy - 0.06, top - 0.05),
                          (x + rng.uniform(-0.1, 0.1), yy + rng.uniform(-0.1, 0.1), top + h)], glow, bone)
