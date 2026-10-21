@@ -165,20 +165,40 @@ def bush(seed):
 
 
 def rock(seed, size):
+    """
+    A weathered rock: a main block with flat-ish facets, a second chunk leaning on it, a few pebbles at
+    its foot and moss on the top faces.
+    """
     def build():
         rng = random.Random(seed)
         m = mats()
         mb = lp.MeshBuilder("Rock%d" % seed)
-        pts = []
-        for _ in range(16):
+
+        def chunk(cx, cy, cz, rx, ry, rz, mat):
+            pts = []
+            for _ in range(13):
+                a = rng.uniform(0, 2 * math.pi)
+                e = rng.uniform(-0.9, 0.9)
+                k = rng.uniform(0.85, 1.05)
+                pts.append((cx + math.cos(a) * math.cos(e) * rx * k, cy + math.sin(a) * math.cos(e) * ry * k, cz + math.sin(e) * rz * k))
+            # Flatten: clamp to a few planes so the facets read as broken stone, not a ball.
+            flat = []
+            for x, y, z in pts:
+                z = min(z, cz + rz * 0.8)
+                flat.append((x, y, z))
+            mb.hull(flat, mat)
+            return flat
+
+        main = chunk(0, 0, size * 0.3, size * 0.95, size * 0.75, size * 0.55, m["Stone"])
+        chunk(size * 0.7, size * 0.35, size * 0.15, size * 0.45, size * 0.4, size * 0.38, m["StoneDark"])
+        for _ in range(3):
             a = rng.uniform(0, 2 * math.pi)
-            r = rng.uniform(0.6, 1.0) * size
-            pts.append((math.cos(a) * r, math.sin(a) * r * rng.uniform(0.7, 1.0), rng.uniform(-0.3, 0.75) * size))
-        mb.hull(pts, m["Stone"])
-        # A mossy cap on top.
-        top = [(x * 0.7, y * 0.7, z + 0.04 * size) for x, y, z in pts if z > 0.45 * size]
-        if len(top) >= 4:
-            mb.hull(top + [(0, 0, max(p[2] for p in top) + 0.05 * size)], m["Moss"])
+            d = size * rng.uniform(1.0, 1.3)
+            r = size * rng.uniform(0.1, 0.18)
+            blob(mb, (math.cos(a) * d, math.sin(a) * d, r * 0.3), r, m["StoneDark"] if rng.random() < 0.5 else m["Stone"], rng, points=8, squash=0.6)
+        top = sorted(main, key=lambda q: -q[2])[:6]
+        ztop = max(q[2] for q in top)
+        mb.hull([(x * 0.85, y * 0.85, z + 0.03 * size) for x, y, z in top] + [(0, 0, ztop + 0.04 * size)], m["Moss"])
         return mb.finish()
     return build
 
@@ -616,36 +636,67 @@ def cauldron():
 
 
 def bridge():
+    """
+    A humped footbridge: planks of two tones on two log stringers, posts with braces, rope-bound joints
+    and a handrail following the curve on each side.
+    """
     m = mats()
     mb = lp.MeshBuilder("Bridge")
+    rope = lp.material("Rope", "#a88a5a")
     length, width = 10.0, 3.0
-    n = 16
+    n = 18
+    deck = lambda y: 0.6 + 0.5 * math.cos(math.pi * y / length)
+    for x in (-width / 2 + 0.3, width / 2 - 0.3):
+        mb.tube([((x, y, deck(y) - 0.14), 0.12) for y in [-length / 2 + length * k / 8 for k in range(9)]], m["WoodDark"], sides=6)
+    rng = random.Random(14)
     for i in range(n):
         y = -length / 2 + (i + 0.5) * length / n
-        z = 0.6 + 0.5 * math.cos(math.pi * y / length)
-        mb.box((0, y, z), (width, length / n - 0.04, 0.12), m["Plank"])
+        mb.box((rng.uniform(-0.04, 0.04), y, deck(y)), (width + rng.uniform(-0.1, 0.1), length / n - 0.05, 0.1), m["Plank"] if i % 2 else m["Wood"],
+               rotation=(math.degrees(math.atan(-0.5 * math.pi / length * math.sin(math.pi * y / length))), 0, rng.uniform(-1.5, 1.5)))
     for x in (-width / 2, width / 2):
         for i in range(5):
             y = -length / 2 + i * length / 4
-            z = 0.6 + 0.5 * math.cos(math.pi * y / length)
-            mb.frustum((x, y, -1.0), (x, y, z + 1.0), 0.1, 0.09, m["WoodDark"], sides=5)
+            mb.tube([((x, y, -1.0), 0.11), ((x, y, deck(y) + 1.05), 0.09)], m["WoodDark"], sides=6)
+            mb.frustum((x, y, deck(y) + 0.88), (x, y, deck(y) + 0.96), 0.115, 0.115, rope, sides=6)
+        rail = [(x, y, deck(y) + 0.95) for y in [-length / 2 + length * k / 12 for k in range(13)]]
+        mb.tube([(q, 0.055) for q in rail], m["Wood"], sides=5)
         for i in range(4):
             y0, y1 = -length / 2 + i * length / 4, -length / 2 + (i + 1) * length / 4
-            z0, z1 = 0.6 + 0.5 * math.cos(math.pi * y0 / length), 0.6 + 0.5 * math.cos(math.pi * y1 / length)
-            mb.frustum((x, y0, z0 + 0.9), (x, y1, z1 + 0.9), 0.05, 0.05, m["Wood"], sides=5)
+            mb.tube([((x, y0, deck(y0) + 0.1), 0.04), ((x, y1, deck(y1) + 0.85), 0.04)], m["WoodDark"], sides=4)
     return mb.finish()
 
 
 def dock():
+    """A dock of planks on log piles with rope-bound tops, a mooring post, a coil of rope and a little boat tied up."""
     m = mats()
     mb = lp.MeshBuilder("Dock")
+    rope = lp.material("Rope", "#a88a5a")
+    rng = random.Random(15)
     length, width = 8.0, 2.4
-    for i in range(12):
-        y = (i + 0.5) * length / 12
-        mb.box((0, -y, 0.4), (width, length / 12 - 0.05, 0.1), m["Plank"])
+    for i in range(14):
+        y = (i + 0.5) * length / 14
+        mb.box((rng.uniform(-0.05, 0.05), -y, 0.4), (width + rng.uniform(-0.12, 0.08), length / 14 - 0.05, 0.1), m["Plank"] if i % 2 else m["Wood"],
+               rotation=(0, 0, rng.uniform(-2, 2)))
     for x in (-width / 2 + 0.1, width / 2 - 0.1):
+        mb.box((x, -length / 2, 0.29), (0.14, length, 0.14), m["WoodDark"])
         for y in (0.3, length / 2, length - 0.3):
-            mb.frustum((x, -y, -1.5), (x, -y, 0.65), 0.12, 0.11, m["WoodDark"], sides=5)
+            mb.tube([((x, -y, -1.5), 0.13), ((x, -y, 0.7), 0.11)], m["WoodDark"], sides=6)
+            mb.frustum((x, -y, 0.55), (x, -y, 0.62), 0.125, 0.125, rope, sides=6)
+    mb.tube([((width / 2 - 0.1, -length + 0.3, 0.7), 0.11), ((width / 2 - 0.1, -length + 0.3, 1.0), 0.09)], m["WoodDark"], sides=6)
+    for k in range(3):
+        mb.frustum((0.6, -length + 1.2, 0.46 + 0.035 * k), (0.6, -length + 1.2, 0.49 + 0.035 * k), 0.2 - 0.03 * k, 0.2 - 0.03 * k, rope, sides=8)
+    # A small rowing boat tied alongside.
+    bx, by = width / 2 + 0.9, -length + 2.2
+    rings = []
+    for f, half, depth in ((-1.0, 0.05, 0.25), (-0.7, 0.4, 0.38), (0.0, 0.58, 0.42), (0.7, 0.48, 0.38), (1.0, 0.3, 0.3)):
+        y = by + f * 1.5
+        rings.append([(bx + math.sin(t) * half, y, 0.15 - depth * max(0.0, -math.cos(t)) * 0.9 + (0.08 if abs(f) > 0.9 else 0.0))
+                      for t in (math.pi / 2 + math.pi * k / 6 for k in range(7))])
+    mb.grid(rings, m["Wood"], None, lambda q: (bx, q[1], 0.6))
+    mb.grid(rings, m["WoodDark"], None, lambda q: (bx, q[1], 0.6), facing_in=True)
+    for f in (-0.3, 0.4):
+        mb.box((bx, by + f * 1.5, 0.05), (0.95, 0.18, 0.05), m["Plank"])
+    mb.tube([((width / 2 - 0.1, -length + 0.3, 0.9), 0.015), ((bx, by - 1.4, 0.2), 0.015)], rope, sides=4)
     return mb.finish()
 
 
