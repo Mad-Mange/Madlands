@@ -27,7 +27,9 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 |---|---|
 | `blender/build.py` | The asset list (name, Unity folder, builder) and the build entry point. |
 | `blender/lowpoly.py` | Helpers: flat-colored materials, boxes, tubes, spheres, convex hulls, lofts through cross-sections (`loft`, `ring`), limbs along a path (`tube`), surfaces through rows of points (`grid`) and with a lining (`shell`), weights over several bones, armatures, keyframed actions, FBX export. |
-| `blender/humanoid.py` | The humanoid races (proportions, body cross-sections, face, hair, beard, colors) and all humanoid animations. Stylized and heroic: big deltoids, a tapering torso, chunky fists and boots, a strong brow. |
+| `blender/humanoid.py` | The humanoid races (proportions, body cross-sections, the sculpted head, hair and beard styles, colors), the model at three levels of detail, and all humanoid animations. Stylized and heroic: big deltoids, a tapering torso with pecs, chunky fists and boots, a square jaw and heavy brow. |
+| `blender/sculpt.py` | Clay modelling: signed distance functions (ellipsoids, round cones, capped cones, rounded boxes) blended into each other or carved away, turned into meshes by casting rays from a point inside (`Star`: heads, noses, fists, beards) or around a path (`sweep`: arms, legs, boots, braids). The rays form a regular grid, so the resolution is a parameter (the levels of detail). |
+| `blender/lookbook.py` | Renders races dressed in outfits (the client's tint rules), from the front, side and back, in poses and the face close up, to compare with reference sheets: `blender -b --factory-startup -P art/blender/lookbook.py -- [look ...] [--lod N]` into `builds/lookbook/`. |
 | `blender/gear.py` | Worn gear, built into every race's model: helmets, hoods and hats wrapped around the head's hull, shoulder pads around the shoulder, cloaks, robe skirts, breastplates and aprons from the trunk's sections. Each piece is its own mesh (`GearHood`, `GearCloak` ...) the client hides until it is worn (`GearVisuals.cs`). |
 | `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, frog, training dummy. |
 | `blender/items.py` | Held items: origin at the grip, pointing along +Z, edge along X; shields face +X. |
@@ -41,21 +43,26 @@ public repo). Use them for the feel, then build our own shapes.
 ## Conventions
 
 - Meters, +Z up, the model faces -Y (Blender's front view), feet at the origin.
-- Flat shading, no textures. Material names matter: the client recolors the gear regions of characters by name
+- No textures. Props and creatures are flat-shaded; characters are shaded smoothly (`smooth=True` on a part; gear gets
+  hard edges where its faces meet at more than 40 degrees). Material names matter: the client recolors the gear regions of characters by name
   (`Skin`, `Hair`, `Eyes`, `Chest`, `Arms`, `Hands`, `Waist`, `Legs`, `Feet`). A region's `Trim` material
   (`ChestTrim`, `ArmsTrim`, `FeetTrim`: collars, cuffs, soles) gets a darker tone of the same color. `Hair` is the
   hair on the scalp, which the client hides under helmets and hoods; `Beard` (beard and brows) is tinted with it and
   stays visible. Some NPCs hide `Beard` and `BeardMetal` (the braid rings). `Legs` is the hips and thighs (hidden
   under a robe's skirt, which moves with them), `LegsLower` the knees and shins (tinted with `Legs`). A name with
   `Metal` is metallic, with `Glow` emissive.
+- A race's model is several meshes: `<Race>Body`, `<Race>Hair` (the hair on the scalp), `<Race>Beard` and the gear pieces,
+  each built three times with names ending in `_LOD0`, `_LOD1`, `_LOD2` (`lowpoly.set_lod`: counts of sides and rows go
+  through `lp.res`, parts smaller than `lp.MIN_PART` drop out). The client makes a LOD group of them.
 - Gear pieces are meshes named `Gear` + the piece. Their `Gear` materials take the item's color (`GearTrim` a darker,
   `GearDark` a much darker tone: linings; `GearMetal`, `GearMetalTrim` the same, metallic); every other material keeps
-  its color (`BuckleMetal` rivets and clasps, `Bone`, `LampGlow`). Cloth that bends between bones (skirts, cloaks,
+  its color (`BuckleMetal` rivets, clasps and gilded rims, `Embroidery` gold thread, `Bone`, `LampGlow`, `CrystalGlow`). Cloth that bends between bones (skirts, cloaks,
   aprons) is a surface without thickness with a lining facing the other way (`shell(thickness=0)`): with a
   thickness, shearing tips the surface through its lining. A part below a joint must not follow the bone above it.
 - Humanoids use Unity's humanoid bone names (`Hips`, `Spine`, `Chest`, `LeftUpperArm`, ...) in a T-pose, plus
   `MainHandGrip` and `OffHandGrip` where held items go, `HeadTop` at the top of the skull and `Cloak` behind the
-  shoulders (a cloak's hem hangs from it; the client swings it back while running, out behind while sitting). Rigged parts follow one bone each. `ArtImporter` maps every humanoid bone by name and measures the
+  shoulders (a cloak's hem hangs from it; the client swings it back while running, out behind while sitting). Small
+  parts follow one bone each; a character's limbs and trunk, and cloth, blend their weights over the joints. `ArtImporter` maps every humanoid bone by name and measures the
   avatar again when a race's proportions change.
 - Humanoid animations exist once, in `HumanoidAnimations` (Brightvale skeleton); Unity retargets them to every race.
 - Animation rotations in the scripts are given about the armature's rest axes: X = the model's left, -Y = forward,

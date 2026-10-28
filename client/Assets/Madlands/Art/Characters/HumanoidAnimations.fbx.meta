@@ -789,7 +789,7 @@ ModelImporter:
       scale: {x: 1, y: 0.99999994, z: 1}
     - name: Cloak
       parentName: 
-      position: {x: 0, y: 0.18999994, z: 0.1457353}
+      position: {x: 0, y: 0.18999994, z: 0.14823529}
       rotation: {x: 1, y: 2.6765506e-24, z: 0.00000004371139, w: -6.123234e-17}
       scale: {x: 1, y: 1, z: 1}
     - name: LeftShoulder
@@ -829,7 +829,7 @@ ModelImporter:
       scale: {x: 1, y: 1, z: 1}
     - name: HeadTop
       parentName: 
-      position: {x: 0, y: 0.2550001, z: 0}
+      position: {x: 0, y: 0.2473501, z: 0}
       rotation: {x: 0, y: 0, z: 0, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: RightShoulder
@@ -851,12 +851,12 @@ ModelImporter:
       parentName: 
       position: {x: 0.000000007450581, y: 0.24000007, z: -0.00000005765799}
       rotation: {x: -0.000000006667798, y: -0.0000000024483675, z: 0.000000006519257, w: 1}
-      scale: {x: 1.0000001, y: 1.0000001, z: 1}
+      scale: {x: 1.0000001, y: 1, z: 1}
     - name: MainHandGrip
       parentName: 
-      position: {x: -0.009999983, y: 0.07000001, z: -0.00000007166606}
+      position: {x: -0.009999994, y: 0.07000007, z: -0.000000073822285}
       rotation: {x: 0.000000013930268, y: 0.0000000014906463, z: 0.7071068, w: 0.7071067}
-      scale: {x: 1.0000001, y: 1.0000001, z: 1}
+      scale: {x: 1, y: 1, z: 1}
     armTwist: 0.5
     foreArmTwist: 0.5
     upperLegTwist: 0.5

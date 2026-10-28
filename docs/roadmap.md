@@ -162,6 +162,19 @@ Every phase ends in something playable and tested. Architectural decisions are i
   loops that cross-fade with the area you are in; footsteps (grass, wood, splashing through water), swings, hits,
   spells by school, loot, coins, windows, quest and level jingles; volume sliders (Settings > Sound). Effects from
   Kenney's CC0 packs, everything else made by `art/audio/` ([CREDITS.md](../CREDITS.md))
+- [x] Characters remodeled after reference sheets for the three classes (2026-10-27): heads, fists, hair and beards are
+  sculpted like clay from shapes blended into each other (`art/blender/sculpt.py`: signed distance functions sampled
+  along rays, so the resolution is a parameter) and shaded smoothly: square jaws, heavy brows, eyes with lids, thick
+  swept hair with a beard and mustache, the Korrin's great beard with locks and braids, a crest gathered into a knot.
+  Arms and legs are one surface each that bends at the elbow and knee, the trunk one surface with pecs and shoulder
+  blades. Body, hair, beard and every gear piece are separate meshes in three levels of detail (`_LOD0` .. `_LOD2`,
+  grouped by the client into a LOD group: about 9k triangles for a bare character up close, 2-3k far away). New gear
+  for the classes' looks: tabards, a cowl with its hood thrown back, the shardmage's long coat with split tails and a
+  glowing crystal, a warden's harness and a cloak with the Greywood's tree, breastplates with tassets, gilded rims and
+  the knights' star; new characters start in their class's look and Captain Brand wears the knight's plate. Two shields
+  after the sheets: the knights' round steel shield with a gilded star (Captain Brand's, item 1037) and a warden's
+  teal shield with the Greywood's tree (now the Mossback Scale Shield's look).
+  `art/blender/lookbook.py` renders outfits (sides, poses, faces) to compare with the reference sheets
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)
 
@@ -222,6 +235,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
   modeled pieces (`GearVisuals`, `art/blender/gear.py`, 2026-10-21). More pieces (gloves, boots, belts as meshes)
   are a new function in `gear.py` each; the display ids stay.
 - **Tree crowns have no colliders**, so they block neither line of sight nor the camera.
+- **Only male bodies, two races.** The shardmage's reference sheet shows an elven woman: that needs a body type chosen at
+  character creation (saved with the character, sent with its display) and an elf race with its own proportions and head.
+- **Gear pieces bend rigidly or by simple blends:** a long coat or tabard still cuts into a thigh swung far forward.
 
 - ~~**Bandwidth**~~ (done 2026-10-18): `EntityMoves` entries are packed (guid as type + varint, ~2 mm positions, 16-bit
   yaw and velocity: about 24 bytes instead of 42) and far entities are sent at 5 Hz (50–100 m) or 2.5 Hz (beyond 100 m).

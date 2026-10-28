@@ -11,7 +11,11 @@ it back while the unit runs).
 
 Materials: "Gear" takes the item's color, "GearTrim" a darker and "GearDark" a much darker tone of it
 (linings, the inside of a hood); "GearMetal" and "GearMetalTrim" the same, metallic. Everything else
-keeps its own color: BuckleMetal (rivets, buckles, clasps), Bone, LampGlow, Seaweed.
+keeps its own color: BuckleMetal (rivets, buckles, clasps, gilded rims), Embroidery (gold thread on cloth),
+Bone, LampGlow, CrystalGlow, Fur, Seaweed.
+
+Pieces are shaded smoothly with hard edges where faces meet at a sharp angle (rims, plate edges), and are
+built at every level of detail (lp.res for their rows and sides; rivets drop out of the coarser levels).
 """
 
 import math
@@ -21,9 +25,24 @@ from mathutils import Matrix, Vector
 
 import humanoid as hu
 import lowpoly as lp
+import sculpt as sc
 
 TAU = 2 * math.pi
 UP = Vector((0, 0, 1))
+# Faces meeting at more than this many degrees get a hard edge.
+SHARP = 40.0
+
+
+class _Builder(lp.MeshBuilder):
+    """A MeshBuilder for gear: everything shaded smoothly, hard edges by angle when finished."""
+
+    def add_faces(self, verts, groups, bone=None, matrix=None, closed=False, double_sided=False, smooth=True,
+                  inside=None, facing_in=False):
+        return super().add_faces(verts, groups, bone, matrix=matrix, closed=closed, double_sided=double_sided, smooth=True,
+                                 inside=inside, facing_in=facing_in)
+
+    def finish(self, collection=None, sharp_angle=SHARP):
+        return super().finish(collection, sharp_angle)
 
 
 def _materials():
@@ -34,8 +53,12 @@ def _materials():
         GearMetal=lp.material("GearMetal", "#9aa3ae", metallic=0.6, roughness=0.5),
         GearMetalTrim=lp.material("GearMetalTrim", "#5f656c", metallic=0.6, roughness=0.5),
         BuckleMetal=lp.material("BuckleMetal", "#c9a24a", metallic=0.6, roughness=0.5),
+        Embroidery=lp.material("Embroidery", "#c9a54e"),
         Bone=lp.material("Bone", "#ddd2b4"),
         LampGlow=lp.material("LampGlow", "#ffd27a", emission=3.0),
+        CrystalGlow=lp.material("CrystalGlow", "#b48cff", emission=3.0),
+        Fur=lp.material("Fur", "#cdb894"),
+        FurDark=lp.material("FurDark", "#9c8664"),
     )
 
 
@@ -98,23 +121,8 @@ class Fit:
 
 
 def head_fit(r, hair=False, nose=False):
-    """The head's hull: skull, jaw, ears and beard; with the hair (hats sit on it) and the nose (face plates)."""
-    at, s = hu.head_at(r), r["head_shape"]
-    points = [at(*p) for p in lp.mirrored(hu.SKULL)]
-    points += [at(x * s["jaw"], y, z) for x, y, z in lp.mirrored(hu.JAW)]
-    points += hu.ear(r, 1) + hu.ear(r, -1)
-    if r["beard"]:
-        points += [at(*p) for p in lp.mirrored(hu.BEARD + hu.MUSTACHE)]
-    if nose:
-        root = Vector((0, -0.12, 0.15))
-        points += [at(*(root + (Vector(p) - root) * s["nose"])) for p in lp.mirrored(hu.NOSE)]
-    if hair:
-        points += [at(*p) for p in lp.mirrored(hu.HAIR_CAP + hu.HAIRLINE[r["hair"]])]
-        if r["hair"] == "swept":
-            points += [at(*tip) for _, tip, _ in hu.SWEPT_LOCKS]
-        else:
-            points += [at(x, 0.03 + y, 0.29 + z) for x, y, z in lp.mirrored([(0.05, 0, 0), (0, 0.05, 0), (0, -0.05, 0), (0, 0, 0.045)])]
-    return Fit(points)
+    """The head's hull: skull, face, ears and beard; with the hair (hats sit on it) and the nose (face plates)."""
+    return Fit(hu.head_points(r, hair, nose))
 
 
 def dome(fit, center, clearance, rim, rows=5, cols=16, bulge=None):
@@ -137,6 +145,7 @@ def dome(fit, center, clearance, rim, rows=5, cols=16, bulge=None):
                 hi = mid
         return (lo + hi) / 2
 
+    rows, cols = lp.res(rows, 1), lp.res(cols, 8)
     ts = [TAU * i / cols for i in range(cols)]
     ends = [rim_theta(t) for t in ts]
     out = [[point(0.0, 0.0)]]
@@ -148,6 +157,7 @@ def dome(fit, center, clearance, rim, rows=5, cols=16, bulge=None):
 def ring_at(fit, axis, z, clearance, cols=16, extra=None):
     """A closed horizontal ring around `fit` at height z: rays from the point `axis` (x, y) at that height."""
     origin = Vector((axis[0], axis[1], z))
+    cols = lp.res(cols, 8)
     out = []
     for i in range(cols):
         d = around(TAU * i / cols)
@@ -184,6 +194,7 @@ def loop_tube(mb, points, radius, mat, bone, sides=5, closed=True, squash=(1.0, 
     """A tube along a path (a closed loop by default): rolled hems, rims and hat bands."""
     pts = [Vector(p) for p in points]
     n = len(pts)
+    sides = lp.res(sides, 3)
     rings = []
     for i in range(n):
         a = pts[(i - 1) % n] if closed or i > 0 else pts[i]
@@ -210,7 +221,7 @@ def spike(mb, base, tip, radius, mat, bone, sides=5, bend=None):
     mid = (base + tip) / 2 + (Vector(bend) if bend else Vector())
     path = [base, (base + mid) / 2, mid, (mid + tip) / 2, tip]
     radii = [radius, radius * 0.8, radius * 0.58, radius * 0.34, radius * 0.06]
-    mb.tube(list(zip(path, radii)), mat, bone, sides=sides)
+    mb.tube(list(zip(path, radii)), mat, bone, sides=lp.res(sides, 4))
 
 
 def by_height(low, high, z0, z1):
@@ -245,7 +256,7 @@ def helm(r, m):
     """A Korrin-forged nasal helm: a riveted dome over a rim band, cheek guards, a nose guard and a crest."""
     at = _head_frame(r)
     s = r["head_shape"]
-    mb = lp.MeshBuilder("GearHelm")
+    mb = _Builder("GearHelm")
     fit = head_fit(r)
     center = at(0, 0.01, 0.12)
     rows = dome(fit, center, 0.018, _rim(r, [(0, 0.2), (45, 0.19), (90, 0.165), (180, 0.12)]), rows=5, cols=18)
@@ -256,8 +267,8 @@ def helm(r, m):
         if i % 3 == 1:
             stud(mb, p + Vector((0, 0, 0.012)) + (p - center).normalized() * 0.006, p - center, 0.008, m["BuckleMetal"], "Head")
     # The crest, over the top from the brow to the nape.
-    front, back = 0, len(rows[1]) // 2
-    path = [rows[k][front] for k in range(5, 0, -1)] + [rows[0][0]] + [rows[k][back] for k in range(1, 5)]
+    front, back, last = 0, len(rows[1]) // 2, len(rows) - 1
+    path = [rows[k][front] for k in range(last, 0, -1)] + [rows[0][0]] + [rows[k][back] for k in range(1, last)]
     mb.tube([(p + (p - center).normalized() * 0.008, (0.007, 0.016)) for p in path], m["GearMetalTrim"], "Head", sides=4)
     # The nose guard follows the nose's ridge from the rim down.
     root = Vector((0, -0.12, 0.15))
@@ -288,7 +299,7 @@ def helm(r, m):
 def horned_helm(r, m):
     """A closed war helm: a dome down over the cheeks and nape, a face plate with an eye slit, horns."""
     at = _head_frame(r)
-    mb = lp.MeshBuilder("GearHornedHelm")
+    mb = _Builder("GearHornedHelm")
     fit = head_fit(r, nose=True)
     center = at(0, 0.01, 0.12)
     rows = dome(fit, center, 0.02, _rim(r, [(0, 0.2), (40, 0.19), (70, 0.04), (180, 0.03)]), rows=6, cols=18)
@@ -331,7 +342,7 @@ def _capelet(r, mb, m, outer, inner):
     for zz, half, grow, square in ((neck + 0.03, r["neck_r"] + 0.07, 0.07, 0.0), (z + 0.08, sx + 0.02, 0.06, 0.25),
                                    (z + 0.0, sx + dl * 1.3, 0.075, 0.35), (z - 0.09, sx + dl * 1.5, 0.09, 0.35)):
         _, front, back = hu.extent(r, min(zz, z + 0.04))
-        rows.append(arc(zz, half, -front + grow, back + grow, open_t, TAU - open_t, 15, square=square))
+        rows.append(arc(zz, half, -front + grow, back + grow, open_t, TAU - open_t, lp.res(15, 7), square=square))
     # A slightly scalloped hem.
     rows[-1] = [p + Vector((0, 0, -0.012 if i % 2 else 0.0)) for i, p in enumerate(rows[-1])]
     mb.shell(rows, 0.01, outer, inner, lambda p: Vector((0, 0.0, p.z - 0.1)), "Chest", rim_mat=m["GearTrim"])
@@ -340,7 +351,7 @@ def _capelet(r, mb, m, outer, inner):
 
 def _hood(r, m, name, outer, inner, edge):
     at = _head_frame(r)
-    mb = lp.MeshBuilder(name)
+    mb = _Builder(name)
     fit = head_fit(r)
     center = at(0, 0.02, 0.12)
     rows = _hood_rows(r, fit, center)
@@ -407,7 +418,7 @@ def _brim(mb, m, ring, base, widths, droop, inner_drop=0.0, bone="Head"):
 
 def straw_hat(r, m):
     """A wide straw hat with a dented crown and a band, worn over the hair."""
-    mb = lp.MeshBuilder("GearStrawHat")
+    mb = _Builder("GearStrawHat")
     fit = head_fit(r, hair=True)
     ring, base = _hat_base(r, fit, 0.215, 0.012)
     top = fit.top + 0.045
@@ -424,7 +435,7 @@ def straw_hat(r, m):
 
 def wizard_hat(r, m):
     """A tall pointed hat with a wide brim, its tip bent back; a buckled band."""
-    mb = lp.MeshBuilder("GearWizardHat")
+    mb = _Builder("GearWizardHat")
     fit = head_fit(r, hair=True)
     ring, base = _hat_base(r, fit, 0.205, 0.014)
     rows = [ring]
@@ -446,7 +457,7 @@ def wizard_hat(r, m):
 def miner_helm(r, m):
     """A rounded miner's cap with a short brim and a lamp."""
     at = _head_frame(r)
-    mb = lp.MeshBuilder("GearMinerHelm")
+    mb = _Builder("GearMinerHelm")
     fit = head_fit(r)
     center = at(0, 0.01, 0.12)
     rows = dome(fit, center, 0.022, _rim(r, [(0, 0.2), (90, 0.17), (180, 0.13)]), rows=5, cols=16)
@@ -460,15 +471,15 @@ def miner_helm(r, m):
     origin = at(0, 0.0, 0.25)
     front = origin + around(0) * fit.reach(origin, around(0))
     housing = front + Vector((0, -0.035, 0.0))
-    mb.frustum(housing + Vector((0, 0.03, 0)), housing + Vector((0, -0.02, 0)), 0.026, 0.032, m["BuckleMetal"], "Head", sides=8)
-    mb.frustum(housing + Vector((0, -0.02, 0)), housing + Vector((0, -0.026, 0)), 0.026, 0.026, m["LampGlow"], "Head", sides=8)
+    mb.frustum(housing + Vector((0, 0.03, 0)), housing + Vector((0, -0.02, 0)), 0.026, 0.032, m["BuckleMetal"], "Head", sides=lp.res(8, 5))
+    mb.frustum(housing + Vector((0, -0.02, 0)), housing + Vector((0, -0.026, 0)), 0.026, 0.026, m["LampGlow"], "Head", sides=lp.res(8, 5))
     return mb.finish()
 
 
 def oilskin_hat(r, m):
     """A fisherman's oilskin hat: a round crown, a short brim in front and a long one over the neck."""
     at = _head_frame(r)
-    mb = lp.MeshBuilder("GearOilskinHat")
+    mb = _Builder("GearOilskinHat")
     fit = head_fit(r)
     center = at(0, 0.01, 0.12)
     rows = dome(fit, center, 0.028, _rim(r, [(0, 0.205), (90, 0.17), (180, 0.14)]), rows=5, cols=16)
@@ -554,20 +565,22 @@ def _edge(mu, outer, side, inner):
 
 def leather_pads(r, m):
     """Layered leather shoulder pads: a cap over the shoulder and three riveted lames down the arm."""
-    mb = lp.MeshBuilder("GearLeatherPads")
+    mb = _Builder("GearLeatherPads")
     for s in (1, -1):
         sh = _Shoulder(r, s)
-        mus = [-180 + 360 * i / 14 for i in range(14)]
+        n = lp.res(14, 8)
+        mus = [-180 + 360 * i / n for i in range(n)]
         end = lambda mu: _edge(mu, 62, 66, 58)
         cap = sh.rows([0] + [lambda mu, f=f: end(mu) * f for f in (0.3, 0.6, 0.85, 1.0)], mus, lambda th, mu: 0.024)
         mb.shell(cap, 0.012, m["Gear"], m["GearDark"], lambda p: sh.center, sh.bone, closed=True, rim_mat=m["GearTrim"])
         loop_tube(mb, cap[-1], 0.009, m["GearTrim"], sh.bone, sides=4)
-        side_mus = [-95 + 190 * i / 8 for i in range(9)]
+        n = lp.res(8, 4)
+        side_mus = [-95 + 190 * i / n for i in range(n + 1)]
         for k, (a, b) in enumerate(((-6, 12), (6, 24), (18, 36))):
             lame = sh.rows([lambda mu, a=a: end(mu) + a, lambda mu, a=a, b=b: end(mu) + (a + b) / 2, lambda mu, b=b: end(mu) + b],
                            side_mus, lambda th, mu, k=k: 0.02 - 0.003 * k)
             mb.shell(lame, 0.01, m["Gear"], m["GearDark"], lambda p: sh.center, sh.bone, rim_mat=m["GearTrim"])
-            for i in (2, 4, 6):
+            for i in range(2, len(side_mus) - 1, 2):
                 p = lame[-1][i]
                 stud(mb, p + (p - sh.center).normalized() * 0.004 + (lame[0][i] - p) * 0.25, p - sh.center, 0.007, m["BuckleMetal"], sh.bone)
     return mb.finish()
@@ -575,20 +588,28 @@ def leather_pads(r, m):
 
 def _pauldron(r, m, mb, s, spikes):
     sh = _Shoulder(r, s, elevation=58.0)
-    mus = [-180 + 360 * i / 16 for i in range(16)]
+    n = lp.res(16, 8)
+    mus = [-180 + 360 * i / n for i in range(n)]
     end = lambda mu: _edge(mu, 72, 72, 60)
     clear = lambda th, mu: 0.03 + 0.012 * math.sin(math.radians(th) * 2)
     dome_rows = sh.rows([0] + [lambda mu, f=f: end(mu) * f for f in (0.25, 0.5, 0.75, 1.0)], mus, clear)
+    rim = m["GearMetalTrim"] if spikes else m["BuckleMetal"]
     mb.shell(dome_rows, 0.014, m["GearMetal"], m["GearMetalTrim"], lambda p: sh.center, sh.bone, closed=True)
-    loop_tube(mb, dome_rows[-1], 0.013, m["GearMetalTrim"], sh.bone, sides=5)
-    for i in range(0, 16, 2):
+    loop_tube(mb, dome_rows[-1], 0.013, rim, sh.bone, sides=5)
+    for i in range(0, n, 2):
         p = dome_rows[-2][i]
         stud(mb, p, p - sh.center, 0.008, m["BuckleMetal"], sh.bone)
-    side_mus = [-95 + 190 * i / 8 for i in range(9)]
+    k = lp.res(8, 4)
+    side_mus = [-95 + 190 * i / k for i in range(k + 1)]
     lame = sh.rows([lambda mu: end(mu) - 4, lambda mu: end(mu) + 10, lambda mu: end(mu) + 22], side_mus,
                    lambda th, mu: 0.024)
     mb.shell(lame, 0.012, m["GearMetal"], m["GearMetalTrim"], lambda p: sh.center, sh.bone)
-    loop_tube(mb, lame[-1], 0.009, m["GearMetalTrim"], sh.bone, sides=4, closed=False)
+    loop_tube(mb, lame[-1], 0.009, rim, sh.bone, sides=4, closed=False)
+    if not spikes:
+        lame = sh.rows([lambda mu: end(mu) + 18, lambda mu: end(mu) + 30, lambda mu: end(mu) + 40], side_mus[1:-1],
+                       lambda th, mu: 0.02)
+        mb.shell(lame, 0.01, m["GearMetal"], m["GearMetalTrim"], lambda p: sh.center, sh.bone)
+        loop_tube(mb, lame[-1], 0.008, rim, sh.bone, sides=4, closed=False)
     if spikes:
         for theta, length in ((8, 0.12), (30, 0.095), (52, 0.07)):
             d = sh.dir(theta, 0)
@@ -598,7 +619,7 @@ def _pauldron(r, m, mb, s, spikes):
 
 def pauldrons(r, m):
     """Round plate pauldrons with a rolled rim, rivets and a lame below."""
-    mb = lp.MeshBuilder("GearPauldrons")
+    mb = _Builder("GearPauldrons")
     for s in (1, -1):
         _pauldron(r, m, mb, s, spikes=False)
     return mb.finish()
@@ -606,45 +627,50 @@ def pauldrons(r, m):
 
 def spiked_pauldrons(r, m):
     """The plate pauldrons with a row of spikes."""
-    mb = lp.MeshBuilder("GearSpikedPauldrons")
+    mb = _Builder("GearSpikedPauldrons")
     for s in (1, -1):
         _pauldron(r, m, mb, s, spikes=True)
     return mb.finish()
 
 
 def fur_mantle(r, m):
-    """A shaggy fur mantle over both shoulders and around the neck, open in front, with clasps."""
-    mb = lp.MeshBuilder("GearFurMantle")
-    z, sx, dl, neck = r["shoulder_z"], r["shoulder_x"], r["deltoid"], r["neck"]
-    open_t = math.radians(30)
-    cols = 21
+    """A thick, lumpy fur mantle rolled around the neck and over both shoulders, open in front, tufts along its hem, with clasps."""
+    mb = _Builder("GearFurMantle")
+    z, sx, dl, neck, nr = r["shoulder_z"], r["shoulder_x"], r["deltoid"], r["neck"], r["neck_r"]
+    open_t = math.radians(28)
+    cols = lp.res(23, 9)
+    specs = ((neck + 0.07, nr + 0.05, 0.05), (neck + 0.045, nr + 0.085, 0.085), (z + 0.09, sx + 0.035, 0.095),
+             (z + 0.03, sx + dl * 1.42, 0.115), (z - 0.05, sx + dl * 1.62, 0.125), (z - 0.1, sx + dl * 1.68, 0.12))
     rows = []
-    for k, (zz, half, grow) in enumerate(((neck + 0.05, r["neck_r"] + 0.075, 0.075), (z + 0.09, sx + 0.03, 0.08),
-                                          (z + 0.0, sx + dl * 1.45, 0.1), (z - 0.1, sx + dl * 1.6, 0.11))):
+    for k, (zz, half, grow) in enumerate(specs):
         _, front, back = hu.extent(r, min(zz, z + 0.04))
         row = arc(zz, half, -front + grow, back + grow, open_t, TAU - open_t, cols, square=0.3)
-        # Shaggy: every other point pushed out, the hem in long tufts.
         center = Vector((0, 0, zz))
-        row = [p + (p - center).normalized() * (0.014 if (i + k) % 2 else 0.0) for i, p in enumerate(row)]
-        if k == 3:
-            row = [p + Vector((0, 0, -0.055 if i % 2 else 0.0)) for i, p in enumerate(row)]
+        row = [q + (q - center).normalized() * (0.012 * math.sin(3.1 * i + 1.7 * k) + (0.01 if (i + k) % 2 else 0.0))
+               for i, q in enumerate(row)]
         rows.append(row)
-    mb.shell(rows, 0.03, m["Gear"], m["GearDark"], lambda p: Vector((0, 0.0, p.z - 0.1)), "Chest", rim_mat=m["GearTrim"])
-    for s in (1, -1):
-        p = rows[1][0 if s < 0 else -1]
-        mb.sphere(p + Vector((0, -0.02, -0.02)), (0.022, 0.012, 0.022), m["BuckleMetal"], "Chest", segments=6, rings=4)
-    return mb.finish()
+    mb.shell(rows, 0.032, m["Gear"], m["GearDark"], lambda q: Vector((0, 0.0, q.z - 0.1)), "Chest", rim_mat=m["GearTrim"])
+    # Soft tufts along the hem.
+    for i, q in enumerate(rows[-1]):
+        if i in (0, len(rows[-1]) - 1):
+            continue
+        out = (q - Vector((0, 0, q.z))).normalized()
+        length = 0.035 + 0.02 * ((i * 7) % 3) / 2
+        tip = q + out * 0.012 + Vector((0, 0, -length))
+        mb.tube([(q + Vector((0, 0, 0.03)), 0.03), ((q + tip) / 2, 0.026), (tip, 0.008)], m["Gear"], "Chest", sides=lp.res(7, 4))
+    for side in (1, -1):
+        q = rows[2][0 if side < 0 else -1]
+        mb.sphere(q + Vector((0, -0.025, -0.02)), (0.022, 0.012, 0.022), m["BuckleMetal"], "Chest", segments=lp.res(8, 5), rings=4)
+    return mb.finish(sharp_angle=80)
 
 
 # ---------------------------------------------------------------- back and body
 
 
-def cloak(r, m):
-    """A cloak from the shoulders to the calves, in folds, with clasps; the hem follows the Cloak bone."""
-    mb = lp.MeshBuilder("GearCloak")
-    z, sx, dl, neck = r["shoulder_z"], r["shoulder_x"], r["deltoid"], r["neck"]
+def _cloak_rows(r, cols, ragged=False):
+    """A cloak's rows from the neck over the shoulders down to the calves, in folds; a torn hem when `ragged`."""
+    z, sx, dl = r["shoulder_z"], r["shoulder_x"], r["deltoid"]
     hem = r["knee"] * 0.62
-    cols = 13
     rows = []
     _, _, back = hu.extent(r, z - 0.06)
     rows.append(arc(z + 0.075, r["neck_r"] + 0.06, r["neck_r"] + 0.01, r["neck_r"] + 0.07, math.radians(70), math.radians(290), cols))
@@ -659,19 +685,67 @@ def cloak(r, m):
         for i in range(cols):
             u = 1 - 2 * i / (cols - 1)
             fold = 0.018 * f * (1 if i % 2 else -1) if 0 < i < cols - 1 else 0.0
-            row.append(Vector((u * half, reach - 0.11 * u * u * (1 - 0.3 * f) + fold, zz)))
+            drop = 0.0
+            if ragged and k == len(drops) - 1 and 0 < i < cols - 1:
+                drop = (0.07, -0.02, 0.05, 0.0, 0.08, -0.015, 0.04)[i % 7]
+            row.append(Vector((u * half, reach - 0.11 * u * u * (1 - 0.3 * f) + fold, zz + drop)))
         rows.append(row)
 
     def weigh(p):
         s = smooth(z - 0.02, z - 0.2, p.z)
         return {"Chest": 1.0 - s, "Cloak": s}
+    return rows, weigh
 
+
+def _cloak(mb, r, m, rows, weigh):
     mb.shell(rows, 0, m["Gear"], m["GearTrim"], lambda p: Vector((0, 0.0, p.z)), weigh)
     border = [row[0] for row in rows] + rows[-1][1:] + [row[-1] for row in reversed(rows[:-1])] + list(reversed(rows[0][1:-1]))
     loop_tube(mb, border, 0.01, m["GearTrim"], weigh, sides=5)
     for end in (0, -1):
         p = rows[0][end]
-        mb.sphere(p + Vector((0, -0.012, -0.01)), (0.026, 0.012, 0.026), m["BuckleMetal"], "Chest", segments=7, rings=4)
+        mb.sphere(p + Vector((0, -0.012, -0.01)), (0.026, 0.012, 0.026), m["BuckleMetal"], "Chest", segments=lp.res(8, 5), rings=4)
+
+
+def cloak(r, m):
+    """A cloak from the shoulders to the calves, in folds, with clasps; the hem follows the Cloak bone."""
+    mb = _Builder("GearCloak")
+    rows, weigh = _cloak_rows(r, lp.res(13, 7))
+    _cloak(mb, r, m, rows, weigh)
+    return mb.finish()
+
+
+def _on_rows(rows, u, v):
+    """A point on a cloak's surface: u across from its left edge (-1) to its right (1), v down from the shoulders (0) to the hem (1)."""
+    k = 1 + v * (len(rows) - 2)
+    k0 = min(int(k), len(rows) - 2)
+    f = k - k0
+
+    def across(row):
+        c = (1 - u) / 2 * (len(row) - 1)
+        c0 = min(int(c), len(row) - 2)
+        g = c - c0
+        return row[c0] * (1 - g) + row[c0 + 1] * g
+    return across(rows[k0]) * (1 - f) + across(rows[k0 + 1]) * f
+
+
+def warden_cloak(r, m):
+    """A warden's cloak with a torn hem and the Greywood's tree embroidered in gold on its back."""
+    mb = _Builder("GearWardenCloak")
+    rows, weigh = _cloak_rows(r, lp.res(13, 7), ragged=True)
+    _cloak(mb, r, m, rows, weigh)
+    out = Vector((0, 0.007, 0))
+    trunk = [(0, 0.66), (0.02, 0.52), (0, 0.38), (0, 0.24)]
+    branches = [[(0, 0.44), (-0.18, 0.34), (-0.34, 0.26)], [(0, 0.44), (0.18, 0.34), (0.34, 0.26)],
+                [(0, 0.34), (-0.12, 0.22), (-0.2, 0.12)], [(0, 0.34), (0.12, 0.22), (0.2, 0.12)],
+                [(0, 0.28), (-0.04, 0.16), (-0.02, 0.08)], [(0, 0.28), (0.05, 0.17), (0.03, 0.09)],
+                [(0.02, 0.62), (-0.14, 0.7), (-0.24, 0.72)], [(0.02, 0.62), (0.15, 0.69), (0.25, 0.72)]]
+    mb.tube([(_on_rows(rows, u, v) + out, (0.016, 0.006)) for u, v in trunk], m["Embroidery"], weigh, sides=lp.res(5, 4))
+    for branch in branches:
+        mb.tube([(_on_rows(rows, u, v) + out, 0.0065 - 0.0015 * i) for i, (u, v) in enumerate(branch)], m["Embroidery"], weigh,
+                sides=lp.res(5, 4))
+    # A ring around the tree.
+    ring = [_on_rows(rows, 0.42 * math.sin(a), 0.42 + 0.34 * math.cos(a)) + out for a in (TAU * i / lp.res(24, 10) for i in range(lp.res(24, 10)))]
+    loop_tube(mb, ring, 0.006, m["Embroidery"], weigh, sides=4, squash=(0.5, 1.0))
     return mb.finish()
 
 
@@ -706,8 +780,8 @@ def _skirt_rows(r, cols):
 
 def robe_skirt(r, m):
     """A robe's flared skirt from under the belt to the shins, a band down the front and a rolled hem."""
-    mb = lp.MeshBuilder("GearRobeSkirt")
-    rows = _skirt_rows(r, 18)
+    mb = _Builder("GearRobeSkirt")
+    rows = _skirt_rows(r, lp.res(18, 8))
     weigh = skirt_weights(r)
     mb.shell(rows, 0, m["Gear"], m["GearDark"], lambda p: Vector((0, 0.0, p.z + 0.2)), weigh, closed=True)
     loop_tube(mb, rows[-1], 0.012, m["GearTrim"], weigh, sides=5)
@@ -719,8 +793,8 @@ def robe_skirt(r, m):
 
 def rags(r, m):
     """Rotten clothes: a skirt torn into ragged strips, tatters over the shoulders, strands of weed (Seaweed)."""
-    mb = lp.MeshBuilder("GearRags")
-    cols = 20
+    mb = _Builder("GearRags")
+    cols = lp.res(20, 8)
     rows = _skirt_rows(r, cols)
     # Torn: every column ends at its own length, some strips hang long, some are torn short.
     lengths = [0.5, 1.0, 0.25, 0.85, 0.6, 0.15, 0.95, 0.4, 0.75, 0.3, 1.0, 0.55, 0.2, 0.9, 0.45, 0.7, 0.1, 0.8, 0.35, 0.65]
@@ -731,7 +805,8 @@ def rags(r, m):
     z, sx = r["shoulder_z"], r["shoulder_x"]
     for s in (1, -1):
         sh = _Shoulder(r, s)
-        mus = [-110 + 220 * i / 7 for i in range(8)]
+        n = lp.res(7, 4)
+        mus = [-110 + 220 * i / n for i in range(n + 1)]
         tatter = sh.rows([lambda mu: 20, lambda mu: 50, lambda mu: 70 + 22 * ((int(mu) // 10) % 3) / 2], mus, lambda th, mu: 0.012)
         mb.shell(tatter, 0, m["GearTrim"], m["GearDark"], lambda p: sh.center, sh.bone)
     weed = lp.material("Seaweed", "#3f5a2a")
@@ -746,14 +821,15 @@ def rags(r, m):
 
 def gauntlets(r, m):
     """Plate gauntlets: flared cuffs over the forearms with a rolled rim, and riveted plates over the fists."""
-    mb = lp.MeshBuilder("GearGauntlets")
+    mb = _Builder("GearGauntlets")
     z, ex, wx, k = r["shoulder_z"], r["elbow_x"], r["wrist_x"], r["hand"] / 0.13
     fa = r["forearm"]
+    n = lp.res(10, 6)
     for side, s in hu.SIDES:
         lower, hand = side + "LowerArm", side + "Hand"
         rows = []
         for x, radius in ((ex + (wx - ex) * 0.45, fa[1] * 1.15), (ex + (wx - ex) * 0.75, fa[2] * 1.3), (wx - 0.005, fa[2] * 1.75)):
-            rows.append([Vector((s * x, math.cos(t) * radius, z + math.sin(t) * radius)) for t in (TAU * i / 10 for i in range(10))])
+            rows.append([Vector((s * x, math.cos(t) * radius, z + math.sin(t) * radius)) for t in (TAU * i / n for i in range(n))])
         mb.shell(rows, 0.008, m["GearMetal"], m["GearMetalTrim"], lambda p: Vector((p.x, 0, z)), lower, closed=True)
         loop_tube(mb, rows[-1], 0.009, m["GearMetalTrim"], lower, sides=4)
         loop_tube(mb, rows[0], 0.007, m["GearMetalTrim"], lower, sides=4)
@@ -772,7 +848,7 @@ def gauntlets(r, m):
 
 def greaves(r, m):
     """Plate greaves: a cop over each knee with a fan at its side, a plate down the front of the shin, straps."""
-    mb = lp.MeshBuilder("GearGreaves")
+    mb = _Builder("GearGreaves")
     knee, top = r["knee"], r["boot_top"]
     th, sh = r["thigh"], r["shin"]
     for side, s in hu.SIDES:
@@ -806,12 +882,13 @@ def greaves(r, m):
 
 def sash(r, m):
     """A cloth sash over the belt, knotted at the left hip, its two ends hanging down the thigh."""
-    mb = lp.MeshBuilder("GearSash")
+    mb = _Builder("GearSash")
     z0, z1 = r["belt"][0][0] - 0.005, r["belt"][1][0] + 0.005
     rows = []
     for zz in (z0, z1):
         half, front, back = hu.extent(r, zz)
-        rows.append(arc(zz, half + 0.016, -front + 0.016, back + 0.016, 0, TAU * 15 / 16, 16, square=0.35))
+        n = lp.res(16, 8)
+        rows.append(arc(zz, half + 0.016, -front + 0.016, back + 0.016, 0, TAU * (n - 1) / n, n, square=0.35))
     mb.shell(rows, 0, m["Gear"], m["GearDark"], lambda p: Vector((0, 0, p.z)), "Hips", closed=True)
     for row in rows:
         loop_tube(mb, row, 0.006, m["GearTrim"], "Hips", sides=4)
@@ -832,44 +909,111 @@ def sash(r, m):
 
 def robe_cuffs(r, m):
     """Wide bell sleeves flaring over the forearms of a robe."""
-    mb = lp.MeshBuilder("GearRobeCuffs")
+    mb = _Builder("GearRobeCuffs")
     z, ex, wx = r["shoulder_z"], r["elbow_x"], r["wrist_x"]
     fa = r["forearm"]
+    n = lp.res(12, 6)
     for side, s in hu.SIDES:
         bone = side + "LowerArm"
         rows = []
         for x, radius in ((ex + (wx - ex) * 0.3, fa[1] * 1.1), (ex + (wx - ex) * 0.7, fa[2] * 1.5), (wx - 0.01, fa[2] * 2.2)):
             rows.append([Vector((s * x, math.cos(t) * radius, z - 0.012 + math.sin(t) * radius * 1.08 - (radius - fa[1]) * 0.6))
-                         for t in (TAU * i / 12 for i in range(12))])
+                         for t in (TAU * i / n for i in range(n))])
         mb.shell(rows, 0.008, m["Gear"], m["GearDark"], lambda p: Vector((p.x, 0, z)), bone, closed=True, rim_mat=m["GearTrim"])
         loop_tube(mb, rows[-1], 0.01, m["GearTrim"], bone, sides=4)
     return mb.finish()
 
 
+TRUNK = ("pelvis", "belly", "torso", "collar")
+
+
+def _cuirass_row(r, z, cols, lift=0.016, lift_front=0.034, keel=0.014):
+    """A ring of plate around the trunk at height z, over the pecs, with a keel down the front."""
+    half, front, back = hu.extent(r, z, TRUNK)
+    row = arc(z, half + lift, -front + lift_front, back + lift, 0, TAU * (cols - 1) / cols, cols, square=0.3)
+    center = Vector((0, 0, z))
+    out = []
+    for i, p in enumerate(row):
+        around_deg = abs(math.degrees(wrap(TAU * i / cols)))
+        push = sum(amount * math.exp(-((z - bz) / bh) ** 2) * math.exp(-((around_deg - ba) / bw) ** 2)
+                   for bz, bh, ba, bw, amount in hu.trunk_bumps(r))
+        q = p + outward([p], center, push)[0] - p
+        out.append(q)
+    out[0] = out[0] + Vector((0, -keel, 0))
+    return out
+
+
 def breastplate(r, m):
-    """A plate cuirass over the chest and belly with a keel down the front and rolled edges."""
-    mb = lp.MeshBuilder("GearBreastplate")
-    cols = 18
-    rows = []
-    for zz in (r["spine"] + 0.03, r["chest"], (r["chest"] + r["shoulder_z"]) / 2, r["shoulder_z"] - 0.02, r["shoulder_z"] + 0.02):
-        half, front, back = hu.extent(r, zz)
-        row = arc(zz, half + 0.012, -front + 0.032, back + 0.022, 0, TAU * (cols - 1) / cols, cols, square=0.3)
-        row[0] = row[0] + Vector((0, -0.016, 0))
-        rows.append(row)
-    weigh = by_height("Spine", "Chest", r["chest"] - 0.05, r["chest"] + 0.05)
+    """
+    A plate cuirass over the chest and belly with a keel down the front and gilded rims, and tassets of two
+    lames over each hip, below the belt.
+    """
+    mb = _Builder("GearBreastplate")
+    cols = lp.res(18, 8)
+    sz, ch, sp = r["shoulder_z"], r["chest"], r["spine"]
+    zs = [sp + 0.035, (sp + ch) / 2, ch, ch + (sz - ch) * 0.35, ch + (sz - ch) * 0.7, sz - 0.015, sz + 0.03]
+    rows = [_cuirass_row(r, zz, cols) for zz in zs]
+    rows[-1] = _cuirass_row(r, zs[-1], cols, lift=0.01, lift_front=0.02, keel=0.004)
+    weigh = by_height("Spine", "Chest", ch - 0.05, ch + 0.05)
     mb.shell(rows, 0.012, m["GearMetal"], m["GearMetalTrim"], lambda p: Vector((0, 0.0, p.z)), weigh, closed=True)
     for row in (rows[0], rows[-1]):
-        loop_tube(mb, row, 0.012, m["GearMetalTrim"], weigh, sides=5)
+        loop_tube(mb, row, 0.012, m["BuckleMetal"], weigh, sides=5)
+    # The tassets: two overlapping lames on each hip, hanging from the belt.
+    hip, knee = r["hip"], r["knee"]
+    top = r["belt"][0][0] + 0.012
+    skirt = skirt_weights(r)
+    for s in (1, -1):
+        for k, (z0, z1) in enumerate(((top, hip - (hip - knee) * 0.2), (hip - (hip - knee) * 0.14, hip - (hip - knee) * 0.38))):
+            lame = []
+            n = lp.res(6, 3)
+            for zz, grow in ((z0, 0.0), ((z0 + z1) / 2, 0.012), (z1, 0.024)):
+                half, front, back = hu.extent(r, max(zz, r["tunic"][0][0]))
+                lift = 0.022 + 0.01 * k + grow
+                lame.append(arc(zz, half + lift, -front + lift, back + lift, s * math.radians(24), s * math.radians(104), n + 1, square=0.3))
+            mb.shell(lame, 0.008, m["GearMetal"], m["GearMetalTrim"], lambda p: Vector((0, 0.0, p.z)), skirt)
+            loop_tube(mb, lame[-1], 0.007, m["BuckleMetal"], skirt, sides=4, closed=False)
+            for p in lame[0][1:-1:2]:
+                stud(mb, p + Vector((0, 0, -0.012)), p - Vector((0, 0, p.z)), 0.006, m["BuckleMetal"], skirt)
     return mb.finish()
+
+
+def star_emblem(r, m):
+    """A gilded eight-pointed star on the chest of a breastplate (the knights of Mirewatch)."""
+    mb = _Builder("GearStarEmblem")
+    sz, ch = r["shoulder_z"], r["chest"]
+    z = ch + (sz - ch) * 0.46
+    cols = 18
+    p0 = _cuirass_row(r, z, cols)[0]
+    p1 = _cuirass_row(r, z + 0.03, cols)[0]
+    normal = (Vector((0, -1, 0)) - (p1 - p0).normalized() * (p1 - p0).normalized().dot(Vector((0, -1, 0)))).normalized()
+    up = (p1 - p0).normalized()
+    side = up.cross(normal).normalized()
+    base = p0 + normal * 0.008
+    ring = []
+    for i in range(16):
+        a = TAU * i / 16
+        radius = (0.058 if i % 4 == 0 else 0.042) if i % 2 == 0 else 0.017
+        ring.append(base + side * (math.sin(a) * radius) + up * (math.cos(a) * radius))
+    back = [p - normal * 0.006 for p in ring]
+    tip = base + normal * 0.012
+    tail = base - normal * 0.006
+    verts = ring + back + [tip, tail]
+    n = len(ring)
+    faces = [(i, (i + 1) % n, 2 * n) for i in range(n)]
+    faces += [((i + 1) % n, i, n + i, n + (i + 1) % n) for i in range(n)]
+    faces += [(n + (i + 1) % n, n + i, 2 * n + 1) for i in range(n)]
+    mb.add(verts, faces, m["BuckleMetal"], "Chest", closed=True)
+    mb.sphere(base + normal * 0.01, 0.011, m["BuckleMetal"], "Chest", segments=lp.res(8, 5), rings=lp.res(5, 3))
+    return mb.finish(sharp_angle=30)
 
 
 def apron(r, m):
     """A heavy apron from the chest to the knees, with a pocket, neck straps and waist ties."""
-    mb = lp.MeshBuilder("GearApron")
+    mb = _Builder("GearApron")
     z, chest, knee = r["shoulder_z"], r["chest"], r["knee"]
     top = chest + (z - chest) * 0.55
     hip_z = r["tunic"][0][0]
-    cols = 9
+    cols = lp.res(9, 5)
     rows = []
     for zz in (top, chest, r["spine"], r["belt"][0][0], hip_z, (hip_z + knee) / 2, knee + 0.06):
         half, front, back = hu.extent(r, max(zz, hip_z))
@@ -892,7 +1036,7 @@ def apron(r, m):
     border = [row[0] for row in rows] + rows[-1][1:] + [row[-1] for row in reversed(rows[:-1])] + list(reversed(rows[0][1:-1]))
     loop_tube(mb, border, 0.008, m["GearTrim"], weigh, sides=4)
     # The pocket.
-    a, b = rows[4][3], rows[4][5]
+    a, b = rows[4][cols // 2 - 1], rows[4][cols // 2 + 1]
     mid = (a + b) / 2 + Vector((0, -0.006, -0.06))
     mb.box(mid, ((b - a).length, 0.012, 0.09), m["GearTrim"], skirt)
     # Straps up over the shoulders to the back of the neck, ties around the waist.
@@ -903,9 +1047,201 @@ def apron(r, m):
         mb.tube([(p, 0.009), (over, 0.009), (nape, 0.009)], m["GearDark"], "Chest", sides=4)
     belt = r["belt"][0][0] + 0.01
     half, front, back = hu.extent(r, belt)
-    tie = arc(belt, half + 0.012, -front + 0.012, back + 0.012, math.radians(60), math.radians(300), 9)
+    tie = arc(belt, half + 0.012, -front + 0.012, back + 0.012, math.radians(60), math.radians(300), lp.res(9, 5))
     mb.tube([(p, (0.004, 0.012)) for p in tie], m["GearDark"], "Hips", sides=4)
     return mb.finish()
+
+
+def tabard(r, m):
+    """A cloth tabard hanging from under the belt to the knees, front and back, edged in gold, pointed at the hem."""
+    mb = _Builder("GearTabard")
+    top = r["belt"][1][0] - 0.012
+    tz = r["tunic"][0][0]
+    hem = r["knee"] + (r["hip"] - r["knee"]) * 0.14
+    cols = lp.res(8, 4)
+    levels = lp.res(6, 3)
+    half_w = hu.extent(r, top)[0] * 0.66
+    skirt = skirt_weights(r)
+    lx = r["leg_x"]
+
+    def weigh(p):
+        down = smooth(tz, hem, p.z) * 0.6
+        left = smooth(-lx, lx, p.x)
+        w = {"Hips": 1.0 - down, "LeftUpperLeg": down * left, "RightUpperLeg": down * (1.0 - left)}
+        return w if p.z < tz else skirt(p)
+    for face in (-1, 1):
+        rows = []
+        for k in range(levels + 1):
+            f = k / levels
+            zc = top + (hem - top) * f
+            half, front, back = hu.extent(r, max(zc, tz))
+            reach = (-front if face < 0 else back) + 0.012 + 0.03 * smooth(tz, hem, zc)
+            w = half_w * (1.0 - 0.15 * f)
+            row = []
+            for i in range(cols + 1):
+                u = -1 + 2 * i / cols
+                zz = zc
+                if k == levels:
+                    zz = hem - (0.075 if face < 0 else 0.05) * (1 - abs(u))
+                row.append(Vector((u * w, face * (reach - 0.035 * u * u), zz)))
+            rows.append(row)
+        mb.shell(rows, 0, m["Gear"], m["GearDark"], lambda p, face=face: Vector((p.x * 0.5, face * -0.2, p.z)), weigh)
+        border = [row[0] for row in rows] + rows[-1][1:] + [row[-1] for row in reversed(rows[:-1])]
+        loop_tube(mb, border, 0.006, m["Embroidery"], weigh, closed=False, sides=4)
+        if face < 0:
+            # A gold lozenge above the point.
+            c = rows[-1][cols // 2] + Vector((0, -0.006, 0.07))
+            mb.hull([c + Vector(d) for d in ((0.024, 0, 0), (-0.024, 0, 0), (0, 0, 0.034), (0, 0, -0.034), (0, -0.006, 0), (0, 0.004, 0))],
+                    m["Embroidery"], weigh)
+    return mb.finish(sharp_angle=60)
+
+
+def cowl(r, m):
+    """A cowl of cloth wound around the neck and over the shoulders, its hood thrown back onto the upper back."""
+    mb = _Builder("GearCowl")
+    neck, sz, nr = r["neck"], r["shoulder_z"], r["neck_r"]
+    n = lp.res(16, 8)
+    _, front, back = hu.extent(r, sz - 0.02, TRUNK)
+    for k, (lift, grow, radius) in enumerate(((0.0, 0.0, 0.034), (0.034, -0.008, 0.026))):
+        loop = []
+        for i in range(n):
+            t = TAU * i / n
+            frontness = max(0.0, math.cos(t))
+            d = around(t)
+            reach = nr + 0.05 + grow + 0.028 * abs(math.sin(t)) + 0.012 * frontness
+            z = neck - 0.032 + lift - 0.035 * frontness ** 2
+            loop.append(Vector((0, 0.008, z)) + d * reach)
+        loop_tube(mb, loop, radius, m["Gear"], "Chest", sides=lp.res(8, 5))
+    # The hood, lying in folds between the shoulder blades, its opening rimmed darker.
+    center = Vector((0, back + 0.035, sz - 0.075))
+    hood = _thrown_hood(center)
+    star = sc.Star(hood, center)
+    sc.grid_mesh(mb, star.grid(lp.res(8, 4), lp.res(12, 6)), m["Gear"], "Chest", closed=True, inside=lambda p: center)
+    rim = [center + Vector((math.sin(a) * 0.075, 0.034 + 0.008 * math.cos(a), 0.05 + math.cos(a) * 0.035)) for a in
+           (TAU * i / lp.res(12, 6) for i in range(lp.res(12, 6)))]
+    loop_tube(mb, rim, 0.01, m["GearTrim"], "Chest", sides=lp.res(5, 4))
+    return mb.finish(sharp_angle=70)
+
+
+def _thrown_hood(center):
+    """The thrown-back hood of a cowl: a fold of cloth lying on the upper back."""
+    c = Vector(center)
+    return sc.blend(sc.ellipsoid(c, (0.115, 0.05, 0.1)), (sc.ellipsoid(c + Vector((0, 0.018, 0.06)), (0.09, 0.04, 0.05)), 0.03),
+                    (sc.ellipsoid(c + Vector((0, 0.01, -0.07)), (0.06, 0.035, 0.05)), 0.03))
+
+
+def coat(r, m):
+    """
+    A long coat's skirt split into tails that end in points, a darker underskirt showing between them, gold
+    edges and lozenges; a high collar with a crescent clasp, and a glowing crystal on a chain at the hip.
+    """
+    mb = _Builder("GearCoat")
+    weigh = skirt_weights(r)
+    belt_z = r["belt"][0][0] + 0.015
+    tz = r["tunic"][0][0]
+    hem = (r["knee"] + r["ankle"]) / 2 - 0.02
+    half0, front0, back0 = hu.extent(r, tz)
+
+    def skirt_ring(zz, t0, t1, n, grow=0.0):
+        if zz >= tz:
+            half, front, back = hu.extent(r, zz)
+            half, front, back = half + 0.014 + grow, -front + 0.016 + grow, back + 0.016 + grow
+        else:
+            f = (tz - zz) / (tz - hem)
+            half, front, back = half0 * (1.05 + 0.24 * f) + grow, -front0 * (1.06 + 0.3 * f) + grow, back0 * (1.06 + 0.34 * f) + grow
+        return arc(zz, half, front, back, t0, t1, n, square=0.2)
+    levels = [belt_z, tz, r["hip"] - (r["hip"] - r["knee"]) * 0.5, r["knee"], hem]
+    # The underskirt (GearDark, a little inside), seen at the front between the tails.
+    under = [skirt_ring(zz, math.radians(-40), math.radians(40), lp.res(5, 3), grow=-0.006) for zz in levels[:-1] + [hem - 0.03]]
+    mb.shell(under, 0, m["GearDark"], m["GearDark"], lambda p: Vector((0, 0.0, p.z)), weigh)
+    n = lp.res(9, 4)
+    for s in (1, -1):
+        # Each side's tail from beside the front opening round to the back seam, its hem pointed at the front.
+        t0, t1 = s * math.radians(12), s * math.radians(178)
+        rows = [skirt_ring(zz, t0, t1, n + 1) for zz in levels]
+        last = rows[-1]
+        for i, p in enumerate(last):
+            u = i / n
+            point = math.exp(-((u - 0.12) / 0.12) ** 2)
+            last[i] = p + Vector((0, 0, -0.09 * point + 0.05 * u * u))
+        mb.shell(rows, 0, m["Gear"], m["GearDark"], lambda p: Vector((0, 0.0, p.z)), weigh)
+        border = [row[0] for row in rows] + rows[-1][1:] + [row[-1] for row in reversed(rows[:-1])]
+        loop_tube(mb, border, 0.007, m["Embroidery"], weigh, closed=False, sides=4)
+        tip = rows[-1][min(range(len(last)), key=lambda i: last[i].z)]
+        c = tip + Vector((0, 0, 0.075)) + (tip - Vector((0, 0, tip.z))).normalized() * 0.004
+        mb.hull([c + Vector(d) for d in ((0.018 * s, 0, 0), (-0.018 * s, 0, 0), (0, 0, 0.028), (0, 0, -0.028), (0, -0.006, 0), (0, 0.004, 0))],
+                m["Embroidery"], weigh)
+    # The high collar, open at the throat, with a gilded rim.
+    nr, neck, sz = r["neck_r"], r["neck"], r["shoulder_z"]
+    cols = lp.res(14, 7)
+    collar = []
+    for zz, reach in ((neck - 0.03, nr + 0.03), (neck + 0.02, nr + 0.035), (neck + 0.065, nr + 0.05)):
+        collar.append([Vector((0, 0.01, zz)) + around(t) * reach for t in
+                       (math.radians(28) + (TAU - math.radians(56)) * i / (cols - 1) for i in range(cols))])
+    mb.shell(collar, 0.008, m["Gear"], m["GearDark"], lambda p: Vector((0, 0.01, p.z)), "Chest", rim_mat=m["GearTrim"])
+    loop_tube(mb, collar[-1], 0.006, m["Embroidery"], "Chest", closed=False, sides=4)
+    # The crescent clasp under the collar.
+    _, front, _ = hu.extent(r, sz - 0.05, TRUNK)
+    c = Vector((0, front - 0.025, sz - 0.05))
+    arc_pts = [c + Vector((math.sin(a) * 0.026, 0, math.cos(a) * 0.026)) for a in
+               (math.radians(-150 + 300 * i / 8) for i in range(9))]
+    radii = [0.003 + 0.007 * math.sin(math.pi * i / 8) for i in range(9)]
+    mb.tube([(p + Vector((0.008 * math.sin(math.pi * i / 8), 0, 0)), (rr, rr * 0.6)) for i, (p, rr) in enumerate(zip(arc_pts, radii))],
+            m["BuckleMetal"], "Chest", sides=lp.res(6, 4))
+    # The crystal on a chain at the left hip.
+    half, front, _ = hu.extent(r, belt_z)
+    hook = Vector((half * 0.55, front - 0.01, belt_z - 0.01))
+    gem = hook + Vector((0.01, -0.012, -0.12))
+    mb.tube([(hook, 0.003), (hook + Vector((0.006, -0.008, -0.05)), 0.003), (gem + Vector((0, 0, 0.045)), 0.003)], m["BuckleMetal"], weigh, sides=4)
+    mb.hull([gem + Vector(d) for d in ((0, 0, 0.045), (0, 0, -0.05), (0.018, 0, 0), (-0.018, 0, 0), (0, 0.016, 0.004), (0, -0.016, 0.004),
+                                       (0.011, 0.011, 0.012), (-0.011, -0.011, -0.012))], m["CrystalGlow"], weigh)
+    return mb.finish(sharp_angle=60)
+
+
+def harness(r, m):
+    """Leather straps crossed over the chest and back from the shoulders to the hips, studded, a brass medallion where they cross."""
+    mb = _Builder("GearHarness")
+    sz, ch, sp = r["shoulder_z"], r["chest"], r["spine"]
+    low = r["belt"][1][0] + 0.005
+    steps = lp.res(10, 4)
+
+    def surface(x, z, face):
+        half, front, back = hu.extent(r, z, TRUNK)
+        e = 2.0 / (2.0 + 3.0 * 0.3)
+        p = 2.0 / e
+        depth = -front if face < 0 else back
+        q = max(0.0, 1.0 - min(1.0, abs(x) / max(half, 1e-6)) ** p) ** (1.0 / p)
+        y0 = face * depth * q
+        around_deg = abs(math.degrees(math.atan2(x, -y0)))
+        bump = sum(amount * math.exp(-((z - bz) / bh) ** 2) * math.exp(-((around_deg - ba) / bw) ** 2) for bz, bh, ba, bw, amount in hu.trunk_bumps(r))
+        return Vector((x, y0 + face * (bump + 0.014), z))
+
+    def weigh(p):
+        a = smooth(sp - 0.03, sp + 0.03, p.z)
+        b = smooth(ch - 0.04, ch + 0.04, p.z)
+        return {"Hips": 1.0 - a, "Spine": a * (1.0 - b), "Chest": a * b}
+    for face in (-1, 1):
+        for s in (1, -1):
+            top = Vector((s * r["shoulder_x"] * 0.62, 0, sz + 0.04))
+            path = []
+            for i in range(steps + 1):
+                u = i / steps
+                z = sz - 0.02 + (low - (sz - 0.02)) * u
+                x = s * r["shoulder_x"] * 0.62 * (1 - 2 * u) * (1 - 0.1 * u)
+                path.append(surface(x, z, face))
+            path = [top] + path
+            mb.tube([(p, (0.024, 0.006)) for p in path], m["Gear"], weigh, sides=lp.res(6, 4))
+            if face < 0:
+                for p in path[2:-1:2]:
+                    stud(mb, p + Vector((0, -0.006, 0)), Vector((0, -1, 0)), 0.006, m["BuckleMetal"], weigh)
+    # The medallion where the straps cross on the chest.
+    zc = sz - 0.02 + (low - (sz - 0.02)) * 0.5
+    c = surface(0, zc, -1) + Vector((0, -0.006, 0))
+    mb.frustum(c + Vector((0, 0.004, 0)), c + Vector((0, -0.01, 0)), 0.04, 0.036, m["BuckleMetal"], weigh, sides=lp.res(14, 7))
+    mb.frustum(c + Vector((0, -0.01, 0)), c + Vector((0, -0.016, 0)), 0.02, 0.016, m["BuckleMetal"], weigh, sides=lp.res(10, 6))
+    loop_tube(mb, [c + Vector((math.sin(a) * 0.03, -0.012, math.cos(a) * 0.03)) for a in (TAU * i / lp.res(14, 7) for i in range(lp.res(14, 7)))],
+              0.004, m["GearTrim"], weigh, sides=4)
+    return mb.finish(sharp_angle=50)
 
 
 # ---------------------------------------------------------------- all pieces
@@ -932,6 +1268,12 @@ PIECES = {
     "Greaves": greaves,
     "Sash": sash,
     "Apron": apron,
+    "Tabard": tabard,
+    "Cowl": cowl,
+    "Coat": coat,
+    "Harness": harness,
+    "WardenCloak": warden_cloak,
+    "StarEmblem": star_emblem,
 }
 
 

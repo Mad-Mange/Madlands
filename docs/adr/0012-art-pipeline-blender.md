@@ -24,7 +24,8 @@ its look. The project owner wants to use Blender and to start very low-poly, ref
 **Look**
 
 - Flat-shaded low-poly, no textures. Every part has a named material with a plain color. Rigged parts follow one
-  bone each (rigid skinning).
+  bone each (rigid skinning). (2026-10-27: characters are shaded smoothly instead, with hard edges by angle on plate,
+  and their limbs bend at the joints; see Consequences.)
 - Material names are a contract with the client: the gear regions of characters (`Skin`, `Hair`, `Eyes`, `Chest`,
   `Arms`, `Hands`, `Waist`, `Legs`, `Feet`) are recolored at runtime by name. `Metal` in a name makes a material
   metallic, `Glow` makes it emissive.
@@ -66,3 +67,11 @@ its look. The project owner wants to use Blender and to start very low-poly, ref
   (2026-10-21: the pieces became meshes inside each race's model instead, built from the race's proportions and
   skinned to its skeleton, hidden until worn: `art/blender/gear.py`.)
 - The player's model comes from the race (`races.json` `displayId`), sent in `Welcome` (protocol v7).
+- (2026-10-27) Characters moved past the plain look: heads, fists, hair and beards are sculpted from signed distance
+  functions (`art/blender/sculpt.py`: ellipsoids, round cones and boxes blended like clay, meshed by casting rays from a
+  point inside, or around a path), so their resolution is a parameter. A race's model is several meshes on one
+  armature (`<Race>Body`, `<Race>Hair`, `<Race>Beard`, the `Gear*` pieces), each built three times at falling
+  detail (`lowpoly.set_lod`; names end in `_LOD0` .. `_LOD2`); the client groups them into a `LODGroup`
+  (`DisplayModel.SetUpLods`) and applies tints and hidden regions to every mesh of the body. Limbs and the trunk are
+  single surfaces with weights blended over the joints. `art/blender/lookbook.py` renders races in outfits for
+  comparing with reference sheets. Props and creatures stay flat-shaded.

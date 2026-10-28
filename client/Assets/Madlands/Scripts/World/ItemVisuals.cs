@@ -19,6 +19,8 @@ namespace Madlands.Client
         public const uint OrnateMace = 2008;
         public const uint GreatAxe = 2009;
         public const uint Cleaver = 2010;
+        public const uint KnightShield = 2011;
+        public const uint WardenShield = 2012;
 
         private static readonly Color Wood = new Color(0.42f, 0.29f, 0.17f);
         private static readonly Color DarkWood = new Color(0.3f, 0.2f, 0.12f);
@@ -32,6 +34,9 @@ namespace Madlands.Client
         /// <summary>Held in both hands: swings with the two-handed attack.</summary>
         public static bool IsTwoHanded(uint displayId) => displayId == Staff || displayId == CrystalRod || displayId == GreatAxe || displayId == Cleaver;
 
+        /// <summary>Worn on the forearm (its face turned outward, see Create).</summary>
+        public static bool IsShield(uint displayId) => displayId == Buckler || displayId == KnightShield || displayId == WardenShield;
+
         /// <summary>A staff: stands upright in the hand while the holder is idle or moving (UnitView).</summary>
         public static bool IsStaff(uint displayId) => displayId == Staff || displayId == CrystalRod;
 
@@ -40,7 +45,7 @@ namespace Madlands.Client
         {
             { Shortsword, "Shortsword" }, { Staff, "Staff" }, { Cudgel, "Cudgel" }, { Hatchet, "Hatchet" }, { Cutlass, "Cutlass" },
             { Buckler, "Buckler" }, { CrystalRod, "CrystalRod" }, { OrnateMace, "OrnateMace" }, { GreatAxe, "GreatAxe" },
-            { Cleaver, "Cleaver" },
+            { Cleaver, "Cleaver" }, { KnightShield, "KnightShield" }, { WardenShield, "WardenShield" },
         };
 
         public static void Create(Transform hand, uint displayId)
@@ -52,7 +57,7 @@ namespace Madlands.Client
                 var item = Object.Instantiate(prefab, hand, false).transform;
                 // A shield's face looks along the arm in the T-pose, so a hanging arm held it flat like a tray:
                 // turned about the grip, it faces out from the forearm.
-                if (displayId == Buckler) item.localRotation = Quaternion.AngleAxis(ShieldTurn, Vector3.up) * item.localRotation;
+                if (IsShield(displayId)) item.localRotation = Quaternion.AngleAxis(ShieldTurn, Vector3.up) * item.localRotation;
                 return;
             }
             switch (displayId)
@@ -99,6 +104,8 @@ namespace Madlands.Client
                     EntityVisuals.Part(PrimitiveType.Cube, hand, new Vector3(-0.08f, 0.95f, 0f), new Vector3(0.12f, 0.08f, 0.04f), DarkSteel);
                     break;
                 case Buckler:
+                case KnightShield:
+                case WardenShield:
                     var shield = EntityVisuals.Part(PrimitiveType.Cylinder, hand, new Vector3(-0.04f, 0.1f, 0f), new Vector3(0.55f, 0.025f, 0.55f), Wood);
                     shield.localRotation = Quaternion.Euler(0f, 0f, 90f);
                     EntityVisuals.Part(PrimitiveType.Sphere, hand, new Vector3(-0.08f, 0.1f, 0f), Vector3.one * 0.12f, Steel);

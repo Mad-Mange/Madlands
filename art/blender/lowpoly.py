@@ -19,6 +19,23 @@ from mathutils import Matrix, Quaternion, Vector
 
 AXES = {"X": Vector((1, 0, 0)), "Y": Vector((0, 1, 0)), "Z": Vector((0, 0, 1))}
 
+# Level of detail the builders are working at: 1.0 for LOD0, less for the coarser levels. Counts of
+# sides, rows and segments go through res(); parts smaller than MIN_PART meters are left out.
+DETAIL = 1.0
+MIN_PART = 0.0
+LODS = ((1.0, 0.0), (0.55, 0.012), (0.3, 0.03))
+
+
+def res(n, minimum=3):
+    """A count of sides or rows at the current level of detail."""
+    return max(minimum, int(round(n * DETAIL)))
+
+
+def set_lod(level):
+    """Builds at level of detail `level` (0, 1, 2) from now on."""
+    global DETAIL, MIN_PART
+    DETAIL, MIN_PART = LODS[level]
+
 
 def srgb_to_linear(c):
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
@@ -84,15 +101,32 @@ class MeshBuilder:
             self.groups.append(bone)
         return self.groups.index(bone)
 
-    def add(self, verts, faces, mat, bone=None, matrix=None, closed=False, double_sided=False):
+    def add(self, verts, faces, mat, bone=None, matrix=None, closed=False, double_sided=False, smooth=False):
         """
         Adds raw geometry: `faces` index into `verts` (counter-clockwise seen from outside). `closed`
         shapes get their normals pointed outward; `double_sided` adds a back side (cloth, roofs).
+        `smooth` shades the part smoothly (organic shapes, cloth) instead of flat.
         """
-        if double_sided:
-            self.add(verts, [tuple(reversed(f)) for f in faces], mat, bone, matrix)
+        return self.add_faces(verts, {mat: faces}, bone, matrix=matrix, closed=closed, double_sided=double_sided, smooth=smooth)
+
+    def add_faces(self, verts, groups, bone=None, matrix=None, closed=False, double_sided=False, smooth=False,
+                  inside=None, facing_in=False):
+        """
+        Like add, with faces in several materials sharing the vertices ({material: faces}), so smooth
+        shading runs on across material borders. Faces point away from `inside(p)` when given.
+        Parts smaller than MIN_PART are left out (the coarser levels of detail).
+        """
         if matrix is not None:
             verts = [matrix @ Vector(v) for v in verts]
+        if MIN_PART > 0 and len(verts) > 1:
+            lo = Vector(map(min, *[Vector(v) for v in verts]))
+            hi = Vector(map(max, *[Vector(v) for v in verts]))
+            if (hi - lo).length < MIN_PART:
+                return []
+        if inside is not None:
+            groups = {m: [_away(verts, f, inside(_center(verts, f)), facing_in) for f in faces] for m, faces in groups.items()}
+        if double_sided:
+            self.add_faces(verts, {m: [tuple(reversed(f)) for f in faces] for m, faces in groups.items()}, bone, smooth=smooth)
         bm_verts = [self.bm.verts.new(Vector(v)) for v in verts]
         if callable(bone):
             for v in bm_verts:
@@ -104,14 +138,15 @@ class MeshBuilder:
             group = self._group_index(bone)
             for v in bm_verts:
                 v[self.deform][group] = 1.0
-        index = self._material_index(mat)
-        for face in faces:
-            try:
-                f = self.bm.faces.new([bm_verts[i] for i in face])
-            except ValueError:
-                continue
-            f.material_index = index
-            f.smooth = False
+        for mat, faces in groups.items():
+            index = self._material_index(mat)
+            for face in faces:
+                try:
+                    f = self.bm.faces.new([bm_verts[i] for i in face])
+                except ValueError:
+                    continue
+                f.material_index = index
+                f.smooth = smooth
         if closed:
             self._fix_normals(bm_verts)
         return bm_verts
@@ -128,7 +163,7 @@ class MeshBuilder:
         faces = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
         return self.add(verts, faces, mat, bone, _placement(center, rotation))
 
-    def frustum(self, a, b, ra, rb, mat, bone=None, sides=6, squash=(1.0, 1.0), cap_a=True, cap_b=True, twist=0.0):
+    def frustum(self, a, b, ra, rb, mat, bone=None, sides=6, squash=(1.0, 1.0), cap_a=True, cap_b=True, twist=0.0, smooth=False):
         """A tube from point a (radius ra) to point b (radius rb); `squash` scales the cross-section."""
         a, b = Vector(a), Vector(b)
         axis = (b - a).normalized()
@@ -148,11 +183,11 @@ class MeshBuilder:
             faces.append(tuple(reversed(range(sides))))
         if cap_b:
             faces.append(tuple(range(sides, 2 * sides)))
-        created = self.add(verts, faces, mat, bone)
+        created = self.add(verts, faces, mat, bone, smooth=smooth)
         self._fix_normals(created)
         return created
 
-    def sphere(self, center, radius, mat, bone=None, segments=8, rings=5, rotation=None):
+    def sphere(self, center, radius, mat, bone=None, segments=8, rings=5, rotation=None, smooth=False):
         """A low-poly UV sphere; `radius` may be a 3-vector (an ellipsoid)."""
         if not isinstance(radius, (tuple, list)):
             radius = (radius, radius, radius)
@@ -175,9 +210,9 @@ class MeshBuilder:
         last = 1 + (rings - 2) * segments
         for s in range(segments):
             faces.append((last + s, last + (s + 1) % segments, top))
-        return self.add(verts, faces, mat, bone, _placement(center, rotation))
+        return self.add(verts, faces, mat, bone, _placement(center, rotation), smooth=smooth)
 
-    def loft(self, rings, mat, bone=None, cap_a=True, cap_b=True):
+    def loft(self, rings, mat, bone=None, cap_a=True, cap_b=True, smooth=False):
         """A closed tube through cross-sections (lists of points with the same count): torsos, sleeves."""
         n = len(rings[0])
         verts = [p for r in rings for p in r]
@@ -190,11 +225,11 @@ class MeshBuilder:
             faces.append(tuple(reversed(range(n))))
         if cap_b:
             faces.append(tuple(range((len(rings) - 1) * n, len(rings) * n)))
-        created = self.add(verts, faces, mat, bone)
+        created = self.add(verts, faces, mat, bone, smooth=smooth)
         self._fix_normals(created)
         return created
 
-    def tube(self, sections, mat, bone=None, sides=6, twist=0.0, cap_a=True, cap_b=True):
+    def tube(self, sections, mat, bone=None, sides=6, twist=0.0, cap_a=True, cap_b=True, smooth=False):
         """
         A tube along a path of (point, radius) sections: limbs with muscles and cuffs. `radius` may be
         (r_u, r_v): for a limb along X, u is front-back (Y) and v is up-down (Z); along -Z, u is X and v is Y.
@@ -210,7 +245,7 @@ class MeshBuilder:
             ru, rv = radius if isinstance(radius, (tuple, list)) else (radius, radius)
             rings.append([points[k] + u * (math.cos(t) * ru) + v * (math.sin(t) * rv)
                           for t in (2 * math.pi * i / sides + twist for i in range(sides))])
-        return self.loft(rings, mat, bone, cap_a, cap_b)
+        return self.loft(rings, mat, bone, cap_a, cap_b, smooth=smooth)
 
     def hull(self, points, mat, bone=None, center=(0, 0, 0), rotation=None):
         """The convex hull of `points`: chunky heads, rocks, crystals."""
@@ -229,7 +264,7 @@ class MeshBuilder:
         bm.free()
         return self.add(verts, faces, mat, bone)
 
-    def grid(self, rows, mat, bone=None, inside=None, closed=False, facing_in=False):
+    def grid(self, rows, mat, bone=None, inside=None, closed=False, facing_in=False, smooth=False):
         """
         A surface through rows of points (cloth, plates). A row of one point is a pole: a fan of
         triangles to the next row. `closed` joins each row's last point to its first. Faces point away
@@ -252,9 +287,9 @@ class MeshBuilder:
                 faces.append((a[i], a[j], b[j], b[i]))
         if inside is not None:
             faces = [_away(flat, f, inside(_center(flat, f)), facing_in) for f in faces]
-        return self.add(flat, faces, mat, bone)
+        return self.add(flat, faces, mat, bone, smooth=smooth)
 
-    def shell(self, rows, thickness, mat, inner_mat, inside, bone=None, closed=False, rim_mat=None):
+    def shell(self, rows, thickness, mat, inner_mat, inside, bone=None, closed=False, rim_mat=None, smooth=False):
         """
         A grid with a thickness: the surface through `rows`, a lining `thickness` closer to `inside(p)`
         and a rim between the two along the open borders (hood openings, hems, plate edges). Thickness 0
@@ -266,8 +301,8 @@ class MeshBuilder:
             return p + (Vector(inside(p)) - p).normalized() * thickness
 
         if thickness <= 0:
-            self.grid(rows, mat, bone, inside, closed)
-            self.grid(rows, inner_mat, bone, inside, closed, facing_in=True)
+            self.grid(rows, mat, bone, inside, closed, smooth=smooth)
+            self.grid(rows, inner_mat, bone, inside, closed, facing_in=True, smooth=smooth)
             return rows
         inner = [[inward(p) for p in row] for row in rows]
         if callable(bone):
@@ -275,8 +310,8 @@ class MeshBuilder:
             surface = {_key(q): Vector(p) for row, inner_row in zip(rows, inner) for p, q in zip(row, inner_row)}
             weigh = bone
             bone = lambda p: weigh(surface.get(_key(p), p))
-        self.grid(rows, mat, bone, inside, closed)
-        self.grid(inner, inner_mat, bone, inside, closed, facing_in=True)
+        self.grid(rows, mat, bone, inside, closed, smooth=smooth)
+        self.grid(inner, inner_mat, bone, inside, closed, facing_in=True, smooth=smooth)
         rim_mat = rim_mat or mat
         borders = []  # (outer edge, inner edge, a point on the shell's side of the edge)
         for k, neighbour in ((0, 1), (len(rows) - 1, len(rows) - 2)):
@@ -301,11 +336,16 @@ class MeshBuilder:
         faces = {f for v in verts for f in v.link_faces}
         bmesh.ops.recalc_face_normals(self.bm, faces=list(faces))
 
-    def finish(self, collection=None):
-        """Builds the Blender object (materials, vertex groups) and frees the builder."""
+    def finish(self, collection=None, sharp_angle=None):
+        """
+        Builds the Blender object (materials, vertex groups) and frees the builder. With `sharp_angle`
+        (degrees), smooth parts get hard edges where their faces meet at a sharper angle (plate armor).
+        """
         mesh = bpy.data.meshes.new(self.name)
         self.bm.to_mesh(mesh)
         self.bm.free()
+        if sharp_angle is not None:
+            mesh.set_sharp_from_angle(angle=math.radians(sharp_angle))
         for mat in self.materials:
             mesh.materials.append(mat)
         obj = bpy.data.objects.new(self.name, mesh)

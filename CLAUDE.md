@@ -18,7 +18,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 | `server/Madlands.Bots` | Headless bot players (register/login via the API, then hunt creatures or wander) for load/integration testing. |
 | `server/Madlands.Server.Tests` | xUnit: protocol roundtrips, world logic, client core, real HTTP+UDP realm tests (`TestRealm`), Postgres tests (`[PostgresFact]`, skipped if no DB). |
 | `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
-| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; `audio/` synthesizes the music and sounds (OGG into `Audio/`). |
+| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; characters are sculpted from blended shapes (`blender/sculpt.py`) in three LODs, `blender/lookbook.py` renders them in outfits; `audio/` synthesizes the music and sounds (OGG into `Audio/`). |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
 | `docs/zones/` | Zone design: map, story, NPCs, creatures and quest chains (`hollowmere.md`). |
 | `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests, gatherable objects (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, objects.json, map.json: written by Unity, Madlands > Export Map). |
@@ -39,6 +39,7 @@ dotnet run --project tools/Madlands.ContentTool -- validate
 
 $blender = "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 & $blender -b --factory-startup -P art/blender/build.py -- [asset ...] [--preview <dir>]   # FBX into the Unity project (+ pictures)
+& $blender -b --factory-startup -P art/blender/lookbook.py -- [look ...] [--lod N]         # races in outfits -> builds/lookbook/*.png
 & $blender -b --factory-startup -P art/blender/icons.py -- [icon ...]                      # interface symbols as PNG
 & $blender -b --factory-startup -P art/audio/build.py -- [sound ...]                       # synthesized music/sounds as OGG
 python art/audio/kenney.py                                                                  # re-import the CC0 Kenney sounds
@@ -108,6 +109,14 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   nothing there.
 - A MonoBehaviour method named `Start` (or another Unity message) with parameters logs "Script error ... can not take
   parameters" in player builds: name helpers differently.
+- Character meshes come three times, named `*_LOD0` .. `*_LOD2` (`humanoid.build_race`). `DisplayModel` strips the suffix
+  (gear piece names), tints every body mesh (body, hair, beard) and builds the `LODGroup` at runtime (`SetUpLods`).
+  New mesh names make `ArtImporter` measure the avatar again: harmless.
+- `sculpt.Star` and `sculpt.sweep` cast rays from points that must lie inside the shape: an origin outside gives an
+  empty, invisible mesh without any error (count the triangles). `humanoid.Head.surface` casts straight forward at a
+  height; rays from the head's center reach the face at other heights.
+- Blender's Workbench draws back faces: cloth (a surface plus a lining facing the other way) z-fights in previews
+  unless backface culling is on (the lookbook turns it on; Unity culls back faces).
 - Props with mesh colliders become navmesh obstacles (Madlands > Export Map). Anything hanging lower than the 2 m agent
   height over a path (a gate's banner, a beam) closes it for creatures; `NavigationTests` walks out of Mirewatch's gates.
 

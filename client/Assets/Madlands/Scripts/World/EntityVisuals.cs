@@ -17,6 +17,8 @@ namespace Madlands.Client
     /// A display built from a Blender model (art/README.md): its animator and clips, the weapon grips,
     /// the gear regions that can be recolored (body materials named Chest, Legs, ...) and the worn gear
     /// pieces the model carries, hidden until shown (meshes named "Gear" + piece: art/blender/gear.py).
+    /// A character is several meshes (body, hair, beard, pieces), each in up to three levels of detail
+    /// (names ending in _LOD0, _LOD1, _LOD2) that a LOD group switches between.
     /// </summary>
     public sealed class DisplayModel
     {
@@ -44,19 +46,26 @@ namespace Madlands.Client
         private static readonly Dictionary<(Material, Color), Material> Tinted = new Dictionary<(Material, Color), Material>();
         private static Material _invisible;
         private static bool _invisibleLoaded;
-        private Renderer _body;
-        private Material[] _baseMaterials;
-        /// <summary>Each body material as it is shown (the model's own or tinted), hidden or not.</summary>
-        private Material[] _shown;
+        /// <summary>The meshes that are always shown (body, hair, beard) at every level of detail.</summary>
+        private readonly List<BodyPart> _parts = new List<BodyPart>();
+        private readonly Dictionary<string, Color?> _tints = new Dictionary<string, Color?>();
         private readonly HashSet<string> _hidden = new HashSet<string>();
-        private readonly Dictionary<string, Piece> _pieces = new Dictionary<string, Piece>();
+        /// <summary>Gear pieces by name ("Hood"), one renderer per level of detail.</summary>
+        private readonly Dictionary<string, List<Piece>> _pieces = new Dictionary<string, List<Piece>>();
         private Transform _cloak;
         private Quaternion _cloakRest;
         private Vector3 _cloakRestPosition;
         private Vector3 _cloakAxis;
         private float _cloakAngle;
 
-        /// <summary>A gear piece: its renderer, its own materials and how high it reaches in the rest pose.</summary>
+        /// <summary>A mesh of the body: its renderer and the model's own materials.</summary>
+        private sealed class BodyPart
+        {
+            public Renderer Renderer;
+            public Material[] Materials;
+        }
+
+        /// <summary>A gear piece at one level of detail: its renderer, its own materials and how high it reaches in the rest pose.</summary>
         private sealed class Piece
         {
             public Renderer Renderer;
@@ -64,26 +73,43 @@ namespace Madlands.Client
             public float Top;
         }
 
-        public Renderer Body
+        /// <summary>A mesh's name without its level of detail ("GearHood_LOD1" -> "GearHood").</summary>
+        public static string BaseName(string name)
         {
-            get => _body;
-            set
-            {
-                _body = value;
-                _baseMaterials = value != null ? value.sharedMaterials : null;
-                _shown = value != null ? (Material[])_baseMaterials.Clone() : null;
-                _hidden.Clear();
-            }
+            int i = name.LastIndexOf("_LOD", System.StringComparison.Ordinal);
+            return i > 0 && i + 4 < name.Length && char.IsDigit(name[i + 4]) ? name.Substring(0, i) : name;
         }
 
+        /// <summary>The level of detail in a mesh's name (0 without one).</summary>
+        public static int LodLevel(string name)
+        {
+            int i = name.LastIndexOf("_LOD", System.StringComparison.Ordinal);
+            return i > 0 && i + 4 < name.Length && int.TryParse(name.Substring(i + 4), out int level) ? level : 0;
+        }
+
+        /// <summary>Takes a mesh of the body (body, hair, beard): tints and hidden regions apply to its materials.</summary>
+        public void AddBodyPart(Renderer renderer)
+        {
+            _parts.Add(new BodyPart { Renderer = renderer, Materials = renderer.sharedMaterials });
+        }
+
+        public bool HasBody => _parts.Count > 0;
+
         /// <summary>Back to the model's own color for a region (gear taken off).</summary>
-        public void ResetTint(string region) => Recolor(region, null);
+        public void ResetTint(string region)
+        {
+            if (_tints.Remove(region)) ApplyMaterials();
+        }
 
         /// <summary>
-        /// Recolors one gear region of this model only: the body material named <paramref name="region"/>,
-        /// its darker "Trim" second tone, and for "Hair" also the beard and brows.
+        /// Recolors one gear region of this model only: the body materials named <paramref name="region"/>
+        /// (and region + "Lower"), its darker "Trim" second tone, and for "Hair" also the beard and brows.
         /// </summary>
-        public void Tint(string region, Color color) => Recolor(region, color);
+        public void Tint(string region, Color color)
+        {
+            _tints[region] = color;
+            ApplyMaterials();
+        }
 
         /// <summary>Hides a region (a body material), like the hair under a helmet, or shows it again.</summary>
         public void SetHidden(string region, bool hidden)
@@ -97,8 +123,9 @@ namespace Madlands.Client
         /// </summary>
         public void AddPiece(Renderer renderer, float top)
         {
-            string name = renderer.gameObject.name.Substring(PiecePrefix.Length);
-            _pieces[name] = new Piece { Renderer = renderer, Materials = renderer.sharedMaterials, Top = top };
+            string name = BaseName(renderer.gameObject.name).Substring(PiecePrefix.Length);
+            if (!_pieces.TryGetValue(name, out var lods)) _pieces[name] = lods = new List<Piece>();
+            lods.Add(new Piece { Renderer = renderer, Materials = renderer.sharedMaterials, Top = top });
             renderer.gameObject.SetActive(false);
         }
 
@@ -111,30 +138,64 @@ namespace Madlands.Client
         /// </summary>
         public bool ShowPiece(string name, Color color)
         {
-            if (!_pieces.TryGetValue(name, out var piece)) return false;
-            var shown = new Material[piece.Materials.Length];
-            for (int i = 0; i < shown.Length; i++)
+            if (!_pieces.TryGetValue(name, out var lods)) return false;
+            foreach (var piece in lods)
             {
-                var source = piece.Materials[i];
-                if (source == null || !source.name.StartsWith(PiecePrefix, System.StringComparison.Ordinal))
+                var shown = new Material[piece.Materials.Length];
+                for (int i = 0; i < shown.Length; i++)
                 {
-                    shown[i] = source;
-                    continue;
+                    var source = piece.Materials[i];
+                    if (source == null || !source.name.StartsWith(PiecePrefix, System.StringComparison.Ordinal))
+                    {
+                        shown[i] = source;
+                        continue;
+                    }
+                    float shade = source.name.EndsWith("Trim", System.StringComparison.Ordinal) ? TrimShade
+                        : source.name.EndsWith("Dark", System.StringComparison.Ordinal) ? DarkShade : 1f;
+                    shown[i] = TintedCopy(source, new Color(color.r * shade, color.g * shade, color.b * shade, 1f));
                 }
-                float shade = source.name.EndsWith("Trim", System.StringComparison.Ordinal) ? TrimShade
-                    : source.name.EndsWith("Dark", System.StringComparison.Ordinal) ? DarkShade : 1f;
-                shown[i] = TintedCopy(source, new Color(color.r * shade, color.g * shade, color.b * shade, 1f));
+                piece.Renderer.sharedMaterials = shown;
+                piece.Renderer.gameObject.SetActive(true);
+                Height = Mathf.Max(Height, piece.Top * Root.localScale.y);
             }
-            piece.Renderer.sharedMaterials = shown;
-            piece.Renderer.gameObject.SetActive(true);
-            Height = Mathf.Max(Height, piece.Top * Root.localScale.y);
             return true;
         }
 
         public void HidePieces()
         {
-            foreach (var piece in _pieces.Values)
-                piece.Renderer.gameObject.SetActive(false);
+            foreach (var lods in _pieces.Values)
+                foreach (var piece in lods)
+                    piece.Renderer.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Groups the model's renderers by their level of detail (names ending in _LODn) into a LOD group:
+        /// full detail up close, the coarser meshes further away. Models without levels are left alone.
+        /// </summary>
+        public void SetUpLods(IEnumerable<Renderer> renderers)
+        {
+            var byLevel = new SortedDictionary<int, List<Renderer>>();
+            foreach (var r in renderers)
+            {
+                int level = LodLevel(r.gameObject.name);
+                if (!byLevel.TryGetValue(level, out var list)) byLevel[level] = list = new List<Renderer>();
+                list.Add(r);
+            }
+            if (byLevel.Count < 2) return;
+            // Screen heights (of the model's height) below which the next level takes over; the last culls.
+            float[] below = { 0.14f, 0.045f, 0.004f };
+            var lods = new List<LOD>();
+            int k = 0;
+            foreach (var pair in byLevel)
+            {
+                lods.Add(new LOD(below[Mathf.Min(k, below.Length - 1)], pair.Value.ToArray()));
+                k++;
+            }
+            var group = Root.GetComponent<LODGroup>();
+            if (group == null) group = Root.gameObject.AddComponent<LODGroup>();
+            group.SetLODs(lods.ToArray());
+            group.localReferencePoint = new Vector3(0f, Height * 0.5f / Mathf.Max(Root.lossyScale.y, 1e-4f), 0f);
+            group.size = Mathf.Max(Height, 0.5f) / Mathf.Max(Root.lossyScale.y, 1e-4f);
         }
 
         /// <summary>
@@ -162,20 +223,23 @@ namespace Madlands.Client
             _cloakAxis = fromModel.MultiplyVector(Vector3.right).normalized;
         }
 
-        private void Recolor(string region, Color? color)
+        /// <summary>The material a body material is shown with: tinted by its region's color, or the model's own.</summary>
+        private Material Shown(Material source)
         {
-            if (_body == null) return;
-            for (int i = 0; i < _baseMaterials.Length; i++)
+            if (source == null) return null;
+            string name = source.name;
+            foreach (var pair in _tints)
             {
-                var source = _baseMaterials[i];
-                if (source == null) continue;
+                if (!pair.Value.HasValue) continue;
+                string region = pair.Key;
                 float shade;
-                if (source.name == region || source.name == region + "Lower" || (region == "Hair" && source.name == "Beard")) shade = 1f;
-                else if (source.name == region + "Trim") shade = TrimShade;
+                if (name == region || name == region + "Lower" || (region == "Hair" && name == "Beard")) shade = 1f;
+                else if (name == region + "Trim") shade = TrimShade;
                 else continue;
-                _shown[i] = color.HasValue ? TintedCopy(source, new Color(color.Value.r * shade, color.Value.g * shade, color.Value.b * shade, 1f)) : source;
+                var c = pair.Value.Value;
+                return TintedCopy(source, new Color(c.r * shade, c.g * shade, c.b * shade, 1f));
             }
-            ApplyMaterials();
+            return source;
         }
 
         private static Material TintedCopy(Material source, Color color)
@@ -191,11 +255,16 @@ namespace Madlands.Client
 
         private void ApplyMaterials()
         {
-            var materials = (Material[])_shown.Clone();
-            if (_hidden.Count > 0 && Invisible != null)
+            foreach (var part in _parts)
+            {
+                var materials = new Material[part.Materials.Length];
                 for (int i = 0; i < materials.Length; i++)
-                    if (_baseMaterials[i] != null && _hidden.Contains(_baseMaterials[i].name)) materials[i] = Invisible;
-            _body.sharedMaterials = materials;
+                {
+                    var source = part.Materials[i];
+                    materials[i] = source != null && _hidden.Contains(source.name) && Invisible != null ? Invisible : Shown(source);
+                }
+                part.Renderer.sharedMaterials = materials;
+            }
         }
 
         private static Material Invisible
@@ -357,12 +426,12 @@ namespace Madlands.Client
                 }
                 case CaptainDisplay:
                 {
-                    // Steel armor, a helmet and a blue cloak: the outpost's commander.
+                    // Gilded steel with Mirewatch's star, a helmet, a blue tabard and cloak: the outpost's commander.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
                     if (model == null) return shape;
-                    Dress(model, chest: "#3a4a6e", arms: "#5d6676", legs: "#2f3d66", hands: "#6d7480", feet: "#4a4f58");
-                    Wear(model, "#9aa3b2", "Helm", "Pauldrons", "Breastplate");
-                    Wear(model, "#27428a", "Cloak");
+                    Dress(model, chest: "#3a4a6e", arms: "#3b3c44", legs: "#2f3d66", hands: "#6d7480", feet: "#4a4f58");
+                    Wear(model, "#9aa3b2", "Helm", "Pauldrons", "Breastplate", "StarEmblem", "Gauntlets", "Greaves");
+                    Wear(model, "#27428a", "Cloak", "Tabard");
                     return shape;
                 }
                 case HerbalistDisplay:
@@ -582,7 +651,8 @@ namespace Madlands.Client
             };
             if (model.Animator != null) model.Animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
             model.CaptureRestPose();
-            foreach (var r in root.GetComponentsInChildren<Renderer>())
+            var renderers = root.GetComponentsInChildren<Renderer>(true);
+            foreach (var r in renderers)
             {
                 float top = r.bounds.max.y - root.position.y;
                 if (r is SkinnedMeshRenderer skinned)
@@ -597,9 +667,10 @@ namespace Madlands.Client
                     model.AddPiece(r, top);
                     continue;
                 }
-                if (model.Body == null && r is SkinnedMeshRenderer) model.Body = r;
+                if (r is SkinnedMeshRenderer) model.AddBodyPart(r);
                 model.Height = Mathf.Max(model.Height, top);
             }
+            model.SetUpLods(renderers);
             model.FindCloak();
             // Grips in the rest pose: a weapon's +Y points forward, its +X up (blade edge up).
             model.MainHandGrip = model.Bone("MainHandGrip");

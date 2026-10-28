@@ -30,7 +30,7 @@
     {
       "id": 10, "name": "Captain Edda Brand", "displayId": 110, "minLevel": 12, "maxLevel": 12, "faction": 1,
       "health": 8, "damage": 2, "respawnSeconds": 30, "xp": 0, "callForHelpRadius": 0,
-      "equipment": { "mainHand": 1001, "offHand": 1030 },
+      "equipment": { "mainHand": 1035, "offHand": 1037 },
       "gossip": "Captain Edda Brand, Mirewatch. If you can swing a blade or throw a spell, I have work for you. If you can't, stay out from under my feet."
     },
     {

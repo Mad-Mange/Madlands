@@ -7,6 +7,8 @@ Shields: the face looks along +X (outward on the left arm).
 import math
 import random
 
+from mathutils import Vector
+
 import lowpoly as lp
 
 METAL = "#c9cdd5"
@@ -280,6 +282,105 @@ def buckler():
     return mb.finish()
 
 
+def _ring(mb, mat, cx, cz, r, radius, n=32, x_at=None):
+    """A closed ring of tube around a shield in the YZ plane (a rim): radius (across the face, out of it)."""
+    ru, rv = radius if isinstance(radius, tuple) else (radius, radius)
+    rings = []
+    for k in range(n):
+        t = 2 * math.pi * k / n
+        c = Vector((x_at(r) if x_at else cx, math.cos(t) * r, cz + math.sin(t) * r))
+        out = Vector((0, math.cos(t), math.sin(t)))
+        rings.append([c + out * (math.cos(a) * ru) + Vector((1, 0, 0)) * (math.sin(a) * rv) for a in (2 * math.pi * j / 6 for j in range(6))])
+    rings.append(rings[0])
+    mb.loft(rings, mat, cap_a=False, cap_b=False, smooth=True)
+
+
+def _round_face(mb, mat, cx, cz, r, dome, rings, segments, inside_x):
+    """A shield's round face in the YZ plane at x = cx, bulging out (+X) by `dome` at the middle; returns the height function."""
+    def height(rho):
+        return dome * (1 - (rho / r) ** 2)
+    rows = [[(cx + dome, 0.0, cz)]]
+    for k in range(1, rings + 1):
+        rho = r * k / rings
+        rows.append([(cx + height(rho), math.cos(t) * rho, cz + math.sin(t) * rho)
+                     for t in (2 * math.pi * i / segments for i in range(segments))])
+    mb.grid(rows, mat, inside=lambda p: (inside_x, p[1] * 0.5, cz + (p[2] - cz) * 0.5), closed=True, smooth=True)
+    return height
+
+
+def _star_on(mb, mat, cx, cz, height, long_ray, short_ray, inner, lift=0.007, depth=0.012):
+    """An eight-pointed star lying on a domed face (its height function), raised by `lift`."""
+    ring = []
+    for i in range(16):
+        a = 2 * math.pi * i / 16
+        radius = (long_ray if i % 4 == 0 else short_ray) if i % 2 == 0 else inner
+        ring.append((cx + height(radius) + lift, math.sin(a) * radius, cz + math.cos(a) * radius))
+    back = [(x - depth, y, z) for x, y, z in ring]
+    tip = (cx + height(0) + lift + 0.01, 0, cz)
+    n = len(ring)
+    faces = [(i, (i + 1) % n, 2 * n) for i in range(n)] + [((i + 1) % n, i, n + i, n + (i + 1) % n) for i in range(n)]
+    mb.add(ring + back + [tip], faces, mat, closed=True)
+
+
+def knight_shield():
+    """A round steel shield of Mirewatch's knights: domed, a gilded rim, an eight-pointed gilded star with a boss, rivets."""
+    mb = lp.MeshBuilder("KnightShield")
+    steel = lp.material("Metal", METAL)
+    dark = lp.material("DarkMetal", "#6c7480")
+    gold = lp.material("GoldMetal", "#d2a845")
+    leather = lp.material("Leather", "#4a3222")
+    cx, cz, r = 0.04, 0.1, 0.3
+    height = _round_face(mb, steel, cx, cz, r, 0.05, 6, 28, cx - 0.2)
+    # The back: a flat dish of darker steel, straps where the arm goes.
+    back = [[(cx - 0.012, 0.0, cz)]] + [[(cx - 0.012, math.cos(t) * r, cz + math.sin(t) * r) for t in (2 * math.pi * i / 28 for i in range(28))]]
+    mb.grid(back, dark, inside=lambda p: (cx + 0.2, 0, cz), closed=True)
+    for z in (cz - 0.09, cz + 0.07):
+        mb.box((cx - 0.03, 0, z), (0.02, 0.2, 0.04), leather)
+    _ring(mb, gold, cx + 0.002, cz, r, (0.014, 0.02))
+    _ring(mb, dark, cx, cz, r * 0.72, 0.007, n=28, x_at=lambda rho: cx + height(rho) + 0.003)
+    _star_on(mb, gold, cx, cz, height, 0.2, 0.13, 0.045)
+    mb.sphere((cx + height(0) + 0.02, 0, cz), (0.03, 0.045, 0.045), gold, segments=12, rings=7, smooth=True)
+    for k in range(12):
+        t = 2 * math.pi * (k + 0.5) / 12
+        rho = r * 0.86
+        mb.sphere((cx + height(rho) + 0.004, math.cos(t) * rho, cz + math.sin(t) * rho), 0.01, gold, segments=6, rings=4, smooth=True)
+    return mb.finish(sharp_angle=40)
+
+
+def warden_shield():
+    """A warden's round shield: planks painted the Greywood's teal, the great tree in gold, an iron rim with rivets."""
+    mb = lp.MeshBuilder("WardenShield")
+    wood = lp.material("Wood", "#7a5531")
+    dark = lp.material("DarkWood", "#5a3d22")
+    paint = lp.material("Paint", "#2f5e5a")
+    iron = lp.material("Metal", "#8f969e")
+    gold = lp.material("GoldMetal", "#d2a845")
+    cx, cz, r = 0.05, 0.1, 0.31
+    for k in range(6):
+        y0 = -r + 2 * r * k / 6
+        y1 = -r + 2 * r * (k + 1) / 6
+        pts = []
+        for y in (y0 + 0.003, y1 - 0.003):
+            h = math.sqrt(max(0.0, r * r - y * y))
+            pts += [(x, y, cz + dz) for x in (cx - 0.022, cx + 0.018) for dz in (-h, h)]
+        mb.hull(pts, wood if k % 2 else dark)
+    height = _round_face(mb, paint, cx + 0.019, cz, r * 0.86, 0.012, 5, 28, cx - 0.2)
+    # The tree: a trunk, branches and roots of gold.
+    def at(y, z):
+        rho = math.hypot(y, z)
+        return (cx + 0.019 + height(min(rho, r * 0.86)) + 0.004, y, cz + z)
+    trunk = [(0, -0.15), (0.01, -0.05), (0, 0.04), (0, 0.13)]
+    mb.tube([(at(*p), 0.016) for p in trunk], gold, sides=6, smooth=True)
+    for branch in ([(0, 0.0), (-0.08, 0.07), (-0.15, 0.1)], [(0, 0.0), (0.08, 0.07), (0.15, 0.1)], [(0, 0.05), (-0.05, 0.12), (-0.07, 0.18)],
+                   [(0, 0.05), (0.05, 0.12), (0.07, 0.18)], [(0, -0.12), (-0.09, -0.17), (-0.15, -0.18)], [(0, -0.12), (0.09, -0.17), (0.15, -0.18)]):
+        mb.tube([(at(*p), 0.011 - 0.003 * i) for i, p in enumerate(branch)], gold, sides=5, smooth=True)
+    _ring(mb, iron, cx, cz, r, (0.018, 0.032))
+    for k in range(12):
+        t = 2 * math.pi * k / 12
+        mb.sphere((cx + 0.026, math.cos(t) * r * 0.93, cz + math.sin(t) * r * 0.93), 0.011, iron, segments=6, rings=4, smooth=True)
+    return mb.finish(sharp_angle=40)
+
+
 WEAPONS = {
     "Shortsword": shortsword,
     "Cutlass": cutlass,
@@ -291,4 +392,6 @@ WEAPONS = {
     "GreatAxe": great_axe,
     "Cleaver": cleaver,
     "Buckler": buckler,
+    "KnightShield": knight_shield,
+    "WardenShield": warden_shield,
 }

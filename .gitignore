@@ -42,6 +42,7 @@ sysinfo.txt
 # ---- Reference pictures (screenshots of other games and art) ----
 # Only for looking at while modelling; they belong to their owners and must never reach the public repo.
 /art/inspiration/
+/inspiration/
 /client/Assets/ThirdParty/Paid.meta
 
 # ---- Builds & generated content ----
