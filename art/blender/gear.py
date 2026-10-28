@@ -1,6 +1,6 @@
 """
 Worn gear for the humanoid races: helmets, hoods and hats, shoulder pads and mantles, cloaks, robes,
-breastplates and aprons.
+breastplates, jerkins and aprons.
 
 Every piece is a mesh of its own in the race's model, named "Gear" + the piece ("GearHood"). The client
 hides them all and shows the ones a unit wears (GearVisuals.cs), tinted with the item's color. Each is
@@ -927,19 +927,24 @@ def robe_cuffs(r, m):
 TRUNK = ("pelvis", "belly", "torso", "collar")
 
 
-def _cuirass_row(r, z, cols, lift=0.016, lift_front=0.034, keel=0.014):
-    """A ring of plate around the trunk at height z, over the pecs, with a keel down the front."""
+def _cuirass_row(r, z, cols, lift=0.016, lift_front=0.034, keel=0.014, opening=0.0):
+    """
+    A ring of plate around the trunk at height z, over the pecs, with a keel down the front. With an
+    `opening` (radians to each side of the front) the row is open: from one edge round the back to the other.
+    """
     half, front, back = hu.extent(r, z, TRUNK)
-    row = arc(z, half + lift, -front + lift_front, back + lift, 0, TAU * (cols - 1) / cols, cols, square=0.3)
+    t0, t1 = (opening, TAU - opening) if opening else (0.0, TAU * (cols - 1) / cols)
+    row = arc(z, half + lift, -front + lift_front, back + lift, t0, t1, cols, square=0.3)
     center = Vector((0, 0, z))
     out = []
     for i, p in enumerate(row):
-        around_deg = abs(math.degrees(wrap(TAU * i / cols)))
+        around_deg = abs(math.degrees(wrap(t0 + (t1 - t0) * i / (cols - 1))))
         push = sum(amount * math.exp(-((z - bz) / bh) ** 2) * math.exp(-((around_deg - ba) / bw) ** 2)
                    for bz, bh, ba, bw, amount in hu.trunk_bumps(r))
         q = p + outward([p], center, push)[0] - p
         out.append(q)
-    out[0] = out[0] + Vector((0, -keel, 0))
+    if not opening:
+        out[0] = out[0] + Vector((0, -keel, 0))
     return out
 
 
@@ -1244,6 +1249,122 @@ def harness(r, m):
     return mb.finish(sharp_angle=50)
 
 
+def jerkin(r, m):
+    """
+    A sleeveless leather jerkin from the belt to the shoulders, laced up a V at the front, with a thick fur
+    collar around the neck and over the tops of the shoulders (the wardens').
+    """
+    mb = _Builder("GearJerkin")
+    sz, ch, sp = r["shoulder_z"], r["chest"], r["spine"]
+    cols = lp.res(17, 7)
+    # The lowest row tucks under the belt; the V opens wider toward the neck.
+    zs = [r["belt"][1][0] - 0.012, sp + 0.02, (sp + ch) / 2, ch, ch + (sz - ch) * 0.35, ch + (sz - ch) * 0.7, sz - 0.015, sz + 0.025]
+    opening = [5, 5, 6, 8, 12, 19, 30, 42]
+    rows = []
+    for k, (zz, a) in enumerate(zip(zs, opening)):
+        lift = 0.006 if k in (0, len(zs) - 1) else 0.013
+        rows.append(_cuirass_row(r, zz, cols, lift=lift, lift_front=lift + 0.003, keel=0.0, opening=math.radians(a)))
+
+    def weigh(p):
+        a = smooth(sp - 0.03, sp + 0.03, p.z)
+        b = smooth(ch - 0.04, ch + 0.04, p.z)
+        return {"Hips": 1.0 - a, "Spine": a * (1.0 - b), "Chest": a * b}
+    mb.shell(rows, 0.01, m["Gear"], m["GearDark"], lambda p: Vector((0, 0.0, p.z)), weigh, rim_mat=m["GearTrim"])
+    # Welted edges down the V, seams down the sides and the back and across the yoke.
+    def seam(points, radius=0.0045):
+        mb.tube([(p + (p - Vector((0, 0, p.z))).normalized() * 0.003, (radius, radius * 0.7)) for p in points], m["GearTrim"], weigh,
+                sides=lp.res(4, 3))
+    for end in (0, -1):
+        seam([row[end] for row in rows[:-1]], 0.006)
+
+    def nearest(row, k, t):
+        a = math.radians(opening[k])
+        return row[round((t - a) / (TAU - 2 * a) * (cols - 1))]
+    for t in (math.pi / 2, math.pi, 3 * math.pi / 2):
+        seam([nearest(row, k, t) for k, row in enumerate(rows[1:-1], 1)])
+    seam(rows[5][1:-1])
+
+    # Criss-cross lacing over the V, a little in from its edges.
+    def eyelet(k, side):
+        row = rows[k]
+        edge, next_ = (row[0], row[1]) if side > 0 else (row[-1], row[-2])
+        return edge + (next_ - edge).normalized() * 0.012 + Vector((0, -0.006, 0))
+    laced = range(1, 6)
+    for first in (1, -1):
+        mb.tube([(eyelet(k, first if i % 2 == 0 else -first), 0.0035) for i, k in enumerate(laced)], m["GearDark"], weigh,
+                sides=lp.res(4, 3))
+    _fur_collar(r, m, mb)
+    return mb.finish(sharp_angle=60)
+
+
+def _fur_collar(r, m, mb):
+    """
+    A thick roll of fur around the back of the neck and over the shoulders, open at the throat: clumps blended
+    into each other, with short tufts hanging from its outer side.
+    """
+    neck, nr = r["neck"], r["neck_r"]
+    k = r["deltoid"] / 0.074
+    t0 = math.radians(36)
+
+    def at(t):
+        frontness = max(0.0, math.cos(t))
+        reach = nr + (0.054 + 0.03 * abs(math.sin(t))) * k
+        return Vector((0, 0.012, neck - 0.028 - 0.03 * frontness ** 2)) + around(t) * reach
+    count = 19
+    parts = []
+    for i in range(count):
+        t = t0 + (TAU - 2 * t0) * i / (count - 1)
+        end = min(1.0, 0.6 + 0.4 * min(i, count - 1 - i) / 2)
+        size = (0.042 + 0.012 * ((i * 7) % 3) / 2) * k * end
+        parts.append(sc.sphere(at(t) + Vector((0, 0, (0.01 if i % 2 else -0.004) * k)), size))
+        if 0 < i < count - 1 and i % 2 == 0:
+            root = at(t) + around(t) * 0.028 * k - Vector((0, 0, 0.012 * k))
+            parts.append(sc.cone(root, root + around(t) * 0.014 * k - Vector((0, 0, 0.04 * k)), 0.03 * k, 0.012 * k))
+    roll = sc.union(*parts, k=0.022 * k)
+    n = lp.res(31, 9)
+    path = [at(t0 + (TAU - 2 * t0) * i / (n - 1)) for i in range(n)]
+    low = neck - 0.06 * k
+    sc.sweep_mesh(mb, roll, path, lp.res(14, 5), m["Fur"], "Chest", material_at=lambda c: m["FurDark"] if c.z < low else None)
+
+
+def belt_flaps(r, m):
+    """Leather flaps hanging from under the belt over the hips and thighs, front, sides and back, riveted at the top."""
+    mb = _Builder("GearBeltFlaps")
+    hip, knee = r["hip"], r["knee"]
+    top = r["belt"][0][0] + 0.012
+    tz = r["tunic"][0][0]
+    weigh = skirt_weights(r)
+    cols = lp.res(4, 2)
+    levels = lp.res(3, 2)
+    for center, width, drop in ((19, 26, 0.44), (55, 30, 0.34), (98, 34, 0.3), (144, 34, 0.38)):
+        for s in (1, -1):
+            bottom = hip - (hip - knee) * drop
+            rows = []
+            for k in range(levels + 1):
+                f = k / levels
+                zz = top + (bottom - top) * f
+                if k == 0:
+                    # Tucked under the belt.
+                    half, front, back = hu.extent(r, zz, TRUNK)
+                    lift = 0.008
+                else:
+                    half, front, back = hu.extent(r, max(zz, tz))
+                    lift = 0.012 + 0.03 * f
+                w = math.radians(width) / 2 * (1 + 0.12 * f)
+                c = math.radians(center)
+                row = arc(zz, half + lift, -front + lift, back + lift, s * (c - w), s * (c + w), cols + 1, square=0.3)
+                if k == levels:
+                    # Rounded corners at the hem.
+                    row = [p + Vector((0, 0, 0.022 * (2 * i / cols - 1) ** 2)) for i, p in enumerate(row)]
+                rows.append(row)
+            mb.shell(rows, 0.006, m["Gear"], m["GearDark"], lambda p: Vector((0, 0.0, p.z)), weigh, rim_mat=m["GearTrim"])
+            mid = cols // 2
+            p = rows[1][mid] * 0.6 + rows[0][mid] * 0.4
+            normal = p - Vector((0, 0, p.z))
+            stud(mb, p + normal.normalized() * 0.004, normal, 0.008, m["BuckleMetal"], weigh)
+    return mb.finish(sharp_angle=60)
+
+
 # ---------------------------------------------------------------- all pieces
 
 PIECES = {
@@ -1272,6 +1393,8 @@ PIECES = {
     "Cowl": cowl,
     "Coat": coat,
     "Harness": harness,
+    "Jerkin": jerkin,
+    "BeltFlaps": belt_flaps,
     "WardenCloak": warden_cloak,
     "StarEmblem": star_emblem,
 }

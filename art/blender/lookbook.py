@@ -43,6 +43,10 @@ LOOKS = {
     "warden": ("Korrin",
                dict(Chest="#2f5a58", Arms="#5a3a26", Legs="#3c3a36", Feet="#4a3222", Hands="#5a3a26", Waist="#5a3a22"),
                [("FurMantle", "#c9b48e"), ("Harness", "#5a3a22"), ("Tabard", "#2f5a58"), ("WardenCloak", "#2f5a58")]),
+    # The classes' first chests (GearVisuals.cs): the warrior's tunic, tabard and cowl, the warden's jerkin and flaps.
+    "recruit": ("BrightvaleHuman", dict(Chest="#6e5a46", Arms="#655340"), [("Tabard", "#2c4a8c"), ("Cowl", "#2c4a8c")]),
+    "initiate": ("Korrin", dict(Chest="#2f5a58", Arms="#2b5351"), [("Jerkin", "#5e3f26"), ("BeltFlaps", "#5e3f26")]),
+    "initiate_human": ("BrightvaleHuman", dict(Chest="#2f5a58", Arms="#2b5351"), [("Jerkin", "#5e3f26"), ("BeltFlaps", "#5e3f26")]),
     "captain": ("BrightvaleHuman",
                 dict(Chest="#3a4a6e", Arms="#5d6676", Legs="#2f3d66", Hands="#6d7480", Feet="#4a4f58"),
                 [("Helm", "#9aa3b2"), ("Pauldrons", "#9aa3b2"), ("Breastplate", "#9aa3b2"), ("Cloak", "#27428a")]),

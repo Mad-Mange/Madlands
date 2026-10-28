@@ -47,9 +47,10 @@ namespace Madlands.Client
         private static readonly Dictionary<uint, Look> Looks = new Dictionary<uint, Look>
         {
             // Chest. The classes' first chests show their look (docs/images/phase5-heroes.jpg): the warrior's blue
-            // tabard and cowl over a padded tunic, the shardmage's long violet coat, the warden's tabard and straps.
+            // tabard and cowl over a padded tunic, the shardmage's long violet coat, the warden's laced leather
+            // jerkin with a fur collar and belt flaps over a teal shirt.
             { 3001, Look.Plated("#6e5a46", "#2c4a8c", "Tabard", "Cowl") }, { 3002, new Look("#4b3480", "Coat", "Cowl") },
-            { 3003, new Look("#2f5a58", "Tabard").And("#5a3a22", "Harness") },
+            { 3003, new Look("#2f5a58").And("#5e3f26", "Jerkin", "BeltFlaps") },
             { 3004, new Look("#6a5444").And("#4a3424", "Harness") }, { 3005, new Look("#4a3a6a", Robe) }, { 3006, new Look("#4a7a6a") },
             { 3007, new Look("#5a6a7a", Robe) }, { 3008, new Look("#8a96a0", "Breastplate") },
             // Legs

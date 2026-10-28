@@ -170,7 +170,8 @@ Every phase ends in something playable and tested. Architectural decisions are i
   blades. Body, hair, beard and every gear piece are separate meshes in three levels of detail (`_LOD0` .. `_LOD2`,
   grouped by the client into a LOD group: about 9k triangles for a bare character up close, 2-3k far away). New gear
   for the classes' looks: tabards, a cowl with its hood thrown back, the shardmage's long coat with split tails and a
-  glowing crystal, a warden's harness and a cloak with the Greywood's tree, breastplates with tassets, gilded rims and
+  glowing crystal, the warden's laced leather jerkin with a fur collar and belt flaps (warriors and wardens look apart
+  from the start), a warden's harness and a cloak with the Greywood's tree, breastplates with tassets, gilded rims and
   the knights' star; new characters start in their class's look and Captain Brand wears the knight's plate. Two shields
   after the sheets: the knights' round steel shield with a gilded star (Captain Brand's, item 1037) and a warden's
   teal shield with the Greywood's tree (now the Mossback Scale Shield's look).

@@ -456,6 +456,21 @@ ModelImporter:
       position: {x: 0, y: 0, z: 0}
       rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
       scale: {x: 1, y: 1, z: 1}
+    - name: GearBeltFlaps_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: GearBeltFlaps_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: GearBeltFlaps_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
     - name: GearBoneHood_LOD0
       parentName: 
       position: {x: 0, y: 0, z: 0}
@@ -632,6 +647,21 @@ ModelImporter:
       rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
       scale: {x: 1, y: 1, z: 1}
     - name: GearHornedHelm_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: GearJerkin_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: GearJerkin_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: GearJerkin_LOD2
       parentName: 
       position: {x: 0, y: 0, z: 0}
       rotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071067}
