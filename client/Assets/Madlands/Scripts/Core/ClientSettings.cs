@@ -11,6 +11,7 @@ namespace Madlands.Client
     ///   Madlands.exe -server 192.168.1.10 -httpport 7780
     ///   Madlands.exe -autoconnect -stopat charselect     (stop at the character screen)
     ///   Madlands.exe -autoconnect -screenshot shot.png -screenshotdelay 6 -quitafter 10
+    ///   -screenshotburst 8 (eight pictures a quarter second apart, shot_1.png .. shot_8.png: spell effects in flight)
     ///   Framing for screenshots: -campitch 30 -camdistance 25 -camyaw 40 -hidedebug, -face 180 (turns the character
     ///   to that compass direction once in the world: 0 north, 90 east)
     ///   Combat checks: -class shardmage (new characters), -exec ".level 5;.spawn 2" (chat lines
@@ -43,6 +44,8 @@ namespace Madlands.Client
         public string StopAt;
         public string ScreenshotPath;
         public float ScreenshotDelay = 5f;
+        /// <summary>Pictures taken (more than one: numbered, a quarter second apart).</summary>
+        public int ScreenshotBurst = 1;
         public float QuitAfter;
         public float? CameraPitch;
         public float? CameraDistance;
@@ -129,6 +132,10 @@ namespace Madlands.Client
                         break;
                     case "-screenshotdelay" when next != null:
                         s.ScreenshotDelay = float.Parse(next, CultureInfo.InvariantCulture);
+                        i++;
+                        break;
+                    case "-screenshotburst" when next != null:
+                        s.ScreenshotBurst = Math.Max(1, int.Parse(next, CultureInfo.InvariantCulture));
                         i++;
                         break;
                     case "-quitafter" when next != null:

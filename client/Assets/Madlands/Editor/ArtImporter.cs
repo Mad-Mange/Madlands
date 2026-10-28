@@ -69,7 +69,8 @@ namespace Madlands.Client.Editor
             importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
             importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
             importer.meshCompression = ModelImporterMeshCompression.Off;
-            importer.isReadable = false;
+            // Effects/ meshes are copied into particle meshes at runtime (Effects.cs).
+            importer.isReadable = assetPath.Contains("/Effects/");
             importer.optimizeGameObjects = false; // weapon grips and attachments hang on bone transforms
 
             bool character = assetPath.Contains("/Characters/");

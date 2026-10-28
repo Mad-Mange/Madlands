@@ -233,25 +233,58 @@ def great_axe():
 
 
 def cleaver():
-    """A two-handed cleaver of slag iron: a long wrapped haft and a broad slab blade with a glowing toothed edge."""
+    """
+    A two-handed cleaver of slag iron: a long haft wrapped in leather between iron bands, a heavy pommel
+    ring, and a broad blade with a thick spine, a bellied, chipped edge glowing with heat, a hanging hole
+    near its top corner, rivets down the spine and cracks of fire across its faces.
+    """
     mb = lp.MeshBuilder("Cleaver")
     wrap = lp.material("Leather", "#3a3230")
     iron = lp.material("DarkMetal", "#4a4146")
     rust = lp.material("Rust", "#6e3a2e")
     glow = lp.material("EmberGlow", "#ffb030", emission=3.0)
-    mb.frustum((0, 0, -0.42), (0, 0, 0.95), 0.024, 0.026, wrap, sides=6)
-    for z in (-0.2, 0.05, 0.3):
-        mb.frustum((0, 0, z), (0, 0, z + 0.05), 0.032, 0.032, iron, sides=6)
-    mb.frustum((0, 0.03, -0.47), (0, -0.03, -0.47), 0.05, 0.05, iron, sides=6, cap_a=False, cap_b=False)
-    # The blade: a slab from the haft toward +X, wider at the tip, its edge along the far side.
-    mb.hull([(x, y, z) for y in (0.018, -0.018) for x, z in ((-0.03, 0.5), (-0.03, 1.02), (0.3, 1.08), (0.34, 0.46))], iron)
-    mb.hull([(x, y, z) for y in (0.022, -0.022) for x, z in ((-0.05, 0.98), (-0.05, 1.04), (0.3, 1.1), (0.3, 1.04))], rust)
-    mb.box((0.12, 0, 0.92), (0.06, 0.05, 0.06), iron)
-    for i in range(6):
-        z = 0.5 + i * 0.105
-        x = 0.335 - 0.04 * (i / 5)
-        mb.hull([(x - 0.03, 0.012, z), (x - 0.03, -0.012, z), (x - 0.03, 0.012, z + 0.09), (x - 0.03, -0.012, z + 0.09),
-                 (x + 0.06, 0.0, z + 0.04)], glow)
+    hole = lp.material("Hole", "#141012")
+    mb.tube([((0, 0, -0.44), 0.024), ((0, 0, 0.3), 0.026), ((0, 0, 1.0), 0.028)], wrap, sides=7)
+    grip(mb, -0.36, 0.3, 0.027, wrap, iron, wraps=9)
+    for z in (0.38, 0.55):
+        mb.frustum((0, 0, z), (0, 0, z + 0.035), 0.034, 0.034, iron, sides=7)
+    mb.tube([((0, 0.0, -0.44), 0.03), ((0, 0, -0.5), 0.045), ((0, 0, -0.56), 0.03)], iron, sides=7)
+    mb.tube([(Vector((0, math.cos(a) * 0.05, -0.6 + math.sin(a) * 0.05)), 0.012) for a in [i * math.pi / 5 for i in range(11)]], iron, sides=5)
+
+    # The blade: cross-sections up its height, a thick spine at the haft thinning to a wedge at the edge.
+    def edge_x(z):
+        """How far out the edge reaches: a belly in the middle, chipped in a few places."""
+        t = (z - 0.44) / (1.1 - 0.44)
+        x = 0.3 + 0.08 * math.sin(math.pi * min(1.0, t * 1.1)) - 0.05 * max(0.0, t - 0.85) / 0.15
+        for chip, depth in ((0.3, 0.025), (0.62, 0.018)):
+            x -= depth * max(0.0, 1 - abs(t - chip) / 0.04)
+        return x
+
+    zs = [0.44 + (1.1 - 0.44) * k / 14 for k in range(15)]
+    body, edge = [], []
+    for z in zs:
+        x1 = edge_x(z)
+        bevel = x1 - 0.045
+        body.append([(-0.035, 0.024, z), (bevel * 0.6, 0.02, z), (bevel, 0.012, z), (bevel, -0.012, z), (bevel * 0.6, -0.02, z), (-0.035, -0.024, z)])
+        edge.append([(bevel, 0.012, z), (x1, 0.0, z), (bevel, -0.012, z)])
+    mb.loft(body, iron)
+    mb.loft(edge, glow)
+    # A rusty spine along the top and back, rivets down the haft, the hanging hole.
+    mb.tube([((-0.045, 0, 0.42), 0.03), ((-0.045, 0, 1.12), 0.03)], rust, sides=6)
+    mb.tube([((-0.04, 0, 1.11), 0.024), ((edge_x(1.1) * 0.5, 0, 1.12), 0.022), ((edge_x(1.1) - 0.02, 0, 1.1), 0.015)], rust, sides=6)
+    for z in (0.5, 0.66, 0.82, 0.98):
+        for y in (0.027, -0.027):
+            mb.sphere((0.0, y, z), 0.012, iron, segments=5, rings=3)
+    for y in (0.0205, -0.0205):
+        mb.sphere((0.22, y, 1.0), (0.032, 0.004, 0.032), hole, segments=8, rings=3)
+    # Cracks of fire across both faces.
+    rng = random.Random(9)
+    for y in (0.0215, -0.0215):
+        for start in ((0.05, 0.6), (0.12, 0.86)):
+            pts = [Vector((start[0], y, start[1]))]
+            for _ in range(4):
+                pts.append(pts[-1] + Vector((rng.uniform(0.03, 0.05), 0, rng.uniform(-0.04, 0.04))))
+            mb.tube([(p, 0.004 if i else 0.006) for i, p in enumerate(pts)], glow, sides=4)
     return mb.finish()
 
 

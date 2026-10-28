@@ -264,14 +264,13 @@ namespace Madlands.Client
             if (_ring == null || color != _ringColor)
             {
                 if (_ring != null) Destroy(_ring.gameObject);
-                _ring = EntityVisuals.Glow(null, Vector3.zero, Vector3.one, color, PrimitiveType.Cylinder);
-                _ring.name = "TargetRing";
+                _ring = Effects.Spawn("FxTargetRing", null, Vector3.zero, 1f, color);
                 _ringColor = color;
             }
             _ring.gameObject.SetActive(true);
-            float size = view.Shape.Radius * 2.6f + 0.4f;
-            _ring.localScale = new Vector3(size, 0.012f, size);
-            _ring.position = view.transform.position + Vector3.up * 0.04f;
+            // Four arcs with arrowheads pointing in at the target, turning slowly.
+            _ring.localScale = Vector3.one * (view.Shape.Radius * 1.3f + 0.2f);
+            _ring.SetPositionAndRotation(view.transform.position + Vector3.up * 0.04f, Quaternion.Euler(0f, Time.time * 25f, 0f));
         }
     }
 }

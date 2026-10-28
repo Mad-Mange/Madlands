@@ -19,6 +19,7 @@ import beasts  # noqa: E402
 import brute  # noqa: E402
 import buildings  # noqa: E402
 import creatures  # noqa: E402
+import effects  # noqa: E402
 import humanoid  # noqa: E402
 import items  # noqa: E402
 import lowpoly as lp  # noqa: E402
@@ -49,6 +50,7 @@ ASSETS = {
 ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in props.PROPS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in buildings.BUILDINGS.items()})
+ASSETS.update({name: ("Effects", builder, False) for name, builder in effects.EFFECTS.items()})
 
 # Previews of mesh-less animation files put a body on the skeleton (after the export).
 PREVIEW_DRESS = {

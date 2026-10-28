@@ -318,8 +318,15 @@ namespace Madlands.Client
         /// </summary>
         public Transform Attach(string bone, PrimitiveType type, Vector3 position, Vector3 scale, Color color, Vector3 euler = default, bool glow = false)
         {
+            var part = glow ? EntityVisuals.Glow(null, Vector3.zero, scale, color, type) : EntityVisuals.Part(type, null, Vector3.zero, scale, color);
+            return Attach(bone, part, position, euler);
+        }
+
+        /// <summary>Hangs a part (an effect model, Effects.Spawn) on a bone, placed like the primitives above.</summary>
+        public Transform Attach(string bone, Transform part, Vector3 position, Vector3 euler = default)
+        {
             var parent = Bone(bone) ?? Root;
-            var part = glow ? EntityVisuals.Glow(parent, Vector3.zero, scale, color, type) : EntityVisuals.Part(type, parent, Vector3.zero, scale, color);
+            part.SetParent(parent, false);
             var m = _restFromModel.TryGetValue(parent.name, out var found) ? found : Matrix4x4.identity;
             part.localPosition = m.MultiplyPoint3x4(position);
             part.localRotation = m.rotation * Quaternion.Euler(euler);
@@ -405,7 +412,7 @@ namespace Madlands.Client
                     model.Tint("Hair", Hex("#2a2422"));
                     model.Tint("Feet", Hex("#2e2622"));
                     Wear(model, "#2f2a28", "Hood");
-                    model.Attach("Chest", PrimitiveType.Cube, new Vector3(0f, 1.32f, 0.13f), new Vector3(0.07f, 0.12f, 0.04f), new Color(0.4f, 0.95f, 1f), new Vector3(0f, 0f, 45f), glow: true);
+                    model.Attach("Chest", Effects.Spawn("FxShard", null, Vector3.zero, 0.17f, new Color(0.4f, 0.95f, 1f)), new Vector3(0f, 1.32f, 0.14f), new Vector3(0f, 0f, 35f));
                     return shape;
                 case ShardcasterDisplay:
                 {
@@ -418,8 +425,7 @@ namespace Madlands.Client
                     model.Tint("Waist", Hex("#c9a23e"));
                     model.Tint("Hair", Hex("#d8d4cc"));
                     Wear(model, "#55357a", "RobeSkirt", "RobeCuffs");
-                    var crystal = Glow(parent, new Vector3(0f, shape.Height + 0.45f, 0f), new Vector3(0.2f, 0.34f, 0.2f), new Color(0.45f, 1f, 1f));
-                    crystal.localRotation = Quaternion.Euler(0f, 45f, 0f);
+                    var crystal = Effects.Spawn("FxShard", parent, new Vector3(0f, shape.Height + 0.45f, 0f), 0.5f, new Color(0.45f, 1f, 1f));
                     crystal.gameObject.AddComponent<Spinner>();
                     shape.Height += 0.6f;
                     return shape;
@@ -529,7 +535,7 @@ namespace Madlands.Client
                     if (oracle)
                     {
                         Wear(model, "#4a3a6a", "RobeSkirt", "RobeCuffs");
-                        model.Attach("Chest", PrimitiveType.Sphere, new Vector3(0f, 0.98f, 0.19f), Vector3.one * 0.08f, Hex("#c8f0ff"), glow: true);
+                        model.Attach("Chest", Effects.Spawn("FxOrb", null, Vector3.zero, 0.1f, Hex("#c8f0ff")), new Vector3(0f, 0.98f, 0.2f));
                     }
                     return shape;
                 }

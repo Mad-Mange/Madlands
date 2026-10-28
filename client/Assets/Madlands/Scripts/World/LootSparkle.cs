@@ -4,8 +4,8 @@ namespace Madlands.Client
 {
     /// <summary>
     /// Marks a corpse the local player can loot: a golden halo on the ground that slowly turns and
-    /// breathes, sparkles rising from the body, a warm pulsing light and a small gem turning above it.
-    /// Everything is built in code from the shared glow material (no textures).
+    /// breathes, little stars rising from the body, a warm pulsing light and a cut gem turning above it
+    /// (the effect models, Effects.cs).
     /// </summary>
     public sealed class LootSparkle : MonoBehaviour
     {
@@ -54,11 +54,10 @@ namespace Madlands.Client
 
             // The gem floats a little above where the body lies.
             _gemHeight = Mathf.Max(0.9f, shape.Height * 0.45f + 0.35f);
-            _gem = EntityVisuals.Glow(transform, Vector3.up * _gemHeight, Vector3.one * 0.16f, Gold);
-            _gem.localRotation = Quaternion.Euler(45f, 0f, 45f);
+            _gem = Effects.Spawn("FxGem", transform, Vector3.up * _gemHeight, 0.24f, Gold);
         }
 
-        /// <summary>Small golden flecks rising from the corpse and shrinking away.</summary>
+        /// <summary>Small golden stars rising from the corpse and shrinking away.</summary>
         private void Sparks(float radius)
         {
             var sparks = new GameObject("Sparks");
@@ -71,7 +70,7 @@ namespace Madlands.Client
             main.loop = true;
             main.startLifetime = new ParticleSystem.MinMaxCurve(1.1f, 1.8f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.25f, 0.6f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.11f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.16f);
             main.startColor = Gold;
             main.gravityModifier = -0.04f;
             main.maxParticles = 48;
@@ -90,9 +89,20 @@ namespace Madlands.Client
             size.enabled = true;
             size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 0.4f), new Keyframe(0.25f, 1f), new Keyframe(1f, 0f)));
 
+            // Little four-pointed stars (the effect mesh), turning as they rise.
+            main.startRotation3D = true;
+            main.startRotationY = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            var spin = ps.rotationOverLifetime;
+            spin.enabled = true;
+            spin.separateAxes = true;
+            spin.x = new ParticleSystem.MinMaxCurve(0f);
+            spin.y = new ParticleSystem.MinMaxCurve(-4f, 4f);
+            spin.z = new ParticleSystem.MinMaxCurve(0f);
             var renderer = sparks.GetComponent<ParticleSystemRenderer>();
-            renderer.sharedMaterial = EntityVisuals.GlowMaterial(Gold);
-            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sharedMaterial = Effects.FadeMaterial;
+            renderer.renderMode = ParticleSystemRenderMode.Mesh;
+            renderer.mesh = Effects.ParticleMesh("FxStar");
+            renderer.alignment = ParticleSystemRenderSpace.World;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             ps.Play();
         }

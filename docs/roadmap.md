@@ -176,6 +176,12 @@ Every phase ends in something playable and tested. Architectural decisions are i
   after the sheets: the knights' round steel shield with a gilded star (Captain Brand's, item 1037) and a warden's
   teal shield with the Greywood's tree (now the Mossback Scale Shield's look).
   `art/blender/lookbook.py` renders outfits (sides, poses, faces) to compare with the reference sheets
+- [x] Beasts and spells remodeled (2026-10-28): the wolf, the boar and the bear sculpted like the heroes (bodies blended
+  from masses of muscle, legs that bend at the joints, muzzles, paws, split hooves), the shardling of chipped rock,
+  Ruukhar's skull hood and the cleaver he drops; the Cinder Cut's slag pools (lying along the slope), slag heaps,
+  shard crystals and giant skull. Spell effects are models from `art/blender/effects.py` instead of Unity primitives:
+  bolts by school (a crystal, a star, a fireball, a leaf) with trails of flecks, bursts and flashes, a frost nova that
+  raises ice crystals, a bolt growing between a caster's hands, a target ring with arrowheads, a gem over loot
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)
 

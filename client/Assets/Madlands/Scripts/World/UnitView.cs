@@ -27,7 +27,7 @@ namespace Madlands.Client
         private Transform _visual;
         private DisplayModel _model;
         private UnitAnimator _animator;
-        private Transform _castGlow;
+        private CastGlow _castGlow;
         private Transform _mainHand;
         private Transform _offHand;
         private Transform _sparkle;
@@ -235,7 +235,7 @@ namespace Madlands.Client
             _sparkle = LootSparkle.Create(transform, Shape).transform;
         }
 
-        /// <summary>Shows (school given) or hides a glow above the unit while it casts.</summary>
+        /// <summary>Shows (school given) or hides the glow of a cast in the school's color (CastGlow).</summary>
         public void SetCasting(SpellSchool? school)
         {
             bool casting = school != null;
@@ -253,7 +253,7 @@ namespace Madlands.Client
                 return;
             }
             if (_castGlow != null) return;
-            _castGlow = EntityVisuals.Glow(transform, Vector3.up * (Shape.Height + 0.15f), Vector3.one * 0.3f, SchoolColors.Get(school.Value), PrimitiveType.Sphere);
+            _castGlow = CastGlow.Create(transform, _model, Shape, school.Value);
         }
 
         /// <summary>A step every stride: grass, wood (docks, floors) or a splash in water.</summary>
@@ -273,11 +273,6 @@ namespace Madlands.Client
 
         private void LateUpdate()
         {
-            if (_castGlow != null)
-            {
-                float pulse = 0.25f + Mathf.Sin(Time.time * 10f) * 0.06f;
-                _castGlow.localScale = Vector3.one * pulse;
-            }
 
             if (_moving && !_dead) Footsteps();
 

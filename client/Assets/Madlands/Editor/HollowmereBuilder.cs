@@ -378,6 +378,15 @@ namespace Madlands.Client.Editor
 
         private static float GroundAt(float x, float z) => _terrain.SampleHeight(new Vector3(x, 0f, z)) + _terrain.GetPosition().y;
 
+        /// <summary>Turns a placed prop to lie along the slope of the ground under it (pools, not things that stand).</summary>
+        private static void LieOnGround(GameObject prop)
+        {
+            var p = prop.transform.position - _terrain.GetPosition();
+            var size = _terrain.terrainData.size;
+            var normal = _terrain.terrainData.GetInterpolatedNormal(p.x / size.x, p.z / size.z);
+            prop.transform.rotation = Quaternion.FromToRotation(Vector3.up, normal) * prop.transform.rotation;
+        }
+
         /// <summary>
         /// Places a Blender prop (Art/Props) on the ground. Yaw 0 faces north (+Z). Mesh colliders block
         /// players and line of sight and become navmesh obstacles; trunks get a capsule.
@@ -664,11 +673,12 @@ namespace Madlands.Client.Editor
                     if (Vector2.Distance(new Vector2(child.position.x, child.position.z), CinderCut) < 36f) Object.DestroyImmediate(child.gameObject);
                 }
             }
-            // Slag pools around the middle (the fight needs the middle free), heaps on the rim.
+            // Slag pools around the middle (the fight needs the middle free), lying along the bowl's slope; heaps on the rim.
             for (int i = 0; i < 6; i++)
             {
                 float a = i * Mathf.PI * 2f / 6f + Range(rng, -0.25f, 0.25f), r = Range(rng, 13f, 19f);
-                Place("SlagPool", lair, CinderCut.x + Mathf.Cos(a) * r, CinderCut.y + Mathf.Sin(a) * r, Range(rng, 0f, 360f), Range(rng, 0.8f, 1.3f), Collide.None, sink: 0.05f);
+                LieOnGround(Place("SlagPool", lair, CinderCut.x + Mathf.Cos(a) * r, CinderCut.y + Mathf.Sin(a) * r, Range(rng, 0f, 360f), Range(rng, 0.8f, 1.3f),
+                    Collide.None, sink: 0.05f));
             }
             for (int i = 0; i < 10; i++)
             {

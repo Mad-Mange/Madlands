@@ -10,6 +10,7 @@ import random
 from mathutils import Vector
 
 import lowpoly as lp
+import sculpt as sc
 
 
 def cycle(t, phase=0.0):
@@ -127,13 +128,13 @@ QUADS = {
         height=0.74, hip=0.7, length=0.95, width=0.44, depth=0.5, leg_x=0.15, leg_r=0.07, sprawl=0.0,
         neck=(0.14, 0.0), head_len=0.42, head_drop=0.12, jaw_drop=0.1, tail=(0.22, 0.12), head="boar", hump=1.12,
         colors=dict(Fur="#5b4436", FurLight="#7d6553", Dark="#2a2420", Tusk="#ebe2c8"),
-        walk=(18, 30, 2, 0.02), run=(30, 55, 6, 0.05), walk_speed=1.1, run_speed=3.8,
+        walk=(18, 30, 2, 0.02), run=(30, 55, 6, 0.05), walk_speed=1.1, run_speed=3.8, sculpted=True, slim=0.6, bulk=0.82,
     ),
     "Bear": dict(
         height=1.2, hip=1.1, length=1.35, width=0.72, depth=0.78, leg_x=0.26, leg_r=0.13, sprawl=0.0,
         neck=(0.22, 0.05), head_len=0.5, head_drop=0.12, jaw_drop=0.14, tail=(0.12, 0.05), head="bear", hump=1.28,
         colors=dict(Fur="#4a3a2c", FurLight="#6e5844", Dark="#1f1a16", Tusk="#e6dcc4"),
-        walk=(16, 30, 3, 0.03), run=(28, 50, 7, 0.07), walk_speed=1.4, run_speed=4.5,
+        walk=(16, 30, 3, 0.03), run=(28, 50, 7, 0.07), walk_speed=1.4, run_speed=4.5, sculpted=True, slim=0.85, ruff=True,
     ),
     "Crocodile": dict(
         height=0.4, hip=0.42, length=1.5, width=0.6, depth=0.34, leg_x=0.26, leg_r=0.07, sprawl=0.24,
@@ -419,10 +420,249 @@ def quad_death(s):
     return [(0, {}), (8, {"Neck": [("X", -18)], "Hips": [("Y", 20)], "@root": (0, 0, -lie * 0.3)}), (18, down), (30, down)]
 
 
+# ---------------------------------------------------------------- sculpted quadrupeds
+
+def _spine(s):
+    """The line through the middle of the trunk, rump to neck: (y, z) pairs by increasing y."""
+    L, H, Hh = s["length"], s["height"], s["hip"]
+    hy, cy, _ = quad_points(s)
+    nl, rise = s["neck"]
+    mid_z = (H + Hh) / 2
+    return [(cy - nl, H + rise), (cy, H - 0.01), (cy + 0.25 * L, H - 0.03), (0.0, mid_z - 0.03), (hy - 0.2 * L, Hh - 0.01), (hy + 0.06 * L, Hh)]
+
+
+def _spine_z(s, y):
+    pts = _spine(s)
+    if y <= pts[0][0]:
+        return pts[0][1]
+    for (y0, z0), (y1, z1) in zip(pts, pts[1:]):
+        if y <= y1:
+            return z0 + (z1 - z0) * (y - y0) / (y1 - y0)
+    return pts[-1][1]
+
+
+def trunk_sdf(s):
+    """
+    The trunk and neck: a deep chest tapering back to the hips, the withers (a bear's hump), haunches and
+    rump, the brisket low in front, the belly tucked up before the hind legs, a thick neck.
+    """
+    L, H, Hh, W, depth = s["length"], s["height"], s["hip"], s["width"], s["depth"]
+    hy, cy, _ = quad_points(s)
+    hump = s.get("hump", 1.0)
+    nl, rise = s["neck"]
+    neck_end = (0, cy - nl, H + rise)
+    wide = W / depth * 0.95
+    body = sc.union(
+        sc.cone((0, cy + 0.12 * L, H - 0.12 * depth), (0, hy - 0.22 * L, Hh - 0.03), 0.53 * depth, 0.4 * depth).scaled((wide, 1, 1)),
+        sc.ellipsoid((0, cy + 0.25 * L, H + depth * (0.1 + 0.35 * (hump - 1))), (0.32 * W, 0.22 * L, 0.3 * depth)),
+        sc.ellipsoid((0, hy - 0.18 * L, Hh), (0.44 * W, 0.24 * L, 0.42 * depth)),
+        sc.ellipsoid((0, hy - 0.0 * L, Hh + 0.02), (0.36 * W, 0.13 * L, 0.34 * depth)),
+        sc.ellipsoid((0, cy + 0.08 * L, H - depth * 0.35), (0.34 * W, 0.14 * L, 0.3 * depth)),
+        sc.cone((0, cy + 0.1 * L, H - 0.03), (0, neck_end[1] + 0.03, neck_end[2] - 0.02), 0.38 * depth, 0.3 * depth),
+        k=0.12 * depth)
+    tuck = sc.ellipsoid((0, hy - 0.34 * L, Hh - depth * 0.78), (0.7 * W, 0.24 * L, 0.26 * depth))
+    body = sc.carve(body, (tuck, 0.1 * depth))
+    if s.get("ruff"):
+        # Clumps of shaggy fur around the neck and over the hump, blended on like clay.
+        rng = random.Random(7)
+        clumps = []
+        for i in range(16):
+            a = math.pi * (0.05 + 0.9 * (i % 8) / 7)
+            y = cy + (0.02 if i < 8 else 0.16) * L + rng.uniform(-0.03, 0.03)
+            z = H + (0.02 if i < 8 else depth * 0.12)
+            reach = depth * (0.4 if i < 8 else 0.42)
+            c = (math.cos(a) * reach * wide, y, z + math.sin(a) * reach)
+            clumps.append(sc.ellipsoid(c, (depth * 0.13, depth * 0.16, depth * 0.11)))
+        body = sc.blend(body, *[(c, 0.04 * depth) for c in clumps])
+    return body
+
+
+def _leg_sdf(s, part, top, knee, ankle):
+    """A leg: the broad muscle of the shoulder or the ham at the top, the knee, a shin tapering to the ankle."""
+    r = s["leg_r"]
+    slim = s.get("slim", 0.8)
+    top, knee, ankle = Vector(top), Vector(knee), Vector(ankle)
+    upper_len = (top - knee).length
+    # The muscle sits high on the body's side, so the leg grows out of the flank instead of hanging under it.
+    bulk = s.get("bulk", 1.0)
+    if part == "Back":
+        muscle = sc.ellipsoid(tuple(top + Vector((0, 0.0, -upper_len * 0.38))), (r * 1.55 * bulk, r * 2.4 * bulk, upper_len * 0.62))
+        upper = sc.chain([tuple(top), tuple(knee)], [r * 1.5, r * 0.95])
+    else:
+        muscle = sc.ellipsoid(tuple(top + Vector((0, 0.0, -upper_len * 0.38))), (r * 1.45 * bulk, r * 2.3 * bulk, upper_len * 0.6))
+        upper = sc.chain([tuple(top), tuple(knee)], [r * 1.35, r * 0.95])
+    lower = sc.chain([tuple(knee), tuple(knee.lerp(ankle, 0.45)), tuple(ankle)], [r * 0.92, r * 0.92 * slim + 0.08 * r, r * slim])
+    return sc.blend(upper, (muscle, 0.06), (lower, 0.05))
+
+
+def _head_sdf(s, base):
+    """The head from the neck's end: a boar's long wedge with jowls and a flat snout, or a bear's round skull and muzzle."""
+    x0, y0, z0 = base
+    l = s["head_len"]
+    if s["head"] == "boar":
+        return sc.union(
+            sc.ellipsoid((0, y0 - 0.06, z0 + 0.02), (0.15, 0.17, 0.16)),
+            sc.cone((0, y0 - 0.1, z0 - 0.0), (0, y0 - l + 0.03, z0 - 0.09), 0.13, 0.07),
+            sc.ellipsoid((0.1, y0 - 0.13, z0 - 0.08), (0.075, 0.12, 0.08)),
+            sc.ellipsoid((-0.1, y0 - 0.13, z0 - 0.08), (0.075, 0.12, 0.08)),
+            sc.cone((-0.08, y0 - 0.12, z0 + 0.1), (0.08, y0 - 0.12, z0 + 0.1), 0.05),
+            sc.capped((0, y0 - l + 0.04, z0 - 0.09), (0, y0 - l - 0.01, z0 - 0.095), 0.085, 0.08, rounding=0.012),
+            k=0.05)
+    return sc.union(
+        sc.ellipsoid((0, y0 - l * 0.28, z0 + 0.03), (0.22, 0.22, 0.2)),
+        sc.cone((-0.12, y0 - l * 0.35, z0 + 0.1), (0.12, y0 - l * 0.35, z0 + 0.1), 0.07),
+        sc.cone((0, y0 - l * 0.45, z0 - 0.02), (0, y0 - l * 0.95, z0 - 0.06), 0.13, 0.08),
+        sc.ellipsoid((0.15, y0 - l * 0.28, z0 - 0.06), (0.1, 0.11, 0.1)),
+        sc.ellipsoid((-0.15, y0 - l * 0.28, z0 - 0.06), (0.1, 0.11, 0.1)),
+        sc.sphere((0.17, y0 - l * 0.12, z0 + 0.2), 0.07),
+        sc.sphere((-0.17, y0 - l * 0.12, z0 + 0.2), 0.07),
+        sc.ellipsoid((0, y0 - l * 0.98, z0 - 0.03), (0.06, 0.04, 0.045)),
+        k=0.06)
+
+
+def sculpted_quad_body(name, s):
+    """
+    A quadruped sculpted like the heroes: the trunk and neck swept along the spine and blended from
+    clay-like masses (barrel, shoulders and hump, haunches), muscled legs that bend at the knee, the
+    head with its muzzle, ears and jaw, paws with claws or split hooves, a tail; shaded smoothly, fur
+    tufts and bristles on top.
+    """
+    m = {k: lp.material(k, v) for k, v in s["colors"].items()}
+    eye = lp.material("Eye", "#120e0c")
+    mb = lp.MeshBuilder(name + "Body")
+    L, H, Hh, W, depth = s["length"], s["height"], s["hip"], s["width"], s["depth"]
+    hy, cy, legs = quad_points(s)
+    nl, rise = s["neck"]
+    neck_end = (0, cy - nl, H + rise)
+    rng = random.Random(len(name))
+    boar = s["head"] == "boar"
+
+    # The trunk and neck, swept along the spine from behind the rump into the head.
+    trunk = trunk_sdf(s)
+    ys = [hy + 0.08 * L - (hy + 0.08 * L - neck_end[1] + 0.06) * i / 15 for i in range(16)]
+    path = [Vector((0, y, _spine_z(s, y))) for y in ys]
+    rows = sc.sweep(trunk, path, 18, caps=(True, False), up=(0, 0, 1), limit=1.5)
+    weigh = along_y([("Neck", neck_end[1] + nl * 0.35), ("Chest", cy + 0.14 * L), ("Spine", 0.0), ("Hips", hy - 0.26 * L)])
+
+    def trunk_material(c):
+        return m["FurLight"] if c.z < _spine_z(s, c.y) - depth * 0.3 and abs(c.x) < W * 0.32 else None
+    sc.grid_mesh(mb, rows, m["Fur"], weigh, closed=True, material_at=trunk_material,
+                 inside=lambda c: Vector((0, c.y, _spine_z(s, c.y))))
+    surface = sc.Star(trunk, (0, 0, (H + Hh) / 2), limit=2.0)
+
+    def top_at(y):
+        """The top of the back at y."""
+        origin = Vector((0, y, _spine_z(s, y)))
+        return origin + Vector((0, 0, surface.reach(origin, (0, 0, 1))))
+
+    # Legs: one sweep from inside the body down to the ankle, bending at the knee.
+    for leg_name, (top, knee, ankle, tip) in legs.items():
+        part, side = leg_name.split(".")
+        upper, lower, paw_bone = part + "UpperLeg." + side, part + "LowerLeg." + side, part + "Paw." + side
+        start = Vector((top[0] * 0.85, top[1], top[2] + depth * 0.3))
+        knee_v, ankle_v = Vector(knee), Vector((ankle[0], ankle[1], ankle[2] + s["leg_r"] * 0.5))
+        shape = _leg_sdf(s, part, start, knee_v, ankle_v)
+        leg_path = [start.lerp(knee_v, f) for f in (0.0, 0.25, 0.5, 0.75)] + [knee_v.lerp(ankle_v, f) for f in (0.0, 0.33, 0.66, 1.0)]
+        leg_rows = sc.sweep(shape, leg_path, 12, caps=(True, True), up=(0, -1, 0), limit=0.8)
+        kz = knee[2]
+
+        def leg_weigh(p, upper=upper, lower=lower, kz=kz):
+            t = smooth(kz + 0.04, kz - 0.04, p.z)
+            return {upper: 1.0 - t, lower: t}
+        pts = leg_path
+        sc.grid_mesh(mb, leg_rows, m["Fur"], leg_weigh, closed=True,
+                     inside=lambda c, pts=pts: min(pts, key=lambda q: (q - c).length))
+        r = s["leg_r"]
+        if boar:
+            # A split hoof: two rounded toes under the ankle and a dewclaw behind.
+            ax, ay, az = ankle
+            hoof = sc.union(sc.ellipsoid((ax, ay - r * 0.1, r * 0.75), (r * 0.6, r * 0.6, r * 0.6)),
+                            *[sc.cone((ax + k * r * 0.32, ay + r * 0.3, r * 1.0), (ax + k * r * 0.38, ay - r * 0.75, r * 0.3), r * 0.48, r * 0.3)
+                              for k in (-1, 1)], k=0.02)
+            hoof = sc.intersect(hoof, sc.Shape(lambda q: -q[:, 2]))
+            sc.star_mesh(mb, sc.Star(hoof, (ax, ay - r * 0.1, r * 0.5), limit=0.4), m["Dark"], paw_bone, 6, 10)
+            for k in (-1, 1):
+                mb.tube([((ax + k * r * 0.5, ay + r * 0.6, r * 1.2), r * 0.16), ((ax + k * r * 0.55, ay + r * 0.95, r * 0.75), 0.005)],
+                        m["Dark"], paw_bone, sides=4)
+        else:
+            # A broad padded paw with the toes rounded on top, claws curving down in front.
+            ax, ay, az = ankle
+            w = r * 1.15
+            foot = sc.union(sc.ellipsoid((ax, ay - r * 0.5, r * 0.55), (w, r * 1.3, r * 0.6)),
+                            *[sc.sphere((ax + k * w * 0.62, ay - r * 1.45, r * 0.42), r * 0.42) for k in (-1, 0, 1)], k=0.04)
+            foot = sc.intersect(foot, sc.Shape(lambda q: -q[:, 2]))
+            sc.star_mesh(mb, sc.Star(foot, (ax, ay - r * 0.6, r * 0.45), limit=0.6), m["Fur"], paw_bone, 6, 10)
+            for k in (-1, -0.33, 0.33, 1):
+                base = Vector((ax + k * w * 0.7, ay - r * 1.75, r * 0.4))
+                mb.tube([(base, r * 0.16), (base + Vector((0, -r * 0.45, -r * 0.25)), r * 0.09), (base + Vector((0, -r * 0.65, -r * 0.5)), 0.004)],
+                        m["Dark"], paw_bone, sides=4)
+
+    # The head and the jaw.
+    head = _head_sdf(s, neck_end)
+    x0, y0, z0 = neck_end
+    l = s["head_len"]
+    center = (0, y0 - l * (0.35 if boar else 0.4), z0 - 0.03)
+
+    def head_material(c):
+        if boar:
+            return m["Dark"] if c.y < y0 - l + 0.035 else (m["FurLight"] if c.z < z0 - 0.12 else None)
+        if c.y < y0 - l * 0.9 and c.z > z0 - 0.09:
+            return m["Dark"]
+        return m["FurLight"] if c.y < y0 - l * 0.5 else None
+    sc.star_mesh(mb, sc.Star(head, center, limit=1.0), m["Fur"], "Head", 16, 24, material_at=head_material)
+    jaw_from = Vector((0, y0 - l * 0.25, z0 - (0.13 if boar else 0.14)))
+    jaw_to = Vector((0, y0 - l * (0.85 if boar else 0.9), z0 - (0.14 if boar else 0.13)))
+    jaw = sc.chain([tuple(jaw_from), tuple(jaw_to)], [0.08 if boar else 0.1, 0.05 if boar else 0.06])
+    sc.sweep_mesh(mb, jaw, [jaw_from, jaw_from.lerp(jaw_to, 0.5), jaw_to], 8, m["FurLight"], "Jaw")
+    for sx in (1, -1):
+        if boar:
+            mb.sphere((sx * 0.105, y0 - l * 0.38, z0 + 0.06), 0.022, eye, "Head", segments=6, rings=4, smooth=True)
+            # Ears: pointed and leaning out; nostrils in the snout; tusks curling up out of the jaw.
+            ear = [(sx * 0.09, y0 - 0.02, z0 + 0.14), (sx * 0.15, y0 + 0.02, z0 + 0.13), (sx * 0.12, y0 - 0.04, z0 + 0.12),
+                   (sx * 0.2, y0 + 0.07, z0 + 0.3)]
+            mb.hull(ear, m["Fur"], "Head")
+            mb.sphere((sx * 0.032, y0 - l - 0.012, z0 - 0.085), 0.018, eye, "Head", segments=5, rings=3)
+            tusk = [Vector((sx * 0.07, y0 - l + 0.1, z0 - 0.14)), Vector((sx * 0.12, y0 - l + 0.04, z0 - 0.08)),
+                    Vector((sx * 0.13, y0 - l + 0.06, z0 + 0.0))]
+            mb.tube([(tusk[0], 0.022), (tusk[1], 0.016), (tusk[2], 0.003)], m["Tusk"], "Jaw", sides=5, smooth=True)
+        else:
+            mb.sphere((sx * 0.085, y0 - l * 0.55, z0 + 0.07), 0.025, eye, "Head", segments=6, rings=4, smooth=True)
+            mb.sphere((sx * 0.17, y0 - l * 0.12 - 0.035, z0 + 0.2), (0.04, 0.02, 0.045), m["Dark"], "Head", segments=6, rings=4, smooth=True)
+
+    # The tail.
+    tl, tdrop = s["tail"]
+    tr = depth * 0.08
+    if boar:
+        curl = [(0, hy + 0.04 * L, Hh + 0.02), (0, hy + 0.08 * L + 0.04, Hh - 0.04), (0.03, hy + 0.08 * L + 0.08, Hh - 0.12), (0.0, hy + 0.08 * L + 0.06, Hh - 0.2)]
+        mb.tube([(curl[0], 0.03), (curl[1], 0.022)], m["Fur"], "Tail1", sides=5, smooth=True)
+        mb.tube([(curl[1], 0.022), (curl[2], 0.016), (curl[3], 0.006)], m["Fur"], "Tail2", sides=5, smooth=True)
+        mb.hull([(0, curl[3][1] + dx, curl[3][2] + dz) for dx, dz in ((0.03, 0), (-0.03, 0), (0, -0.08))] + [(0.03, curl[3][1], curl[3][2] - 0.05)],
+                m["Dark"], "Tail2")
+    else:
+        mb.tube([((0, hy + 0.04 * L, Hh), tr * 1.6), ((0, hy + 0.08 * L + tl * 0.6, Hh - tdrop), tr)], m["Fur"], "Tail1", sides=6, smooth=True)
+
+    # Fur on top: a bristly dark ridge down a boar's back, shaggy tufts on a bear's haunches.
+    if boar:
+        for i in range(12):
+            y = cy + 0.02 + (hy - cy) * 0.75 * i / 11
+            p = top_at(y) - Vector((0, 0, 0.02))
+            bone = "Chest" if y < cy + 0.25 * L else ("Spine" if y < hy - 0.25 * L else "Hips")
+            tufts(mb, [p], m["Dark"], bone, rng, size=0.15 - 0.007 * i, sweep=(0, 0.7, 0.7))
+    else:
+        for i in range(10):
+            a = math.pi * (0.15 + 0.7 * i / 9)
+            y = hy - 0.1 * L + rng.uniform(-0.06, 0.06)
+            origin = Vector((0, y, _spine_z(s, y)))
+            d = Vector((math.cos(a), 0, math.sin(a)))
+            p = origin + d * (surface.reach(origin, d) - 0.02)
+            tufts(mb, [p], m["FurLight"], "Hips", rng, size=0.08, sweep=(math.cos(a) * 0.4, 0.7, 0.2))
+    return mb.finish()
+
+
 def build_quad(name):
     s = QUADS[name]
     arm = lp.armature("Armature", quad_skeleton(s))
-    lp.bind(quad_body(name, s), arm)
+    lp.bind(sculpted_quad_body(name, s) if s.get("sculpted") else quad_body(name, s), arm)
     four_beat = {"Back.L": 0.0, "Front.L": 0.25, "Back.R": 0.5, "Front.R": 0.75}
     gallop = {"Front.L": 0.0, "Front.R": 0.12, "Back.L": 0.5, "Back.R": 0.62}
     trot = {"Front.L": 0.0, "Back.R": 0.0, "Front.R": 0.5, "Back.L": 0.5}
@@ -587,6 +827,15 @@ def build_shardling():
             pts += [base + d * width * 0.8, shoulder + d * width]
         mb.hull(pts, mat, bone)
 
+    def chunk(center, radii, mat, bone, seed, tilt=(0, 0, 0), slab=True):
+        """A broken block of rock (or a round stone): chipped and lumpy, shaded flat."""
+        base = sc.box((0, 0, 0), radii, radius=min(radii) * 0.45) if slab else sc.ellipsoid((0, 0, 0), radii)
+        shape = sc.lumpy(base, min(radii) * 0.18, max(radii) * 1.1, seed)
+        rows = sc.Star(shape, (0, 0, 0), limit=1.0).grid(7, 10)
+        rows = [sc.rotate_points(row, (0, 0, 0), tilt) for row in rows]
+        rows = [[p + Vector(center) for p in row] for row in rows]
+        sc.grid_mesh(mb, rows, mat, bone, closed=True, smooth=False, inside=lambda p: Vector(center))
+
     # The heart: a bright core crystal in a cage of rock slabs, open at the front.
     shard((0, 0, 0.85), (0, -0.02, 1.25), 0.11, core, "Body", facets=6)
     shard((0, 0, 1.0), (0, -0.02, 0.62), 0.09, core, "Body", facets=6)
@@ -595,30 +844,23 @@ def build_shardling():
         if math.cos(t) > 0.5:
             continue  # open at the front (t = 0 is -Y)
         out = Vector((math.sin(t), -math.cos(t), 0))
-        c = Vector((0, 0, 1.0)) + out * 0.3
-        pts = [c + out * dx + Vector((0, 0, dz)) + Vector((-out.y, out.x, 0)) * dy
-               for dx in (-0.05, 0.07) for dy in (-0.07, 0.07) for dz in (-0.24, 0.28)]
-        pts = [p + Vector((rng.uniform(-0.03, 0.03), rng.uniform(-0.03, 0.03), rng.uniform(-0.05, 0.05))) for p in pts]
-        mb.hull(pts, rock if k % 2 else rock2, "Body")
+        c = Vector((0, 0, 1.0)) + out * 0.31
+        chunk(c, (0.06, 0.085, 0.24), rock if k % 2 else rock2, "Body", 30 + k, tilt=(rng.uniform(-8, 8), rng.uniform(-8, 8), math.degrees(t)))
     # Shoulders of rock with crystals breaking out, and a crown of crystals for a head over a stone brow.
     for sx in (1, -1):
-        mb.hull([(sx * x, y, z) for x, y, z in ((0.22, 0.1, 1.3), (0.5, 0.05, 1.35), (0.48, -0.12, 1.2), (0.3, -0.15, 1.15), (0.36, 0.12, 1.1),
-                                                (0.42, 0.0, 1.45))], rock, "Body")
+        chunk((sx * 0.38, -0.02, 1.3), (0.15, 0.13, 0.11), rock, "Body", 40 + sx, tilt=(0, sx * 15, 0))
         for k in range(3):
             shard((sx * (0.32 + 0.06 * k), 0.02 * k, 1.38), (sx * (0.42 + 0.12 * k), 0.1 + 0.08 * k, 1.7 + 0.12 * (1 - k)), 0.05, glow, "Body")
-    mb.hull([(x, y, z) for x, y, z in ((0.14, -0.12, 1.4), (-0.14, -0.12, 1.4), (0.12, 0.1, 1.38), (-0.12, 0.1, 1.38), (0.0, -0.17, 1.52),
-                                     (0.1, 0.0, 1.55), (-0.1, 0.0, 1.55))], rock2, "Head")
-    mb.box((0, -0.16, 1.47), (0.18, 0.03, 0.04), core, "Head")
+    chunk((0, -0.02, 1.47), (0.14, 0.12, 0.08), rock2, "Head", 50)
+    mb.box((0, -0.15, 1.47), (0.18, 0.03, 0.035), core, "Head")
     for k in range(5):
         t = math.pi * (0.15 + 0.7 * k / 4)
         shard((math.cos(t) * 0.08, 0.02, 1.52), (math.cos(t) * 0.22, 0.06, 1.72 + 0.12 * math.sin(t)), 0.04, glow, "Head")
     # Arms: chunks of rock hanging below the shoulders, crystal fists.
     for sx in (1, -1):
         side = "L" if sx > 0 else "R"
-        mb.hull([(sx * x, y, z) for x, y, z in ((0.42, 0.06, 1.22), (0.6, 0.1, 1.1), (0.64, -0.08, 0.9), (0.5, -0.1, 1.05), (0.56, 0.05, 0.92))],
-                rock2, "ArmUpper." + side)
-        mb.hull([(sx * x, y, z) for x, y, z in ((0.6, -0.02, 0.9), (0.74, 0.06, 0.66), (0.58, 0.06, 0.66), (0.66, -0.14, 0.62), (0.68, -0.08, 0.8))],
-                rock, "ArmLower." + side)
+        chunk((sx * 0.53, 0.0, 1.06), (0.08, 0.08, 0.15), rock2, "ArmUpper." + side, 60 + sx, tilt=(0, sx * -30, 0))
+        chunk((sx * 0.65, -0.05, 0.74), (0.075, 0.075, 0.13), rock, "ArmLower." + side, 70 + sx, tilt=(10, sx * -8, 0))
         for k in range(3):
             shard((sx * 0.66, -0.1 + 0.06 * k, 0.6), (sx * (0.66 + 0.04 * (k - 1)), -0.2 + 0.08 * k, 0.4), 0.04, glow, "ArmLower." + side)
     # Below: a tail of shards tapering to a point over the ground, small stones floating around it.
@@ -628,9 +870,7 @@ def build_shardling():
         shard((math.cos(t) * 0.12, math.sin(t) * 0.12, 0.72), (math.cos(t) * 0.22, math.sin(t) * 0.22, 0.35), 0.06, rock, "Base")
     for k in range(4):
         t = 2 * math.pi * k / 4 + 0.8
-        blob_pts = [(math.cos(t) * 0.42 + rng.uniform(-0.05, 0.05), math.sin(t) * 0.42 + rng.uniform(-0.05, 0.05), 0.55 + rng.uniform(-0.05, 0.05))
-                    for _ in range(7)]
-        mb.hull(blob_pts, rock2, "Base")
+        chunk((math.cos(t) * 0.42, math.sin(t) * 0.42, 0.55 + rng.uniform(-0.05, 0.05)), (0.06, 0.055, 0.05), rock2, "Base", 80 + k, slab=False)
     lp.bind(mb.finish(), arm)
 
     def float_pose(t, lean, speed_bob):

@@ -28,10 +28,12 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 | `blender/build.py` | The asset list (name, Unity folder, builder) and the build entry point. |
 | `blender/lowpoly.py` | Helpers: flat-colored materials, boxes, tubes, spheres, convex hulls, lofts through cross-sections (`loft`, `ring`), limbs along a path (`tube`), surfaces through rows of points (`grid`) and with a lining (`shell`), weights over several bones, armatures, keyframed actions, FBX export. |
 | `blender/humanoid.py` | The humanoid races (proportions, body cross-sections, the sculpted head, hair and beard styles, colors), the model at three levels of detail, and all humanoid animations. Stylized and heroic: big deltoids, a tapering torso with pecs, chunky fists and boots, a square jaw and heavy brow. |
-| `blender/sculpt.py` | Clay modelling: signed distance functions (ellipsoids, round cones, capped cones, rounded boxes) blended into each other or carved away, turned into meshes by casting rays from a point inside (`Star`: heads, noses, fists, beards) or around a path (`sweep`: arms, legs, boots, braids). The rays form a regular grid, so the resolution is a parameter (the levels of detail). |
+| `blender/sculpt.py` | Clay modelling: signed distance functions (ellipsoids, round cones, capped cones, rounded boxes, `lumpy` rock surfaces) blended into each other or carved away, turned into meshes by casting rays from a point inside (`Star`: heads, noses, fists, beards) or around a path (`sweep`: arms, legs, boots, braids). The rays form a regular grid, so the resolution is a parameter (the levels of detail). |
 | `blender/lookbook.py` | Renders races dressed in outfits (the client's tint rules), from the front, side and back, in poses and the face close up, to compare with reference sheets: `blender -b --factory-startup -P art/blender/lookbook.py -- [look ...] [--lod N]` into `builds/lookbook/`. |
 | `blender/gear.py` | Worn gear, built into every race's model: helmets, hoods and hats wrapped around the head's hull, shoulder pads around the shoulder, cloaks, robe skirts, breastplates and aprons from the trunk's sections. Each piece is its own mesh (`GearHood`, `GearCloak` ...) the client hides until it is worn (`GearVisuals.cs`). |
 | `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, frog, training dummy. |
+| `blender/beasts.py` | One parametric quadruped (boar, bear, crocodile, Gloomjaw; the boar and bear sculpted with `sculpt.py` like the heroes), the spider and the shardling. `blender/brute.py` is Ruukhar the Slagborn. |
+| `blender/effects.py` | Spell and interface effects (`Fx...` in `Art/Effects`): crystals, stars, flames, leaves, flecks, a gem, rings and a shock wave. Solid faces are split into three tones (`EffectLight`, `Effect`, `EffectDark`) by how they face a light, which the client colors per spell school (`Effects.cs`). |
 | `blender/items.py` | Held items: origin at the grip, pointing along +Z, edge along X; shields face +X. |
 | `blender/preview.py` | The preview renders. |
 | `blender/buildings.py` | Detailed buildings built from shingle courses, planks and beams: `GroveHouse` (dark timber, a swaybacked slate roof, cross gables with horned bargeboards and lanterns), `Cottage` (a half-timbered farmhouse under thick thatch, with shutters, flower boxes and a stone chimney) `Longhouse` (the Muddy Boot inn: red shingles, dormers, a porch and a hanging sign), and the square's `Well`, `MarketStall` and `Watchtower`. |
@@ -104,5 +106,5 @@ never overwrites the hand-made version.
 
 1. Write a function that builds it (return the root object: the armature for rigged models).
 2. Add it to `ASSETS` in `build.py` with its Unity folder (`Characters` humanoid, `Creatures` generic rig,
-   `Items`/`Props` static).
+   `Items`/`Props` static, `Effects` static and readable by scripts).
 3. Build it, check the preview, then use it from `EntityVisuals` (units) or the map builder (props).

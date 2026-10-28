@@ -63,6 +63,7 @@ builds/client/Madlands.exe -screen-fullscreen 0 -screenshot builds/screenshots/l
 # Combat (server with --gm-all): -class picks the class of a new character, -exec sends chat lines/GM commands
 # after entering the world, -autofight targets the nearest enemy and uses the action bar.
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 3;.tele -60 -62" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
+# Spell effects are quick: -screenshotburst 40 takes 40 pictures a quarter second apart (fight_1.png .. fight_40.png).
 # Items and quests: -open bags,character,questlog,spellbook,map opens windows, -talkto "Old Tamsin" (+ -quest 1) opens an NPC dialog,
 # -loot opens loot of corpses in reach, -gather gathers objects in reach (mushrooms), -tooltip <item id> shows a bag item's
 # tooltip, -equip 1020,1210 equips from the bags, -baritems "7=4003,13=4008" puts items onto action buttons 1-24 and

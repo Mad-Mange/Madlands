@@ -6,7 +6,10 @@ center, meters, +Z up, the front faces -Y. Colliders are chosen by the map build
 import math
 import random
 
+from mathutils import Vector
+
 import lowpoly as lp
+import sculpt as sc
 
 PALETTE = {
     "Bark": "#6b4a2f", "BarkGray": "#7d7468", "Leaves": "#46752f", "LeavesDark": "#335a26", "LeavesLight": "#6a9a3c",
@@ -287,83 +290,202 @@ def stump():
     return mb.finish()
 
 
+def _above(shape, z):
+    """The part of a shape above height z: what is buried is never drawn."""
+    return sc.intersect(shape, sc.box((0, 0, z + 50), (50, 50, 50)))
+
+
+def _slag_mats():
+    return {
+        "Crust": lp.material("SlagCrust", "#2e2a2b"),
+        "CrustLight": lp.material("SlagCrustLight", "#4a4240"),
+        "Glow": lp.material("LavaGlow", "#b8300a", emission=3.0),
+        "Hot": lp.material("LavaGlowHot", "#ff8a2a", emission=3.5),
+    }
+
+
 def slag_pool():
-    """A pool of molten slag in a crust of black rock: walk around it (or through it, it is only a look)."""
+    """
+    A pool of molten slag: a lumpy rim of black crust with glowing cracks around a sunken middle that
+    glows hotter toward its heart, crust plates and bubbles floating on it (only a look: no collider).
+    """
     rng = random.Random(31)
-    m = mats()
+    m = _slag_mats()
     mb = lp.MeshBuilder("SlagPool")
-    glow = lp.material("LavaGlow", "#b8300a", emission=3.0)
-    crust = lp.material("SlagCrust", "#2e2a2b")
-    rim = []
-    for i in range(14):
-        a = 2 * math.pi * i / 14
-        r = rng.uniform(2.2, 2.7)
-        rim.append((math.cos(a) * r, math.sin(a) * r))
-    # The molten middle, a little sunk, and the crust ring around it in lumps.
-    mb.add([(x * 0.8, y * 0.8, 0.04) for x, y in rim], [tuple(range(len(rim)))], glow)
-    for i, (x, y) in enumerate(rim):
-        nx, ny = rim[(i + 1) % len(rim)]
-        mb.hull([(x * 0.75, y * 0.75, 0.0), (nx * 0.75, ny * 0.75, 0.0), (x * 1.05, y * 1.05, 0.0), (nx * 1.05, ny * 1.05, 0.0),
-                 ((x + nx) * 0.45, (y + ny) * 0.45, rng.uniform(0.15, 0.35))], crust)
-    # Floating crust plates with glowing cracks between them.
+    segments, around = lp.res(36, 12), [rng.uniform(0, 2 * math.pi) for _ in range(3)]
+
+    def edge(a):
+        """Where the molten middle ends at angle a."""
+        return 1.75 + 0.22 * math.sin(2 * a + around[0]) + 0.12 * math.sin(3 * a + around[1])
+
+    # Rings out from the middle: the melt, the inner slope of the rim, its crest, its outer foot and a skirt
+    # reaching into the ground, so the rim sits down on a slope too.
+    profile = [(0.0, 0.13), (0.45, 0.135), (0.8, 0.14), (0.98, 0.15), (1.08, 0.27), (1.2, 0.37), (1.34, 0.26), (1.55, -0.06), (1.62, -0.4)]
+    rows = [[(0.0, 0.0, 0.13)]]
+    for f, z in profile[1:]:
+        row = []
+        for i in range(segments):
+            a = 2 * math.pi * i / segments
+            r = edge(a) * f
+            lift = rng.uniform(-0.04, 0.06) if 1.0 < f < 1.5 else 0.0
+            row.append((math.cos(a) * r, math.sin(a) * r, z + lift))
+        rows.append(row)
+    cracks = [rng.uniform(0, 2 * math.pi) for _ in range(5)]
+
+    def material_at(c):
+        a = math.atan2(c.y, c.x)
+        f = math.hypot(c.x, c.y) / edge(a)
+        if f < 0.55:
+            return m["Hot"]
+        if f < 0.99:
+            return m["Glow"]
+        # Cracks run out across the rim from the melt.
+        if f < 1.3 and any(abs(math.remainder(a - k, 2 * math.pi)) < 0.07 for k in cracks):
+            return m["Glow"]
+        return m["CrustLight"] if c.z > 0.31 else m["Crust"]
+    sc.grid_mesh(mb, rows, m["Crust"], None, closed=True, smooth=False, material_at=material_at,
+                 inside=lambda p: (p[0] * 0.5, p[1] * 0.5, -1.0))
+    # Crust plates drifting on the melt, and a few bubbles.
+    for _ in range(5):
+        a, r = rng.uniform(0, 2 * math.pi), rng.uniform(0.3, 1.2)
+        cx, cy, size = math.cos(a) * r, math.sin(a) * r, rng.uniform(0.18, 0.34)
+        rim = [(cx + math.cos(b) * size * rng.uniform(0.6, 1.0), cy + math.sin(b) * size * rng.uniform(0.6, 1.0))
+               for b in [2 * math.pi * k / 6 + rng.uniform(-0.3, 0.3) for k in range(6)]]
+        mb.hull([(x, y, 0.125) for x, y in rim] + [(x * 0.9 + cx * 0.1, y * 0.9 + cy * 0.1, rng.uniform(0.16, 0.2)) for x, y in rim],
+                m["Crust"])
     for _ in range(4):
-        cx, cy = rng.uniform(-1.0, 1.0), rng.uniform(-1.0, 1.0)
-        mb.hull([(cx + rng.uniform(-0.45, 0.45), cy + rng.uniform(-0.45, 0.45), rng.uniform(0.03, 0.09)) for _ in range(7)], crust)
+        a, r = rng.uniform(0, 2 * math.pi), rng.uniform(0.2, 1.3)
+        mb.sphere((math.cos(a) * r, math.sin(a) * r, 0.13), (0.09, 0.09, 0.06), m["Hot"], segments=6, rings=3)
     return mb.finish()
 
 
 def slag_rock():
-    """A heap of black slag split by glowing veins."""
+    """A heap of black slag in broad facets, its top faces dusted grey, veins of glowing melt running down it."""
     rng = random.Random(37)
-    m = mats()
+    m = _slag_mats()
     mb = lp.MeshBuilder("SlagRock")
-    glow = lp.material("LavaGlow", "#b8300a", emission=3.0)
-    crust = lp.material("SlagCrust", "#2e2a2b")
-    for cx, cy, r, h in ((0, 0, 1.1, 1.6), (0.9, 0.4, 0.7, 0.9), (-0.8, -0.3, 0.6, 0.7)):
-        mb.hull([(cx + math.cos(a) * r * rng.uniform(0.7, 1.0), cy + math.sin(a) * r * rng.uniform(0.7, 1.0), rng.uniform(-0.2, 0.2))
-                 for a in [i * 2 * math.pi / 7 for i in range(7)]]
-                + [(cx + rng.uniform(-0.3, 0.3) * r, cy + rng.uniform(-0.3, 0.3) * r, h * rng.uniform(0.8, 1.0)) for _ in range(3)], crust)
-    for a, z0, z1 in ((0.3, 0.2, 1.3), (2.2, 0.1, 1.0), (4.1, 0.3, 1.2)):
-        x, y = math.cos(a) * 0.82, math.sin(a) * 0.82
-        mb.frustum((x, y, z0), (x * 0.55, y * 0.55, z1), 0.06, 0.03, glow, sides=4)
+    heap = sc.union(sc.ellipsoid((0.0, 0.0, 0.35), (1.1, 1.0, 1.25)), sc.ellipsoid((0.85, 0.35, 0.1), (0.75, 0.7, 0.75)),
+                    sc.ellipsoid((-0.75, -0.35, 0.05), (0.65, 0.6, 0.6)), sc.ellipsoid((0.15, -0.1, 1.15), (0.55, 0.5, 0.55)), k=0.35)
+    rock = _above(sc.lumpy(heap, 0.13, 0.8, 37), -0.3)
+    star = sc.Star(rock, (0.0, 0.0, 0.4), limit=3.0)
+    sc.star_mesh(mb, star, m["Crust"], None, lp.res(15, 7), lp.res(24, 9), smooth=False,
+                 material_at=lambda c: m["CrustLight"] if star.normal(c).z > 0.88 else None)
+    # Veins: paths over the surface from near the top down to the ground, wandering and forking, half sunk in it.
+    for k in range(6):
+        t = 2 * math.pi * k / 6 + rng.uniform(-0.4, 0.4)
+        theta = rng.uniform(0.25, 0.6)
+        dirs = []
+        while theta < 1.75:
+            dirs.append(sc.direction(theta, t))
+            theta += 0.16
+            t += rng.uniform(-0.22, 0.22)
+        pts = star.points(dirs, -0.012)
+        widths = [0.075 * (1.0 - 0.45 * i / len(pts)) for i in range(len(pts))]
+        mb.tube(list(zip(pts, widths)), m["Glow"], sides=lp.res(4, 3))
+        fork = len(pts) // 2
+        branch = star.points([sc.direction(1.0 + 0.16 * i, t + 0.35 + 0.1 * i) for i in range(4)], -0.012)
+        mb.tube(list(zip([pts[fork]] + branch, [0.055, 0.045, 0.04, 0.03, 0.02])), m["Glow"], sides=lp.res(4, 3))
     return mb.finish()
 
 
 def beast_skull():
-    """The bleached skull of something enormous, half sunk in the ground: horns, eye sockets, a row of teeth."""
-    m = mats()
-    mb = lp.MeshBuilder("BeastSkull")
+    """
+    The bleached skull of something enormous, half sunk in the ground (the map buries it 0.6 m deep):
+    a domed brain case with a crest, heavy brows over deep eye sockets, cheekbones, a long snout with
+    nostrils, fangs along the jaw, one great horn sweeping back and the other broken off.
+    """
     bone = lp.material("Bone", "#ddd7c3")
     shadow = lp.material("BoneShadow", "#aaa290")
     dark = lp.material("SocketDark", "#2c2829")
-    mb.hull([(sx * 1.2, -0.2, 0.0) for sx in (1, -1)] + [(sx * 1.0, 1.6, 0.0) for sx in (1, -1)]
-            + [(sx * 0.9, 0.1, 1.5) for sx in (1, -1)] + [(sx * 0.6, 1.4, 1.2) for sx in (1, -1)] + [(0, -0.4, 1.2)], bone)
-    mb.hull([(sx * 0.8, -0.2, 0.0) for sx in (1, -1)] + [(sx * 0.5, -2.2, 0.0) for sx in (1, -1)]
-            + [(sx * 0.7, -0.2, 0.9) for sx in (1, -1)] + [(sx * 0.4, -2.1, 0.5) for sx in (1, -1)], bone)
-    for sx in (1, -1):
-        mb.box((sx * 0.92, -0.05, 0.95), (0.3, 0.55, 0.42), dark, rotation=(0, sx * -15, 0))
-        mb.frustum((sx * 0.7, 0.8, 1.2), (sx * 2.2, 1.6, 2.8), 0.32, 0.03, shadow, sides=6)
-        for i in range(5):
-            y = -2.0 + i * 0.36
-            mb.frustum((sx * (0.45 - i * 0.02), y, 0.1), (sx * (0.45 - i * 0.02), y, -0.35), 0.09, 0.01, bone, sides=4)
-    mb.box((0, -1.2, 0.62), (0.28, 0.5, 0.18), dark)
+    horn = lp.material("Horn", "#c4b89a")
+    mb = lp.MeshBuilder("BeastSkull")
+    g = 0.6  # the ground once buried
+    eyes = [((x, -0.62, g + 1.0), 0.32) for x in (-0.6, 0.6)]
+    nostrils = [((x, -2.42, g + 0.66), 0.14) for x in (-0.16, 0.16)]
+    temples = [((x, 0.3, g + 0.95), 0.27) for x in (-1.05, 1.05)]
+    skull = sc.union(
+        sc.ellipsoid((0, 0.45, g + 0.75), (1.05, 1.05, 0.85)),
+        sc.cone((0, -0.2, g + 1.45), (0, 1.25, g + 1.3), 0.16, 0.1),
+        sc.cone((-0.8, -0.45, g + 1.15), (0.8, -0.45, g + 1.15), 0.2),
+        sc.cone((-0.28, -0.5, g + 0.75), (-0.2, -2.3, g + 0.55), 0.55, 0.3),
+        sc.cone((0.28, -0.5, g + 0.75), (0.2, -2.3, g + 0.55), 0.55, 0.3),
+        sc.cone((-0.95, 0.05, g + 0.55), (-0.62, -1.1, g + 0.45), 0.17),
+        sc.cone((0.95, 0.05, g + 0.55), (0.62, -1.1, g + 0.45), 0.17), k=0.25)
+    solid = skull
+    skull = sc.carve(skull, *[sc.sphere(c, r) for c, r in eyes + temples], k=0.06)
+    skull = sc.carve(skull, *[sc.ellipsoid(c, (r * 0.9, r, r * 0.85)) for c, r in nostrils], k=0.03)
+    skull = _above(sc.lumpy(skull, 0.02, 0.5, 5), g - 0.25)
+
+    sc.star_mesh(mb, sc.Star(skull, (0, -0.25, g + 0.7), limit=4.0), bone, None, lp.res(26, 10), lp.res(40, 14), smooth=False,
+                 material_at=lambda c: shadow if c.z < g + 0.15 else None)
+    # Darkness at the bottom of the sockets and nostrils, showing only through the holes.
+    for c, r in eyes + nostrils + temples:
+        sc.lining(mb, solid, c, r * 0.9, dark, None, (0, 0.3, g + 0.8), lp.res(5, 3), lp.res(8, 5))
+    # Fangs hang from the jaw line down into the ground: long ones at the front corners.
+    for sx in (-1, 1):
+        for i in range(6):
+            y = -2.2 + i * 0.27
+            x = sx * (0.36 + i * 0.05)
+            top = g + 0.42 + i * 0.03
+            length = 0.5 if i == 1 else 0.3 - i * 0.02
+            mb.frustum((x, y, top), (x * 0.97, y - 0.04, top - length), 0.075 if i == 1 else 0.055, 0.008, bone, sides=lp.res(5, 4))
+    # One horn sweeps back and up in a curl, ridged all along; the other is a broken stump.
+    curl = [Vector(p) for p in ((0.75, 0.15, g + 1.25), (1.35, 0.45, g + 1.65), (1.75, 1.05, g + 2.1), (1.7, 1.75, g + 2.65),
+                                (1.35, 2.15, g + 3.0))]
+    for sx, reach in ((1, 1.0), (-1, 0.32)):
+        count = max(3, int(round(lp.res(14, 6) * reach)))
+        path, radii = [], []
+        for i in range(count + 1):
+            u = reach * i / count
+            k = min(int(u * (len(curl) - 1)), len(curl) - 2)
+            f = u * (len(curl) - 1) - k
+            p = curl[k].lerp(curl[k + 1], f)
+            path.append((p.x * sx, p.y, p.z))
+            ridge = 1.0 + (0.1 if i % 2 else 0.0)
+            radii.append((0.3 - 0.27 * u) * ridge)
+        sc.sweep_mesh(mb, sc.chain(path, radii), path, lp.res(8, 5), horn, None, smooth=False,
+                      material_at=lambda c: shadow if c.z < g + 1.45 else None)
     return mb.finish()
 
 
 def crystal_cluster():
+    """
+    Shard crystals breaking out of a dark rock: six-sided crystals fanning out from its middle, the
+    tall ones in the center, little ones around its foot; their points glow brighter than their sides.
+    """
     rng = random.Random(11)
     m = mats()
     mb = lp.MeshBuilder("CrystalCluster")
-    mb.hull([(rng.uniform(-0.9, 0.9), rng.uniform(-0.9, 0.9), rng.uniform(-0.2, 0.3)) for _ in range(10)], m["StoneDark"])
+    tip_mat = lp.material("CrystalGlowTip", "#9af0ff", emission=2.5)
+    base = _above(sc.lumpy(sc.ellipsoid((0, 0, -0.05), (1.0, 0.9, 0.5)), 0.06, 0.6, 11), -0.35)
+    sc.star_mesh(mb, sc.Star(base, (0, 0, 0.0), limit=2.0), m["StoneDark"], None, lp.res(8, 4), lp.res(16, 8), smooth=False,
+                 material_at=lambda c: m["Stone"] if c.z > 0.22 else None)
+
+    def crystal(x, y, height, radius, tilt):
+        """A six-sided crystal from (x, y) in the rock, leaning by `tilt` (dx, dy per meter up)."""
+        sides = 6
+        twist = rng.uniform(0, math.pi)
+        body = height * rng.uniform(0.68, 0.8)
+        verts = []
+        for z, r in ((-0.15, radius), (body, radius * 0.92)):
+            for i in range(sides):
+                a = twist + 2 * math.pi * i / sides
+                verts.append((x + tilt[0] * z + math.cos(a) * r, y + tilt[1] * z + math.sin(a) * r * 0.9, z))
+        verts.append((x + tilt[0] * height, y + tilt[1] * height, height))
+        side_faces = [(i, (i + 1) % sides, sides + (i + 1) % sides, sides + i) for i in range(sides)]
+        tip_faces = [(sides + i, sides + (i + 1) % sides, 2 * sides) for i in range(sides)]
+        mb.add_faces(verts, {m["CrystalGlow"]: side_faces, tip_mat: tip_faces}, closed=True)
+
+    for k in range(8):
+        a = 2 * math.pi * k / 8 + rng.uniform(-0.3, 0.3)
+        d = 0.15 + 0.4 * (k % 3) / 2
+        x, y = math.cos(a) * d, math.sin(a) * d
+        lean = 0.25 + d * 0.6
+        crystal(x, y, rng.uniform(1.4, 2.1) * (1.0 - d * 0.6), rng.uniform(0.13, 0.2), (math.cos(a) * lean, math.sin(a) * lean))
     for _ in range(6):
-        x, y = rng.uniform(-0.6, 0.6), rng.uniform(-0.6, 0.6)
-        h = rng.uniform(0.8, 2.0)
-        tilt = (rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4))
-        r = rng.uniform(0.12, 0.22)
-        pts = [(x + r * math.cos(i * math.pi / 3), y + r * math.sin(i * math.pi / 3), 0.1) for i in range(6)]
-        pts += [(x + tilt[0] * h + r * 0.9 * math.cos(i * math.pi / 3), y + tilt[1] * h + r * 0.9 * math.sin(i * math.pi / 3), h * 0.8) for i in range(6)]
-        pts.append((x + tilt[0] * h * 1.15, y + tilt[1] * h * 1.15, h))
-        mb.hull(pts, m["CrystalGlow"])
+        a = rng.uniform(0, 2 * math.pi)
+        d = rng.uniform(0.55, 0.85)
+        crystal(math.cos(a) * d, math.sin(a) * d, rng.uniform(0.35, 0.6), rng.uniform(0.05, 0.08), (math.cos(a) * 0.7, math.sin(a) * 0.7))
     return mb.finish()
 
 

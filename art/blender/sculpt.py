@@ -13,6 +13,7 @@ Directions follow gear.py: theta is the angle from straight up, t the angle arou
 """
 
 import math
+import random
 
 import numpy as np
 from mathutils import Matrix, Vector
@@ -201,6 +202,23 @@ def carve(base, *parts, k=0.01):
     return out
 
 
+def waves(seed, wavelength, count=7):
+    """A smooth field over space, about -1..1: overlapping waves running in random directions."""
+    rng = random.Random(seed)
+    parts = []
+    for _ in range(count):
+        d = np.array([rng.gauss(0, 1) for _ in range(3)])
+        d *= TAU / (wavelength * rng.uniform(0.6, 1.4)) / np.linalg.norm(d)
+        parts.append((d, rng.uniform(0, TAU)))
+    return lambda q: sum(np.sin(np.atleast_2d(q) @ d + ph) for d, ph in parts) * (2.2 / count)
+
+
+def lumpy(shape, amount, wavelength, seed):
+    """A shape whose surface swells and sinks by `amount` in waves about `wavelength` long: rock, slag, crust."""
+    field = waves(seed, wavelength)
+    return Shape(lambda q: shape.f(q) + amount * field(q))
+
+
 def direction(theta, t):
     """Unit vector at polar angle theta (from up) and angle t around (0 = front, -Y)."""
     return Vector((math.sin(theta) * math.sin(t), -math.sin(theta) * math.cos(t), math.cos(theta)))
@@ -352,6 +370,17 @@ def star_mesh(mb, star, mat, bone, rings, segments, smooth=True, material_at=Non
     rows = star.grid(rings, segments, focus=focus)
     return grid_mesh(mb, rows, mat, bone, closed=True, smooth=smooth, material_at=material_at,
                      inside=inside or (lambda p: star.center))
+
+
+def lining(mb, solid, center, radius, mat, bone, inside, rings=5, segments=8, margin=0.01):
+    """
+    The dark floor of a hole carved into `solid` (eye sockets, nostrils): the part of a sphere around the
+    hole's center that lies within the solid as it was before the carving, so it shows through the opening
+    without poking out anywhere. `inside` is a point deep in the solid.
+    """
+    shape = intersect(sphere(center, radius), solid.offset(-margin))
+    start = Vector(center) + (Vector(inside) - Vector(center)).normalized() * radius * 0.5
+    return star_mesh(mb, Star(shape, start, limit=radius * 3), mat, bone, rings, segments, smooth=False)
 
 
 def grid_mesh(mb, rows, mat, bone, closed=False, smooth=True, material_at=None, inside=None, facing_in=False):

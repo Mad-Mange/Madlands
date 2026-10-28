@@ -17,7 +17,8 @@ namespace Madlands.Client
         private NetworkController _network;
         private bool _visible = true;
         private float _fps;
-        private bool _screenshotTaken;
+        private int _screenshotsTaken;
+        private float _nextScreenshotAt;
         private VisualElement _panel;
         private Label _text;
         private float _refreshAt;
@@ -62,13 +63,17 @@ namespace Madlands.Client
             bool due = settings.AutoEntersWorld
                 ? _network.EnteredWorldAt >= 0f && Time.time - _network.EnteredWorldAt >= settings.ScreenshotDelay
                 : Time.realtimeSinceStartup >= settings.ScreenshotDelay;
-            if (!_screenshotTaken && settings.ScreenshotPath != null && due)
+            if (_screenshotsTaken < settings.ScreenshotBurst && settings.ScreenshotPath != null && due && Time.realtimeSinceStartup >= _nextScreenshotAt)
             {
                 var path = Path.GetFullPath(settings.ScreenshotPath);
+                // A burst numbers its pictures: shot_1.png, shot_2.png ...
+                if (settings.ScreenshotBurst > 1)
+                    path = Path.Combine(Path.GetDirectoryName(path), $"{Path.GetFileNameWithoutExtension(path)}_{_screenshotsTaken + 1}{Path.GetExtension(path)}");
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
                 ScreenCapture.CaptureScreenshot(path);
                 Debug.Log("[Debug] Screenshot saved to " + path);
-                _screenshotTaken = true;
+                _screenshotsTaken++;
+                _nextScreenshotAt = Time.realtimeSinceStartup + 0.25f;
             }
             if (settings.QuitAfter > 0f && Time.realtimeSinceStartup >= settings.QuitAfter) Application.Quit();
         }

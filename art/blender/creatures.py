@@ -8,8 +8,13 @@ Z = up). Material names can be recolored per display by the client (Fur, FurLigh
 import math
 import random
 
+from mathutils import Vector
+
 import beasts
 import lowpoly as lp
+import sculpt as sc
+
+smooth = beasts.smooth
 
 
 def cycle(t, phase=0.0):
@@ -47,42 +52,124 @@ def wolf_skeleton():
 
 
 def wolf_body():
-    """A lean wolf: deep chest and tucked belly, a ruff of fur, long legs with paws, a bushy tail."""
+    """
+    A lean grey wolf sculpted like the heroes: a deep chest and tucked waist, a shaggy ruff around the neck,
+    a narrow muzzle with a black nose and amber eyes, tall ears, long legs that bend at the elbow and the
+    hock, padded paws with claws, a bushy tail with a pale tip; shaded smoothly.
+    """
     fur = lp.material("Fur", "#5f6268")
     light = lp.material("FurLight", "#9a9ca0")
     dark = lp.material("Dark", "#26262a")
     eyes = lp.material("EyesGlow", "#e8c84a", emission=0.6)
     rng = random.Random(3)
     mb = lp.MeshBuilder("WolfBody")
-    sections = [(-0.5, 0.92, 0.12, 0.15), (-0.42, 0.89, 0.16, 0.2), (-0.28, 0.86, 0.17, 0.21), (-0.1, 0.83, 0.15, 0.18, 1.0, 0.95),
-                (0.1, 0.81, 0.12, 0.13, 1.0, 0.75), (0.28, 0.8, 0.14, 0.16), (0.42, 0.8, 0.12, 0.14), (0.5, 0.81, 0.06, 0.07)]
-    beasts.trunk(mb, sections, beasts.along_y([("Chest", -0.3), ("Spine", -0.05), ("Hips", 0.22)]), fur, light)
-    beasts.trunk(mb, [(-0.7, 1.1, 0.09, 0.1), (-0.6, 1.03, 0.11, 0.13), (-0.48, 0.95, 0.13, 0.16)],
-                 beasts.along_y([("Neck", -0.62), ("Chest", -0.47)]), fur, light, n=10, belly_cols=1)
-    # A ruff of fur around the neck.
+
+    # The trunk and neck, swept along the spine; a ruff of fur clumps blended on around the neck.
+    spine = [(-0.72, 1.12), (-0.5, 0.95), (-0.3, 0.87), (-0.05, 0.83), (0.22, 0.8), (0.5, 0.81)]
+
+    def spine_z(y):
+        if y <= spine[0][0]:
+            return spine[0][1]
+        for (y0, z0), (y1, z1) in zip(spine, spine[1:]):
+            if y <= y1:
+                return z0 + (z1 - z0) * (y - y0) / (y1 - y0)
+        return spine[-1][1]
+
+    trunk = sc.union(
+        sc.ellipsoid((0, -0.3, 0.83), (0.16, 0.25, 0.22)),
+        sc.cone((0, -0.15, 0.84), (0, 0.25, 0.8), 0.17, 0.12),
+        sc.ellipsoid((0, 0.3, 0.8), (0.14, 0.17, 0.15)),
+        sc.ellipsoid((0, -0.36, 0.72), (0.12, 0.12, 0.13)),
+        sc.cone((0, -0.4, 0.9), (0, -0.72, 1.13), 0.15, 0.09),
+        k=0.06)
+    trunk = sc.carve(trunk, (sc.ellipsoid((0, 0.08, 0.6), (0.3, 0.2, 0.12)), 0.06))
+    clumps = []
+    for i in range(14):
+        a = math.pi * (-0.15 + 1.3 * (i % 7) / 6)
+        y = -0.5 + (0.0 if i < 7 else 0.09) + rng.uniform(-0.02, 0.02)
+        reach = 0.16 if i < 7 else 0.18
+        clumps.append(sc.ellipsoid((math.cos(a) * reach, y, spine_z(y) + math.sin(a) * reach), (0.075, 0.085, 0.06)))
+    trunk = sc.blend(trunk, *[(c, 0.015) for c in clumps])
+    ys = [0.56 - (0.56 + 0.71) * i / 15 for i in range(16)]
+    rows = sc.sweep(trunk, [Vector((0, y, spine_z(y))) for y in ys], 16, caps=(True, False), limit=0.8)
+    weigh = beasts.along_y([("Neck", -0.6), ("Chest", -0.3), ("Spine", -0.05), ("Hips", 0.22)])
+    sc.grid_mesh(mb, rows, fur, weigh, closed=True, inside=lambda c: Vector((0, c.y, spine_z(c.y))),
+                 material_at=lambda c: light if c.z < spine_z(c.y) - 0.13 and abs(c.x) < 0.1 else None)
+
+    # Tufts sticking out of the ruff.
     for i in range(12):
         a = math.pi * (-0.1 + 1.2 * i / 11)
-        p = (math.cos(a) * 0.15, -0.5 + rng.uniform(-0.03, 0.03), 0.95 + math.sin(a) * 0.16)
-        beasts.tufts(mb, [p], light if math.sin(a) < 0.2 else fur, "Chest", rng, size=0.09, sweep=(math.cos(a) * 0.6, 0.7, 0.2 + math.sin(a) * 0.4))
-    # The head: skull, snout, nose, ears, eyes and a jaw.
-    mb.hull([(x * s, y, z) for s in (1, -1) for x, y, z in
-             ((0.11, -0.62, 1.06), (0.12, -0.66, 1.24), (0.08, -0.82, 1.22), (0.1, -0.82, 1.06), (0.04, -1.0, 1.12), (0.05, -1.0, 1.05))],
-            fur, "Head")
-    mb.box((0, -0.99, 1.11), (0.06, 0.05, 0.05), dark, "Head")
+        y = -0.47 + rng.uniform(-0.03, 0.03)
+        origin = Vector((0, y, spine_z(y)))
+        d = Vector((math.cos(a), 0, math.sin(a)))
+        p = origin + d * (sc.Star(trunk, origin, limit=0.5).reach(origin, d) - 0.015)
+        beasts.tufts(mb, [p], light if math.sin(a) < 0.2 else fur, "Chest", rng, size=0.1, sweep=(math.cos(a) * 0.6, 0.7, 0.2 + math.sin(a) * 0.4))
+
+    # The head: skull, brow, cheek ruffs, a narrow muzzle and a black nose; ears, eyes and the jaw.
+    head = sc.union(
+        sc.ellipsoid((0, -0.72, 1.16), (0.11, 0.12, 0.1)),
+        sc.cone((-0.05, -0.8, 1.21), (0.05, -0.8, 1.21), 0.035),
+        sc.cone((0, -0.78, 1.13), (0, -0.99, 1.1), 0.068, 0.038),
+        sc.ellipsoid((0.085, -0.7, 1.08), (0.06, 0.07, 0.06)),
+        sc.ellipsoid((-0.085, -0.7, 1.08), (0.06, 0.07, 0.06)),
+        sc.ellipsoid((0, -1.0, 1.115), (0.03, 0.025, 0.025)),
+        k=0.03)
+
+    def head_material(c):
+        if c.y < -0.975 and c.z > 1.09:
+            return dark
+        return light if c.z < 1.09 or (c.y < -0.85 and c.z < 1.11) else None
+    sc.star_mesh(mb, sc.Star(head, (0, -0.78, 1.14), limit=0.6), fur, "Head", 14, 22, material_at=head_material)
     for s in (1, -1):
-        mb.hull([(s * 0.05, -0.66, 1.22), (s * 0.12, -0.7, 1.22), (s * 0.08, -0.64, 1.36), (s * 0.08, -0.72, 1.22)], fur, "Head")
-        mb.box((s * 0.075, -0.83, 1.17), (0.03, 0.02, 0.02), eyes, "Head")
-        mb.hull([(s * 0.1, -0.66, 1.05), (s * 0.15, -0.64, 1.12), (s * 0.13, -0.6, 1.02), (s * 0.12, -0.7, 1.08)], light, "Head")
-    mb.box((0, -0.86, 1.01), (0.08, 0.22, 0.04), light, "Jaw")
-    # Legs: a thick thigh or shoulder, a lean shank, a paw with claws.
+        ear = [Vector(p) for p in ((s * 0.045, -0.67, 1.2), (s * 0.11, -0.69, 1.19), (s * 0.08, -0.64, 1.18), (s * 0.085, -0.7, 1.36))]
+        mb.hull(ear, fur, "Head")
+        middle = sum(ear, Vector()) / 4
+        mb.hull([middle.lerp(p, 0.7) + Vector((0, -0.014, 0)) for p in (ear[0], ear[1], ear[3])] + [middle], dark, "Head")
+        mb.sphere((s * 0.06, -0.83, 1.165), (0.022, 0.012, 0.014), eyes, "Head", segments=6, rings=4, smooth=True)
+    jaw_from, jaw_to = Vector((0, -0.76, 1.05)), Vector((0, -0.96, 1.065))
+    sc.sweep_mesh(mb, sc.chain([tuple(jaw_from), tuple(jaw_to)], [0.055, 0.03]), [jaw_from, jaw_from.lerp(jaw_to, 0.5), jaw_to], 8, light, "Jaw")
+
+    # Legs: a muscled shoulder or thigh, a lean shank bending the other way at the hock, padded paws.
     for leg, (top, mid, low, tip, _) in WOLF_LEGS.items():
         back = leg == "Back"
         for side, x in (("L", 0.14), ("R", -0.14)):
-            beasts.leg(mb, [(x, top[0], top[1] + 0.03), (x, mid[0], mid[1]), (x, low[0], low[1] + 0.02)],
-                       (0.1 if back else 0.08, 0.05, 0.035), fur, (leg + "UpperLeg." + side, leg + "LowerLeg." + side))
-            beasts.paw(mb, (x, low[0], low[1]), (x, tip[0], 0.0), 0.085, light if not back else fur, leg + "Paw." + side, claws=dark)
-    mb.tube([((0, 0.45, 0.84), 0.05), ((0, 0.6, 0.79), 0.08), ((0, 0.72, 0.72), 0.085)], fur, "Tail1", sides=7)
-    mb.tube([((0, 0.72, 0.72), 0.085), ((0, 0.84, 0.62), 0.075), ((0, 0.95, 0.48), 0.02)], light, "Tail2", sides=7)
+            upper, lower, paw_bone = leg + "UpperLeg." + side, leg + "LowerLeg." + side, leg + "Paw." + side
+            a = Vector((x * 0.8, top[0], top[1] + (0.0 if back else 0.06)))
+            b = Vector((x, mid[0], mid[1]))
+            c = Vector((x, low[0], low[1] + 0.03))
+            muscle = sc.ellipsoid(tuple(a.lerp(b, 0.35)), (0.075, 0.12 if back else 0.09, (a - b).length * 0.5))
+            shape = sc.blend(sc.chain([tuple(a), tuple(b)], [0.085 if back else 0.075, 0.045]), (muscle, 0.04),
+                             (sc.chain([tuple(b), tuple(b.lerp(c, 0.5)), tuple(c)], [0.045, 0.036, 0.032]), 0.03))
+            path = [a.lerp(b, f) for f in (0.0, 0.33, 0.66)] + [b.lerp(c, f) for f in (0.0, 0.33, 0.66, 1.0)]
+            leg_rows = sc.sweep(shape, path, 10, caps=(True, True), up=(0, -1, 0), limit=0.5)
+
+            def leg_weigh(p, upper=upper, lower=lower, b=b, c=c):
+                # Handed over at the elbow or knee, by how far down the lower part a point lies.
+                t = smooth(-0.03, 0.03, (p - b).dot((c - b).normalized()))
+                return {upper: 1.0 - t, lower: t}
+            sc.grid_mesh(mb, leg_rows, fur, leg_weigh, closed=True, inside=lambda q, path=path: min(path, key=lambda r: (r - q).length))
+            # A padded paw on the ground with four toes and claws.
+            px, py = x, low[0] - 0.04
+            # The foot rises from the pad to the wrist or hock, where the lower leg ends.
+            paw = sc.union(sc.ellipsoid((px, py, 0.035), (0.045, 0.06, 0.04)),
+                           *[sc.sphere((px + k * 0.026, py - 0.055, 0.025), 0.022) for k in (-1.5, -0.5, 0.5, 1.5)], k=0.015)
+            paw = sc.intersect(paw, sc.Shape(lambda q: -q[:, 2]))
+            sc.star_mesh(mb, sc.Star(paw, (px, py - 0.01, 0.03), limit=0.3), light if not back else fur, paw_bone, 6, 10)
+            foot = [c + Vector((0, 0, 0.01)), Vector((px, py + 0.01, 0.05))]
+            mb.tube([(foot[0], 0.034), (foot[0].lerp(foot[1], 0.5), 0.033), (foot[1], 0.036)], fur, paw_bone, sides=8, smooth=True)
+            for k in (-1.5, -0.5, 0.5, 1.5):
+                base = Vector((px + k * 0.026, py - 0.07, 0.03))
+                mb.tube([(base, 0.008), (base + Vector((0, -0.025, -0.02)), 0.002)], dark, paw_bone, sides=4)
+
+    # A bushy tail: thick through the middle, a pale tip.
+    tail = sc.chain([(0, 0.45, 0.84), (0, 0.6, 0.79), (0, 0.74, 0.7), (0, 0.86, 0.6), (0, 0.96, 0.46)], [0.045, 0.075, 0.085, 0.07, 0.02])
+    tail_path = [Vector(p) for p in ((0, 0.45, 0.84), (0, 0.6, 0.79), (0, 0.74, 0.7), (0, 0.86, 0.6), (0, 0.95, 0.47))]
+
+    def tail_weigh(p):
+        t = smooth(0.68, 0.76, p.y)
+        return {"Tail1": 1.0 - t, "Tail2": t}
+    sc.grid_mesh(mb, sc.sweep(tail, tail_path, 9, caps=(True, True), limit=0.4), fur, tail_weigh, closed=True,
+                 inside=lambda q: min(tail_path, key=lambda r: (r - q).length), material_at=lambda c: light if c.y > 0.86 else None)
     return mb.finish()
 
 
