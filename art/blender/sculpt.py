@@ -344,6 +344,43 @@ class Star:
             i += len(row)
         return out
 
+    def rows(self, thetas, segments):
+        """Closed rows of surface points at the given polar angles (radians; 0 and pi are poles): rows where they are needed."""
+        rows_dirs = []
+        for theta in thetas:
+            if theta < 1e-6 or theta > math.pi - 1e-6:
+                rows_dirs.append([direction(theta, 0.0)])
+            else:
+                rows_dirs.append([direction(theta, TAU * i / segments) for i in range(segments)])
+        pts = self.points([d for row in rows_dirs for d in row])
+        out, i = [], 0
+        for row in rows_dirs:
+            out.append(pts[i:i + len(row)])
+            i += len(row)
+        return out
+
+
+def decal(mb, star, middle, outline, mat, bone, lift=0.003):
+    """
+    A flat marking lying on a star's surface: a fan from the direction `middle` out to the `outline`
+    directions (in order around it), lifted off the surface a little. Round blotches, an hourglass.
+    """
+    pts = star.points([middle] + list(outline))
+    pts = [p + n * lift for p, n in zip(pts, star.normals(pts))]
+    n = len(outline)
+    faces = [(0, 1 + k, 1 + (k + 1) % n) for k in range(n)]
+    mb.add_faces(pts, {mat: faces}, bone, inside=lambda p: star.center, smooth=True)
+
+
+def spot(mb, star, d, radius, mat, bone, lift=0.003, sides=9):
+    """A round decal where the direction `d` meets the surface: a blotch, an eardrum."""
+    d = Vector(d).normalized()
+    u = d.cross(Vector((0, 0, 1)) if abs(d.z) < 0.9 else Vector((1, 0, 0))).normalized()
+    v = d.cross(u)
+    span = radius / star.reach(star.center, d)
+    outline = [(d + (u * math.cos(TAU * k / sides) + v * math.sin(TAU * k / sides)) * span).normalized() for k in range(sides)]
+    decal(mb, star, d, outline, mat, bone, lift)
+
 
 def _crowd(u, at, strength, width=0.2):
     """

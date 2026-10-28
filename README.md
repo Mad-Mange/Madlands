@@ -87,11 +87,11 @@ Everything for the first real zone is in; what is left is putting a realm online
   </tr>
   <tr>
     <td><img src="docs/images/phase5-reedfen.jpg" alt="A mage wading through the Reedfen marsh among reeds, a defeated mireling in the water"></td>
-    <td><img src="docs/images/phase5-gloomjaw.jpg" alt="Shardlings and the crystal-backed crocodile Gloomjaw in the lagoon"></td>
+    <td><img src="docs/images/phase5-gloomjaw.jpg" alt="Gloomjaw, a huge crocodile with rows of armor plates and clusters of glowing blue crystals on its back, lying in its lagoon with its teeth showing, a warrior wading toward it"></td>
   </tr>
   <tr>
     <td><sub><b>Reedfen.</b> Wading through the marsh; the mirelings' huts in the reeds.</sub></td>
-    <td><sub><b>Gloomjaw's lagoon.</b> Shardlings guard the world boss, a crocodile grown over with moon shards.</sub></td>
+    <td><sub><b>Gloomjaw's lagoon.</b> The world boss, a crocodile grown over with clusters of moon-shard crystals, waits in the water; shardlings guard the shore.</sub></td>
   </tr>
   <tr>
     <td><img src="docs/images/phase5-questmap.jpg" alt="The world map with yellow circles where the active quests' frogs and spiders live and the bandit camp to scout"></td>
@@ -156,6 +156,14 @@ Everything for the first real zone is in; what is left is putting a realm online
   <tr>
     <td><sub><b>Spells.</b> Spells are modeled too: a turning crystal, star, flame or leaf flies to the target with a trail and bursts in flecks and a flash; casters hold a growing bolt between their hands; Shard Nova raises ice crystals from the ground.</sub></td>
     <td><sub><b>The Cinder Cut.</b> Ruukhar's lair: slag pools with crusted rims, heaps of slag with glowing veins, shard crystals breaking out of the rock and the skull of something enormous.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/phase5-swamp.jpg" alt="The south shore of the mere: fat green frogs with golden eyes, a big black spider and a mire snapper crocodile on the bank, a warrior among them"></td>
+    <td><img src="docs/images/phase5-spider.jpg" alt="Two Greywood spiders up close: jointed legs banded pale at the joints, bristly round abdomens, glowing eyes, frogs and reeds behind them"></td>
+  </tr>
+  <tr>
+    <td><sub><b>The shore.</b> Mire frogs sculpted in one piece with blotches, warts and a mouth that opens wide; the snapper's back is armored with keeled plates and its teeth interlock along the jaws.</sub></td>
+    <td><sub><b>Greywood spiders.</b> Jointed legs thickest at the thigh and banded pale at every joint, eight glowing eyes over curved fangs, a bristly abdomen with a red hourglass.</sub></td>
   </tr>
   <tr>
     <td><img src="docs/images/phase5-gate.jpg" alt="Mirewatch's north gate: towers of bound logs under a little horned roof with the village's blue banner, the palisade of sharpened stakes, watchtowers with thatched roofs at both ends"></td>
@@ -277,7 +285,7 @@ The **core loop** is in: take a quest, go out and fight, loot, get better gear, 
     <td valign="top">
       <b>Dev log</b>
       <ul>
-        <li><sub><b>2026-10-28 – Beasts and spells.</b> The wolf, the boar and the bear sculpted like the heroes; the shardling of chipped rock; Ruukhar with a sculpted skull hood and the cleaver he drops; the Cinder Cut's slag pools, slag heaps, crystals and giant skull remodeled. Spell effects are models now: crystals, stars, flames and leaves that fly, burst and leave trails, a frost nova that raises ice from the ground, a growing bolt in the caster's hands, a target ring with arrowheads.</sub></li>
+        <li><sub><b>2026-10-28 – Beasts and spells.</b> The wolf, the boar and the bear sculpted like the heroes, then the frog, the spider, the mire snapper and Gloomjaw with its crystal clusters; the shardling of chipped rock; Ruukhar with a sculpted skull hood and the cleaver he drops; the Cinder Cut's slag pools, slag heaps, crystals and giant skull remodeled. Spell effects are models now: crystals, stars, flames and leaves that fly, burst and leave trails, a frost nova that raises ice from the ground, a growing bolt in the caster's hands, a target ring with arrowheads.</sub></li>
         <li><sub><b>2026-10-27 – The heroes.</b> Characters remodeled after reference sheets for the three classes: heads, hair and beards sculpted like clay and shaded smoothly, limbs that bend at the joints, body, hair, beard and gear as separate meshes in three levels of detail. New characters start in their class's look (the warrior's tabard and cowl, the shardmage's long coat, the warden's leather jerkin with a fur collar); new tabards, a jerkin, a coat, a tree cloak, a knight's star shield and a warden's shield; a lookbook renders outfits in Blender.</sub></li>
         <li><sub><b>2026-10-21 – Modeled gear.</b> Helmets, hoods, hats, pads, cloaks, robes, breastplates, gauntlets and greaves are now modeled pieces built into every race's model; the NPCs wear them. Mirelings got their own model; the frog, wolf, boar, bear, spider and shardling were remodeled; Mirewatch got new gates, an inn, cottages, a well, stalls and watchtowers; new trees, rocks and clutter all over the valley; detailed weapons; weapons rest pointing down, staffs stand upright, shields sit on the forearm.</sub></li>
         <li><sub><b>2026-10-20 – Characters and maps.</b> Both races remodeled in Blender after classic fantasy MMOs; finished quests show where to turn them in, from anywhere on the maps; quest levels on the world map; two action bars that hold potions and elixirs too.</sub></li>

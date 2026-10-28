@@ -312,17 +312,10 @@ namespace Madlands.Client
             _restFromModel.TryGetValue(bone, out var m) ? m.inverse.MultiplyPoint3x4(Vector3.zero) : Vector3.zero;
 
         /// <summary>
-        /// Adds a primitive that follows a bone. Position, rotation and scale are in model space for the
-        /// rest pose (meters, +Z forward), so attachments are placed the way the model was made, whatever
-        /// pose the model is in now.
+        /// Hangs a part (an effect model, Effects.Spawn) on a bone. Position and rotation are in model space
+        /// for the rest pose (meters, +Z forward), so attachments are placed the way the model was made,
+        /// whatever pose the model is in now; the part keeps its own scale.
         /// </summary>
-        public Transform Attach(string bone, PrimitiveType type, Vector3 position, Vector3 scale, Color color, Vector3 euler = default, bool glow = false)
-        {
-            var part = glow ? EntityVisuals.Glow(null, Vector3.zero, scale, color, type) : EntityVisuals.Part(type, null, Vector3.zero, scale, color);
-            return Attach(bone, part, position, euler);
-        }
-
-        /// <summary>Hangs a part (an effect model, Effects.Spawn) on a bone, placed like the primitives above.</summary>
         public Transform Attach(string bone, Transform part, Vector3 position, Vector3 euler = default)
         {
             var parent = Bone(bone) ?? Root;
@@ -546,7 +539,11 @@ namespace Madlands.Client
                     Dress(model, chest: "#3a4038", arms: "#8a9a8a", legs: "#2f352f", hair: "#2a3a2a", skin: "#8a9a8a", hands: "#8a9a8a", feet: "#2a2a2a");
                     Wear(model, "#4a4a3a", "Rags");
                     foreach (var x in new[] { -0.044f, 0.044f })
-                        model.Attach("Head", PrimitiveType.Cube, new Vector3(x, 1.706f, 0.121f), new Vector3(0.036f, 0.02f, 0.01f), Hex("#7ff2ff"), glow: true);
+                    {
+                        var eye = Effects.Spawn("FxOrb", null, Vector3.zero, 1f, Hex("#7ff2ff"));
+                        eye.localScale = new Vector3(0.038f, 0.022f, 0.014f);
+                        model.Attach("Head", eye, new Vector3(x, 1.706f, 0.121f));
+                    }
                     return shape;
                 case LieutenantDisplay:
                 {

@@ -258,69 +258,126 @@ def frog_skeleton():
     return bones
 
 
+FROG_MOUTH_Z = 0.27
+
+
 def frog_body():
     """
-    A fat swamp frog: a squat warty body with a pale throat and belly, a wide mouth, bulging eyes on top,
-    muscled hind legs folded at its sides, and splayed webbed toes.
+    A fat swamp frog sculpted in one piece, head and body: a squat warty back with dark blotches and two
+    ridges, a pale throat and belly, a wide mouth that opens dark, golden eyes bulging on top, muscled
+    hind legs folded at its sides and long webbed feet, little hands with round finger pads.
     """
     skin = lp.material("Skin", "#5b8a3a")
     belly = lp.material("Belly", "#cfc47e")
     spots = lp.material("Spots", "#3d6127")
     eyes = lp.material("Eyes", "#e6d36a")
     pupil = lp.material("Pupil", "#151515")
+    mouth = lp.material("Mouth", "#3a1418")
     rng = random.Random(8)
     mb = lp.MeshBuilder("FrogBody")
-    # Body: a lumpy hull, heavier at the back, the belly a flat pale hull underneath.
-    body = []
-    for z, rx, ry, y0 in ((0.12, 0.24, 0.3, 0.04), (0.22, 0.32, 0.38, 0.03), (0.34, 0.3, 0.34, 0.04), (0.44, 0.2, 0.24, 0.06), (0.49, 0.1, 0.12, 0.08)):
-        for k in range(10):
-            t = 2 * math.pi * k / 10
-            body.append((math.cos(t) * rx, y0 + math.sin(t) * ry * (1.12 if math.sin(t) > 0 else 1.0), z))
-    mb.hull(body, skin, "Body")
-    mb.hull([(math.cos(t) * 0.25, 0.04 + math.sin(t) * 0.31, z) for t in (2 * math.pi * k / 10 for k in range(10)) for z in (0.1, 0.16)],
-            belly, "Body")
-    # Warts and dark spots on the back.
-    for _ in range(12):
-        t = rng.uniform(0, 2 * math.pi)
-        r = rng.uniform(0.05, 0.24)
-        x, y = math.cos(t) * r, 0.05 + math.sin(t) * r * 1.2
-        z = 0.48 - (r / 0.3) ** 2 * 0.2
-        mb.sphere((x, y, z), rng.uniform(0.025, 0.045), spots if rng.random() < 0.6 else skin, "Body", segments=5, rings=3)
-    # Head: a wide flat skull with a broad mouth line, a pale throat on the jaw, bulging eyes.
-    head = [(sx * x, y, z) for sx in (1, -1) for x, y, z in
-            ((0.24, -0.1, 0.28), (0.25, -0.14, 0.4), (0.18, -0.34, 0.33), (0.1, -0.42, 0.3), (0.0, -0.44, 0.31), (0.12, -0.14, 0.46),
-             (0.2, -0.3, 0.27), (0.08, -0.4, 0.27))]
-    mb.hull(head, skin, "Head")
-    mb.hull([(sx * x, y, z) for sx in (1, -1) for x, y, z in
-             ((0.23, -0.12, 0.26), (0.19, -0.3, 0.26), (0.08, -0.41, 0.26), (0.0, -0.43, 0.26), (0.2, -0.12, 0.17), (0.14, -0.28, 0.17),
-              (0.05, -0.36, 0.19))], belly, "Jaw")
-    mouth = [(0.245, -0.12, 0.272), (0.2, -0.3, 0.272), (0.09, -0.415, 0.272), (0.0, -0.44, 0.272), (-0.09, -0.415, 0.272), (-0.2, -0.3, 0.272),
-             (-0.245, -0.12, 0.272)]
-    mb.tube([(pt, 0.008) for pt in mouth], pupil, "Head", sides=4)
+
+    # Body and head as one mass: no neck, a wide flat skull, eye bulges, a sagging throat, ridges down the back.
+    mass = sc.union(
+        sc.ellipsoid((0, 0.06, 0.25), (0.27, 0.3, 0.19)),
+        sc.ellipsoid((0, 0.17, 0.25), (0.22, 0.17, 0.17)),
+        sc.ellipsoid((0, -0.2, 0.31), (0.25, 0.2, 0.12)),
+        sc.ellipsoid((0, -0.36, 0.3), (0.15, 0.09, 0.075)),
+        sc.ellipsoid((0, -0.17, 0.2), (0.2, 0.15, 0.08)),
+        sc.sphere((0.14, -0.19, 0.41), 0.07),
+        sc.sphere((-0.14, -0.19, 0.41), 0.07),
+        k=0.06)
+    ridges = [sc.cone((sx * 0.13, -0.08, 0.42), (sx * 0.15, 0.22, 0.37), 0.025, 0.015) for sx in (1, -1)]
+    mass = sc.blend(mass, *[(r, 0.03) for r in ridges])
+    center = Vector((0, -0.02, FROG_MOUTH_Z))
+    star = sc.Star(mass, center, limit=0.7)
+    # Even rows, but two close ones around the mouth: the band between them is the mouth, a dark line that
+    # stretches open with the jaw.
+    thetas = [math.radians(a) for a in (0, 12, 24, 36, 48, 60, 70, 80, 88.4, 91.6, 100, 110, 122, 136, 152, 166, 180)]
+    rows = star.rows(thetas, 30)
+
+    def material_at(c):
+        if abs(c.z - FROG_MOUTH_Z) < 0.006 and c.y < -0.11:
+            return mouth
+        if c.z < 0.15 or (c.z < FROG_MOUTH_Z and c.y < -0.08):
+            return belly
+        return None
+
+    def weigh(p):
+        front = smooth(-0.06, -0.16, p.y)
+        if p.z >= FROG_MOUTH_Z - 1e-4:
+            return {"Head": front, "Body": 1.0 - front}
+        jaw = front * max(smooth(0.12, 0.2, p.z), smooth(-0.22, -0.3, p.y))
+        return {"Jaw": jaw, "Body": 1.0 - jaw}
+    sc.grid_mesh(mb, rows, skin, weigh, closed=True, material_at=material_at, inside=lambda c: center)
+
+    # Dark blotches and warts over the back, the eardrums behind the eyes.
+    def over_back(k, count, turn=0.0):
+        """Directions spread evenly over the back (a sunflower spiral), the k-th of count."""
+        r = 1.5 * math.sqrt((k + 0.5) / count)
+        t = k * 2.39996 + turn
+        return Vector((math.cos(t) * r * 0.9, 0.35 + math.sin(t) * r, 1.0))
+    for k in range(12):
+        sc.spot(mb, star, over_back(k, 12), rng.uniform(0.03, 0.05), spots, weigh)
     for sx in (1, -1):
-        mb.sphere((sx * 0.14, -0.2, 0.47), 0.085, skin, "Head", segments=7, rings=4)
-        mb.sphere((sx * 0.15, -0.22, 0.49), 0.07, eyes, "Head", segments=7, rings=5)
-        mb.box((sx * 0.155, -0.29, 0.5), (0.04, 0.012, 0.022), pupil, "Head")
-        mb.sphere((sx * 0.05, -0.43, 0.33), 0.012, pupil, "Head", segments=4, rings=3)
+        sc.spot(mb, star, Vector((sx * 0.25, -0.04, 0.07)), 0.035, spots, weigh)
+    for k in range(16):
+        d = over_back(k, 16, 1.2).normalized()
+        p = center + d * (star.reach(center, d) - 0.006)
+        mb.sphere(tuple(p), rng.uniform(0.011, 0.02), skin, "Body" if p.y > -0.08 else "Head", segments=6, rings=3, smooth=True)
+
+    # Eyes: golden, with a black slit across, and nostrils on the snout.
+    for sx in (1, -1):
+        eye = Vector((sx * 0.15, -0.2, 0.445))
+        mb.sphere(tuple(eye), 0.062, eyes, "Head", segments=10, rings=7, smooth=True)
+        look = Vector((sx * 0.55, -0.75, 0.35)).normalized()
+        mb.sphere(tuple(eye + look * 0.056), (0.034, 0.012, 0.015), pupil, "Head", segments=8, rings=4, smooth=True,
+                  rotation=(0, 0, math.degrees(math.atan2(look.x, -look.y))))
+        mb.sphere((sx * 0.045, -0.435, 0.335), (0.012, 0.01, 0.008), pupil, "Head", segments=5, rings=3)
+
     # Legs.
     for side, sx in (("L", 1), ("R", -1)):
-        mb.tube([((sx * 0.18, -0.12, 0.26), 0.055), ((sx * 0.22, -0.17, 0.14), 0.045), ((sx * 0.24, -0.2, 0.05), 0.035)], skin, "FrontLeg." + side, sides=6)
-        for k in range(3):
-            a = math.radians(-40 + 40 * k)
-            tip = (sx * 0.24 + sx * math.sin(a) * 0.1, -0.2 - math.cos(a) * 0.1, 0.012)
-            mb.tube([((sx * 0.24, -0.2, 0.03), 0.02), (tip, 0.012)], skin, "FrontLeg." + side, sides=4)
-            mb.sphere(tip, 0.018, belly, "FrontLeg." + side, segments=4, rings=3)
-        mb.tube([((sx * 0.18, 0.14, 0.26), 0.11), ((sx * 0.28, 0.04, 0.22), 0.1), ((sx * 0.34, -0.04, 0.18), 0.065)], skin, "BackThigh." + side, sides=7)
-        mb.tube([((sx * 0.34, -0.04, 0.18), 0.06), ((sx * 0.33, 0.08, 0.13), 0.05), ((sx * 0.31, 0.2, 0.08), 0.035)], skin, "BackShin." + side, sides=6)
-        # A long webbed foot with four toes.
-        heel = (sx * 0.31, 0.2, 0.05)
-        toes = []
+        # A short arm and a hand of four splayed fingers with round pads.
+        arm = [Vector((sx * 0.16, -0.11, 0.22)), Vector((sx * 0.23, -0.17, 0.12)), Vector((sx * 0.24, -0.2, 0.035))]
+        sc.sweep_mesh(mb, sc.chain([tuple(q) for q in arm], [0.05, 0.038, 0.026]), arm, 8, skin, "FrontLeg." + side)
         for k in range(4):
-            a = math.radians(-30 + 20 * k)
-            toes.append((sx * 0.33 + sx * math.sin(a) * 0.13, 0.0 - math.cos(a) * 0.08, 0.015))
-        mb.add([heel] + toes, [(0, 1, 2), (0, 2, 3), (0, 3, 4)], skin, "BackFoot." + side, double_sided=True)
-        for tip in toes:
-            mb.sphere(tip, 0.02, belly, "BackFoot." + side, segments=4, rings=3)
+            a = math.radians(-50 + 33 * k)
+            base = Vector((sx * 0.24, -0.2, 0.025))
+            tip = base + Vector((sx * math.sin(a) * 0.085, -math.cos(a) * 0.085, -0.012))
+            mb.tube([(base, 0.016), (tip, 0.01)], skin, "FrontLeg." + side, sides=5, smooth=True)
+            mb.sphere(tuple(tip), 0.015, belly, "FrontLeg." + side, segments=5, rings=3, smooth=True)
+        # The hind leg folded at the side: a fat thigh forward to the knee, the shin back to the heel.
+        hip, knee, heel = Vector((sx * 0.16, 0.15, 0.22)), Vector((sx * 0.33, -0.04, 0.17)), Vector((sx * 0.31, 0.2, 0.06))
+        thigh = sc.blend(sc.chain([tuple(hip), tuple(knee)], [0.1, 0.052]),
+                         (sc.ellipsoid(tuple(hip.lerp(knee, 0.35)), (0.1, 0.11, 0.095)), 0.04))
+        bands = (0.0, 0.22, 0.34, 0.5, 0.62, 0.8, 1.0)
+
+        def thigh_material(c, hip=hip, knee=knee):
+            # Dark bands across the top of the thigh, between the second and third and the fourth and fifth rows.
+            t = (c - hip).dot((knee - hip).normalized()) / (knee - hip).length
+            if c.z < 0.14:
+                return belly
+            return spots if c.z > 0.19 and (0.22 < t < 0.34 or 0.5 < t < 0.62) else None
+        sc.sweep_mesh(mb, thigh, [hip.lerp(knee, f) for f in bands], 10, skin, "BackThigh." + side, material_at=thigh_material)
+        shin = sc.chain([tuple(knee), tuple(knee.lerp(heel, 0.5) + Vector((0, 0, 0.01))), tuple(heel)], [0.05, 0.04, 0.028])
+        sc.sweep_mesh(mb, shin, [knee, knee.lerp(heel, 0.5), heel], 8, skin, "BackShin." + side)
+        # A long foot forward from the heel, five toes and webs between them.
+        ankle = Vector((sx * 0.32, 0.12, 0.03))
+        sc.sweep_mesh(mb, sc.chain([tuple(heel), tuple(ankle), (sx * 0.34, 0.02, 0.02)], [0.028, 0.024, 0.02]),
+                      [heel, ankle, Vector((sx * 0.34, 0.02, 0.02))], 6, skin, "BackFoot." + side)
+        root = Vector((sx * 0.34, 0.03, 0.018))
+        tips = []
+        for k in range(5):
+            a = math.radians(-34 + 17 * k)
+            length = (0.1, 0.13, 0.15, 0.13, 0.1)[k]
+            tip = root + Vector((sx * math.sin(a) * length, -math.cos(a) * length, -0.006))
+            tips.append(tip)
+            mb.tube([(root, 0.012), (tip, 0.007)], skin, "BackFoot." + side, sides=4, smooth=True)
+            mb.sphere(tuple(tip), 0.013, belly, "BackFoot." + side, segments=5, rings=3, smooth=True)
+        for a, b in zip(tips, tips[1:]):
+            # The web reaches two thirds of the way out, its edge curving in between the toes.
+            mid = root.lerp((a + b) / 2, 0.55)
+            web = [root + Vector((0, 0, 0.003)), root.lerp(a, 0.8), mid, root.lerp(b, 0.8)]
+            mb.add(web, [(0, 1, 2), (0, 2, 3)], spots, "BackFoot." + side, double_sided=True)
     return mb.finish()
 
 
