@@ -13,7 +13,7 @@ namespace Madlands.Server.Tests;
 /// </summary>
 public class CombatIntegrationTests
 {
-    private const int MireFrog = 1;
+    private const int MireCroaker = 1;
     private const int DuskWolf = 2;
     private const int TrainingDummy = 5;
     private const byte Warrior = 1;
@@ -78,7 +78,7 @@ public class CombatIntegrationTests
     [Fact]
     public async Task Auto_attack_kills_a_creature_and_grants_experience()
     {
-        var (realm, s) = await StartAsync(Warrior, gm: true, At(MireFrog, 0, 4));
+        var (realm, s) = await StartAsync(Warrior, gm: true, At(MireCroaker, 0, 4));
         await using var _ = realm;
         using var __ = s;
         var c = s.Client;
@@ -88,16 +88,16 @@ public class CombatIntegrationTests
 
         s.Command(".level 5");
         s.Pump(() => c.Self.Values.Level == 5);
-        var frog = s.Find("Mire Frog");
-        Assert.Equal(Reaction.Neutral, c.GetReaction(frog.Guid));
+        var croaker = s.Find("Mire Croaker");
+        Assert.Equal(Reaction.Neutral, c.GetReaction(croaker.Guid));
 
-        c.SetTarget(frog.Guid);
-        c.CastSpell(1, frog.Guid); // Attack
+        c.SetTarget(croaker.Guid);
+        c.CastSpell(1, croaker.Guid); // Attack
         s.Pump(() => c.Self.Values.Has(UnitFlags.AutoAttacking));
-        s.Pump(() => frog.Unit!.Values.IsDead, 20000);
+        s.Pump(() => croaker.Unit!.Values.IsDead, 20000);
 
-        Assert.Contains(s.Events, e => e.Source == c.LocalGuid && e.Target == frog.Guid && e.Spell == 0 && e.Amount > 0);
-        Assert.Contains(s.Events, e => e.Target == frog.Guid && e.Flags.HasFlag(CombatFlags.KillingBlow));
+        Assert.Contains(s.Events, e => e.Source == c.LocalGuid && e.Target == croaker.Guid && e.Spell == 0 && e.Amount > 0);
+        Assert.Contains(s.Events, e => e.Target == croaker.Guid && e.Flags.HasFlag(CombatFlags.KillingBlow));
         s.Pump(() => s.Xp > 0 && c.Stats.Xp > 0);
         Assert.Equal(s.Xp, c.Stats.Xp);
         s.Pump(() => !c.Self.Values.Has(UnitFlags.AutoAttacking));
@@ -359,7 +359,7 @@ public class CombatIntegrationTests
     public async Task Rested_experience_doubles_kills_and_is_kept_over_relogging()
     {
         var database = new Persistence.InMemoryGameDatabase();
-        var content = TestRealm.CombatContent(At(MireFrog, 0, 6));
+        var content = TestRealm.CombatContent(At(MireCroaker, 0, 6));
         content.Maps[1].Definition.RestAreas.Add(new RestAreaDefinition { Name = "Inn", X = 0, Z = 0, Radius = 15 });
         await using var realm = await TestRealm.StartAsync(database, content, gmAll: true);
         var (account, character) = await realm.NewPlayerAsync("rester", "Rester", Warrior);
@@ -371,7 +371,7 @@ public class CombatIntegrationTests
             s.Command(".rested 500");
             s.Pump(() => c.Stats.RestedXp == 500);
 
-            c.SetTarget(s.Find("Mire Frog").Guid);
+            c.SetTarget(s.Find("Mire Croaker").Guid);
             s.Command(".damage 9999");
             s.Pump(() => s.Xp > 0 && c.Stats.RestedXp < 500);
             Assert.True(s.RestedBonus > 0);

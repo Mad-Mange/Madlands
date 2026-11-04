@@ -36,7 +36,7 @@ A misty valley with a lake where a shard fell a generation ago. The village of *
 
 **Threats:**
 
-- Twisted frogs and wolves
+- Twisted frog-folk and wolves
 - Bandits smuggling shards
 - A cult that wants to wake what lives in the lake
 

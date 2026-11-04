@@ -447,8 +447,8 @@ namespace Madlands.Client
                     return shape;
                 }
                 case FrogDisplay:
-                    // "Fat as dogs, they are" (Old Tamsin).
-                    return Scaled(Creature(parent, displayId, "Frog", 0.6f, walkSpeed: 1.2f, runSpeed: 3.5f, out model), model, 1.5f);
+                    // The frog-folk of the mere: their own textures, nothing to recolor (art/blender/tripo.py).
+                    return Humanoid(parent, "MireCroaker", out model);
                 case WolfDisplay:
                     return Creature(parent, displayId, "Wolf", 0.7f, walkSpeed: 1.3f, runSpeed: 4.2f, out model);
                 case DummyDisplay:
@@ -691,16 +691,6 @@ namespace Madlands.Client
         {
             switch (displayId)
             {
-                case FrogDisplay:
-                {
-                    var skin = new Color(0.36f, 0.52f, 0.24f);
-                    Part(PrimitiveType.Sphere, parent, new Vector3(0f, 0.32f, 0f), new Vector3(0.95f, 0.55f, 1.05f), skin);
-                    Part(PrimitiveType.Sphere, parent, new Vector3(-0.22f, 0.58f, 0.32f), Vector3.one * 0.22f, new Color(0.95f, 0.9f, 0.6f));
-                    Part(PrimitiveType.Sphere, parent, new Vector3(0.22f, 0.58f, 0.32f), Vector3.one * 0.22f, new Color(0.95f, 0.9f, 0.6f));
-                    Part(PrimitiveType.Sphere, parent, new Vector3(-0.38f, 0.12f, -0.15f), new Vector3(0.3f, 0.2f, 0.5f), skin * 0.8f);
-                    Part(PrimitiveType.Sphere, parent, new Vector3(0.38f, 0.12f, -0.15f), new Vector3(0.3f, 0.2f, 0.5f), skin * 0.8f);
-                    return new DisplayShape { Height = 0.8f, Radius = 0.6f };
-                }
                 case WolfDisplay:
                 {
                     var fur = new Color(0.4f, 0.4f, 0.45f);

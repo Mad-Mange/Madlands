@@ -20,7 +20,7 @@ x = east, z = north, meters. The water level is 21 m; all water is shallow (you 
 | Place | Center | Levels | What is there |
 |---|---|---|---|
 | Mirewatch | (0, -140) | 1–3 | The hub village: palisade with three gates, the Muddy Boot inn, market square, four timber grove houses facing it and cottages further out, the captain's yard with training dummies, a dock on the mere. Player spawn and rest area (rested experience). |
-| The Mere | (0, 60) | 1–2 | Shallow lake. Mire frogs on the south shore. |
+| The Mere | (0, 60) | 1–2 | Shallow lake. Mire croakers, the frog-folk, on the south shore. |
 | Westbrook | (-260, -150) | 2–4 | Farmhouse, barn and four fields with fences. Bristleback boars. |
 | The Old Mill | (-390, -40) | 4 | Ruins of a mill; bandit waystation (explore objective). |
 | Reedfen | (275, -40) | 3–8 | Marsh with pools and reeds, three mireling camps, the singing stone (300, -5) with the oracles, snappers in the north shallows. |
@@ -41,7 +41,7 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 | Id | NPC | Where | Role |
 |---|---|---|---|
 | 10 | Captain Edda Brand | Mirewatch, captain's yard | Wolves, the bandit camp, sends you to Westbrook, Rennick and Brannoc |
-| 11 | Old Tamsin | Mirewatch, her garden | Frogs, the singing pearl, sends you to Brother Aldous |
+| 11 | Old Tamsin | Mirewatch, her garden | Croakers, the singing pearl, sends you to Brother Aldous |
 | 12 | Quartermaster Holt | Mirewatch, supply tent | Vendor: food, drink, draughts, elixirs and tonics (long buffs), bags, basic armor |
 | 13 | Marla Fenn | The Muddy Boot | Vendor: food and drink |
 | 14 | Farmer Wil Tenney | Westbrook | Boars, tusks, the old mill |
@@ -55,7 +55,7 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 
 | Id | Creature | Levels | Where | Notes |
 |---|---|---|---|---|
-| 1 | Mire Frog | 1–2 | South shore | Neutral |
+| 1 | Mire Croaker | 1–2 | South shore | Neutral |
 | 6 | Bristleback Boar | 2–4 | Westbrook | Neutral; Gore |
 | 7 | Mireling | 3–5 | Reedfen | |
 | 8 | Mireling Oracle | 4–5 | The singing stone | Caster: Murk Bolt |
@@ -75,7 +75,7 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 
 | Chain | Quests | Levels |
 |---|---|---|
-| Mirewatch | Trouble in the Mire, A Taste for Frog Legs, Supplies and Sense; Glowcaps for a Salve (gather the glowcap mushrooms at the feet of the Greywood's trees for Old Tamsin) | 1–5 |
+| Mirewatch | Trouble in the Mire, Bones for the Pot, Supplies and Sense; Glowcaps for a Salve (gather the glowcap mushrooms at the feet of the Greywood's trees for Old Tamsin) | 1–5 |
 | Westbrook | Word from Westbrook → Boars in the Barley → The Old Mill; Tough as Tusks | 3–4 |
 | The mere | Something in the Reeds → The Singing Stone → A Pearl for Tamsin; Nets and Nonsense | 4–5 |
 | Wolves and the wood | Wolves at Dusk → Rennick's Watch; Pelts for the Palisade; Webs in the Greywood → The Old Bears; Venom for the Infirmary | 4–7 |

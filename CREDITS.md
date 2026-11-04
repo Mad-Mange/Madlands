@@ -1,7 +1,12 @@
 # Credits
 
 Everything in Madlands is made for the project (code, the Blender-script models in `art/`, the synthesized music
-and sounds in `art/audio/`), except the following free assets.
+and sounds in `art/audio/`), except the following.
+
+## Models
+
+Generated with [Tripo](https://www.tripo3d.ai) on a Pro plan by the project owner and processed by `art/blender/tripo.py`:
+the Mire Croaker (`client/Assets/Madlands/Art/Characters/MireCroaker.fbx` and its textures).
 
 ## Sound effects
 

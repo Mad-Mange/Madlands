@@ -11,7 +11,8 @@ namespace Madlands.Client.Editor
     /// Import rules for the Blender art in Assets/Madlands/Art (art/README.md), so a new FBX needs no
     /// clicking in the inspector: Characters/ are humanoids (Unity maps the avatar from the bone names),
     /// Creatures/ have generic rigs, everything else is a static mesh. Materials become URP Lit with the
-    /// Blender color; Ground/ pieces (scattered by the terrain) get the instanced, swaying Madlands/GroundCover.
+    /// Blender color, or with the textures named after them in Textures/ (art/blender/tripo.py); Ground/ pieces
+    /// (scattered by the terrain) get the instanced, swaying Madlands/GroundCover.
     /// Keeps <see cref="ArtCatalog"/> (Resources/ArtCatalog.asset) in sync.
     /// </summary>
     public sealed class ArtImporter : AssetPostprocessor
@@ -39,11 +40,27 @@ namespace Madlands.Client.Editor
         public override int GetPostprocessOrder() => 10; // after URP's own material conversion
 
         /// <summary>Raise when the import rules change: Unity then imports the art again with them.</summary>
-        public override uint GetVersion() => 12;
+        public override uint GetVersion() => 13;
+
+        /// <summary>A texture of a textured model, by kind: basecolor, normal, ms (metallic in R, smoothness in A).</summary>
+        private static string TexturePath(string material, string kind) => ArtRoot + "Textures/" + material + "_" + kind + ".png";
 
         /// <summary>Icons/ are interface pictures (art/blender/icons.py): kept sharp and transparent when drawn small.</summary>
         private void OnPreprocessTexture()
         {
+            if (assetPath.StartsWith(ArtRoot + "Textures/", System.StringComparison.Ordinal))
+            {
+                var textured = (TextureImporter)assetImporter;
+                textured.mipmapEnabled = true;
+                textured.alphaIsTransparency = false;
+                if (assetPath.EndsWith("_normal.png", System.StringComparison.Ordinal)) textured.textureType = TextureImporterType.NormalMap;
+                else
+                {
+                    textured.textureType = TextureImporterType.Default;
+                    textured.sRGBTexture = !assetPath.EndsWith("_ms.png", System.StringComparison.Ordinal);
+                }
+                return;
+            }
             if (!assetPath.StartsWith(ArtRoot + "Icons/", System.StringComparison.Ordinal)) return;
             var importer = (TextureImporter)assetImporter;
             importer.textureType = TextureImporterType.Default;
@@ -67,7 +84,10 @@ namespace Madlands.Client.Editor
             importer.importVisibility = false;
             importer.importBlendShapes = false;
             importer.importNormals = ModelImporterNormals.Import;
-            importer.importTangents = ModelImporterTangents.None;
+            // Normal maps need tangents; the plain models do not.
+            importer.importTangents = File.Exists(TexturePath(Path.GetFileNameWithoutExtension(assetPath), "normal"))
+                ? ModelImporterTangents.CalculateMikk
+                : ModelImporterTangents.None;
             importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
             importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
             importer.meshCompression = ModelImporterMeshCompression.Off;
@@ -223,6 +243,39 @@ namespace Madlands.Client.Editor
                 material.SetColor("_EmissionColor", color * 1.1f);
                 material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
             }
+            ApplyTextures(description.materialName, material);
+        }
+
+        /// <summary>Gives a material the textures named after it, if it has any (art/blender/tripo.py).</summary>
+        private void ApplyTextures(string name, Material material)
+        {
+            var baseColor = LoadTexture(name, "basecolor");
+            if (baseColor == null) return;
+            material.SetColor("_BaseColor", Color.white);
+            material.SetTexture("_BaseMap", baseColor);
+            var normal = LoadTexture(name, "normal");
+            if (normal != null)
+            {
+                material.SetTexture("_BumpMap", normal);
+                material.EnableKeyword("_NORMALMAP");
+            }
+            var metallicSmoothness = LoadTexture(name, "ms");
+            if (metallicSmoothness != null)
+            {
+                material.SetTexture("_MetallicGlossMap", metallicSmoothness);
+                material.SetFloat("_Smoothness", 1f); // multiplies the map's alpha
+                material.EnableKeyword("_METALLICSPECGLOSSMAP");
+            }
+        }
+
+        private Texture2D LoadTexture(string material, string kind)
+        {
+            string path = TexturePath(material, kind);
+            if (!File.Exists(path)) return null;
+            context.DependsOnSourceAsset(path);
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null) Debug.LogWarning($"[ArtImporter] {assetPath}: {path} is not imported yet");
+            return texture;
         }
 
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
@@ -295,7 +348,8 @@ namespace Madlands.Client.Editor
                     if (t.name == "Hips" || t.name == "Head" || t.name == "LeftHand" || t.name == "MainHandGrip" || t.name == "LeftFoot")
                         text.AppendLine($"  {t.name} at {t.position:F2} rot {t.rotation.eulerAngles:F0}");
                 foreach (var r in model.Prefab.GetComponentsInChildren<Renderer>())
-                    text.AppendLine($"  renderer {r.name}: " + string.Join(", ", r.sharedMaterials.Select(m => m == null ? "null" : $"{m.name} {m.GetColor("_BaseColor")}")));
+                    text.AppendLine($"  renderer {r.name}: " + string.Join(", ", r.sharedMaterials.Select(m => m == null ? "null"
+                        : $"{m.name} {m.GetColor("_BaseColor")}" + (m.GetTexture("_BaseMap") != null ? $" textures {m.GetTexture("_BaseMap").name}, {(m.GetTexture("_BumpMap") != null ? m.GetTexture("_BumpMap").name : "no normal map")}, {(m.GetTexture("_MetallicGlossMap") != null ? m.GetTexture("_MetallicGlossMap").name : "no metallic map")}" : ""))));
             }
             foreach (var clip in catalog.Clips)
                 text.AppendLine($"  clip {clip.Set}/{clip.Name}: {clip.Clip.length:F2}s loop={clip.Clip.isLooping} human={clip.Clip.humanMotion}");

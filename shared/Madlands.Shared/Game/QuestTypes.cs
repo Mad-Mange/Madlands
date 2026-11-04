@@ -57,7 +57,7 @@ namespace Madlands.Shared.Game
         /// <summary>Creature id (kill, talk) or item id (collect); 0 for explore.</summary>
         public uint Target;
         public ushort Count;
-        /// <summary>Quest log line, e.g. "Mire Frog slain" or "Scout the bandit camp".</summary>
+        /// <summary>Quest log line, e.g. "Mire Croaker slain" or "Scout the bandit camp".</summary>
         public string Text;
         /// <summary>
         /// Where to go, drawn on the world map: the place to explore, where the creatures to kill live,

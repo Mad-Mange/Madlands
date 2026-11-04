@@ -3,19 +3,19 @@
   "quests": [
     {
       "id": 1, "title": "Trouble in the Mire", "level": 1, "minLevel": 1, "giver": 11, "ender": 11,
-      "details": "The frogs in the low ground have gone strange since the shard fell. Fat as dogs, they are, and twice as mean when you poke them. They have been fouling the only clean spring we have.\n\nThin them out for an old woman, would you? Six of them should teach the rest some manners.",
-      "summary": "Kill 6 Mire Frogs on the shore of the mere, north of Mirewatch.",
+      "details": "The croakers in the low ground have gone strange since the shard fell. Frog-folk, dear, and here long before any of us. They used to keep to their reeds and trade eels for salt. Now they hang bones round their necks, and they are twice as mean when you poke them. They have been fouling the only clean spring we have.\n\nThin them out for an old woman, would you? Six of them should teach the rest some manners.",
+      "summary": "Kill 6 Mire Croakers on the shore of the mere, north of Mirewatch.",
       "progress": "Still croaking out there, are they?",
       "completion": "Ha! I could hear the quiet from here. Take one of these, dear. They were my husband's, and he won't be needing them.",
       "objectives": [ { "type": "kill", "creature": 1, "count": 6 } ],
       "rewards": { "xp": 160, "money": 25, "choices": [ { "item": 1201 }, { "item": 1202 }, { "item": 1203 } ] }
     },
     {
-      "id": 2, "title": "A Taste for Frog Legs", "level": 2, "minLevel": 1, "giver": 11, "ender": 11,
-      "details": "Don't make that face. Shard-fat frog legs make the best stew this side of the Calder, and the settlers will be hungry come nightfall.\n\nBring me five good legs from the mire and I will pack you a supper for the road.",
-      "summary": "Bring 5 Mire Frog Legs to Old Tamsin.",
-      "progress": "No legs, no stew.",
-      "completion": "Lovely and plump. Here, warm bread for the road. Eat it somewhere quiet; it does nobody any good gobbled in a fight.",
+      "id": 2, "title": "Bones for the Pot", "level": 2, "minLevel": 1, "giver": 11, "ender": 11,
+      "details": "Don't make that face. Those bone charms the croakers wear have soaked up the shard's light, and that is half of what ails them. Boiled down with salt they make the best poultice this side of the Calder, and the settlers will need it come nightfall.\n\nBring me five good charms from the mire and I will pack you a supper for the road.",
+      "summary": "Bring 5 Croaker Bone Charms to Old Tamsin.",
+      "progress": "No charms, no poultice.",
+      "completion": "Lovely and foul. Here, warm bread for the road. Eat it somewhere quiet; it does nobody any good gobbled in a fight.",
       "objectives": [ { "type": "collect", "item": 3001, "count": 5 } ],
       "rewards": { "xp": 200, "money": 30, "items": [ { "item": 4001, "count": 5 } ] }
     },

@@ -58,7 +58,7 @@
     { "id": 1103, "name": "Initiate's Vestments", "icon": 1103, "displayId": 3003, "quality": "common", "class": "armor", "slot": "chest", "sellPrice": 5, "stats": { "armor": 7 } },
 
     { "id": 1201, "name": "Mirefen Gloves", "icon": 1201, "displayId": 3302, "quality": "uncommon", "class": "armor", "slot": "hands", "sellPrice": 20, "stats": { "armor": 9, "agility": 1, "stamina": 1 } },
-    { "id": 1202, "name": "Frogskin Boots", "icon": 1202, "displayId": 3202, "quality": "uncommon", "class": "armor", "slot": "feet", "sellPrice": 20, "stats": { "armor": 10, "stamina": 2 } },
+    { "id": 1202, "name": "Reedwalker Boots", "icon": 1202, "displayId": 3202, "quality": "uncommon", "class": "armor", "slot": "feet", "sellPrice": 20, "stats": { "armor": 10, "stamina": 2 } },
     { "id": 1203, "name": "Reedwoven Bracers", "icon": 1203, "quality": "uncommon", "class": "armor", "slot": "wrists", "sellPrice": 18, "stats": { "armor": 4, "intellect": 2 } },
     { "id": 1210, "name": "Wolfhide Jerkin", "icon": 1210, "displayId": 3004, "quality": "uncommon", "class": "armor", "slot": "chest", "requiredLevel": 3, "sellPrice": 45, "stats": { "armor": 32, "strength": 2, "stamina": 2 } },
     { "id": 1211, "name": "Duskweave Robe", "icon": 1211, "displayId": 3005, "quality": "uncommon", "class": "armor", "slot": "chest", "requiredLevel": 3, "sellPrice": 45, "stats": { "armor": 10, "intellect": 3, "spirit": 2 } },
@@ -77,13 +77,13 @@
     { "id": 1302, "name": "Settler's Boots", "icon": 1302, "displayId": 3201, "quality": "common", "class": "armor", "slot": "feet", "buyPrice": 45, "sellPrice": 11, "stats": { "armor": 6 } },
     { "id": 1303, "name": "Linen Gloves", "icon": 1303, "displayId": 3301, "quality": "common", "class": "armor", "slot": "hands", "buyPrice": 30, "sellPrice": 7, "stats": { "armor": 3 } },
 
-    { "id": 2001, "name": "Slimy Frog Skin", "icon": 2001, "quality": "poor", "class": "junk", "stackSize": 10, "sellPrice": 4 },
+    { "id": 2001, "name": "Slimy Leg Wraps", "icon": 2001, "quality": "poor", "class": "junk", "stackSize": 10, "sellPrice": 4 },
     { "id": 2002, "name": "Broken Wolf Fang", "icon": 2002, "quality": "poor", "class": "junk", "stackSize": 10, "sellPrice": 7 },
     { "id": 2003, "name": "Dusk Wolf Pelt", "icon": 2003, "quality": "common", "class": "tradeGoods", "stackSize": 10, "sellPrice": 12, "description": "Thick, grey and smelling strongly of wolf." },
     { "id": 2004, "name": "Bandit's Lucky Coin", "icon": 2004, "quality": "poor", "class": "junk", "stackSize": 5, "sellPrice": 24, "description": "It did not work." },
     { "id": 2005, "name": "Cracked Shard Fragment", "icon": 2005, "quality": "poor", "class": "junk", "stackSize": 10, "sellPrice": 15, "description": "Whatever power it held has leaked away." },
 
-    { "id": 3001, "name": "Mire Frog Leg", "icon": 3001, "quality": "common", "class": "quest", "stackSize": 10 },
+    { "id": 3001, "name": "Croaker Bone Charm", "icon": 3001, "quality": "common", "class": "quest", "stackSize": 10 },
     { "id": 3002, "name": "Stolen Moonshard", "icon": 3002, "quality": "common", "class": "quest", "stackSize": 10, "description": "Cold to the touch, and faintly whispering." },
 
     {

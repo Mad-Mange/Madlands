@@ -1,7 +1,8 @@
 # Madlands art
 
-All models are low-poly and made by Python scripts that run in [Blender](https://www.blender.org/) (5.x).
-The decision and its conventions are in [ADR 0012](../docs/adr/0012-art-pipeline-blender.md).
+Models are low-poly and made by Python scripts that run in [Blender](https://www.blender.org/) (5.x): the decision and
+its conventions are in [ADR 0012](../docs/adr/0012-art-pipeline-blender.md). Some characters come from Tripo instead
+([below](#models-from-tripo), [ADR 0014](../docs/adr/0014-characters-from-tripo.md)).
 
 ## Building
 
@@ -28,10 +29,11 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 | `blender/build.py` | The asset list (name, Unity folder, builder) and the build entry point. |
 | `blender/lowpoly.py` | Helpers: flat-colored materials, boxes, tubes, spheres, convex hulls, lofts through cross-sections (`loft`, `ring`), limbs along a path (`tube`), surfaces through rows of points (`grid`) and with a lining (`shell`), weights over several bones, armatures, keyframed actions, FBX export. |
 | `blender/humanoid.py` | The humanoid races (proportions, body cross-sections, the sculpted head, hair and beard styles, colors), the model at three levels of detail, and all humanoid animations. Stylized and heroic: big deltoids, a tapering torso with pecs, chunky fists and boots, a square jaw and heavy brow. |
-| `blender/sculpt.py` | Clay modelling: signed distance functions (ellipsoids, round cones, capped cones, rounded boxes, `lumpy` rock surfaces) blended into each other or carved away, turned into meshes by casting rays from a point inside (`Star`: heads, noses, fists, beards) or around a path (`sweep`: arms, legs, boots, braids). The rays form a regular grid, so the resolution is a parameter (the levels of detail). `decal` and `spot` lay flat markings on a surface (a frog's blotches, a spider's hourglass). |
+| `blender/sculpt.py` | Clay modelling: signed distance functions (ellipsoids, round cones, capped cones, rounded boxes, `lumpy` rock surfaces) blended into each other or carved away, turned into meshes by casting rays from a point inside (`Star`: heads, noses, fists, beards) or around a path (`sweep`: arms, legs, boots, braids). The rays form a regular grid, so the resolution is a parameter (the levels of detail). `decal` and `spot` lay flat markings on a surface (a spider's hourglass). |
 | `blender/lookbook.py` | Renders races dressed in outfits (the client's tint rules), from the front, side and back, in poses and the face close up, to compare with reference sheets: `blender -b --factory-startup -P art/blender/lookbook.py -- [look ...] [--lod N]` into `builds/lookbook/`. |
 | `blender/gear.py` | Worn gear, built into every race's model: helmets, hoods and hats wrapped around the head's hull, shoulder pads around the shoulder, cloaks, robe skirts, breastplates and aprons from the trunk's sections. Each piece is its own mesh (`GearHood`, `GearCloak` ...) the client hides until it is worn (`GearVisuals.cs`). |
-| `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, frog, training dummy. |
+| `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, training dummy. |
+| `blender/tripo.py` | Characters from Tripo: turns an unrigged, textured FBX in a T-pose into a character on the humanoid skeleton ([below](#models-from-tripo)). |
 | `blender/landscape.py` | Ground cover (`Ground`: grass tufts, tall grass, white, yellow and blue flowers, ferns, pebbles) that the terrain scatters and draws instanced near the camera: a terrain detail may have only one material, so each piece's colors are baked into vertex colors under a single `GroundCover` material (`Madlands/GroundCover` lights it like the flat ground and sways it in the wind). Rock formations of stacked, dipping slabs with grass on their ledges (`Cliff1`, `Cliff2`, `Outcrop1`, `Outcrop2`, `RockSpire`) and `LilyPads`. The terrain's own layers are painted in Unity (`Editor/GroundPainter.cs`). |
 | `blender/beasts.py` | Quadrupeds on one parametric skeleton (boar, bear, crocodile, Gloomjaw), the spider and the shardling, sculpted with `sculpt.py` like the heroes. `blender/brute.py` is Ruukhar the Slagborn. |
 | `blender/effects.py` | Spell and interface effects (`Fx...` in `Art/Effects`): crystals, stars, flames, leaves, flecks, a gem, rings and a shock wave. Solid faces are split into three tones (`EffectLight`, `Effect`, `EffectDark`) by how they face a light, which the client colors per spell school (`Effects.cs`). |
@@ -46,7 +48,7 @@ public repo). Use them for the feel, then build our own shapes.
 ## Conventions
 
 - Meters, +Z up, the model faces -Y (Blender's front view), feet at the origin.
-- No textures. Props and creatures are flat-shaded; characters are shaded smoothly (`smooth=True` on a part; gear gets
+- No textures (except [models from Tripo](#models-from-tripo)). Props and creatures are flat-shaded; characters are shaded smoothly (`smooth=True` on a part; gear gets
   hard edges where its faces meet at more than 40 degrees). Material names matter: the client recolors the gear regions of characters by name
   (`Skin`, `Hair`, `Eyes`, `Chest`, `Arms`, `Hands`, `Waist`, `Legs`, `Feet`). A region's `Trim` material
   (`ChestTrim`, `ArmsTrim`, `FeetTrim`: collars, cuffs, soles) gets a darker tone of the same color. `Hair` is the
@@ -73,6 +75,20 @@ public repo). Use them for the feel, then build our own shapes.
 - Clip names the game knows: `Idle`, `Walk`, `Run`, `RunBack`, `StrafeLeft`, `StrafeRight`, `Fall`, `Jump`, `Sit`,
   `Attack1H`, `Attack2H`, `AttackUnarmed`, `CastLoop`, `CastRelease`, `Hit`, `Death` (creatures: `Attack`).
   Looping ones are listed in `ArtImporter.LoopingClips`.
+
+## Models from Tripo
+
+A humanoid model exported from [Tripo](https://www.tripo3d.ai) (paid plan only, the repository is public) goes in like this:
+
+1. Export it standing in a T-pose, facing -Y, as one mesh with `<name>_basecolor`, `_normal`, `_roughness` and
+   `_metallic` textures. The original stays outside the repository, under `MADLANDS_TRIPO_DIR` (default
+   `D:\3D_Stuff\Characters`).
+2. Add a row to `MODELS` in `blender/tripo.py`: the source file, its height in the game and its joints, read off
+   front and side renders. An optional `hue_shift` recolors part of the painting, like skin apart from leather.
+3. Run `build.py <Name> --preview builds/art` and read the log: the triangle counts of the three levels of detail, and
+   how far test poses stretch the skin's edges (`torn` edges mean bad weights or misplaced joints).
+4. Point the display at it in `EntityVisuals` (`Humanoid(parent, "<Name>", out model)`). Unity finds the textures by
+   name and the model plays the shared humanoid clips.
 
 ## Sound and music
 

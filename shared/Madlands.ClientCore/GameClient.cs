@@ -195,7 +195,7 @@ namespace Madlands.ClientCore
         public event Action<GossipMenu> GossipOpened;
         public event Action<VendorInventory> VendorOpened;
         public event Action QuestLogChanged;
-        /// <summary>Quest id, objective index and the new count (chat: "Mire Frog slain: 3/6").</summary>
+        /// <summary>Quest id, objective index and the new count (chat: "Mire Croaker slain: 3/6").</summary>
         public event Action<uint, int, int> QuestProgressed;
         /// <summary>A quest was taken (Active), finished its objectives (Complete), or left the log (Removed).</summary>
         public event Action<uint, QuestLogState> QuestStateChanged;

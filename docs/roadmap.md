@@ -191,6 +191,10 @@ Every phase ends in something playable and tested. Architectural decisions are i
   (grass tufts, tall grass, three kinds of flowers in drifts, ferns, pebbles; one vertex-colored material, swaying in the
   wind); copses, pines on the mountainsides, cliffs, outcrops and a spire; water built over the terrain when the map
   loads, colored by depth, with foam along the shore, and water lilies
+- [x] Characters from Tripo (2026-11-04, ADR 0014): `art/blender/tripo.py` turns a textured Tripo model in a T-pose into
+  a character on the humanoid skeleton, in three levels of detail. The mire frogs became the Mire Croakers, a frog-folk;
+  Old Tamsin's two quests and the frog items were rewritten to suit
+- [ ] Replace the other NPC models with Tripo models, one at a time
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)
 

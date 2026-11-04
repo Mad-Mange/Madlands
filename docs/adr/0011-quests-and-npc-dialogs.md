@@ -40,7 +40,7 @@
 
 **On the client**
 
-- The dialog window shows the greeting and quest list, a quest's story with Accept, its progress text, and the reward screen with the choice. The quest log (L) and the tracker on the right show the objectives. Chat and the screen center announce progress ("Mire Frog slain: 3/6").
+- The dialog window shows the greeting and quest list, a quest's story with Accept, its progress text, and the reward screen with the choice. The quest log (L) and the tracker on the right show the objectives. Chat and the screen center announce progress ("Mire Croaker slain: 3/6").
 
 ## Why
 

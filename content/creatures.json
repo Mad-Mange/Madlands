@@ -2,7 +2,7 @@
   "$schema": "schemas/creatures.schema.json",
   "creatures": [
     {
-      "id": 1, "name": "Mire Frog", "displayId": 101, "minLevel": 1, "maxLevel": 2, "faction": 3,
+      "id": 1, "name": "Mire Croaker", "displayId": 101, "minLevel": 1, "maxLevel": 2, "faction": 3,
       "health": 0.8, "damage": 0.7, "runSpeed": 6, "respawnSeconds": 30, "corpseSeconds": 15, "loot": 1
     },
     {

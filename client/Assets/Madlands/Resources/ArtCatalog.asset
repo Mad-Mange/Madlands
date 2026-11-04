@@ -19,6 +19,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Name: Korrin
     Prefab: {fileID: 919132149155446097, guid: fdd01bc74c2bfe94a86127afb0f03224, type: 3}
+  - Name: MireCroaker
+    Prefab: {fileID: 919132149155446097, guid: f812c4c6d6337d04c9300ff11b61c569, type: 3}
   - Name: Mireling
     Prefab: {fileID: 919132149155446097, guid: 618b11371cdbde44fb7f69b154f8e10e, type: 3}
   - Name: Bear
@@ -27,8 +29,6 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
   - Name: Crocodile
     Prefab: {fileID: 919132149155446097, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
-  - Name: Frog
-    Prefab: {fileID: 919132149155446097, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
   - Name: Gloomjaw
     Prefab: {fileID: 919132149155446097, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
   - Name: Shardling
@@ -300,24 +300,6 @@ MonoBehaviour:
   - Set: Crocodile
     Name: Run
     Clip: {fileID: -7551964380084998518, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
-  - Set: Frog
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
-  - Set: Frog
-    Name: Idle
-    Clip: {fileID: -8945691123924629249, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
-  - Set: Frog
-    Name: Walk
-    Clip: {fileID: 8349542763059015795, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
-  - Set: Frog
-    Name: Attack
-    Clip: {fileID: 4723146814002874508, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
-  - Set: Frog
-    Name: Run
-    Clip: {fileID: -7551964380084998518, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
-  - Set: Frog
-    Name: Death
-    Clip: {fileID: -982115091633673366, guid: 9964fe31bfcdc4b42ab29d4c26190a4c, type: 3}
   - Set: Gloomjaw
     Name: Hit
     Clip: {fileID: -5578746458225771231, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}

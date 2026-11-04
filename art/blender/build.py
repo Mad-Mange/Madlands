@@ -26,6 +26,7 @@ import landscape  # noqa: E402
 import lowpoly as lp  # noqa: E402
 import preview  # noqa: E402
 import props  # noqa: E402
+import tripo  # noqa: E402
 
 ROOT =os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 UNITY_ART = os.path.join(ROOT, "client", "Assets", "Madlands", "Art")
@@ -38,7 +39,6 @@ ASSETS = {
     "Mireling": ("Characters", lambda: humanoid.build_race("Mireling"), False),
     "HumanoidAnimations": ("Characters", humanoid.build_animations, True),
     "Wolf": ("Creatures", creatures.build_wolf, True),
-    "Frog": ("Creatures", creatures.build_frog, True),
     "TrainingDummy": ("Creatures", creatures.build_training_dummy, True),
     "Boar": ("Creatures", lambda: beasts.build_quad("Boar"), True),
     "Bear": ("Creatures", lambda: beasts.build_quad("Bear"), True),
@@ -48,6 +48,7 @@ ASSETS = {
     "Shardling": ("Creatures", beasts.build_shardling, True),
     "Slagborn": ("Creatures", brute.build_slagborn, True),
 }
+ASSETS.update({name: ("Characters", tripo.builder(name), False) for name in tripo.MODELS})
 ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in props.PROPS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in buildings.BUILDINGS.items()})
@@ -59,12 +60,17 @@ ASSETS.update({name: ("Effects", builder, False) for name, builder in effects.EF
 PREVIEW_DRESS = {
     "HumanoidAnimations": lambda arm: lp.bind(humanoid.body("PreviewBody", humanoid.RACES["BrightvaleHuman"]), arm),
 }
+PREVIEW_DRESS.update({name: tripo.preview_dress(name) for name in tripo.MODELS})
 
 
 def build(name, preview_dir):
     folder, builder, animated = ASSETS[name]
     lp.reset_scene()
-    root = builder()
+    try:
+        root = builder()
+    except tripo.MissingSource as missing:
+        print("Skipped %s, keeping its committed files: %s" % (name, missing))
+        return
     os.makedirs(BLEND_DIR, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(BLEND_DIR, name + ".blend"), compress=True)
     out_dir = os.path.join(UNITY_ART, folder)

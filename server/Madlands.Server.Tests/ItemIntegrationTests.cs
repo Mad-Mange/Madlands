@@ -14,10 +14,10 @@ namespace Madlands.Server.Tests;
 /// </summary>
 public class ItemIntegrationTests
 {
-    private const int MireFrog = 1, TrainingDummy = 5, CaptainEdda = 10, OldTamsin = 11, QuartermasterHolt = 12;
-    private const uint WornShortsword = 1001, RecruitsTunic = 1101, FrogskinBoots = 1202, SlimyFrogSkin = 2001, MireFrogLeg = 3001;
+    private const int MireCroaker = 1, TrainingDummy = 5, CaptainEdda = 10, OldTamsin = 11, QuartermasterHolt = 12;
+    private const uint WornShortsword = 1001, RecruitsTunic = 1101, ReedwalkerBoots = 1202, SlimyLegWraps = 2001, BoneCharm = 3001;
     private const uint Hearthbread = 4001, MinorHealingDraught = 4003, SmallLinenPouch = 5001;
-    private const uint FrogQuest = 1, FrogLegQuest = 2, TalkQuest = 5, ScoutQuest = 6;
+    private const uint CroakerQuest = 1, BoneCharmQuest = 2, TalkQuest = 5, ScoutQuest = 6;
     private const byte Warrior = 1;
 
     private sealed class Session : IDisposable
@@ -189,22 +189,22 @@ public class ItemIntegrationTests
         using var __ = s;
         var c = s.Client;
 
-        var frog = s.SpawnAndKill(MireFrog, "Mire Frog");
-        s.Pump(() => c.IsLootable(frog.Guid));
-        c.OpenLoot(frog.Guid);
-        s.Pump(() => c.Loot.Corpse == frog.Guid);
+        var croaker = s.SpawnAndKill(MireCroaker, "Mire Croaker");
+        s.Pump(() => c.IsLootable(croaker.Guid));
+        c.OpenLoot(croaker.Guid);
+        s.Pump(() => c.Loot.Corpse == croaker.Guid);
         Assert.InRange(c.Loot.Money, 1, 4);
-        Assert.DoesNotContain(c.Loot.Items, i => i.ItemId == MireFrogLeg); // only for players on the quest
+        Assert.DoesNotContain(c.Loot.Items, i => i.ItemId == BoneCharm); // only for players on the quest
         long money = c.Loot.Money;
         int items = c.Loot.Items.Count;
 
         c.TakeLoot(LootTake.AllSlots);
-        s.Pump(() => !c.Loot.IsOpen && !c.IsLootable(frog.Guid));
+        s.Pump(() => !c.Loot.IsOpen && !c.IsLootable(croaker.Guid));
         Assert.Equal(money, c.Inventory.Money);
         Assert.Equal(items, s.Received.Count(r => r.Source == ReceiveSource.Loot));
 
         // Nothing left on the corpse, and the living have no loot.
-        s.ExpectError(ActionError.LootNotYours, () => c.OpenLoot(frog.Guid));
+        s.ExpectError(ActionError.LootNotYours, () => c.OpenLoot(croaker.Guid));
         s.ExpectError(ActionError.CantInteract, () => c.OpenLoot(s.Find("Quartermaster Holt").Guid));
     }
 
@@ -219,33 +219,33 @@ public class ItemIntegrationTests
 
         c.Interact(tamsin.Guid);
         s.Pump(() => s.Gossips == 1);
-        Assert.Contains(c.Gossip.Quests, q => q.QuestId == FrogLegQuest && q.Status == QuestGiverStatus.Available);
-        c.AcceptQuest(tamsin.Guid, FrogLegQuest);
-        s.Pump(() => c.Quests.Find(FrogLegQuest) is not null);
+        Assert.Contains(c.Gossip.Quests, q => q.QuestId == BoneCharmQuest && q.Status == QuestGiverStatus.Available);
+        c.AcceptQuest(tamsin.Guid, BoneCharmQuest);
+        s.Pump(() => c.Quests.Find(BoneCharmQuest) is not null);
 
-        for (int kill = 0; kill < 40 && s.Count(MireFrogLeg) < 5; kill++)
+        for (int kill = 0; kill < 40 && s.Count(BoneCharm) < 5; kill++)
         {
-            var frog = s.SpawnAndKill(MireFrog, "Mire Frog");
-            s.Pump(() => c.IsLootable(frog.Guid));
-            c.OpenLoot(frog.Guid);
-            s.Pump(() => c.Loot.Corpse == frog.Guid);
+            var croaker = s.SpawnAndKill(MireCroaker, "Mire Croaker");
+            s.Pump(() => c.IsLootable(croaker.Guid));
+            c.OpenLoot(croaker.Guid);
+            s.Pump(() => c.Loot.Corpse == croaker.Guid);
             c.TakeLoot(LootTake.AllSlots);
             s.Pump(() => !c.Loot.IsOpen);
         }
-        Assert.Equal(5, s.Count(MireFrogLeg));
-        s.Pump(() => c.Quests.Find(FrogLegQuest)!.IsComplete);
-        Assert.Contains(s.Progress, p => p.Quest == FrogLegQuest && p.Count == 5);
+        Assert.Equal(5, s.Count(BoneCharm));
+        s.Pump(() => c.Quests.Find(BoneCharmQuest)!.IsComplete);
+        Assert.Contains(s.Progress, p => p.Quest == BoneCharmQuest && p.Count == 5);
         s.Pump(() => c.GetQuestGiverStatus(tamsin.Guid) == QuestGiverStatus.Reward);
 
         // Enough legs: no more drop.
-        var last = s.SpawnAndKill(MireFrog, "Mire Frog");
+        var last = s.SpawnAndKill(MireCroaker, "Mire Croaker");
         var corpse = (Creature)realm.Game.World.Instances.Single().Find(last.Guid)!;
-        Assert.DoesNotContain(corpse.Loot?.Items ?? new(), i => i.Item.Id == MireFrogLeg);
+        Assert.DoesNotContain(corpse.Loot?.Items ?? new(), i => i.Item.Id == BoneCharm);
 
-        c.TurnInQuest(tamsin.Guid, FrogLegQuest);
-        s.Pump(() => s.Completed.Contains(FrogLegQuest) && s.Count(Hearthbread) == 4 + 5);
-        Assert.Equal(0, s.Count(MireFrogLeg)); // handed in
-        Assert.True(c.Quests.IsCompleted(FrogLegQuest));
+        c.TurnInQuest(tamsin.Guid, BoneCharmQuest);
+        s.Pump(() => s.Completed.Contains(BoneCharmQuest) && s.Count(Hearthbread) == 4 + 5);
+        Assert.Equal(0, s.Count(BoneCharm)); // handed in
+        Assert.True(c.Quests.IsCompleted(BoneCharmQuest));
     }
 
     [Fact]
@@ -258,26 +258,26 @@ public class ItemIntegrationTests
         var tamsin = s.Find("Old Tamsin");
         s.Pump(() => c.GetQuestGiverStatus(tamsin.Guid) == QuestGiverStatus.Available);
 
-        c.AcceptQuest(tamsin.Guid, FrogQuest);
-        s.Pump(() => c.Quests.Find(FrogQuest) is { State: QuestLogState.Active });
-        s.ExpectError(ActionError.QuestNotAvailable, () => c.AcceptQuest(tamsin.Guid, FrogQuest));
-        s.ExpectError(ActionError.QuestNotComplete, () => c.TurnInQuest(tamsin.Guid, FrogQuest, 0));
+        c.AcceptQuest(tamsin.Guid, CroakerQuest);
+        s.Pump(() => c.Quests.Find(CroakerQuest) is { State: QuestLogState.Active });
+        s.ExpectError(ActionError.QuestNotAvailable, () => c.AcceptQuest(tamsin.Guid, CroakerQuest));
+        s.ExpectError(ActionError.QuestNotComplete, () => c.TurnInQuest(tamsin.Guid, CroakerQuest, 0));
 
-        for (int i = 0; i < 6; i++) s.SpawnAndKill(MireFrog, "Mire Frog");
-        s.Pump(() => c.Quests.Find(FrogQuest)!.IsComplete);
-        Assert.Equal(Enumerable.Range(1, 6), s.Progress.Where(p => p.Quest == FrogQuest).Select(p => p.Count));
+        for (int i = 0; i < 6; i++) s.SpawnAndKill(MireCroaker, "Mire Croaker");
+        s.Pump(() => c.Quests.Find(CroakerQuest)!.IsComplete);
+        Assert.Equal(Enumerable.Range(1, 6), s.Progress.Where(p => p.Quest == CroakerQuest).Select(p => p.Count));
         s.Pump(() => c.GetQuestGiverStatus(tamsin.Guid) == QuestGiverStatus.Reward);
 
-        s.ExpectError(ActionError.ChooseReward, () => c.TurnInQuest(tamsin.Guid, FrogQuest));
+        s.ExpectError(ActionError.ChooseReward, () => c.TurnInQuest(tamsin.Guid, CroakerQuest));
         int xpBefore = c.Stats.Xp;
-        c.TurnInQuest(tamsin.Guid, FrogQuest, 1);
-        s.Pump(() => s.Completed.Contains(FrogQuest) && s.Count(FrogskinBoots) == 1 && c.Inventory.Money == 25);
-        Assert.Null(c.Quests.Find(FrogQuest));
+        c.TurnInQuest(tamsin.Guid, CroakerQuest, 1);
+        s.Pump(() => s.Completed.Contains(CroakerQuest) && s.Count(ReedwalkerBoots) == 1 && c.Inventory.Money == 25);
+        Assert.Null(c.Quests.Find(CroakerQuest));
         s.Pump(() => c.Stats.Xp > xpBefore || c.Self.Values.Level > 1);
 
         c.Interact(tamsin.Guid);
         s.Pump(() => s.Gossips == 1);
-        Assert.DoesNotContain(c.Gossip.Quests, q => q.QuestId == FrogQuest);
+        Assert.DoesNotContain(c.Gossip.Quests, q => q.QuestId == CroakerQuest);
     }
 
     [Fact]
@@ -301,11 +301,11 @@ public class ItemIntegrationTests
         s.Pump(() => s.Count(Hearthbread) == 9 && c.Inventory.Money == 1000 - 5 * 25);
         s.ExpectError(ActionError.ItemNotFound, () => c.BuyItem(holt.Guid, WornShortsword)); // he does not sell it
 
-        s.Command($".additem {SlimyFrogSkin} 3");
-        c.SellItem(holt.Guid, s.Find(SlimyFrogSkin));
-        s.Pump(() => s.Count(SlimyFrogSkin) == 0 && c.Inventory.Money == 875 + 3 * 4);
-        s.Command($".additem {MireFrogLeg} 1");
-        s.ExpectError(ActionError.CantSellItem, () => c.SellItem(holt.Guid, s.Find(MireFrogLeg)));
+        s.Command($".additem {SlimyLegWraps} 3");
+        c.SellItem(holt.Guid, s.Find(SlimyLegWraps));
+        s.Pump(() => s.Count(SlimyLegWraps) == 0 && c.Inventory.Money == 875 + 3 * 4);
+        s.Command($".additem {BoneCharm} 1");
+        s.ExpectError(ActionError.CantSellItem, () => c.SellItem(holt.Guid, s.Find(BoneCharm)));
         s.ExpectError(ActionError.ItemNotFound, () => c.SellItem(holt.Guid, ItemPos.Equip(EquipSlot.MainHand)));
 
         s.Command(".tele 40 40");
@@ -373,8 +373,8 @@ public class ItemIntegrationTests
         s.Pump(() => s.CastErrors.Contains(CastResult.InCombat));
         Assert.Equal(3, s.Count(Hearthbread));
 
-        s.Command($".additem {SlimyFrogSkin}");
-        s.ExpectError(ActionError.NotUsable, () => c.UseItem(s.Find(SlimyFrogSkin), c.LocalGuid));
+        s.Command($".additem {SlimyLegWraps}");
+        s.ExpectError(ActionError.NotUsable, () => c.UseItem(s.Find(SlimyLegWraps), c.LocalGuid));
         s.ExpectError(ActionError.ItemNotFound, () => c.UseItem(ItemPos.Equip(EquipSlot.MainHand), c.LocalGuid));
     }
 
@@ -389,11 +389,11 @@ public class ItemIntegrationTests
         {
             s.Pump(() => s.Client.State == ClientState.InWorld && s.Client.Inventory.All.Any());
             var tamsin = s.Find("Old Tamsin");
-            s.Client.AcceptQuest(tamsin.Guid, FrogQuest);
-            s.Pump(() => s.Client.Quests.Find(FrogQuest) is not null);
-            s.SpawnAndKill(MireFrog, "Mire Frog");
-            s.SpawnAndKill(MireFrog, "Mire Frog");
-            s.Pump(() => s.Client.Quests.Find(FrogQuest)!.Progress[0] == 2);
+            s.Client.AcceptQuest(tamsin.Guid, CroakerQuest);
+            s.Pump(() => s.Client.Quests.Find(CroakerQuest) is not null);
+            s.SpawnAndKill(MireCroaker, "Mire Croaker");
+            s.SpawnAndKill(MireCroaker, "Mire Croaker");
+            s.Pump(() => s.Client.Quests.Find(CroakerQuest)!.Progress[0] == 2);
             s.Command(".money 777");
             s.Command(".additem " + SmallLinenPouch);
             s.Client.AutoEquip(s.Find(SmallLinenPouch));
@@ -409,7 +409,7 @@ public class ItemIntegrationTests
         var c = again.Client;
         again.Pump(() => c.State == ClientState.InWorld && c.Inventory.All.Any() && c.Quests.Active.Count == 1);
         Assert.Equal(777, c.Inventory.Money);
-        Assert.Equal(2, c.Quests.Find(FrogQuest)!.Progress[0]);
+        Assert.Equal(2, c.Quests.Find(CroakerQuest)!.Progress[0]);
         Assert.Equal(6, c.Inventory.ContainerSize(ItemPos.FirstBag));
         Assert.Equal(new ClientItem { ItemId = Hearthbread, Count = 4 }, c.Inventory.Get(new ItemPos(ItemPos.FirstBag, 3)));
         Assert.Equal(4, again.Count(Hearthbread)); // the starting kit came only once

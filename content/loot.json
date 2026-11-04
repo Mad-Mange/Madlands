@@ -2,7 +2,7 @@
   "$schema": "schemas/loot.schema.json",
   "lootTables": [
     {
-      "id": 1, "name": "Mire Frog",
+      "id": 1, "name": "Mire Croaker",
       "money": { "min": 1, "max": 4 },
       "items": [
         { "item": 2001, "chance": 0.5 },

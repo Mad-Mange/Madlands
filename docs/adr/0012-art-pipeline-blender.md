@@ -75,3 +75,4 @@ its look. The project owner wants to use Blender and to start very low-poly, ref
   (`DisplayModel.SetUpLods`) and applies tints and hidden regions to every mesh of the body. Limbs and the trunk are
   single surfaces with weights blended over the joints. `art/blender/lookbook.py` renders races in outfits for
   comparing with reference sheets. Props and creatures stay flat-shaded.
+- (2026-11-04) Humanoid NPCs can also come from Tripo, textured: [ADR 0014](0014-characters-from-tripo.md).

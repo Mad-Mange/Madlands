@@ -426,7 +426,7 @@ namespace Madlands.Client
             return Loc.T("stat." + stat);
         }
 
-        /// <summary>"Mire Frog Leg x2" style chat text with the item's name.</summary>
+        /// <summary>"Croaker Bone Charm x2" style chat text with the item's name.</summary>
         public static string Describe(ClientGameData data, uint itemId, int count)
         {
             var item = data.GetItem(itemId);
