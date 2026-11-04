@@ -184,6 +184,13 @@ Every phase ends in something playable and tested. Architectural decisions are i
   shard crystals and giant skull. Spell effects are models from `art/blender/effects.py` instead of Unity primitives:
   bolts by school (a crystal, a star, a fireball, a leaf) with trails of flecks, bursts and flashes, a frost nova that
   raises ice crystals, a bolt growing between a caster's hands, a target ring with arrowheads, a gem over loot
+- [x] The land livened up (2026-10-29): the valley floor rolls in swells and knolls, Shardscar and the mountains are
+  stepped into cliff bands with grassy ledges, camps stand on level ground. Terrain layers painted from code with normal
+  maps (`GroundPainter`: grass, a sunlit meadow, earth, rock, mud, forest floor, a pebble beach, snow), forest floor under
+  every tree and trodden earth round the camps; ground cover from `art/blender/landscape.py` scattered by the terrain
+  (grass tufts, tall grass, three kinds of flowers in drifts, ferns, pebbles; one vertex-colored material, swaying in the
+  wind); copses, pines on the mountainsides, cliffs, outcrops and a spire; water built over the terrain when the map
+  loads, colored by depth, with foam along the shore, and water lilies
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)
 

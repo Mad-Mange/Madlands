@@ -70,11 +70,11 @@ Everything for the first real zone is in; what is left is putting a realm online
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/phase5-hollowmere.jpg" alt="The village of Mirewatch inside its palisade on the shore of the mere"></td>
+    <td width="50%"><img src="docs/images/phase5-hollowmere.jpg" alt="The road along the mere's pebble beach to Mirewatch inside its palisade, meadows full of grass and flowers, pines, and mountains stepped into cliffs and grassy ledges beyond"></td>
     <td width="50%"><img src="docs/images/phase5-heroes.jpg" alt="Four characters in Mirewatch's training camp: a human warrior in a blue tabard and cowl, a red-bearded Korrin warden in a laced leather jerkin with a fur collar over teal sleeves, with an axe and a shield, a human shardmage in a long violet coat, and Captain Brand in gilded plate with a star on the chest, a blue tabard, cloak and a round steel shield with a gilded star"></td>
   </tr>
   <tr>
-    <td><sub><b>Mirewatch.</b> The village inside its palisade on the shore of the mere, the Reedfen marsh and the Greywood beyond.</sub></td>
+    <td><sub><b>Mirewatch.</b> The road along the mere's beach to the village inside its palisade; the valley rolls away to mountains stepped into cliffs and grassy ledges.</sub></td>
     <td><sub><b>The heroes.</b> New characters start in their class's look: the warrior's blue tabard and cowl, the warden's leather jerkin with a fur collar and belt flaps over a teal shirt, the shardmage's long violet coat. Captain Brand wears the full knight's plate and the star shield. Sculpted faces, hair and beards, shaded smoothly, in three levels of detail.</sub></td>
   </tr>
   <tr>
@@ -164,6 +164,14 @@ Everything for the first real zone is in; what is left is putting a realm online
   <tr>
     <td><sub><b>The shore.</b> Mire frogs sculpted in one piece with blotches, warts and a mouth that opens wide; the snapper's back is armored with keeled plates and its teeth interlock along the jaws.</sub></td>
     <td><sub><b>Greywood spiders.</b> Jointed legs thickest at the thigh and banded pale at every joint, eight glowing eyes over curved fangs, a bristly abdomen with a red hourglass.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/phase5-valley.jpg" alt="A warrior on a rolling meadow full of grass tufts and drifts of blue flowers, a road running down to the mere's beach and a watchtower, pines and oaks in copses, mountains with cliff bands behind"></td>
+    <td><img src="docs/images/phase5-meadow.jpg" alt="A warrior on a grassy knoll above the Reedfen marsh: drifts of white and yellow flowers, dead trees and pools in the marsh, a mountain stepped into ledges of rock and grass"></td>
+  </tr>
+  <tr>
+    <td><sub><b>The valley.</b> Swells and knolls, grass tufts that sway in the wind, flowers in drifts, copses of oaks and pines; painted ground (earth, a pebble beach, the forest floor) with the light catching its relief.</sub></td>
+    <td><sub><b>Above the Reedfen.</b> The mountains rise in bands of cliff with grassy ledges and pines climbing their feet; water lilies float in the pools, the water darker where it is deep.</sub></td>
   </tr>
   <tr>
     <td><img src="docs/images/phase5-gate.jpg" alt="Mirewatch's north gate: towers of bound logs under a little horned roof with the village's blue banner, the palisade of sharpened stakes, watchtowers with thatched roofs at both ends"></td>
@@ -285,6 +293,7 @@ The **core loop** is in: take a quest, go out and fight, loot, get better gear, 
     <td valign="top">
       <b>Dev log</b>
       <ul>
+        <li><sub><b>2026-10-29 – The land.</b> Hollowmere's ground rolls in swells and knolls, Shardscar and the mountains are stepped into cliffs and ledges, and camps stand on level ground. Painted ground with relief (grass, a sunlit meadow, earth, rock, mud, forest floor, a pebble beach, snow); grass tufts, flowers, ferns and pebbles scattered by the terrain and swaying in the wind; copses, pines on the mountainsides, cliffs and rock outcrops; water that is light over the shallows and dark where it is deep, with foam at the shore and water lilies.</sub></li>
         <li><sub><b>2026-10-28 – Beasts and spells.</b> The wolf, the boar and the bear sculpted like the heroes, then the frog, the spider, the mire snapper and Gloomjaw with its crystal clusters; the shardling of chipped rock; Ruukhar with a sculpted skull hood and the cleaver he drops; the Cinder Cut's slag pools, slag heaps, crystals and giant skull remodeled. Spell effects are models now: crystals, stars, flames and leaves that fly, burst and leave trails, a frost nova that raises ice from the ground, a growing bolt in the caster's hands, a target ring with arrowheads.</sub></li>
         <li><sub><b>2026-10-27 – The heroes.</b> Characters remodeled after reference sheets for the three classes: heads, hair and beards sculpted like clay and shaded smoothly, limbs that bend at the joints, body, hair, beard and gear as separate meshes in three levels of detail. New characters start in their class's look (the warrior's tabard and cowl, the shardmage's long coat, the warden's leather jerkin with a fur collar); new tabards, a jerkin, a coat, a tree cloak, a knight's star shield and a warden's shield; a lookbook renders outfits in Blender.</sub></li>
         <li><sub><b>2026-10-21 – Modeled gear.</b> Helmets, hoods, hats, pads, cloaks, robes, breastplates, gauntlets and greaves are now modeled pieces built into every race's model; the NPCs wear them. Mirelings got their own model; the frog, wolf, boar, bear, spider and shardling were remodeled; Mirewatch got new gates, an inn, cottages, a well, stalls and watchtowers; new trees, rocks and clutter all over the valley; detailed weapons; weapons rest pointing down, staffs stand upright, shields sit on the forearm.</sub></li>

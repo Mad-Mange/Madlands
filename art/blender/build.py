@@ -22,11 +22,12 @@ import creatures  # noqa: E402
 import effects  # noqa: E402
 import humanoid  # noqa: E402
 import items  # noqa: E402
+import landscape  # noqa: E402
 import lowpoly as lp  # noqa: E402
 import preview  # noqa: E402
 import props  # noqa: E402
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+ROOT =os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 UNITY_ART = os.path.join(ROOT, "client", "Assets", "Madlands", "Art")
 BLEND_DIR = os.path.join(ROOT, "art", "blend")
 
@@ -50,6 +51,8 @@ ASSETS = {
 ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in props.PROPS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in buildings.BUILDINGS.items()})
+ASSETS.update({name: ("Props", builder, False) for name, builder in landscape.PROPS.items()})
+ASSETS.update({name: ("Ground", builder, False) for name, builder in landscape.GROUND.items()})
 ASSETS.update({name: ("Effects", builder, False) for name, builder in effects.EFFECTS.items()})
 
 # Previews of mesh-less animation files put a body on the skeleton (after the export).

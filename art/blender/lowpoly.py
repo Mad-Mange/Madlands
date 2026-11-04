@@ -41,6 +41,10 @@ def srgb_to_linear(c):
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
+def linear_to_srgb(c):
+    return c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
+
+
 def hex_color(value):
     """'#a07040' -> sRGB tuple 0..1."""
     value = value.lstrip("#")

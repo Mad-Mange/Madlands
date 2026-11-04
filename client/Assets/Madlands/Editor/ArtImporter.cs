@@ -11,12 +11,14 @@ namespace Madlands.Client.Editor
     /// Import rules for the Blender art in Assets/Madlands/Art (art/README.md), so a new FBX needs no
     /// clicking in the inspector: Characters/ are humanoids (Unity maps the avatar from the bone names),
     /// Creatures/ have generic rigs, everything else is a static mesh. Materials become URP Lit with the
-    /// Blender color. Keeps <see cref="ArtCatalog"/> (Resources/ArtCatalog.asset) in sync.
+    /// Blender color; Ground/ pieces (scattered by the terrain) get the instanced, swaying Madlands/GroundCover.
+    /// Keeps <see cref="ArtCatalog"/> (Resources/ArtCatalog.asset) in sync.
     /// </summary>
     public sealed class ArtImporter : AssetPostprocessor
     {
         public const string ArtRoot = "Assets/Madlands/Art/";
         public const string CatalogPath = "Assets/Madlands/Resources/ArtCatalog.asset";
+        private const string GroundCoverShader = "Assets/Madlands/Shaders/GroundCover.shader";
 
         /// <summary>Clips that repeat; everything else plays once.</summary>
         public static readonly HashSet<string> LoopingClips = new HashSet<string>
@@ -205,6 +207,14 @@ namespace Madlands.Client.Editor
             material.SetColor("_BaseColor", color);
             material.SetFloat("_Smoothness", description.materialName.Contains("Metal") ? 0.45f : 0.12f);
             material.SetFloat("_Metallic", description.materialName.Contains("Metal") ? 0.6f : 0f);
+            if (assetPath.Contains("/Ground/"))
+            {
+                // Ground cover: its one material draws the vertex colors, both sides, swaying (GPU instanced by the terrain).
+                context.DependsOnSourceAsset(GroundCoverShader);
+                var groundCover = AssetDatabase.LoadAssetAtPath<Shader>(GroundCoverShader);
+                if (groundCover != null) material.shader = groundCover;
+                material.enableInstancing = true;
+            }
             if (description.materialName.Contains("Glow"))
             {
                 // The light comes from the emission; a bright lit base on top of it washes the color out to white.

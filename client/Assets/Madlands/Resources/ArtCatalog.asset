@@ -65,6 +65,22 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 6db75583486a2de44ba61dafcfd63d98, type: 3}
   - Name: FxWave
     Prefab: {fileID: 919132149155446097, guid: 810d65391837f6f4ea510c2c6459e1e9, type: 3}
+  - Name: Fern
+    Prefab: {fileID: 919132149155446097, guid: 18e70993f9bdfc24c8ab8c41f362e844, type: 3}
+  - Name: FlowersBlue
+    Prefab: {fileID: 919132149155446097, guid: 42edc4491b5431f4d8e641b2d2e85c02, type: 3}
+  - Name: FlowersWhite
+    Prefab: {fileID: 919132149155446097, guid: 34471d3b4f5c8e64eacb18ff2bcb963c, type: 3}
+  - Name: FlowersYellow
+    Prefab: {fileID: 919132149155446097, guid: a5ac5afad7b3be6438e79729b90e12fc, type: 3}
+  - Name: GrassTall
+    Prefab: {fileID: 919132149155446097, guid: 0e3cd164a640a7446b7812fc8509be48, type: 3}
+  - Name: GrassTuft
+    Prefab: {fileID: 919132149155446097, guid: 094a5847a30ba9b42b9b6ee4d53a0216, type: 3}
+  - Name: GrassTuftMeadow
+    Prefab: {fileID: 919132149155446097, guid: b30a17a57343b7e41983b4168d7f8c01, type: 3}
+  - Name: Pebbles
+    Prefab: {fileID: 919132149155446097, guid: 6d0ad338e20356f41b4097591cb80b1c, type: 3}
   - Name: Buckler
     Prefab: {fileID: 919132149155446097, guid: 30578add63835cf41b9ba1531ea6e9c3, type: 3}
   - Name: Cleaver
@@ -107,6 +123,10 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 8fb61ea30a0496a4cb03c148256094ce, type: 3}
   - Name: Cauldron
     Prefab: {fileID: 919132149155446097, guid: c40ed0c851f3933408c3c75481ebed00, type: 3}
+  - Name: Cliff1
+    Prefab: {fileID: 919132149155446097, guid: de8e57dad7a80364182f4ba975a112c3, type: 3}
+  - Name: Cliff2
+    Prefab: {fileID: 919132149155446097, guid: 929c1c7bace24e343b1064756d34d42e, type: 3}
   - Name: Cottage
     Prefab: {fileID: 919132149155446097, guid: c75c18fa992194b45ad546da300ae4c9, type: 3}
   - Name: Crate
@@ -123,6 +143,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: dc82fe7531503284eb0352ae2e25356b, type: 3}
   - Name: LanternPost
     Prefab: {fileID: 919132149155446097, guid: b5e9cabbafe17214ea1b9921880c6baa, type: 3}
+  - Name: LilyPads
+    Prefab: {fileID: 919132149155446097, guid: d9ab1855738d4c74ab4dc40d1c12596f, type: 3}
   - Name: Log
     Prefab: {fileID: 919132149155446097, guid: 4240152a8f1db2d479e77348a4136e78, type: 3}
   - Name: Longhouse
@@ -131,6 +153,10 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 1ad0b973813d82e41bc7ff263e3f7c8a, type: 3}
   - Name: Mushrooms
     Prefab: {fileID: 919132149155446097, guid: 3f0209c763b29ca458e8cdcb9a1e1179, type: 3}
+  - Name: Outcrop1
+    Prefab: {fileID: 919132149155446097, guid: 0f2eb432d327e3a49a8aba94e434f140, type: 3}
+  - Name: Outcrop2
+    Prefab: {fileID: 919132149155446097, guid: bc2b9f6906e5f0b48aed6ceab7a45e7e, type: 3}
   - Name: Palisade
     Prefab: {fileID: 919132149155446097, guid: ed97c20c581e0014ea66c5579a97d619, type: 3}
   - Name: Reeds
@@ -139,6 +165,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: e90ba9751c093134eabae7daf67fe9bc, type: 3}
   - Name: Rock2
     Prefab: {fileID: 919132149155446097, guid: 8d7e268279500af43a5bde5601853999, type: 3}
+  - Name: RockSpire
+    Prefab: {fileID: 919132149155446097, guid: d0936ea0a36ac9640b226bb30f6bcd06, type: 3}
   - Name: RuinPillar
     Prefab: {fileID: 919132149155446097, guid: 4b31d2432f945a84c9ec813f8b502d6c, type: 3}
   - Name: RuinWall

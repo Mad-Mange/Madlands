@@ -125,6 +125,11 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   height; rays from the head's center reach the face at other heights.
 - Blender's Workbench draws back faces: cloth (a surface plus a lining facing the other way) z-fights in previews
   unless backface culling is on (the lookbook turns it on; Unity culls back faces).
+- A terrain detail prototype (ground cover) must have exactly one material, or the terrain silently draws nothing
+  (`DetailPrototype.Validate` says why): `art/blender/landscape.py` bakes colors into vertex colors. Changes to a saved
+  `TerrainData` (alpha maps, detail layers) only reach the disk after `EditorUtility.SetDirty`.
+- The water is built over the terrain when a map loads (`WaterSurface`), colored by depth for `Madlands/Water`: a new
+  pool or a lower shore needs no water mesh, only terrain below `WaterLevel`.
 - Props with mesh colliders become navmesh obstacles (Madlands > Export Map). Anything hanging lower than the 2 m agent
   height over a path (a gate's banner, a beam) closes it for creatures; `NavigationTests` walks out of Mirewatch's gates.
 
