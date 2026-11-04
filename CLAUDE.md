@@ -26,7 +26,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 ## Commands (PowerShell; dotnet may need PATH refresh in old shells)
 
 ```powershell
-docker compose -f deploy/docker-compose.yml up -d   # PostgreSQL (+ Seq) for the server and the Postgres tests
+docker compose -f deploy/docker-compose.yml up -d   # PostgreSQL on localhost:15432 (+ Seq on 15341) for the server and the Postgres tests
 dotnet build Madlands.slnx                      # all .NET projects (output in /artifacts)
 dotnet test Madlands.slnx                       # 130+ tests incl. real HTTP+UDP realm, combat/loot/quests end to end, Postgres
 dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --gm-all           # UDP 7777 + HTTP 7780, PostgreSQL, GM commands for all
@@ -95,6 +95,13 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   (`gh auth refresh -h github.com -s workflow`, run by the user: it opens a browser).
 - Windows: a Git Credential Manager prompt cannot be shown from here; push with
   `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (or the user runs `gh auth setup-git`).
+- Windows reserves blocks of ports inside its dynamic range, and Docker Desktop then drops a published port without an
+  error: the container says `Up`, `docker ps` shows `5432/tcp` without `->` and nothing listens on the host, so the
+  server reports it cannot connect. Check `netsh interface ipv4 show excludedportrange protocol=tcp` and
+  `netsh int ipv4 show dynamicport tcp`. The TCP range should start at 49152; if it starts at 1024 any TCP port can be
+  hit, also 7780 (as admin, then restart Windows: `netsh int ipv4 set dynamicport tcp start=49152 num=16384`). This is
+  why local Postgres and Seq use 15432 and 15341, below the default range. The server's and the tests' default
+  connection strings follow; CI has its own Postgres on 5432.
 
 - Unity keeps the orientation an FBX declares: changing Blender's export axes changes nothing. `ArtImporter`
   turns every model root 180 degrees so Blender's front (-Y) faces Unity's +Z.

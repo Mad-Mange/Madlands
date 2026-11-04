@@ -1,5 +1,6 @@
 # Local development services. Start with:  docker compose -f deploy/docker-compose.yml up -d
 # Used from Phase 2 (persistence). Ports are bound to localhost only.
+# Not the usual 5432 and 5341: Windows can reserve those, and Docker then silently publishes nothing (see CLAUDE.md).
 name: madlands
 
 services:
@@ -12,7 +13,7 @@ services:
       POSTGRES_PASSWORD: ${MADLANDS_PG_PASSWORD:-madlands_dev}
       POSTGRES_DB: madlands
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -23,7 +24,7 @@ services:
       ACCEPT_EULA: "Y"
       SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
     ports:
-      - "127.0.0.1:5341:80"
+      - "127.0.0.1:15341:80"
     volumes:
       - seqdata:/data
 

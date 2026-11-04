@@ -10,7 +10,7 @@ For local development see the README.
 | Game server (UDP) | `0.0.0.0:7777` | the internet (firewall: UDP 7777) |
 | Account API (HTTP) | `127.0.0.1:7780` | only Caddy on the same machine |
 | Caddy (TLS) | `:443` (and `:80` for certificates) | the internet: `https://<domain>/api/...` |
-| PostgreSQL | `127.0.0.1:5432` (Docker) | only the realm server |
+| PostgreSQL | `127.0.0.1:15432` (Docker) | only the realm server |
 
 Passwords only ever travel over HTTPS. The realm server refuses to start if `--public-host` is a public
 address while its account API would accept plain HTTP from outside (override: `--allow-plain-http`).
@@ -33,7 +33,7 @@ address while its account API would accept plain HTTP from outside (override: `-
    ```bash
    /opt/madlands/server/Madlands.Server --content /opt/madlands/content \
        --bind 0.0.0.0 --api-bind 127.0.0.1 --trust-proxy --public-host realm.example.com \
-       --connection-string "Host=127.0.0.1;Port=5432;Username=madlands;Password=$MADLANDS_PG_PASSWORD;Database=madlands" \
+       --connection-string "Host=127.0.0.1;Port=15432;Username=madlands;Password=$MADLANDS_PG_PASSWORD;Database=madlands" \
        --realm-name "Madlands playtest"
    ```
    `--trust-proxy` makes the per-IP rate limits use the players' addresses (from `X-Forwarded-For`)
@@ -55,7 +55,7 @@ After=network-online.target docker.service
 [Service]
 WorkingDirectory=/opt/madlands
 Environment=MADLANDS_PG_PASSWORD=<the password>
-ExecStart=/opt/madlands/server/Madlands.Server --content /opt/madlands/content --bind 0.0.0.0 --api-bind 127.0.0.1 --trust-proxy --public-host realm.example.com --connection-string "Host=127.0.0.1;Port=5432;Username=madlands;Password=${MADLANDS_PG_PASSWORD};Database=madlands"
+ExecStart=/opt/madlands/server/Madlands.Server --content /opt/madlands/content --bind 0.0.0.0 --api-bind 127.0.0.1 --trust-proxy --public-host realm.example.com --connection-string "Host=127.0.0.1;Port=15432;Username=madlands;Password=${MADLANDS_PG_PASSWORD};Database=madlands"
 Restart=on-failure
 # The server saves everyone on SIGTERM; give it time.
 TimeoutStopSec=30

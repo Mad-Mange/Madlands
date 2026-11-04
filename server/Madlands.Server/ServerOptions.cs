@@ -4,7 +4,7 @@ namespace Madlands.Server;
 
 public sealed class ServerOptions
 {
-    public const string DevConnectionString = "Host=127.0.0.1;Port=5432;Username=madlands;Password=madlands_dev;Database=madlands";
+    public const string DevConnectionString = "Host=127.0.0.1;Port=15432;Username=madlands;Password=madlands_dev;Database=madlands";
 
     /// <summary>UDP port of the game connection.</summary>
     public int Port { get; set; } = 7777;

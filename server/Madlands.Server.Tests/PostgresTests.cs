@@ -16,7 +16,7 @@ internal static class PostgresTestServer
 
     public static string MaintenanceConnectionString =>
         Environment.GetEnvironmentVariable("MADLANDS_TEST_PG")
-        ?? "Host=127.0.0.1;Port=5432;Username=madlands;Password=madlands_dev;Database=postgres;Timeout=3";
+        ?? "Host=127.0.0.1;Port=15432;Username=madlands;Password=madlands_dev;Database=postgres;Timeout=3";
 
     public static string? Unavailable => UnavailableReason.Value;
 
