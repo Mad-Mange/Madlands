@@ -150,7 +150,7 @@ Everything for the first real zone is in; what is left is putting a realm online
     <td><sub><b>The Muddy Boot.</b> The inn on Mirewatch's square: red shingles, dormers, lanterns on its horned gables, a porch and a sign with a boot. The cottages are half-timbered under thatch.</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/images/phase5-spells.jpg" alt="A shardmage on the shore of the mere casting Shard Nova: a wave of frost runs out over the grass and ice crystals break out of the ground around her"></td>
+    <td><img src="docs/images/phase5-spells.jpg" alt="A shardmage in a violet coat casting Shard Nova on the shore of the mere, arms spread: ice crystals break out of the grass all around, Mire Croakers on the beach and in the shallows, mountains behind"></td>
     <td><img src="docs/images/phase5-cindercut.jpg" alt="The Cinder Cut: a bowl of grey rock with glowing slag pools lying along its slope, slag heaps with veins of fire, shard crystals and a giant horned skull half sunk in the ground; Ruukhar waits in the middle with his cleaver"></td>
   </tr>
   <tr>
@@ -167,7 +167,7 @@ Everything for the first real zone is in; what is left is putting a realm online
   </tr>
   <tr>
     <td><img src="docs/images/phase5-swamp.jpg" alt="The south shore of the mere: hooded Mire Croakers scattered along the beach and a warrior in a meadow of grass and blue flowers, the lake, a palisade on a far hill and mountains behind"></td>
-    <td><img src="docs/images/phase5-spider.jpg" alt="Two Greywood spiders up close: jointed legs banded pale at the joints, bristly round abdomens, glowing eyes, frogs and reeds behind them"></td>
+    <td><img src="docs/images/phase5-spider.jpg" alt="Greywood spiders with jointed legs and bristly round abdomens beside a warrior on a grassy knoll, tall tiered pines and copses behind them and a mountain stepped into ledges"></td>
   </tr>
   <tr>
     <td><sub><b>The shore.</b> The Mire Croakers, a frog-folk in hoods and rags hung with bones, keep to the mere's south shore. They leave you alone until you poke them, and then they are twice as mean.</sub></td>
