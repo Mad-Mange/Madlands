@@ -78,12 +78,20 @@ Everything for the first real zone is in; what is left is putting a realm online
     <td><sub><b>The heroes.</b> New characters start in their class's look: the warrior's blue tabard and cowl, the warden's leather jerkin with a fur collar and belt flaps over a teal shirt, the shardmage's long violet coat. Captain Brand wears the full knight's plate and the star shield. Sculpted faces, hair and beards, shaded smoothly, in three levels of detail.</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/images/phase5-ruukhar.jpg" alt="Ruukhar the Slagborn, a hulking one-eyed brute with purple hide, horns down his back, tusks and skulls on his belt, a great cleaver with a glowing edge in his hand, towers over a warrior and a red-haired Korrin warden in the Cinder Cut, a slag pool behind him"></td>
+    <td><img src="docs/images/phase5-ruukhar.jpg" alt="Ruukhar the Slagborn, a hulking one-eyed brute with purple hide, horns and tusks, holds his great cleaver up high, fire glowing in his chest, while a red-haired Korrin warden fights him in the Cinder Cut; a slag pool and a giant horned skull behind him"></td>
     <td><img src="docs/images/phase5-mirewatch.jpg" alt="The square of Mirewatch: timber houses with horned gables, the well, the inn, market stalls and NPCs with symbols over their heads"></td>
   </tr>
   <tr>
-    <td><sub><b>Ruukhar the Slagborn.</b> A warrior and a warden take on the brute of the Cinder Cut, a model from Tripo twice their height. When he raises his cleaver, his Cinder Quake runs out as a wave of fire and embers: get out of reach while he winds up.</sub></td>
+    <td><sub><b>Ruukhar the Slagborn.</b> The brute of the Cinder Cut, a model from Tripo twice a hero's height, winds up his Cinder Quake: the cleaver goes up and fire glows in his chest. Two and a half seconds to get out of reach.</sub></td>
     <td><sub><b>The square of Mirewatch.</b> Timber grove houses around the well and the inn. Symbols and titles show what the NPCs do (Gerta the weaponsmith, Holt's general goods); the minimap marks the quests.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/phase5-ruukhar-closeup.jpg" alt="Ruukhar up close: a one-eyed brute with purple mottled hide, tusks, horns along his shoulders, leather bracers and a belt hung with skulls and fangs over a torn loincloth, his great cleaver hanging from one hand, a red-haired Korrin warden beside him reaching to his waist"></td>
+    <td><img src="docs/images/phase5-ruukhar-quake.jpg" alt="Ruukhar brings his cleaver down in the Cinder Cut: a wide orange wave of fire runs out across the stone floor and past a Korrin warden, embers flying, slag heaps, rocks and a horned skull behind them"></td>
+  </tr>
+  <tr>
+    <td><sub><b>Ruukhar up close.</b> One eye, tusks, horns down his back and skulls on his belt, with the Slagborn Cleaver he drops in his fist. An unrigged Tripo model, rigged onto the heroes' skeleton and scaled up: he fights with their clips.</sub></td>
+    <td><sub><b>Cinder Quake.</b> The cleaver comes down and a wave of fire and embers runs out twelve meters, burning and slowing everyone it reaches. This warden was too slow.</sub></td>
   </tr>
   <tr>
     <td><img src="docs/images/phase5-reedfen.jpg" alt="A mage wading through the Reedfen marsh among reeds, a defeated mireling in the water"></td>
