@@ -7,7 +7,7 @@ Shields: the face looks along +X (outward on the left arm).
 import math
 import random
 
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 import lowpoly as lp
 
@@ -99,6 +99,15 @@ def cutlass():
     return mb.finish()
 
 
+# Staffs are drawn long; held, they should reach about to their holder's eyes.
+STAFF_SCALE = 0.85
+
+
+def _staff_sized(obj):
+    obj.data.transform(Matrix.Scale(STAFF_SCALE, 4))
+    return obj
+
+
 def staff():
     """A gnarled wooden staff: a knotty shaft bound with leather where it is held, its head split into twisting prongs around a stone."""
     mb = lp.MeshBuilder("Staff")
@@ -117,7 +126,7 @@ def staff():
                  ((math.cos(a + 0.8) * 0.05, math.sin(a + 0.8) * 0.05, 1.32), 0.011), ((math.cos(a + 1.5) * 0.015, math.sin(a + 1.5) * 0.015, 1.38), 0.004)],
                 wood if k % 2 else dark, sides=5)
     mb.sphere((0, 0, 1.25), 0.045, stone, segments=7, rings=5)
-    return mb.finish()
+    return _staff_sized(mb.finish())
 
 
 def crystal_rod():
@@ -139,7 +148,7 @@ def crystal_rod():
                  ((math.cos(a) * 0.045, math.sin(a) * 0.045, 1.42), 0.004)], metal, sides=4)
     mb.hull([(0.05, 0, 1.34), (-0.05, 0, 1.34), (0, 0.05, 1.34), (0, -0.05, 1.34), (0.035, 0.035, 1.3), (-0.035, -0.035, 1.3),
              (0, 0, 1.22), (0, 0, 1.58)], crystal)
-    return mb.finish()
+    return _staff_sized(mb.finish())
 
 
 def cudgel():

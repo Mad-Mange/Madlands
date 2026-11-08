@@ -194,6 +194,10 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] Characters from Tripo (2026-11-04, ADR 0014): `art/blender/tripo.py` turns a textured Tripo model in a T-pose into
   a character on the humanoid skeleton, in three levels of detail. The mire frogs became the Mire Croakers, a frog-folk;
   Old Tamsin's two quests and the frog items were rewritten to suit
+- [x] The classes' own models from Tripo (2026-11-04, ADR 0014): each class shows its model whatever the race (`displayId`
+  on the class), holding its weapon. `tripo.py` bakes an A-pose into a T-pose, corrects the automatic weights of arms and
+  skirts, and takes models rigged by Tripo (the classes and the Mire Croaker), whose hands close round what they hold.
+  Staffs are shorter and stand clear of the arm, a bare hand hangs straight. Worn armor no longer shows on players
 - [ ] Replace the other NPC models with Tripo models, one at a time
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)

@@ -28,6 +28,9 @@ namespace Madlands.Client
         public bool Humanoid;
         public Transform MainHandGrip;
         public Transform OffHandGrip;
+        /// <summary>A humanoid's main hand and its rotation in the rest pose: straight along the forearm.</summary>
+        public Transform RightHand;
+        public Quaternion RightHandRest;
         /// <summary>Weapon rotation relative to each grip: the weapon's +Y points forward in the rest pose.</summary>
         public Quaternion MainHandOffset;
         public Quaternion OffHandOffset;
@@ -57,6 +60,21 @@ namespace Madlands.Client
         private Vector3 _cloakRestPosition;
         private Vector3 _cloakAxis;
         private float _cloakAngle;
+
+        /// <summary>A finger joint of a rigged model (art/blender/tripo.py) and its rotation with the hand open and closed.</summary>
+        private sealed class FingerJoint
+        {
+            public Transform Bone;
+            public Quaternion Open;
+            public Quaternion Closed;
+        }
+
+        private static readonly string[] Fingers = { "Index", "Middle", "Ring", "Pinky" };
+        /// <summary>Degrees each joint bends in a closed hand, from the knuckle out.</summary>
+        private static readonly float[] FingerCurl = { 55f, 75f, 50f };
+        private static readonly float[] ThumbCurl = { 20f, 30f, 25f };
+        private readonly List<FingerJoint> _leftFingers = new List<FingerJoint>();
+        private readonly List<FingerJoint> _rightFingers = new List<FingerJoint>();
 
         /// <summary>A mesh of the body: its renderer and the model's own materials.</summary>
         private sealed class BodyPart
@@ -94,6 +112,9 @@ namespace Madlands.Client
         }
 
         public bool HasBody => _parts.Count > 0;
+
+        /// <summary>Carries gear pieces it can show. A painted model has its armor in its textures.</summary>
+        public bool HasPieces => _pieces.Count > 0;
 
         /// <summary>Back to the model's own color for a region (gear taken off).</summary>
         public void ResetTint(string region)
@@ -307,6 +328,49 @@ namespace Madlands.Client
                 _restFromModel[t.name] = t.worldToLocalMatrix * holder.localToWorldMatrix;
         }
 
+        /// <summary>
+        /// Remembers how a rigged model's hands close (call with the rest pose captured). No clip moves the fingers, so
+        /// they stay as <see cref="CloseHand"/> leaves them. Models without finger bones have nothing to close.
+        /// </summary>
+        public void FindFingers()
+        {
+            FindFingers("Left", _leftFingers);
+            FindFingers("Right", _rightFingers);
+        }
+
+        private void FindFingers(string side, List<FingerJoint> joints)
+        {
+            string hand = side + "Hand";
+            if (Bone(hand + "Middle1") == null || Bone(hand + "Index1") == null || Bone(hand + "Pinky1") == null) return;
+            var along = (RestPosition(hand + "Middle1") - RestPosition(hand)).normalized;
+            var across = RestPosition(hand + "Pinky1") - RestPosition(hand + "Index1");
+            var palm = Vector3.Cross(along, across).normalized;
+            if (palm.y > 0f) palm = -palm; // the palm faces down in the T-pose
+            foreach (var finger in Fingers) AddFinger(joints, hand + finger, palm, FingerCurl);
+            AddFinger(joints, hand + "Thumb", (palm + along).normalized, ThumbCurl);
+        }
+
+        /// <summary>The joints of one finger, each turning about the axis that takes it towards <paramref name="toward"/>.</summary>
+        private void AddFinger(List<FingerJoint> joints, string finger, Vector3 toward, float[] curl)
+        {
+            var direction = Vector3.zero;
+            for (int joint = 1; joint <= curl.Length; joint++)
+            {
+                var bone = Bone(finger + joint);
+                if (bone == null) return;
+                if (Bone(finger + (joint + 1)) != null) direction = RestPosition(finger + (joint + 1)) - RestPosition(finger + joint);
+                var axis = _restFromModel[bone.name].MultiplyVector(Vector3.Cross(direction, toward)).normalized;
+                joints.Add(new FingerJoint { Bone = bone, Open = bone.localRotation, Closed = bone.localRotation * Quaternion.AngleAxis(curl[joint - 1], axis) });
+            }
+        }
+
+        /// <summary>Closes a hand around what it holds, or opens it.</summary>
+        public void CloseHand(bool right, bool closed)
+        {
+            foreach (var joint in right ? _rightFingers : _leftFingers)
+                joint.Bone.localRotation = closed ? joint.Closed : joint.Open;
+        }
+
         /// <summary>Where a bone sits in model space in the rest pose (zero if there is no such bone).</summary>
         public Vector3 RestPosition(string bone) =>
             _restFromModel.TryGetValue(bone, out var m) ? m.inverse.MultiplyPoint3x4(Vector3.zero) : Vector3.zero;
@@ -336,6 +400,9 @@ namespace Madlands.Client
     {
         public const uint PlayerDisplay = 1;
         public const uint KorrinDisplay = 2;
+        public const uint WarriorDisplay = 3;
+        public const uint ShardmageDisplay = 4;
+        public const uint KorrinWardenDisplay = 5;
         public const uint FrogDisplay = 101;
         public const uint WolfDisplay = 102;
         public const uint BanditDisplay = 103;
@@ -395,6 +462,13 @@ namespace Madlands.Client
                     return Humanoid(parent, "BrightvaleHuman", out model);
                 case KorrinDisplay:
                     return Humanoid(parent, "Korrin", out model);
+                // The classes' looks: painted models with their armor in the textures (art/blender/tripo.py).
+                case WarriorDisplay:
+                    return Humanoid(parent, "Warrior", out model);
+                case ShardmageDisplay:
+                    return Humanoid(parent, "Shardmage", out model);
+                case KorrinWardenDisplay:
+                    return Humanoid(parent, "KorrinWarden", out model);
                 case BanditDisplay:
                     // Red rags, a dark hood and a stolen shard glowing on the chest.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
@@ -654,6 +728,12 @@ namespace Madlands.Client
             };
             if (model.Animator != null) model.Animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
             model.CaptureRestPose();
+            if (humanoid)
+            {
+                model.RightHand = model.Bone("RightHand");
+                if (model.RightHand != null) model.RightHandRest = model.RightHand.localRotation;
+                model.FindFingers();
+            }
             var renderers = root.GetComponentsInChildren<Renderer>(true);
             foreach (var r in renderers)
             {

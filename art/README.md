@@ -33,7 +33,7 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 | `blender/lookbook.py` | Renders races dressed in outfits (the client's tint rules), from the front, side and back, in poses and the face close up, to compare with reference sheets: `blender -b --factory-startup -P art/blender/lookbook.py -- [look ...] [--lod N]` into `builds/lookbook/`. |
 | `blender/gear.py` | Worn gear, built into every race's model: helmets, hoods and hats wrapped around the head's hull, shoulder pads around the shoulder, cloaks, robe skirts, breastplates and aprons from the trunk's sections. Each piece is its own mesh (`GearHood`, `GearCloak` ...) the client hides until it is worn (`GearVisuals.cs`). |
 | `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, training dummy. |
-| `blender/tripo.py` | Characters from Tripo: turns an unrigged, textured FBX in a T-pose into a character on the humanoid skeleton ([below](#models-from-tripo)). |
+| `blender/tripo.py` | Characters from Tripo: turns a textured FBX in a T-pose or an A-pose, rigged by Tripo or not, into a character on the humanoid skeleton ([below](#models-from-tripo)). |
 | `blender/landscape.py` | Ground cover (`Ground`: grass tufts, tall grass, white, yellow and blue flowers, ferns, pebbles) that the terrain scatters and draws instanced near the camera: a terrain detail may have only one material, so each piece's colors are baked into vertex colors under a single `GroundCover` material (`Madlands/GroundCover` lights it like the flat ground and sways it in the wind). Rock formations of stacked, dipping slabs with grass on their ledges (`Cliff1`, `Cliff2`, `Outcrop1`, `Outcrop2`, `RockSpire`) and `LilyPads`. The terrain's own layers are painted in Unity (`Editor/GroundPainter.cs`). |
 | `blender/beasts.py` | Quadrupeds on one parametric skeleton (boar, bear, crocodile, Gloomjaw), the spider and the shardling, sculpted with `sculpt.py` like the heroes. `blender/brute.py` is Ruukhar the Slagborn. |
 | `blender/effects.py` | Spell and interface effects (`Fx...` in `Art/Effects`): crystals, stars, flames, leaves, flecks, a gem, rings and a shock wave. Solid faces are split into three tones (`EffectLight`, `Effect`, `EffectDark`) by how they face a light, which the client colors per spell school (`Effects.cs`). |
@@ -80,15 +80,19 @@ public repo). Use them for the feel, then build our own shapes.
 
 A humanoid model exported from [Tripo](https://www.tripo3d.ai) (paid plan only, the repository is public) goes in like this:
 
-1. Export it standing in a T-pose, facing -Y, as one mesh with `<name>_basecolor`, `_normal`, `_roughness` and
-   `_metallic` textures. The original stays outside the repository, under `MADLANDS_TRIPO_DIR` (default
-   `D:\3D_Stuff\Characters`).
-2. Add a row to `MODELS` in `blender/tripo.py`: the source file, its height in the game and its joints, read off
-   front and side renders. An optional `hue_shift` recolors part of the painting, like skin apart from leather.
-3. Run `build.py <Name> --preview builds/art` and read the log: the triangle counts of the three levels of detail, and
-   how far test poses stretch the skin's edges (`torn` edges mean bad weights or misplaced joints).
+1. Export it standing in a T-pose or an A-pose, facing -Y, as one mesh with `<name>_basecolor`, `_normal`, `_roughness` and
+   `_metallic` textures, preferably with Tripo's Mixamo rig: its fingers close round a held weapon. The original stays
+   outside the repository, under `MADLANDS_TRIPO_DIR` (default `D:\3D_Stuff\Characters\MadLands`). A wide A-pose, with air
+   between the arms and the clothes, is best: sleeves hang as they will in the game, and nothing grows together.
+2. Add a row to `MODELS` in `blender/tripo.py`: the source file and its height in the game. A rigged model says
+   `"rigged": True`, an unrigged one gives its joints, read off front and side renders. In an A-pose either kind usually
+   needs `arm_reach`, `trunk_x` and `skirt` to correct the weights, since hands at the hip get tied to the clothes there.
+   An optional `hue_shift` recolors part of the painting, like skin apart from leather.
+3. Run `build.py <Name> --preview builds/art` and read the log: the triangle counts of the three levels of detail, the
+   vertices that follow both an arm and a leg (must be 0: hands would stretch into spikes) and how far test poses stretch
+   the skin's edges (`torn` edges mean bad weights or misplaced joints).
 4. Point the display at it in `EntityVisuals` (`Humanoid(parent, "<Name>", out model)`). Unity finds the textures by
-   name and the model plays the shared humanoid clips.
+   name and the model plays the shared humanoid clips. A class shows it through `displayId` in `content/classes.json`.
 
 ## Sound and music
 

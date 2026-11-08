@@ -32,6 +32,11 @@
             "type": "string",
             "minLength": 1
           },
+          "displayId": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The class's character model (client art). 0 or missing shows the race's model."
+          },
           "powerType": {
             "enum": [
               "none",

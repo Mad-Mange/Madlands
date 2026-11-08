@@ -92,6 +92,8 @@ namespace Madlands.Client
         /// </summary>
         public static void Apply(DisplayModel model, uint[] gear)
         {
+            // A painted model (art/blender/tripo.py) has its armor in its textures: nothing to recolor or put on.
+            if (!model.HasPieces) return;
             model.HidePieces();
             foreach (var region in TintedRegions) model.ResetTint(region);
             model.SetHidden("Hair", false);

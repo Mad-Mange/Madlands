@@ -133,6 +133,9 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
 - A model with textures (`Art/Textures/<Name>_basecolor.png`, `_normal`, `_ms`, found by its material's name) has nothing
   to tint and no gear pieces. If `ArtImporter` warns that a texture is not imported yet, the model imported before it:
   raise `GetVersion()` or reimport the model. The art report lists each material's textures.
+- A player's model comes from the class (`displayId` in `classes.json`), then the race. In an A-pose the hands hang at the
+  hip, so automatic weights tie them to the belt: if a hand stretches into spikes when the arm moves, read the build's
+  "follow both an arm and a leg" line (`tripo._limit_arms`, `_soften_skirt`). A wide A-pose needs none of that: ask for one.
 - Props with mesh colliders become navmesh obstacles (Madlands > Export Map). Anything hanging lower than the 2 m agent
   height over a path (a gate's banner, a beam) closes it for creatures; `NavigationTests` walks out of Mirewatch's gates.
 
@@ -150,7 +153,7 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   (`MovementValidator`, `SpellSystem.Check`) and corrects. Never trust client data; reject NaN; rate-limit every message type.
 - **Combat rules are data + one formula file.** New spell/aura behaviour = a new effect type with a handler, never a
   special case per spell id (ADR 0005). Balance numbers live in `content/` and `Combat/StatFormulas.cs`.
-- **Art comes from the `art/` scripts** (ADR 0012); humanoid NPCs may come from Tripo through `art/blender/tripo.py` (ADR 0014: paid plan only, originals stay out of the repo). `ArtImporter` owns the import settings of everything in
+- **Art comes from the `art/` scripts** (ADR 0012); humanoid NPCs and the classes' models may come from Tripo through `art/blender/tripo.py` (ADR 0014: paid plan only, originals stay out of the repo). `ArtImporter` owns the import settings of everything in
   `Assets/Madlands/Art`; never set them by hand. Character material names are the gear regions the client recolors.
 - **No hard-coded interface text** (ADR 0013): use `Loc.T("area.key")` in code and `text="#area.key"` in UXML, and
   add the English text to `client/Assets/Madlands/Resources/Localization/en.json`. Game content texts come from the

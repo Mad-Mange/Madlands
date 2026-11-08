@@ -19,11 +19,15 @@ namespace Madlands.Client
         private const float DiagonalTurn = 40f;
         /// <summary>
         /// A staff out of a cast or swing: turned up from the hand's line (degrees) and held this far up its
-        /// length (meters), so it stands like a walking staff instead of pointing at the ground.
+        /// length (meters), so it stands like a walking staff instead of pointing at the ground. The hanging arm
+        /// tilts it in towards the body, through the arm: the lean (degrees) takes its top back out, leaning a
+        /// little forward.
         /// </summary>
-        private const float StaffUpright = 110f;
-        private const float StaffSlide = 0.5f;
+        private const float StaffUpright = 105f;
+        private const float StaffLean = -20f;
+        private const float StaffSlide = 0.4f;
 
+        private float _bareHand;
         private Transform _visual;
         private DisplayModel _model;
         private UnitAnimator _animator;
@@ -175,6 +179,7 @@ namespace Madlands.Client
         {
             if (hand != null) Destroy(hand.gameObject);
             hand = null;
+            _model?.CloseHand(right, displayId != 0);
             if (displayId == 0) return;
             hand = new GameObject(right ? "MainHand" : "OffHand").transform;
             var grip = _model == null ? null : right ? _model.MainHandGrip : _model.OffHandGrip;
@@ -203,9 +208,22 @@ namespace Madlands.Client
             float t = Mathf.SmoothStep(0f, 1f, _staffUpright);
             // The weapon's +Y runs along it and its +Z along the arm (down while the arm hangs): turning about
             // its +X lifts it.
-            var rotation = _model.MainHandOffset * Quaternion.AngleAxis(-StaffUpright * t, Vector3.right);
+            var rotation = _model.MainHandOffset * Quaternion.AngleAxis(StaffLean * t, Vector3.up) * Quaternion.AngleAxis(-StaffUpright * t, Vector3.right);
             _mainHand.localRotation = rotation;
             _mainHand.localPosition = rotation * Vector3.down * (StaffSlide * t);
+        }
+
+        /// <summary>
+        /// The clips bend the main hand's wrist for a held weapon (grip in humanoid.py). A bare hand hangs straight, like
+        /// the other one, until an attack or a cast takes over.
+        /// </summary>
+        private void RelaxBareHand()
+        {
+            if (_model.RightHand == null) return;
+            bool relaxed = _mainDisplay == 0 && !_dead && !_animator.ActionPlaying;
+            _bareHand = Mathf.MoveTowards(_bareHand, relaxed ? 1f : 0f, Time.deltaTime * 5f);
+            if (_bareHand > 0f)
+                _model.RightHand.localRotation = Quaternion.Slerp(_model.RightHand.localRotation, _model.RightHandRest, Mathf.SmoothStep(0f, 1f, _bareHand));
         }
 
         /// <summary>Shows the worn armor others can see (humanoid models only).</summary>
@@ -282,6 +300,7 @@ namespace Madlands.Client
                 _turn = Mathf.MoveTowards(_turn, _dead ? 0f : _turnTarget, Time.deltaTime * 240f);
                 _visual.localRotation = Quaternion.Euler(0f, _turn, 0f);
                 HoldStaff();
+                RelaxBareHand();
                 // A cloak trails behind a running unit (less when it backs up), airborne too.
                 float drift = _dead ? 0f : _airborne ? 4f : _moving ? (_backward ? 1.5f : _speed) : 0f;
                 _model.SwayCloak(Time.deltaTime, drift, _sitting && !_moving && !_dead);

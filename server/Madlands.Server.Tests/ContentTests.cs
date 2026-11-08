@@ -186,6 +186,10 @@ public class ContentLoaderTests
         // Every race has its own character model.
         Assert.Equal(db.Races.Count, db.Races.Values.Select(r => r.DisplayId).Distinct().Count());
         Assert.Equal(3, db.Classes.Count);
+        // Every class shows its own model, apart from every race's.
+        Assert.DoesNotContain(db.Classes.Values, c => c.DisplayId == 0);
+        Assert.Equal(db.Classes.Count, db.Classes.Values.Select(c => c.DisplayId).Distinct().Count());
+        Assert.Empty(db.Classes.Values.Select(c => c.DisplayId).Intersect(db.Races.Values.Select(r => r.DisplayId)));
         // Every class can fight from level 1: it knows the auto-attack and at least one ability.
         foreach (var cls in db.Classes.Values)
         {

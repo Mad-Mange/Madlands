@@ -4,6 +4,7 @@
     {
       "id": 1,
       "name": "Warrior",
+      "displayId": 3,
       "powerType": "rage",
       "baseStats": { "strength": 23, "agility": 20, "stamina": 22, "intellect": 17, "spirit": 19 },
       "statsPerLevel": { "strength": 2, "agility": 1, "stamina": 2, "intellect": 0, "spirit": 0.5 },
@@ -23,6 +24,7 @@
     {
       "id": 2,
       "name": "Shardmage",
+      "displayId": 4,
       "powerType": "mana",
       "baseStats": { "strength": 17, "agility": 18, "stamina": 19, "intellect": 24, "spirit": 22 },
       "statsPerLevel": { "strength": 0, "agility": 0.5, "stamina": 1, "intellect": 2, "spirit": 1.5 },
@@ -45,6 +47,7 @@
     {
       "id": 3,
       "name": "Warden",
+      "displayId": 5,
       "powerType": "mana",
       "baseStats": { "strength": 20, "agility": 18, "stamina": 21, "intellect": 22, "spirit": 24 },
       "statsPerLevel": { "strength": 1, "agility": 0.5, "stamina": 1.5, "intellect": 1.5, "spirit": 2 },

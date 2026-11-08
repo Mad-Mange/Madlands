@@ -28,13 +28,13 @@ internal sealed class TestRealm : IAsyncDisposable
     public ServerHost Host { get; }
     public GameServer Game => Host.Game;
 
-    public static ContentDatabase Content()
+    public static ContentDatabase Content(params ClassDefinition[] moreClasses)
     {
         var map = new MapDefinition { Id = 1, Name = "Test", Spawn = new SpawnPoint { X = 0, Z = 0 } };
         return new ContentDatabase(
             new[] { new LoadedMap(map, HeightMap.CreateFlat(-200, -200, 4, 101, 101, 10f)) },
             new[] { new RaceDefinition { Id = 1, Name = "Human", StartMap = 1 }, new RaceDefinition { Id = 2, Name = "Korrin", StartMap = 1, DisplayId = 2 } },
-            new[] { new ClassDefinition { Id = 1, Name = "Warrior" } });
+            new[] { new ClassDefinition { Id = 1, Name = "Warrior" } }.Concat(moreClasses).ToArray());
     }
 
     private static readonly Lazy<ContentDatabase> RepositoryContent =
@@ -100,6 +100,24 @@ internal sealed class TestRealm : IAsyncDisposable
 
 public class WorldIntegrationTests
 {
+    [Fact]
+    public async Task A_class_with_its_own_model_shows_it_whatever_the_race()
+    {
+        await using var realm = await TestRealm.StartAsync(content: TestRealm.Content(new ClassDefinition { Id = 2, Name = "Hero", DisplayId = 7 }));
+        var (aliceAccount, aliceCharacter) = await realm.NewPlayerAsync("alice", "Alice", raceId: 2, classId: 2);
+        var (bobAccount, bobCharacter) = await realm.NewPlayerAsync("bob", "Bob", raceId: 2);
+
+        using var alice = realm.Enter(aliceAccount, aliceCharacter);
+        using var bob = realm.Enter(bobAccount, bobCharacter);
+        var clients = new[] { alice, bob };
+        realm.Pump(clients, () => alice.State == ClientState.InWorld && bob.State == ClientState.InWorld);
+        realm.Pump(clients, () => bob.World.TryGet(alice.LocalGuid, out _));
+
+        Assert.Equal(7u, alice.LocalDisplayId);
+        Assert.Equal(7u, bob.World.Entities.Single().DisplayId);
+        Assert.Equal(2u, bob.LocalDisplayId);
+    }
+
     [Fact]
     public async Task Players_see_each_other_move_and_leave()
     {

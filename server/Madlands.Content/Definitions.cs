@@ -130,6 +130,8 @@ public sealed class ClassDefinition
 {
     public int Id { get; set; }
     public string Name { get; set; } = "";
+    /// <summary>The class's character model (client art); 0 shows the race's model.</summary>
+    public uint DisplayId { get; set; }
     public PowerType PowerType { get; set; } = PowerType.Mana;
     public StatBlock BaseStats { get; set; } = new();
     public StatBlock StatsPerLevel { get; set; } = new();
