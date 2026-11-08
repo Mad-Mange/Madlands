@@ -40,8 +40,8 @@ plan produces, so those models stay out. `CREDITS.md` lists where the models com
   mesh; anything else needs fixing first.
 - Automatic weights treat cloth and tassels as stiff parts of whatever they hang from: a tassel hanging straight down in
   the T-pose points inward when the arm comes down.
-- The scripted characters and their clips stay. Models that are not humanoid (beasts) are not covered yet: they would
-  need their own skeleton and clips.
+- The scripted characters and their clips stay. Four-legged models use the beasts' skeleton and clips
+  ([below](#four-legged-models-gloomjaw)); other shapes are not covered yet.
 
 ## The classes, A-poses and Tripo's rig
 
@@ -100,3 +100,18 @@ height (2.37 m tall, being short-legged) and scaled up 1.3 times in `EntityVisua
 - His cleaver is the Slagborn Cleaver he drops, held as creature equipment and shown at 1.5 times its size
   (`DisplayModel.WeaponScale`), on top of his own scale.
 - A model without Tripo's rig has no finger bones: his hand does not close round the haft. Rigged by Tripo it would.
+
+## Four-legged models: Gloomjaw
+
+Gloomjaw (2026-11-09), the world boss, is the first Tripo model that is not humanoid: an unrigged crocodile standing on
+its legs with its head raised. It goes onto `beasts.py`'s four-legged skeleton, the bones under their names there, so
+the crocodile's clip functions drive it: the `quad` entry of its `MODELS` row places every bone (read off side, front and
+top renders with a grid), and Blender's automatic weights skin it. It is exported to `Art/Creatures` with a generic rig,
+like the sculpted beasts.
+
+- The sculpted crocodile's legs sprawl to the sides and its gait swings them about the vertical axis. The Tripo model
+  stands on straighter legs, which that swing would only twist, so its legs swing under the body (the gait of the boar
+  and the bear) while its body and tail keep the crocodile's sway. It dies rolling onto its side: on its back the
+  crystals would go into the ground.
+- The clips' natural speeds follow from the legs' length and swing; the build logs them for `EntityVisuals`.
+- The sculpted Gloomjaw lay flat and long (about 13 m in the game); the new one stands about 3.8 m tall and 6 m long.

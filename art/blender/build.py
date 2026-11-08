@@ -42,11 +42,12 @@ ASSETS = {
     "Boar": ("Creatures", lambda: beasts.build_quad("Boar"), True),
     "Bear": ("Creatures", lambda: beasts.build_quad("Bear"), True),
     "Crocodile": ("Creatures", lambda: beasts.build_quad("Crocodile"), True),
-    "Gloomjaw": ("Creatures", lambda: beasts.build_quad("Gloomjaw"), True),
     "Spider": ("Creatures", beasts.build_spider, True),
     "Shardling": ("Creatures", beasts.build_shardling, True),
 }
-ASSETS.update({name: ("Characters", tripo.builder(name), False) for name in tripo.MODELS})
+# Tripo models: humanoids are characters, four-legged ones creatures with their own clips.
+ASSETS.update({name: ("Creatures", tripo.builder(name), True) if "quad" in model else ("Characters", tripo.builder(name), False)
+               for name, model in tripo.MODELS.items()})
 ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in props.PROPS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in buildings.BUILDINGS.items()})

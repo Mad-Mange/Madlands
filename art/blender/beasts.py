@@ -1,6 +1,6 @@
 """
 More creatures for Hollowmere, sculpted like the heroes: quadrupeds on one parametric skeleton (boar,
-bear, crocodile and the world boss Gloomjaw), a spider and a floating crystal elemental (shardling).
+bear and crocodile; Gloomjaw comes from Tripo on the same skeleton, tripo.py), a spider and a floating crystal elemental (shardling).
 Same clip names and rotation conventions as creatures.py.
 """
 
@@ -72,9 +72,6 @@ QUADS = {
         walk=(22, 25, 1, 0.01), run=(32, 40, 2, 0.02), walk_speed=1.0, run_speed=3.0,
     ),
 }
-# The world boss: a crocodile grown over with moon-shard crystals (scaled up in the client).
-QUADS["Gloomjaw"] = dict(QUADS["Crocodile"], colors=dict(Fur="#38452c", FurLight="#8c8a62", Dark="#1c2414", Band="#28321f", Tusk="#efe8cc"),
-                         crystals=True)
 
 
 def quad_points(s):
@@ -452,8 +449,7 @@ def croc_body(name, s):
     A crocodile sculpted like the other beasts: a long low body, broad over the shoulders and hips, running
     into a tall flat tail banded dark; rows of keeled scutes down the back that close into a single crest
     on the tail; sprawling legs with clawed toes, webbed behind; a long flat snout over a narrower jaw,
-    their teeth interlocking along the lips, eyes and nostrils raised on knobs. Gloomjaw grows clusters of
-    glowing moon-shard crystals out of its back.
+    their teeth interlocking along the lips, eyes and nostrils raised on knobs.
     """
     m = {k: lp.material(k, v) for k, v in s["colors"].items()}
     mouth = lp.material("Mouth", "#c8a882")
@@ -651,38 +647,6 @@ def croc_body(name, s):
                 web = [root, root.lerp(a_, 0.85), root.lerp((a_ + b_) / 2, 0.6), root.lerp(b_, 0.85)]
                 mb.add(web, [(0, 1, 2), (0, 2, 3)], m["Band"], paw_bone, double_sided=True)
 
-    if s.get("crystals"):
-        # Clusters of six-sided crystals breaking out of the back and the tail, their points brighter.
-        glow = lp.material("CrystalGlow", "#30c8ec", emission=2.0)
-        tip_mat = lp.material("CrystalGlowTip", "#9af0ff", emission=2.5)
-        rng = random.Random(4)
-
-        def crystal(base, axis, height, radius):
-            axis = axis.normalized()
-            u = axis.cross(Vector((0, 0, 1)) if abs(axis.z) < 0.9 else Vector((1, 0, 0))).normalized()
-            v = axis.cross(u)
-            twist = rng.uniform(0, math.pi)
-            verts = []
-            for h, rr in ((-0.08, radius), (height * 0.75, radius * 0.92)):
-                for i in range(6):
-                    a = twist + 2 * math.pi * i / 6
-                    verts.append(base + axis * h + (u * math.cos(a) + v * math.sin(a)) * rr)
-            verts.append(base + axis * height)
-            side_faces = [(i, (i + 1) % 6, 6 + (i + 1) % 6, 6 + i) for i in range(6)]
-            tip_faces = [(6 + i, 6 + (i + 1) % 6, 12) for i in range(6)]
-            w = weigh(base)
-            mb.add_faces(verts, {glow: side_faces, tip_mat: tip_faces}, lambda q, w=w: w, closed=True)
-
-        # Each cluster: one big crystal, smaller ones fanning out around its foot.
-        for x, y, scale in ((0.04, cy + 0.15, 0.8), (-0.08, cy + 0.55, 1.0), (0.1, 0.0, 0.85), (-0.05, hy - 0.2, 1.0), (0.03, hy + 0.5, 0.65),
-                            (-0.02, hy + 0.95, 0.45)):
-            p, n = surface(x, y)
-            crystal(p, n + Vector((x * 2.0, rng.uniform(-0.15, 0.15), 0)), rng.uniform(0.5, 0.6) * scale, 0.07 * scale)
-            for k in range(4):
-                a = 2 * math.pi * k / 4 + rng.uniform(-0.4, 0.4)
-                out = Vector((math.cos(a), math.sin(a), 0))
-                q, nq = surface(x + out.x * 0.07 * scale, y + out.y * 0.09 * scale)
-                crystal(q, nq + out * 0.9, rng.uniform(0.15, 0.3) * scale, rng.uniform(0.03, 0.045) * scale)
     return mb.finish()
 
 

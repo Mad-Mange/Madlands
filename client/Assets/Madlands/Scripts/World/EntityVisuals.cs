@@ -632,7 +632,8 @@ namespace Madlands.Client
                     return Scaled(shape, model, 1.15f);
                 }
                 case GloomjawDisplay:
-                    return Scaled(Creature(parent, displayId, "Gloomjaw", 1.2f, walkSpeed: 1f, runSpeed: 3f, out model), model, 3f);
+                    // The world boss from Tripo on the beasts' skeleton (art/blender/tripo.py logs its clips' speeds).
+                    return Scaled(Creature(parent, displayId, "Gloomjaw", 1.0f, walkSpeed: 0.8f, runSpeed: 1.9f, out model), model, 3f);
                 case SnapperDisplay:
                     return Scaled(Creature(parent, displayId, "Crocodile", 1.0f, walkSpeed: 1f, runSpeed: 3f, out model), model, 1.2f);
                 case BoarDisplay:

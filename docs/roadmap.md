@@ -201,6 +201,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] Ruukhar the Slagborn from Tripo (2026-11-08, ADR 0014): a one-eyed brute on the humanoid skeleton, playing the
   heroes' clips instead of his own, holding the Slagborn Cleaver (creature equipment) at 1.5 times its size. Built
   with a human's hip height so the clips' strides fit, then scaled up 1.3 times in the client. `brute.py` is gone
+- [x] Gloomjaw from Tripo (2026-11-09, ADR 0014): `tripo.py` takes four-legged models too, rigged onto the beasts'
+  skeleton (bones placed by its `MODELS` row, automatic weights) with the crocodile's clips, the legs swinging under the
+  body. The sculpted Gloomjaw and its crystals are gone from `beasts.py`
 - [ ] Replace the other NPC models with Tripo models, one at a time
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)

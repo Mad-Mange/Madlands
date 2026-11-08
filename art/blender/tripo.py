@@ -17,6 +17,7 @@ import bpy
 import numpy as np
 from mathutils import Matrix, Vector
 
+import beasts
 import lowpoly as lp
 
 SOURCE_DIR = os.environ.get("MADLANDS_TRIPO_DIR", r"D:\3D_Stuff\Characters\MadLands")
@@ -88,6 +89,28 @@ MODELS = {
             "ball": (0.125, -0.10, 0.025), "toe": (0.13, -0.17, 0.02),
         },
     },
+    # Gloomjaw, the world boss in the lagoon: a crocodile grown over with moon-shard crystals, on beasts.py's four-legged
+    # skeleton (_build_quad). Scaled up three times in the client.
+    "Gloomjaw": {
+        "source": "Gloomjaw_Boss2/tripo_convert_227f9289-25c5-4d7f-b6b8-dd0a6e532dda.fbx",
+        "height": 1.27,
+        "quad": {
+            "Hips": ((0, 0.21, 0.27), (0, 0.07, 0.27)),
+            "Spine": ((0, 0.07, 0.27), (0, -0.05, 0.28)),
+            "Chest": ((0, -0.05, 0.28), (0, -0.15, 0.33)),
+            "Neck": ((0, -0.15, 0.33), (0, -0.22, 0.41)),
+            "Head": ((0, -0.22, 0.41), (0, -0.49, 0.50)),
+            "Jaw": ((0, -0.235, 0.40), (0, -0.47, 0.435)),
+            "Tail1": ((0, 0.21, 0.24), (0.04, 0.38, 0.20)),
+            "Tail2": ((0.04, 0.38, 0.20), (0.065, 0.49, 0.40)),
+            # The left legs, mirrored for the right: shoulder or hip, knee, ankle and the tips of the toes.
+            "Front": ((0.13, -0.08, 0.28), (0.165, -0.115, 0.15), (0.18, -0.145, 0.06), (0.19, -0.21, 0.02)),
+            "Back": ((0.14, 0.14, 0.25), (0.18, 0.12, 0.13), (0.185, 0.19, 0.06), (0.195, 0.10, 0.02)),
+        },
+        "width": 0.30,  # the trunk, for lying on its side when it dies
+        "walk": (22, 25, 1, 0.01),  # swing, lift, flex and bob of beasts.quad_gait
+        "run": (32, 40, 2, 0.02),
+    },
 }
 
 
@@ -139,6 +162,8 @@ def _build(name, model):
         raise ValueError("%s: expected one mesh, found %d" % (path, len(meshes)))
     source = meshes[0]
     _write_textures(name, _source_maps(path), model.get("hue_shift"))
+    if "quad" in model:
+        return _build_quad(name, model, source)
     if model.get("rigged"):
         return _build_rigged(name, model, source)
 
@@ -206,6 +231,80 @@ def _build_rigged(name, model, source):
     _report(name, levels[0], arm)
     _reset_pose(arm)
     return arm
+
+
+def _build_quad(name, model, source):
+    """
+    A four-legged model on beasts.py's skeleton: its bones placed by the MODELS row, automatic weights, three levels of
+    detail and the crocodile's clips, its legs swinging under the body (a Tripo model stands on straighter legs than
+    the sculpted crocodile, whose legs swing out to the sides).
+    """
+    scale, floor = _normalize(source, model["height"])
+
+    def at(point):
+        return (point[0] * scale, point[1] * scale, (point[2] - floor) * scale)
+
+    arm = lp.armature("Armature", _quad_skeleton(model["quad"], at))
+    material = lp.material(name, "#ffffff")  # ArtImporter finds the textures by this name
+    levels = [_decimated(source, "%sBody_LOD%d" % (name, i), count, material) for i, count in enumerate(LOD_TRIANGLES)]
+    bpy.data.objects.remove(source)
+    _skin_automatically(levels[0], arm)
+    for level in levels[1:]:
+        _copy_weights(levels[0], level)
+        lp.bind(level, arm)
+    for level in levels:
+        _tidy_weights(level)
+    _quad_clips(arm, model, scale, floor)
+    _report(name, levels[0], arm, QUAD_TEST_POSES)
+    _reset_pose(arm)
+    return arm
+
+
+def _quad_skeleton(q, at):
+    """Bone list for lp.armature: beasts.quad_skeleton's bones at this model's joints, the hips first (the root)."""
+    trunk = (("Hips", None), ("Spine", "Hips"), ("Chest", "Spine"), ("Neck", "Chest"), ("Head", "Neck"), ("Jaw", "Head"),
+             ("Tail1", "Hips"), ("Tail2", "Tail1"))
+    bones = [(bone, at(q[bone][0]), at(q[bone][1]), parent) for bone, parent in trunk]
+    for leg, parent in (("Front", "Chest"), ("Back", "Hips")):
+        for side, s in (("L", 1), ("R", -1)):
+            top, knee, ankle, tip = [at((s * x, y, z)) for x, y, z in q[leg]]
+            bones += [
+                (leg + "UpperLeg." + side, top, knee, parent),
+                (leg + "LowerLeg." + side, knee, ankle, leg + "UpperLeg." + side),
+                (leg + "Paw." + side, ankle, tip, leg + "LowerLeg." + side),
+            ]
+    return bones
+
+
+def _quad_clips(arm, model, scale, floor):
+    """The clips of beasts.build_quad: a trot whose legs swing under the body while the body and tail sway like a crocodile's."""
+    q = model["quad"]
+    s = {
+        "sprawl": 0.0,
+        "length": (q["Hips"][0][1] - q["Chest"][1][1]) * scale,
+        "hip": (q["Hips"][0][2] - floor) * scale,
+        "width": model["width"] * scale,
+    }
+    trot = {"Front.L": 0.0, "Back.R": 0.0, "Front.R": 0.5, "Back.L": 0.5}
+
+    def gait(t, params):
+        pose = beasts.quad_gait(s, t, trot, *params)
+        pose.update({
+            "Hips": [("Z", 6 * beasts.cycle(t))], "Spine": [("Z", -8 * beasts.cycle(t))], "Chest": [("Z", -4 * beasts.cycle(t))],
+            "Tail1": [("Z", 14 * beasts.cycle(t, 0.2))], "Tail2": [("Z", 18 * beasts.cycle(t, 0.35))],
+        })
+        return pose
+
+    lp.sample_action(arm, "Idle", 60, beasts.quad_idle(s), loop=True)
+    lp.sample_action(arm, "Walk", 30, lambda t: gait(t, model["walk"]), loop=True)
+    lp.sample_action(arm, "Run", 18, lambda t: gait(t, model["run"]), loop=True)
+    lp.keyframe_action(arm, "Attack", beasts.quad_attack(s))
+    lp.keyframe_action(arm, "Hit", [(0, {}), (3, {"Neck": [("X", -14)], "Spine": [("X", -3)]}), (9, {})])
+    lp.keyframe_action(arm, "Death", beasts.quad_death(s))
+    # How fast the clips move it at normal speed (EntityVisuals walkSpeed, runSpeed): the feet rest for half a stride.
+    leg = sum(q[part][0][2] - floor for part in ("Front", "Back")) / 2 * scale
+    for clip, frames, (swing, *_) in (("Walk", 30, model["walk"]), ("Run", 18, model["run"])):
+        print("%s: %s moves it %.2f m/s" % (arm.name, clip, 4 * leg * math.sin(math.radians(swing)) / (frames / 30)))
 
 
 def _joints_of_rig(rig):
@@ -759,6 +858,14 @@ def _turn(arm, bone, axis, degrees):
     bpy.context.view_layer.update()
 
 
+# A trot, a bite, the body and tail swinging and a leg lifted: what beasts.py's clips ask of a four-legged model.
+QUAD_TEST_POSES = {
+    "trot": [("FrontUpperLeg.L", "X", -30), ("BackUpperLeg.R", "X", -30), ("FrontUpperLeg.R", "X", 30), ("BackUpperLeg.L", "X", 30)],
+    "lift": [("FrontLowerLeg.L", "X", 40), ("BackLowerLeg.R", "X", 40)],
+    "bite": [("Neck", "X", 14), ("Head", "X", 10), ("Jaw", "X", 35)],
+    "sway": [("Spine", "Z", -10), ("Tail1", "Z", 18), ("Tail2", "Z", 22)],
+}
+
 # Arms down, a long stride, a swing forward, an arm overhead and bent elbows and wrists: what the shared clips ask of a
 # model in a T-pose.
 TEST_POSES = {
@@ -773,7 +880,7 @@ TEST_POSES = {
 }
 
 
-def _report(name, mesh, arm):
+def _report(name, mesh, arm, poses=None):
     """Logs the triangle counts and the skin's torn edges (bad weights), to check a new model from the build's output."""
     bpy.ops.object.select_all(action="DESELECT")
     arm.select_set(True)
@@ -789,8 +896,9 @@ def _report(name, mesh, arm):
     print("%s: %d of %d vertices have no weights" % (name, unweighted, len(rest)))
     tied = sum(1 for v in mesh.data.vertices if any(_is_arm(groups[g.group]) and g.weight > 0.02 for g in v.groups)
                and any(_is_leg(groups[g.group]) and g.weight > 0.02 for g in v.groups))
-    print("%s: %d vertices follow both an arm and a leg" % (name, tied))
-    for pose, moves in TEST_POSES.items():
+    if poses is None:
+        print("%s: %d vertices follow both an arm and a leg" % (name, tied))
+    for pose, moves in (poses or TEST_POSES).items():
         _reset_pose(arm)
         for bone, axis, degrees in moves:
             _turn(arm, bone, axis, degrees)

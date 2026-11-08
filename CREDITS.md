@@ -6,9 +6,9 @@ and sounds in `art/audio/`), except the following.
 ## Models
 
 Generated with [Tripo](https://www.tripo3d.ai) on a Pro plan by the project owner and processed by `art/blender/tripo.py`:
-the Mire Croaker, the Warrior, the Shardmage, the Korrin Warden and Ruukhar the Slagborn
-(`client/Assets/Madlands/Art/Characters/MireCroaker.fbx`, `Warrior.fbx`, `Shardmage.fbx`, `KorrinWarden.fbx`, `Ruukhar.fbx`
-and their textures).
+the Mire Croaker, the Warrior, the Shardmage, the Korrin Warden, Ruukhar the Slagborn and Gloomjaw
+(`client/Assets/Madlands/Art/Characters/MireCroaker.fbx`, `Warrior.fbx`, `Shardmage.fbx`, `KorrinWarden.fbx`, `Ruukhar.fbx`,
+`client/Assets/Madlands/Art/Creatures/Gloomjaw.fbx` and their textures).
 
 ## Sound effects
 

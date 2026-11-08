@@ -33,9 +33,9 @@ In Unity, **Madlands > Art Report** logs what Unity made of each model (size, av
 | `blender/lookbook.py` | Renders races dressed in outfits (the client's tint rules), from the front, side and back, in poses and the face close up, to compare with reference sheets: `blender -b --factory-startup -P art/blender/lookbook.py -- [look ...] [--lod N]` into `builds/lookbook/`. |
 | `blender/gear.py` | Worn gear, built into every race's model: helmets, hoods and hats wrapped around the head's hull, shoulder pads around the shoulder, cloaks, robe skirts, breastplates and aprons from the trunk's sections. Each piece is its own mesh (`GearHood`, `GearCloak` ...) the client hides until it is worn (`GearVisuals.cs`). |
 | `blender/creatures.py` | Creatures with generic rigs and their own clips: wolf, training dummy. |
-| `blender/tripo.py` | Characters from Tripo: turns a textured FBX in a T-pose or an A-pose, rigged by Tripo or not, into a character on the humanoid skeleton ([below](#models-from-tripo)). |
+| `blender/tripo.py` | Characters from Tripo: turns a textured FBX in a T-pose or an A-pose, rigged by Tripo or not, into a character on the humanoid skeleton, or a four-legged one onto the beasts' skeleton with their clips ([below](#models-from-tripo)). |
 | `blender/landscape.py` | Ground cover (`Ground`: grass tufts, tall grass, white, yellow and blue flowers, ferns, pebbles) that the terrain scatters and draws instanced near the camera: a terrain detail may have only one material, so each piece's colors are baked into vertex colors under a single `GroundCover` material (`Madlands/GroundCover` lights it like the flat ground and sways it in the wind). Rock formations of stacked, dipping slabs with grass on their ledges (`Cliff1`, `Cliff2`, `Outcrop1`, `Outcrop2`, `RockSpire`) and `LilyPads`. The terrain's own layers are painted in Unity (`Editor/GroundPainter.cs`). |
-| `blender/beasts.py` | Quadrupeds on one parametric skeleton (boar, bear, crocodile, Gloomjaw), the spider and the shardling, sculpted with `sculpt.py` like the heroes. |
+| `blender/beasts.py` | Quadrupeds on one parametric skeleton (boar, bear, crocodile; Gloomjaw is a Tripo model on it), the spider and the shardling, sculpted with `sculpt.py` like the heroes. |
 | `blender/effects.py` | Spell and interface effects (`Fx...` in `Art/Effects`): crystals, stars, flames, leaves, flecks, a gem, rings and a shock wave. Solid faces are split into three tones (`EffectLight`, `Effect`, `EffectDark`) by how they face a light, which the client colors per spell school (`Effects.cs`). |
 | `blender/items.py` | Held items: origin at the grip, pointing along +Z, edge along X; shields face +X. |
 | `blender/preview.py` | The preview renders. |
@@ -93,6 +93,11 @@ A humanoid model exported from [Tripo](https://www.tripo3d.ai) (paid plan only, 
    the skin's edges (`torn` edges mean bad weights or misplaced joints).
 4. Point the display at it in `EntityVisuals` (`Humanoid(parent, "<Name>", out model)`). Unity finds the textures by
    name and the model plays the shared humanoid clips. A class shows it through `displayId` in `content/classes.json`.
+
+A four-legged model gives `quad` instead of joints: the bones of `beasts.py`'s skeleton (trunk, neck, head, jaw, tail and
+the left legs, mirrored) at its own joints, read off side, front and top renders. It goes to `Art/Creatures` with the
+crocodile's clips; the build logs how fast its Walk and Run move it, for `walkSpeed` and `runSpeed` in `EntityVisuals`.
+Ask Tripo for a neutral stance: legs straight under the body, the tail stretched out.
 
 ## Sound and music
 
