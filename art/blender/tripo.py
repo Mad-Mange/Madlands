@@ -74,6 +74,20 @@ MODELS = {
         "trunk_x": 0.165,
         "skirt": {"top": 0.40, "hem": 0.20, "legs": 0.07},
     },
+    # Ruukhar the Slagborn, the boss of the Cinder Cut: a one-eyed brute, built so his hips stand as high as a human's
+    # (the shared clips' strides fit) and scaled up in the client (EntityVisuals).
+    "Ruukhar": {
+        "source": "Boss1/tripo_convert_0849066f-31c9-43a6-87da-04dc53177a77.fbx",
+        "height": 2.37,
+        "joints": {
+            "hips": (0.0, 0.34), "spine": 0.45, "chest": 0.56,
+            "neck": (-0.02, 0.66), "head": (-0.05, 0.70), "top": (-0.06, 0.83),
+            "arm_y": 0.005, "arm_z": 0.64,
+            "clavicle_x": 0.05, "shoulder_x": 0.175, "elbow_x": 0.25, "wrist_x": 0.35, "fingertip_x": 0.49,
+            "hip_x": 0.08, "knee": (0.11, -0.015, 0.20), "ankle": (0.12, 0.01, 0.075),
+            "ball": (0.125, -0.10, 0.025), "toe": (0.13, -0.17, 0.02),
+        },
+    },
 }
 
 

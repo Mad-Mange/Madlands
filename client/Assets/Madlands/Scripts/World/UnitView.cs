@@ -188,6 +188,7 @@ namespace Madlands.Client
                 // In the fist: follows every swing of the animation.
                 hand.SetParent(grip, false);
                 hand.localRotation = right ? _model.MainHandOffset : _model.OffHandOffset;
+                hand.localScale = Vector3.one * _model.WeaponScale;
             }
             else
             {

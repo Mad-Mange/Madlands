@@ -25,6 +25,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: f812c4c6d6337d04c9300ff11b61c569, type: 3}
   - Name: Mireling
     Prefab: {fileID: 919132149155446097, guid: 618b11371cdbde44fb7f69b154f8e10e, type: 3}
+  - Name: Ruukhar
+    Prefab: {fileID: 919132149155446097, guid: 25a0f2420c768c048a730e1873e12ad6, type: 3}
   - Name: Shardmage
     Prefab: {fileID: 919132149155446097, guid: 51d96a5f896089e4cb6ef2ab296780c0, type: 3}
   - Name: Warrior
@@ -39,8 +41,6 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
   - Name: Shardling
     Prefab: {fileID: 919132149155446097, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
-  - Name: Slagborn
-    Prefab: {fileID: 919132149155446097, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
   - Name: Spider
     Prefab: {fileID: 919132149155446097, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Name: TrainingDummy
@@ -342,30 +342,6 @@ MonoBehaviour:
   - Set: Shardling
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
-  - Set: Slagborn
-    Name: Run
-    Clip: {fileID: -7551964380084998518, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
-  - Set: Slagborn
-    Name: Idle
-    Clip: {fileID: -8945691123924629249, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
-  - Set: Slagborn
-    Name: CastLoop
-    Clip: {fileID: -8265580086071612076, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
-  - Set: Slagborn
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
-  - Set: Slagborn
-    Name: Death
-    Clip: {fileID: -982115091633673366, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
-  - Set: Slagborn
-    Name: Walk
-    Clip: {fileID: 8349542763059015795, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
-  - Set: Slagborn
-    Name: Attack
-    Clip: {fileID: 4723146814002874508, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
-  - Set: Slagborn
-    Name: CastRelease
-    Clip: {fileID: -1534196613224196608, guid: 5f0a6ad1b180e6f41890cb5137394898, type: 3}
   - Set: Spider
     Name: Hit
     Clip: {fileID: -5578746458225771231, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}

@@ -39,6 +39,8 @@ namespace Madlands.Client
         /// <summary>Ground speeds (m/s) at which the Walk and Run clips play at normal speed.</summary>
         public float WalkSpeed = 1.7f;
         public float RunSpeed = 6.2f;
+        /// <summary>Held weapons and shields at this size, on top of the model's own scale (a boss's cleaver).</summary>
+        public float WeaponScale = 1f;
 
         /// <summary>How much darker a region's second tone (its "Trim" material: collars, cuffs, soles) is.</summary>
         private const float TrimShade = 0.62f;
@@ -643,18 +645,13 @@ namespace Madlands.Client
                     return Creature(parent, displayId, "Shardling", 0.7f, walkSpeed: 1.5f, runSpeed: 4f, out model);
                 case SlagbornDisplay:
                 {
-                    // Ruukhar the Slagborn: the brute of the Cinder Cut, lit by his own molten seams.
-                    shape = Creature(parent, displayId, "Slagborn", 1.0f, walkSpeed: 1.3f, runSpeed: 3f, out model);
+                    // Ruukhar the Slagborn: the one-eyed brute of the Cinder Cut (art/blender/tripo.py), built with a
+                    // human's hips and scaled up here, so the shared clips' strides grow with him. His cleaver too.
+                    shape = Humanoid(parent, "Ruukhar", out model);
                     if (model == null) return shape;
-                    var glow = new GameObject("MoltenGlow").AddComponent<Light>();
-                    glow.transform.SetParent(model.Root, false);
-                    glow.transform.localPosition = new Vector3(0f, 1.5f, 0.5f);
-                    glow.type = LightType.Point;
-                    glow.color = Hex("#ff7a30");
-                    glow.range = 7f;
-                    glow.intensity = 1.6f;
-                    glow.shadows = LightShadows.None;
-                    return Scaled(shape, model, 1.35f);
+                    shape.Radius = 0.6f;
+                    model.WeaponScale = 1.5f;
+                    return Scaled(shape, model, 1.3f);
                 }
                 default:
                     return Placeholder(parent, displayId);

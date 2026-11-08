@@ -198,6 +198,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
   on the class), holding its weapon. `tripo.py` bakes an A-pose into a T-pose, corrects the automatic weights of arms and
   skirts, and takes models rigged by Tripo (the classes and the Mire Croaker), whose hands close round what they hold.
   Staffs are shorter and stand clear of the arm, a bare hand hangs straight. Worn armor no longer shows on players
+- [x] Ruukhar the Slagborn from Tripo (2026-11-08, ADR 0014): a one-eyed brute on the humanoid skeleton, playing the
+  heroes' clips instead of his own, holding the Slagborn Cleaver (creature equipment) at 1.5 times its size. Built
+  with a human's hip height so the clips' strides fit, then scaled up 1.3 times in the client. `brute.py` is gone
 - [ ] Replace the other NPC models with Tripo models, one at a time
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)

@@ -173,7 +173,7 @@
     { "id": 1283, "name": "Heart of the Mere", "icon": 1283, "quality": "rare", "class": "armor", "slot": "trinket", "requiredLevel": 10, "sellPrice": 360, "stats": { "stamina": 5, "spellPower": 6 }, "description": "It beats, very slowly." },
     { "id": 1290, "name": "Slagborn Cleaver", "icon": 1290, "displayId": 2010, "quality": "rare", "class": "weapon", "slot": "twoHand", "requiredLevel": 10, "sellPrice": 350, "weapon": { "minDamage": 24, "maxDamage": 38, "speedMs": 3400 }, "stats": { "strength": 6, "stamina": 4 }, "description": "The edge never quite cools." },
     { "id": 1291, "name": "Cinderplate Pauldrons", "icon": 1291, "displayId": 3604, "quality": "rare", "class": "armor", "slot": "shoulders", "requiredLevel": 10, "sellPrice": 300, "stats": { "armor": 60, "strength": 4, "stamina": 5 } },
-    { "id": 1292, "name": "Bonecrown Hood", "icon": 1292, "displayId": 3504, "quality": "rare", "class": "armor", "slot": "head", "requiredLevel": 10, "sellPrice": 300, "stats": { "armor": 24, "intellect": 6, "spirit": 4, "spellPower": 6 }, "description": "Cut from the skull he wore. It still remembers the beast." },
+    { "id": 1292, "name": "Bonecrown Hood", "icon": 1292, "displayId": 3504, "quality": "rare", "class": "armor", "slot": "head", "requiredLevel": 10, "sellPrice": 300, "stats": { "armor": 24, "intellect": 6, "spirit": 4, "spellPower": 6 }, "description": "Cut from a skull on his belt. It still remembers the beast." },
     { "id": 2014, "name": "Slagborn Ember", "icon": 2014, "quality": "common", "class": "tradeGoods", "stackSize": 5, "sellPrice": 140, "description": "Warm enough to light a pipe for a year." }
   ]
 }

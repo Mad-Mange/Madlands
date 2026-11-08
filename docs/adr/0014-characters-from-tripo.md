@@ -87,3 +87,16 @@ weapon's grip in the palm. All three classes and the Mire Croaker are rigged thi
 - The Warrior and the Warden kept their closer A-pose: 643 and 2,711 such vertices, the Warden's with clothes on its
   fingers. They take the corrections, which keep a rig's weights for the arm's bones and fingers and only remove what is
   mixed in.
+
+## A boss: Ruukhar the Slagborn
+
+Ruukhar (2026-11-08) is the first Tripo model much larger than a hero: an unrigged one-eyed brute in a T-pose, its joints
+read off front and side renders with a grid. Unity's humanoid clips scale a stride with the avatar's hip height, while
+the client plays them at speeds measured on a human (`DisplayModel.WalkSpeed`). So he is built with a human's hip
+height (2.37 m tall, being short-legged) and scaled up 1.3 times in `EntityVisuals`, which speeds the clips up to match.
+
+- He trades his own clips (`brute.py`, gone) for the heroes': his attacks are a warrior's swings, and Cinder Quake's
+  wind-up raises the cleaver like any cast. The telegraph still reads, but a brute of his own build moves like a hero.
+- His cleaver is the Slagborn Cleaver he drops, held as creature equipment and shown at 1.5 times its size
+  (`DisplayModel.WeaponScale`), on top of his own scale.
+- A model without Tripo's rig has no finger bones: his hand does not close round the haft. Rigged by Tripo it would.

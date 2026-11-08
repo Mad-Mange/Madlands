@@ -147,6 +147,7 @@
       "id": 26, "name": "Ruukhar the Slagborn", "displayId": 130, "minLevel": 12, "maxLevel": 12, "faction": 2,
       "aggroRadius": 16, "health": 26, "damage": 1.8, "armor": 2.2, "attackSpeedMs": 3000, "runSpeed": 5.5,
       "respawnSeconds": 900, "corpseSeconds": 180, "xp": 8, "callForHelpRadius": 0, "loot": 16,
+      "equipment": { "mainHand": 1290 },
       "spells": [
         { "spell": 915, "chance": 1, "cooldownMs": 600000, "healthBelow": 30 },
         { "spell": 914, "chance": 1, "cooldownMs": 18000 },
