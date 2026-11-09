@@ -17,6 +17,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: ef57b53b30faec7458a8bfba02bb6d2c, type: 3}
   - Name: HumanoidAnimations
     Prefab: {fileID: 919132149155446097, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Name: HumanoidMotions
+    Prefab: {fileID: 919132149155446097, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Name: Korrin
     Prefab: {fileID: 919132149155446097, guid: fdd01bc74c2bfe94a86127afb0f03224, type: 3}
   - Name: KorrinWarden
@@ -252,6 +254,42 @@ MonoBehaviour:
   - Set: HumanoidAnimations
     Name: Walk
     Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidMotions
+    Name: A_TPose
+    Clip: {fileID: 4996995007976980875, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: Attack1H
+    Clip: {fileID: 8394281637225282446, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: Attack2H
+    Clip: {fileID: -8883204860901330040, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: AttackUnarmed
+    Clip: {fileID: -3425250077569541093, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: CastLoop
+    Clip: {fileID: -8265580086071612076, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: CastRelease
+    Clip: {fileID: -1534196613224196608, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: Fall
+    Clip: {fileID: -5025487861805838091, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: Jump
+    Clip: {fileID: 1079665108409675491, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+  - Set: HumanoidMotions
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: Bear
     Name: Walk
     Clip: {fileID: 8349542763059015795, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
@@ -325,6 +363,12 @@ MonoBehaviour:
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
   - Set: Shardling
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
     Name: Death
     Clip: {fileID: -982115091633673366, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
   - Set: Shardling
@@ -336,12 +380,6 @@ MonoBehaviour:
   - Set: Shardling
     Name: Idle
     Clip: {fileID: -8945691123924629249, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
-  - Set: Shardling
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
-  - Set: Shardling
-    Name: Attack
-    Clip: {fileID: 4723146814002874508, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
   - Set: Spider
     Name: Hit
     Clip: {fileID: -5578746458225771231, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
@@ -361,14 +399,14 @@ MonoBehaviour:
     Name: Run
     Clip: {fileID: -7551964380084998518, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Set: TrainingDummy
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
+  - Set: TrainingDummy
     Name: Idle
     Clip: {fileID: -8945691123924629249, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
   - Set: TrainingDummy
     Name: Death
     Clip: {fileID: -982115091633673366, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
-  - Set: TrainingDummy
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
   - Set: Wolf
     Name: Hit
     Clip: {fileID: -5578746458225771231, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}

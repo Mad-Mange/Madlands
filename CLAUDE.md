@@ -18,7 +18,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 | `server/Madlands.Bots` | Headless bot players (register/login via the API, then hunt creatures or wander) for load/integration testing. |
 | `server/Madlands.Server.Tests` | xUnit: protocol roundtrips, world logic, client core, real HTTP+UDP realm tests (`TestRealm`), Postgres tests (`[PostgresFact]`, skipped if no DB). |
 | `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
-| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; characters are sculpted from blended shapes (`blender/sculpt.py`) in three LODs, `blender/lookbook.py` renders them in outfits; `audio/` synthesizes the music and sounds (OGG into `Audio/`). |
+| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; characters are sculpted from blended shapes (`blender/sculpt.py`) in three LODs, `blender/lookbook.py` renders them in outfits; `blender/motions.py` takes motion-captured clips from Quaternius (ADR 0015); `audio/` synthesizes the music and sounds (OGG into `Audio/`). |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
 | `docs/zones/` | Zone design: map, story, NPCs, creatures and quest chains (`hollowmere.md`). |
 | `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests, gatherable objects (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, objects.json, map.json: written by Unity, Madlands > Export Map). |
@@ -136,6 +136,9 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
 - A player's model comes from the class (`displayId` in `classes.json`), then the race. In an A-pose the hands hang at the
   hip, so automatic weights tie them to the belt: if a hand stretches into spikes when the arm moves, read the build's
   "follow both an arm and a leg" line (`tripo._limit_arms`, `_soften_skirt`). A wide A-pose needs none of that: ask for one.
+- Unity measures the avatar of an animation-only FBX in the first frame of its first clip: that frame must be the rest pose
+  (`motions.py` writes `A_TPose` first), or every clip retargets turned (arms swinging out to the sides). A humanoid
+  measured wrong keeps its stored rotations (`RemeasureSkeletons` only updates positions): delete its `.meta` and reimport.
 - Props with mesh colliders become navmesh obstacles (Madlands > Export Map). Anything hanging lower than the 2 m agent
   height over a path (a gate's banner, a beam) closes it for creatures; `NavigationTests` walks out of Mirewatch's gates.
 

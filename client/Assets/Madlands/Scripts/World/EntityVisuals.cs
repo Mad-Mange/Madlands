@@ -31,6 +31,7 @@ namespace Madlands.Client
         /// <summary>A humanoid's main hand and its rotation in the rest pose: straight along the forearm.</summary>
         public Transform RightHand;
         public Quaternion RightHandRest;
+        public Transform RightLowerArm;
         /// <summary>Weapon rotation relative to each grip: the weapon's +Y points forward in the rest pose.</summary>
         public Quaternion MainHandOffset;
         public Quaternion OffHandOffset;
@@ -434,6 +435,15 @@ namespace Madlands.Client
 
         /// <summary>The model file whose clips every humanoid race plays (retargeted by Unity).</summary>
         public const string HumanoidClips = "HumanoidAnimations";
+        /// <summary>
+        /// Motion-captured clips (art/blender/motions.py, Quaternius's library) that humanoids play instead of the
+        /// scripted ones of <see cref="HumanoidClips"/> where there is one.
+        /// </summary>
+        public const string HumanoidMotions = "HumanoidMotions";
+        /// <summary>Ground speed (m/s) at which the motion-captured Run looks right (motions.RUN_SPEED).</summary>
+        private const float MotionRunSpeed = 5.36f;
+
+        private static IReadOnlyDictionary<string, AnimationClip> _humanoidClips;
 
         private static readonly Dictionary<Color, Material> LitMaterials = new Dictionary<Color, Material>();
         private static readonly Dictionary<Color, Material> GlowMaterials = new Dictionary<Color, Material>();
@@ -650,6 +660,8 @@ namespace Madlands.Client
                     // human's hips and scaled up here, so the shared clips' strides grow with him. His cleaver too.
                     shape = Humanoid(parent, "Ruukhar", out model);
                     if (model == null) return shape;
+                    // Cinder Quake's wind-up raises the cleaver over his head (the scripted cast): the quest warns of it.
+                    model.Clips = WithScriptedClips(model.Clips, "CastLoop", "CastRelease");
                     shape.Radius = 0.6f;
                     model.WeaponScale = 1.5f;
                     return Scaled(shape, model, 1.3f);
@@ -697,7 +709,33 @@ namespace Madlands.Client
         {
             model = Instantiate(parent, modelName, HumanoidClips, humanoid: true);
             if (model == null) return Placeholder(parent, PlayerDisplay);
+            model.Clips = HumanoidClipSet(out bool motionRun);
+            if (motionRun) model.RunSpeed = MotionRunSpeed;
             return new DisplayShape { Height = model.Height, Radius = 0.45f, Hands = model.MainHandGrip != null };
+        }
+
+        /// <summary>The scripted humanoid clips, each replaced by its motion-captured one where there is one.</summary>
+        private static IReadOnlyDictionary<string, AnimationClip> HumanoidClipSet(out bool motionRun)
+        {
+            var catalog = ArtCatalog.Instance;
+            var motions = catalog.GetClips(HumanoidMotions);
+            motionRun = motions.ContainsKey("Run");
+            if (_humanoidClips != null) return _humanoidClips;
+            var clips = new Dictionary<string, AnimationClip>();
+            foreach (var pair in catalog.GetClips(HumanoidClips)) clips[pair.Key] = pair.Value;
+            foreach (var pair in motions) clips[pair.Key] = pair.Value;
+            return _humanoidClips = clips;
+        }
+
+        /// <summary>A humanoid clip set with these clips from the scripted ones (<see cref="HumanoidClips"/>).</summary>
+        private static IReadOnlyDictionary<string, AnimationClip> WithScriptedClips(IReadOnlyDictionary<string, AnimationClip> clips, params string[] names)
+        {
+            var scripted = ArtCatalog.Instance.GetClips(HumanoidClips);
+            var mixed = new Dictionary<string, AnimationClip>();
+            foreach (var pair in clips) mixed[pair.Key] = pair.Value;
+            foreach (var name in names)
+                if (scripted.TryGetValue(name, out var clip)) mixed[name] = clip;
+            return mixed;
         }
 
         /// <summary>A creature model with its own clips (a placeholder if the art is missing).</summary>
@@ -729,6 +767,7 @@ namespace Madlands.Client
             if (humanoid)
             {
                 model.RightHand = model.Bone("RightHand");
+                model.RightLowerArm = model.Bone("RightLowerArm");
                 if (model.RightHand != null) model.RightHandRest = model.RightHand.localRotation;
                 model.FindFingers();
             }

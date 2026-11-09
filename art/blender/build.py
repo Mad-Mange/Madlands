@@ -23,6 +23,7 @@ import humanoid  # noqa: E402
 import items  # noqa: E402
 import landscape  # noqa: E402
 import lowpoly as lp  # noqa: E402
+import motions  # noqa: E402
 import preview  # noqa: E402
 import props  # noqa: E402
 import tripo  # noqa: E402
@@ -37,6 +38,7 @@ ASSETS = {
     "Korrin": ("Characters", lambda: humanoid.build_race("Korrin"), False),
     "Mireling": ("Characters", lambda: humanoid.build_race("Mireling"), False),
     "HumanoidAnimations": ("Characters", humanoid.build_animations, True),
+    "HumanoidMotions": ("Characters", motions.build, True),
     "Wolf": ("Creatures", creatures.build_wolf, True),
     "TrainingDummy": ("Creatures", creatures.build_training_dummy, True),
     "Boar": ("Creatures", lambda: beasts.build_quad("Boar"), True),

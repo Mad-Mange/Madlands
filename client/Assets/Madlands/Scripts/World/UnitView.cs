@@ -18,16 +18,16 @@ namespace Madlands.Client
         /// <summary>How far the body turns toward a diagonal run (WoW turns the legs, we turn the model).</summary>
         private const float DiagonalTurn = 40f;
         /// <summary>
-        /// A staff out of a cast or swing: turned up from the hand's line (degrees) and held this far up its
-        /// length (meters), so it stands like a walking staff instead of pointing at the ground. The hanging arm
-        /// tilts it in towards the body, through the arm: the lean (degrees) takes its top back out, leaning a
-        /// little forward.
+        /// A staff out of a cast or swing stands like a walking staff, whatever the clip does with the hand: its top
+        /// leans this far forward and out to the side, clear of the arm (degrees), and it is held this far up its
+        /// length (meters).
         /// </summary>
-        private const float StaffUpright = 105f;
-        private const float StaffLean = -20f;
+        private const float StaffForward = 8f;
+        private const float StaffOut = 10f;
         private const float StaffSlide = 0.4f;
 
         private float _bareHand;
+        private float _weaponForward;
         private Transform _visual;
         private DisplayModel _model;
         private UnitAnimator _animator;
@@ -207,11 +207,34 @@ namespace Madlands.Client
             bool upright = !_dead && !_animator.ActionPlaying;
             _staffUpright = Mathf.MoveTowards(_staffUpright, upright ? 1f : 0f, Time.deltaTime * 5f);
             float t = Mathf.SmoothStep(0f, 1f, _staffUpright);
-            // The weapon's +Y runs along it and its +Z along the arm (down while the arm hangs): turning about
-            // its +X lifts it.
-            var rotation = _model.MainHandOffset * Quaternion.AngleAxis(StaffLean * t, Vector3.up) * Quaternion.AngleAxis(-StaffUpright * t, Vector3.right);
-            _mainHand.localRotation = rotation;
-            _mainHand.localPosition = rotation * Vector3.down * (StaffSlide * t);
+            _mainHand.localRotation = _model.MainHandOffset;
+            _mainHand.localPosition = Vector3.zero;
+            if (t <= 0f) return;
+            // The weapon's +Y runs along it.
+            var along = Quaternion.AngleAxis(StaffForward, _visual.right) * Quaternion.AngleAxis(-StaffOut, _visual.forward) * _visual.up;
+            var standing = Quaternion.LookRotation(Vector3.ProjectOnPlane(_visual.forward, along), along);
+            _mainHand.rotation = Quaternion.Slerp(_mainHand.rotation, standing, t);
+            _mainHand.position += _mainHand.rotation * Vector3.down * (StaffSlide * t * _mainHand.lossyScale.y);
+        }
+
+        /// <summary>
+        /// The motion-captured clips (art/blender/motions.py) hold the main hand as if it were empty, palm to the thigh,
+        /// so a held weapon would point back past the hip. Out of an attack or a cast the forearm turns about its own
+        /// line until the weapon points forward; the scripted clips bend the wrist for it already, leaving little to turn.
+        /// </summary>
+        private void TurnWeaponForward()
+        {
+            var hand = _model.RightHand;
+            var forearm = _model.RightLowerArm;
+            bool armed = _mainHand != null && _mainDisplay != 0 && !ItemVisuals.IsStaff(_mainDisplay) && hand != null && forearm != null;
+            _weaponForward = Mathf.MoveTowards(_weaponForward, armed && !_dead && !_animator.ActionPlaying ? 1f : 0f, Time.deltaTime * 5f);
+            if (!armed || _weaponForward <= 0f) return;
+            var axis = (hand.position - forearm.position).normalized;
+            var blade = Vector3.ProjectOnPlane(_mainHand.rotation * Vector3.up, axis);
+            var wanted = Vector3.ProjectOnPlane(_visual.forward, axis);
+            if (blade.sqrMagnitude < 1e-4f || wanted.sqrMagnitude < 1e-4f) return;
+            float angle = Vector3.SignedAngle(blade, wanted, axis) * Mathf.SmoothStep(0f, 1f, _weaponForward);
+            forearm.rotation = Quaternion.AngleAxis(angle, axis) * forearm.rotation;
         }
 
         /// <summary>
@@ -300,6 +323,7 @@ namespace Madlands.Client
                 _animator.Update(Time.deltaTime);
                 _turn = Mathf.MoveTowards(_turn, _dead ? 0f : _turnTarget, Time.deltaTime * 240f);
                 _visual.localRotation = Quaternion.Euler(0f, _turn, 0f);
+                TurnWeaponForward();
                 HoldStaff();
                 RelaxBareHand();
                 // A cloak trails behind a running unit (less when it backs up), airborne too.

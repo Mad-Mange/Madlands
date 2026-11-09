@@ -10,6 +10,13 @@ the Mire Croaker, the Warrior, the Shardmage, the Korrin Warden, Ruukhar the Sla
 (`client/Assets/Madlands/Art/Characters/MireCroaker.fbx`, `Warrior.fbx`, `Shardmage.fbx`, `KorrinWarden.fbx`, `Ruukhar.fbx`,
 `client/Assets/Madlands/Art/Creatures/Gloomjaw.fbx` and their textures).
 
+## Animations
+
+Motion-captured humanoid clips from [Quaternius](https://quaternius.com)'s Universal Animation Library and Universal
+Animation Library 2 (Standard packs, [CC0](https://creativecommons.org/publicdomain/zero/1.0/)), retargeted by
+`art/blender/motions.py` into `client/Assets/Madlands/Art/Characters/HumanoidMotions.fbx`: idling, the run, jumping and
+falling, the sword and fist attacks, the cast, a hit and a death ([ADR 0015](docs/adr/0015-motion-captured-clips.md)).
+
 ## Sound effects
 
 Footsteps, impacts, coins, cloth, books and interface sounds from **Kenney** (www.kenney.nl), released under
