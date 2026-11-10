@@ -37,7 +37,7 @@ public sealed class ChatHandler
         Add("cd", "", "Resets your cooldowns.", Cooldowns);
         Add("god", "", "Toggles god mode: no damage, no costs, no cooldowns, creatures ignore you.", God);
         Add("speed", "<percent>", "Sets your movement speed (100 = normal).", Speed);
-        Add("respawn", "[radius]", "Respawns dead creatures near you (default 60 m).", Respawn);
+        Add("respawn", "[radius]", "Respawns dead creatures, gathered objects and emptied chests near you (default 60 m).", Respawn);
         Add("aura", "<spell id>", "Applies a spell's aura to your target, or you.", Aura);
         Add("cast", "<spell id>", "Casts any spell at your target, known or not.", Cast);
         Add("info", "", "Shows details about your target.", Info);

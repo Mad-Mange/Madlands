@@ -71,6 +71,20 @@ past Rennick's Watch to the shrine and the ruins, and around the east shore past
 | 24 | Gloomjaw | 12 | The lagoon | World boss: 30x health, Death Roll, Tail Sweep (area, slow). Respawns in 15 minutes |
 | 26 | Ruukhar the Slagborn | 12 | The Cinder Cut | Boss for a group of three: 26x health. Molten Cleave (heavy hit), Searing Brand (fire damage over time, stacks 3x), Cinder Quake (2.5 s wind-up, then fire damage and a 50% slow to everyone within 12 m: get out of reach), Forgefire Rage below 30% health (+50% damage). Respawns in 15 minutes |
 
+## Chests
+
+First come, first served (ADR 0010): one chest of each pool stands at one of its places; whoever opens it first rolls
+what is inside, and anyone may take what is left. Emptied, it comes back later at another place of the pool. The
+places are markers in the scene (`HollowmereBuilder.CreateChests`).
+
+| Pool | Chest | Places | Back after | Inside |
+|---|---|---|---|---|
+| 1 | Weathered Chest | The old mill, Westbrook's sacks and the farmhouse | 5 min | 8–24 copper, bread, water, draughts, a keepsake; sometimes a tonic, rarely a green (Mirefen, Reedwalker, signet, cloak) |
+| 2 | Weathered Chest | The Greywood: the spiders' heart, its north, the bears' slopes | 5 min | The same |
+| 3 | Weathered Chest | Reedfen's three mireling camps | 5 min | The same |
+| 4 | Bandit Strongbox | The bandit camp, by the tents | 10 min | 40–90 copper, lucky coins, draughts, eel; often an elixir or tonic, a green one time in five (the bandits' gear), rarely a Smuggler's Rucksack |
+| 5 | Bandit Strongbox | The quarry: Vorn's crates and the pit's benches | 10 min | The same |
+
 ## Quests (30)
 
 | Chain | Quests | Levels |

@@ -131,6 +131,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 8fb61ea30a0496a4cb03c148256094ce, type: 3}
   - Name: Cauldron
     Prefab: {fileID: 919132149155446097, guid: c40ed0c851f3933408c3c75481ebed00, type: 3}
+  - Name: Chest
+    Prefab: {fileID: 919132149155446097, guid: aee0b3287a067b941b5a058cc138cda6, type: 3}
   - Name: Cliff1
     Prefab: {fileID: 919132149155446097, guid: de8e57dad7a80364182f4ba975a112c3, type: 3}
   - Name: Cliff2
@@ -187,6 +189,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 75e0719cab01c914c93b22f781a415cb, type: 3}
   - Name: SlagRock
     Prefab: {fileID: 919132149155446097, guid: b7abfc63c0a3c5d4dba57bb089cb5b26, type: 3}
+  - Name: Strongbox
+    Prefab: {fileID: 919132149155446097, guid: 54c3b54ab175e8e46bffdfee023067e0, type: 3}
   - Name: Stump
     Prefab: {fileID: 919132149155446097, guid: a8a50c94f8a4ecd4e88c3a8159daf2de, type: 3}
   - Name: Tent

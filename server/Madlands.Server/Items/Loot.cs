@@ -1,4 +1,5 @@
 using Madlands.Content;
+using Madlands.Server.World;
 using Madlands.Shared;
 using Madlands.Shared.Game;
 
@@ -19,7 +20,19 @@ public sealed class LootItem
     public int Count { get; }
 }
 
-/// <summary>What a corpse holds for the player who may loot it.</summary>
+/// <summary>Something with a loot window: a creature's corpse or a chest.</summary>
+public interface ILootSource
+{
+    EntityGuid Guid { get; }
+    Vec3 Position { get; }
+    MapInstance? Map { get; }
+    /// <summary>What is left in it; null = nothing (a living creature, a chest nobody opened yet).</summary>
+    Loot? Loot { get; set; }
+    /// <summary>The player with its loot window open.</summary>
+    Player? Looter { get; set; }
+}
+
+/// <summary>What a corpse or a chest holds.</summary>
 public sealed class Loot
 {
     public Loot(EntityGuid owner)
@@ -27,6 +40,7 @@ public sealed class Loot
         Owner = owner;
     }
 
+    /// <summary>The only player who may take it; empty = anyone (a chest).</summary>
     public EntityGuid Owner { get; }
     /// <summary>Copper.</summary>
     public long Money;

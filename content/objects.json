@@ -4,6 +4,8 @@
     {
       "id": 1, "name": "Glowcap Mushrooms", "displayId": 1, "item": 3009, "minCount": 1, "maxCount": 1,
       "respawnSeconds": 45, "questOnly": true
-    }
+    },
+    { "id": 2, "name": "Weathered Chest", "displayId": 2, "loot": 17, "respawnSeconds": 300 },
+    { "id": 3, "name": "Bandit Strongbox", "displayId": 3, "loot": 18, "respawnSeconds": 600 }
   ]
 }

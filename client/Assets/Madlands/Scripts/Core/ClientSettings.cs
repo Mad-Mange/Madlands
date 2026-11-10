@@ -19,7 +19,7 @@ namespace Madlands.Client
     ///   Item and quest checks: -open bags,character,questlog (windows), -talkto "Old Tamsin" (opens
     ///   that NPC's dialog), -quest 1 (with -talkto: shows that quest's page), -loot (opens the loot
     ///   of nearby corpses), -tooltip 1224 (shows the tooltip of that item in the open bags),
-    ///   -equip 1020,1210 (equips those items from the bags), -gather (gathers objects in reach, like mushrooms)
+    ///   -equip 1020,1210 (equips those items from the bags), -gather (gathers objects in reach, like mushrooms, or opens a chest)
     ///   Action bar checks: -baritems 2=4003,13=4008 (puts items onto buttons 1-24, as if dragged from the bags),
     ///   -pressbar 13,2 (presses those buttons once, a second apart)
     /// </summary>
@@ -73,7 +73,7 @@ namespace Madlands.Client
         public uint QuestId;
         /// <summary>Open the loot window of lootable corpses in reach.</summary>
         public bool AutoLoot;
-        /// <summary>Gather gatherable objects in reach (a right-click on each).</summary>
+        /// <summary>Gather objects in reach, or open a chest (a right-click on each).</summary>
         public bool AutoGather;
         /// <summary>An item id whose tooltip is shown once the bags are open.</summary>
         public uint TooltipItem;

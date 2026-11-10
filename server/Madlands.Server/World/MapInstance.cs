@@ -49,6 +49,8 @@ public sealed class MapInstance
     private readonly List<Creature> _despawnScratch = new();
     private readonly List<(SpawnDefinition Spawn, long AtMs)> _respawns = new();
     private readonly List<(ObjectSpawnDefinition Spawn, long AtMs)> _objectRespawns = new();
+    /// <summary>The places of each object pool: one object of a pool is out at a time.</summary>
+    private readonly Dictionary<int, List<ObjectSpawnDefinition>> _objectPools = new();
     private readonly PacketWriter _writer = new(1500);
     private readonly EntitySpawn _spawnMsg = new();
     private readonly EntityDespawn _despawnMsg = new();
@@ -77,7 +79,17 @@ public sealed class MapInstance
         Loot = new LootSystem(this);
         Quests = new QuestSystem(this);
         foreach (var spawn in map.Spawns) SpawnFromDefinition(spawn, 0);
-        foreach (var spawn in map.Objects) SpawnObject(spawn, 0);
+        foreach (var spawn in map.Objects)
+        {
+            if (spawn.Pool == 0)
+            {
+                SpawnObject(spawn, 0);
+                continue;
+            }
+            if (!_objectPools.TryGetValue(spawn.Pool, out var pool)) _objectPools.Add(spawn.Pool, pool = new List<ObjectSpawnDefinition>());
+            pool.Add(spawn);
+        }
+        foreach (var pool in _objectPools.Values) SpawnObject(pool[Random.Next(pool.Count)], 0);
     }
 
     public LoadedMap Map { get; }
@@ -143,7 +155,7 @@ public sealed class MapInstance
         if (!_entities.Remove(entity.Guid)) return;
         _grid.Remove(entity);
         if (entity is Unit unit) Combat.OnUnitRemoved(unit);
-        if (entity is Creature lootable) Loot.OnCreatureRemoved(lootable);
+        if (entity is ILootSource lootable) Loot.OnSourceRemoved(lootable);
         if (entity is Player player)
         {
             Loot.Close(player, notify: false);
@@ -323,10 +335,17 @@ public sealed class MapInstance
         }
     }
 
-    /// <summary>GM: brings back everything that is dead or waiting to respawn near a point.</summary>
+    /// <summary>GM: brings back everything that is dead or waiting to respawn near a point (the count is of creatures).</summary>
     public int RespawnNear(Vec3 center, float radius, long nowMs)
     {
         int count = 0;
+        for (int i = _objectRespawns.Count - 1; i >= 0; i--)
+        {
+            var s = _objectRespawns[i].Spawn;
+            if (Vec3.HorizontalDistance(new Vec3(s.X, 0, s.Z), center.WithY(0)) > radius) continue;
+            SpawnObject(s, nowMs);
+            _objectRespawns.RemoveAt(i);
+        }
         foreach (var c in _creatures)
         {
             if (c.IsDead && Vec3.HorizontalDistance(c.Home, center) <= radius)
@@ -362,11 +381,22 @@ public sealed class MapInstance
         _grid.Add(obj);
     }
 
-    /// <summary>An object was gathered: it disappears for everyone and grows back after its respawn time.</summary>
+    /// <summary>
+    /// An object was gathered (or a chest emptied): it disappears for everyone and comes back after its respawn
+    /// time, at the same place or, in a pool, at another place of the pool.
+    /// </summary>
     public void Gathered(WorldObject obj, long nowMs)
     {
         RemoveEntity(obj);
-        _objectRespawns.Add((obj.Spawn, nowMs + obj.Template.RespawnSeconds * 1000L));
+        _objectRespawns.Add((NextPlace(obj.Spawn), nowMs + obj.Template.RespawnSeconds * 1000L));
+    }
+
+    private ObjectSpawnDefinition NextPlace(ObjectSpawnDefinition spawn)
+    {
+        if (spawn.Pool == 0 || !_objectPools.TryGetValue(spawn.Pool, out var pool) || pool.Count < 2) return spawn;
+        // Any place but this one, all equally likely: an index into the others, the last place standing in for this one.
+        var next = pool[Random.Next(pool.Count - 1)];
+        return next == spawn ? pool[pool.Count - 1] : next;
     }
 
     // ------------------------------------------------------------------ broadcasting

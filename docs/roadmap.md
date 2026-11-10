@@ -139,6 +139,11 @@ Every phase ends in something playable and tested. Architectural decisions are i
   from, a stacking burn and an enrage below 30% health (`healthBelow` on creature spells)
 - [x] Gatherable objects: glowcap mushrooms at the feet of the Greywood's trees shine while Old Tamsin's quest "Glowcaps
   for a Salve" needs them; right-click to pick, they grow back after 45 s (`content/objects.json`, protocol v13)
+- [x] Chests, first come, first served: weathered chests (coin, food, draughts, now and then a tonic or a green) about
+  Westbrook and the old mill, the Greywood and Reedfen's mireling camps, bandit strongboxes (more coin, elixirs, a green
+  one time in five) in the bandit camp and the quarry. One chest of each place's pool is out at a time; emptied, it
+  comes back 5 or 10 minutes later at another place of the pool. They shine, and the lid swings open while you look
+  inside (`loot` objects and map pools, ADR 0010, protocol v15)
 - [x] Action bar arranged by the player: Shift-drag buttons between slots or off the bar, drag spells from the spellbook (P)
   onto it; newly learned spells go into the first empty slot. Saved per character (`ActionBarLayout`). Two rows of
   twelve (the upper row has no keys by default: bound in Settings). Potions, food, drink and elixirs go on it too:

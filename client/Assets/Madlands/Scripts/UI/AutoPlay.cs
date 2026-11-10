@@ -141,11 +141,11 @@ namespace Madlands.Client
             hud.Quests.ShowQuest(network.Settings.QuestId);
         }
 
-        /// <summary>Right-clicks the nearest gatherable object in reach, once a second.</summary>
+        /// <summary>Right-clicks the nearest object in reach (gathers it, or opens a chest), once a second.</summary>
         private void GatherNearby()
         {
             _nextGatherAt = Time.time + 1f;
-            if (network.LocalPlayer == null) return;
+            if (network.LocalPlayer == null || Client.Loot.IsOpen) return;
             foreach (var entity in Client.World.Entities)
             {
                 if (!entity.IsObject || !(entity.View is GameObject go)) continue;

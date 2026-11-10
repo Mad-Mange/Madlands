@@ -166,11 +166,11 @@ namespace Madlands.Client.Editor
             EditorSceneManager.SaveScene(info.gameObject.scene);
         }
 
-        /// <summary>All ObjectSpawnPoint markers (gatherable objects), sorted so the file only changes when the markers do.</summary>
+        /// <summary>All ObjectSpawnPoint markers (gathered objects, chests), sorted so the file only changes when the markers do.</summary>
         private static int WriteObjects(string path)
         {
             var markers = UnityEngine.Object.FindObjectsByType<ObjectSpawnPoint>()
-                .OrderBy(m => m.objectId).ThenBy(m => m.transform.position.x).ThenBy(m => m.transform.position.z).ToList();
+                .OrderBy(m => m.objectId).ThenBy(m => m.pool).ThenBy(m => m.transform.position.x).ThenBy(m => m.transform.position.z).ToList();
             var sb = new StringBuilder();
             sb.Append("{\n  \"$schema\": \"../../schemas/map-objects.schema.json\",\n");
             sb.Append("  \"_generated\": \"Written by Unity (Madlands > Export Map) from ObjectSpawnPoint markers. Edit the scene, not this file.\",\n");
@@ -179,8 +179,8 @@ namespace Madlands.Client.Editor
             {
                 var p = markers[i].transform.position;
                 sb.Append(i == 0 ? "\n" : ",\n");
-                sb.Append(string.Format(CultureInfo.InvariantCulture, "    {{ \"object\": {0}, \"x\": {1:0.00}, \"z\": {2:0.00}, \"yawDegrees\": {3:0} }}",
-                    markers[i].objectId, p.x, p.z, markers[i].transform.eulerAngles.y));
+                sb.Append(string.Format(CultureInfo.InvariantCulture, "    {{ \"object\": {0}, \"x\": {1:0.00}, \"z\": {2:0.00}, \"yawDegrees\": {3:0}{4} }}",
+                    markers[i].objectId, p.x, p.z, markers[i].transform.eulerAngles.y, markers[i].pool > 0 ? ", \"pool\": " + markers[i].pool : ""));
             }
             sb.Append(markers.Count > 0 ? "\n  ]\n}\n" : "]\n}\n");
             File.WriteAllText(path, sb.ToString());

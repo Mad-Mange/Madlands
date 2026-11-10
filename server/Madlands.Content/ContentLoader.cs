@@ -32,7 +32,7 @@ public static class ContentLoader
         var items = LoadList<ItemFile, ItemDefinition>(Path.Combine(contentRoot, "items.json"), f => f.Items, errors);
         var loot = LoadList<LootFile, LootTableDefinition>(Path.Combine(contentRoot, "loot.json"), f => f.LootTables, errors);
         var quests = LoadList<QuestFile, QuestDefinition>(Path.Combine(contentRoot, "quests.json"), f => f.Quests, errors);
-        // Gatherable objects are optional: not every world has something to pick.
+        // Objects (gathered things, chests) are optional: not every world has them.
         var objectsPath = Path.Combine(contentRoot, "objects.json");
         var objects = File.Exists(objectsPath) ? LoadFile<ObjectFile>(objectsPath, errors)?.Objects ?? new() : new List<GameObjectDefinition>();
 
@@ -40,7 +40,7 @@ public static class ContentLoader
         content.Validate(maps, races, classes, factions, spells, creatures, levels);
         content.ValidateItems(items, spells, classes, levels);
         content.ValidateLoot(loot, items, creatures);
-        content.ValidateObjects(objects, items, maps);
+        content.ValidateObjects(objects, items, loot, maps);
         content.ValidateQuests(quests, creatures, items, classes, maps, levels, loot, objects);
         if (errors.Count > 0) throw new ContentException(errors);
         return new ContentDatabase(maps, races, classes, factions, spells, creatures, levels, items, loot, quests, objects);
@@ -360,14 +360,28 @@ public static class ContentLoader
             }
         }
 
-        public void ValidateObjects(List<GameObjectDefinition> objects, List<ItemDefinition> items, List<LoadedMap> maps)
+        public void ValidateObjects(List<GameObjectDefinition> objects, List<ItemDefinition> items, List<LootTableDefinition> loot,
+            List<LoadedMap> maps)
         {
             ValidateIds("objects.json", objects.Select(o => ((long)o.Id, o.Name)), int.MaxValue);
-            var itemIds = items.Select(i => i.Id).ToHashSet();
+            var itemsById = items.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.First());
+            var tables = loot.GroupBy(t => t.Id).ToDictionary(g => g.Key, g => g.First());
             foreach (var o in objects)
             {
                 string where = $"objects.json: object {o.Id} '{o.Name}'";
-                if (!itemIds.Contains(o.Item)) Error($"{where} gives item {o.Item}, which does not exist");
+                if (o.IsChest)
+                {
+                    // A chest is first come, first served: its loot is rolled for whoever opens it first.
+                    if (o.Item != 0) Error($"{where}: a chest has a loot table, not an item");
+                    if (!tables.TryGetValue(o.Loot, out var table)) Error($"{where} is filled from loot table {o.Loot}, which does not exist");
+                    else
+                    {
+                        if (table.Money is not { Min: >= 1 }) Error($"{where}: its loot table must always give money, so it is never empty");
+                        if (table.Items.Any(e => itemsById.TryGetValue(e.Item, out var item) && item.Class == ItemClass.Quest))
+                            Error($"{where}: its loot table drops quest items, which a chest cannot hold");
+                    }
+                }
+                else if (!itemsById.ContainsKey(o.Item)) Error($"{where} gives item {o.Item}, which does not exist");
                 if (o.DisplayId == 0) Error($"{where} needs a displayId");
                 if (o.MinCount < 1 || o.MaxCount < o.MinCount) Error($"{where}: needs 1 <= minCount <= maxCount");
                 if (o.RespawnSeconds < 5) Error($"{where}: respawnSeconds must be at least 5");
@@ -375,8 +389,15 @@ public static class ContentLoader
             }
             var objectIds = objects.Select(o => o.Id).ToHashSet();
             foreach (var map in maps)
+            {
                 foreach (var spawn in map.Objects.Where(s => !objectIds.Contains(s.Object)))
                     Error($"map {map.Id}: object spawn of object {spawn.Object}, which does not exist");
+                foreach (var spawn in map.Objects.Where(s => s.Pool < 0))
+                    Error($"map {map.Id}: object spawn of object {spawn.Object} at ({spawn.X}, {spawn.Z}) has a negative pool");
+                foreach (var pool in map.Objects.Where(s => s.Pool > 0).GroupBy(s => s.Pool))
+                    if (pool.Select(s => s.Object).Distinct().Count() > 1)
+                        Error($"map {map.Id}: object pool {pool.Key} mixes objects {string.Join(", ", pool.Select(s => s.Object).Distinct())}");
+            }
         }
 
         public void ValidateQuests(List<QuestDefinition> quests, List<CreatureDefinition> creatures, List<ItemDefinition> items,

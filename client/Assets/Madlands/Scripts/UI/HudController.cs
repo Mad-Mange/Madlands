@@ -1056,6 +1056,7 @@ namespace Madlands.Client
                 case ActionError.NotUsable: return Loc.T("error.notUsable");
                 case ActionError.TwoHandEquipped: return Loc.T("error.twoHandEquipped");
                 case ActionError.LootNotYours: return Loc.T("error.lootNotYours");
+                case ActionError.LootBusy: return Loc.T("error.lootBusy");
                 case ActionError.QuestLogFull: return Loc.T("error.questLogFull");
                 case ActionError.QuestNotAvailable: return Loc.T("error.questNotAvailable");
                 case ActionError.QuestNotComplete: return Loc.T("error.questNotComplete");

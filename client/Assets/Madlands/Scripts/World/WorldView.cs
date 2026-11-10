@@ -81,7 +81,11 @@ namespace Madlands.Client
                 if (!(entity.View is GameObject go)) continue;
                 Place(entity, go.transform);
                 if (entity.Unit != null && _units.TryGetValue(entity.Guid, out var view)) Animate(view, entity.Unit, client);
-                else if (_objects.TryGetValue(entity.Guid, out var obj)) obj.SetShining(client.NeedsItem(entity.ObjectItem));
+                else if (_objects.TryGetValue(entity.Guid, out var obj))
+                {
+                    obj.SetShining(obj.IsChest || client.NeedsItem(entity.ObjectItem));
+                    obj.SetOpen(client.Loot.Corpse == entity.Guid);
+                }
             }
             if (_network.LocalPlayer != null && _units.TryGetValue(client.LocalGuid, out var local))
             {

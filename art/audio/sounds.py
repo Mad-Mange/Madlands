@@ -279,6 +279,40 @@ def ambience(name):
     return s.normalize(s.make_loop(x, 3.0), 0.5)
 
 
+# ---------------------------------------------------------------- objects
+
+def chest_open(seed, pitch=1.0):
+    """A chest lid: the latch clicks, the hinge creaks as the lid swings up, and it knocks against its stop."""
+    g = s.rng(seed)
+    n = int(0.95 * RATE)
+    out = np.zeros(n)
+    # The latch: a short bright click with a metallic ring.
+    m = int(0.05 * RATE)
+    t = np.arange(m) / RATE
+    click = s.highpass(g.standard_normal(m), 2500) * np.exp(-t * 140) + np.sin(2 * np.pi * 3100 * pitch * t) * np.exp(-t * 80) * 0.4
+    s.mix_into(out, click, 0, 0.5)
+    # The hinge: stick-slip pulses, quick at the middle of the swing, ringing the wood's resonances.
+    start, length = int(0.07 * RATE), int(0.62 * RATE)
+    pulses = np.zeros(length)
+    phase = 0.0
+    for i in range(length):
+        u = i / length
+        phase += (28 + 85 * math.sin(math.pi * u) ** 0.8 + g.normal(0, 6)) / RATE
+        if phase >= 1.0:
+            phase -= 1.0
+            pulses[i] = 0.6 + 0.4 * g.random()
+    creak = sum(s.bandpass(pulses, f * pitch, w) * gain for f, w, gain in ((540, 110, 1.0), (1180, 170, 0.7), (2350, 280, 0.35)))
+    u = np.arange(length) / length
+    creak *= np.sin(np.pi * np.clip(u * 1.1, 0, 1)) ** 0.6
+    s.mix_into(out, s.normalize(creak, 1.0), start, 0.55)
+    # The stop: a dull knock of wood on wood.
+    m = int(0.2 * RATE)
+    t = np.arange(m) / RATE
+    knock = s.lowpass(g.standard_normal(m), 700) * np.exp(-t * 30) + np.sin(2 * np.pi * 120 * pitch * t) * np.exp(-t * 22) * 0.8
+    s.mix_into(out, s.normalize(knock, 1.0), int(0.68 * RATE), 0.6)
+    return s.normalize(s.fade(s.reverb(out, length=0.5, mix=0.12, seed=seed)), 0.6)
+
+
 SCHOOLS = ("arcane", "fire", "frost", "holy", "nature", "shadow")
 
 # clip name -> (folder, builder)
@@ -299,5 +333,7 @@ SOUNDS["jingle_quest_complete"] = ("Sfx", quest_complete)
 SOUNDS["jingle_quest_accept"] = ("Sfx", quest_accept)
 SOUNDS["jingle_objective"] = ("Sfx", objective_done)
 SOUNDS["jingle_death"] = ("Sfx", death)
+SOUNDS["chest_open_1"] = ("Sfx", lambda: chest_open(600))
+SOUNDS["chest_open_2"] = ("Sfx", lambda: chest_open(601, pitch=0.9))
 for amb in ("amb_village", "amb_wilds", "amb_marsh", "amb_forest", "amb_ruins"):
     SOUNDS[amb] = ("Ambience", lambda amb=amb: ambience(amb))

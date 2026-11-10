@@ -509,18 +509,23 @@ public sealed class SpawnDefinition
     public int RespawnSeconds { get; set; }
 }
 
-/// <summary>maps/&lt;id&gt;/objects.json entry: where a gatherable object grows (written by Unity's Export Map).</summary>
+/// <summary>maps/&lt;id&gt;/objects.json entry: where a gatherable object grows or a chest stands (written by Unity's Export Map).</summary>
 public sealed class ObjectSpawnDefinition
 {
     public int Object { get; set; }
     public float X { get; set; }
     public float Z { get; set; }
     public float YawDegrees { get; set; }
+    /// <summary>
+    /// 0 = always here. Spawns sharing a pool (above 0) take turns: one of them is out at a time, and once it is
+    /// gathered or looted it comes back at another place of the pool.
+    /// </summary>
+    public int Pool { get; set; }
 }
 
 /// <summary>
-/// content/objects.json entry: something in the world players gather with a right-click (mushrooms, herbs). It
-/// gives an item and grows back after a while.
+/// content/objects.json entry: something in the world players use with a right-click. Gathered objects (mushrooms,
+/// herbs) give an item; chests are filled from a loot table when first opened. Both come back after a while.
 /// </summary>
 public sealed class GameObjectDefinition
 {
@@ -528,14 +533,18 @@ public sealed class GameObjectDefinition
     public string Name { get; set; } = "";
     /// <summary>How it looks (the client's object displays).</summary>
     public uint DisplayId { get; set; }
-    /// <summary>The item it gives, MinCount..MaxCount of them.</summary>
+    /// <summary>The item it gives, MinCount..MaxCount of them (gathered objects; 0 for a chest).</summary>
     public uint Item { get; set; }
     public int MinCount { get; set; } = 1;
     public int MaxCount { get; set; } = 1;
-    /// <summary>Grows back this long after it was gathered.</summary>
+    /// <summary>A chest: the loot table it is filled from when someone first opens it (0 for a gathered object).</summary>
+    public int Loot { get; set; }
+    /// <summary>Comes back this long after it was gathered or emptied.</summary>
     public int RespawnSeconds { get; set; } = 60;
-    /// <summary>Only players who still need the item for a quest can gather it (and see it shine).</summary>
+    /// <summary>Only players who still need the item for a quest can gather it (and see it shine). Not used by chests.</summary>
     public bool QuestOnly { get; set; } = true;
+
+    public bool IsChest => Loot != 0;
 }
 
 /// <summary>content/levels.json</summary>

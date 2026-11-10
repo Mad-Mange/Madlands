@@ -132,7 +132,14 @@ public class ContentLoaderTests
             File.WriteAllText(Path.Combine(root.FullName, "loot.json"), """
                 { "lootTables": [ { "id": 1, "name": "Wolf", "money": { "min": 5, "max": 1 },
                                     "items": [ { "item": 9, "chance": 0.5 }, { "item": 1, "chance": 2, "max": 9 } ],
-                                    "groups": [ { "chance": 0.1, "items": [5] } ] } ] }
+                                    "groups": [ { "chance": 0.1, "items": [5] } ] },
+                                  { "id": 2, "name": "Strongbox", "items": [ { "item": 5, "chance": 1 } ] } ] }
+                """);
+            File.WriteAllText(Path.Combine(root.FullName, "objects.json"), """
+                { "objects": [
+                  { "id": 1, "name": "Chest", "displayId": 2, "loot": 7 },
+                  { "id": 2, "name": "Strongbox", "displayId": 3, "loot": 2, "item": 1 }
+                ] }
                 """);
             File.WriteAllText(Path.Combine(root.FullName, "creatures.json"),
                 """{ "creatures": [ { "id": 1, "name": "Wolf", "displayId": 102, "faction": 2, "loot": 4, "vendor": [1, 404], "equipment": { "mainHand": 3 } } ] }""");
@@ -168,6 +175,10 @@ public class ContentLoaderTests
             Assert.Contains(ex.Errors, e => e.Contains("count must be in 1..5"));
             Assert.Contains(ex.Errors, e => e.Contains("requires itself through a chain"));
             Assert.Contains(ex.Errors, e => e.Contains("needs details, summary and completion"));
+            Assert.Contains(ex.Errors, e => e.Contains("is filled from loot table 7, which does not exist"));
+            Assert.Contains(ex.Errors, e => e.Contains("a chest has a loot table, not an item"));
+            Assert.Contains(ex.Errors, e => e.Contains("must always give money"));
+            Assert.Contains(ex.Errors, e => e.Contains("drops quest items, which a chest cannot hold"));
         }
         finally
         {

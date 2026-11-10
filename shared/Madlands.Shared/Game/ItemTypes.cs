@@ -110,6 +110,8 @@ namespace Madlands.Shared.Game
         CantDestroyItem = 22,
         /// <summary>Gathering something no quest needs.</summary>
         NotNeeded = 23,
+        /// <summary>Someone else has the chest open.</summary>
+        LootBusy = 24,
     }
 
     /// <summary>How an item or money reached the player (chat lines: "You receive loot", "Received ...").</summary>

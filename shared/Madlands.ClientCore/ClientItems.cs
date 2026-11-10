@@ -179,6 +179,7 @@ namespace Madlands.ClientCore
     /// <summary>The open loot window.</summary>
     public sealed class ClientLoot
     {
+        /// <summary>The corpse or chest it shows; empty = closed.</summary>
         public EntityGuid Corpse;
         public long Money;
         public readonly List<LootEntry> Items = new List<LootEntry>();

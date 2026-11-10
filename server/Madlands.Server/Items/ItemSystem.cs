@@ -181,12 +181,17 @@ public sealed class ItemSystem
 
     // ------------------------------------------------------------------ gathering
 
-    /// <summary>Right-click on a gatherable object: its item goes into the bags, and it grows back later.</summary>
+    /// <summary>Right-click on an object: a gathered one's item goes into the bags (it grows back later); a chest opens.</summary>
     public void Gather(Player player, EntityGuid guid, long now)
     {
         if (_map.Find(guid) is not WorldObject obj || player.IsDead)
         {
             Fail(player, ActionError.CantInteract);
+            return;
+        }
+        if (obj.Template.IsChest)
+        {
+            _map.Loot.OpenChest(player, obj);
             return;
         }
         if (Vec3.Distance(player.Position, obj.Position) > GameConstants.InteractRange + MapInstance.InteractLeeway)

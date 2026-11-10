@@ -21,7 +21,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 | `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; characters are sculpted from blended shapes (`blender/sculpt.py`) in three LODs, `blender/lookbook.py` renders them in outfits; `blender/motions.py` takes motion-captured clips from Quaternius (ADR 0015); `audio/` synthesizes the music and sounds (OGG into `Audio/`). |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
 | `docs/zones/` | Zone design: map, story, NPCs, creatures and quest chains (`hollowmere.md`). |
-| `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests, gatherable objects (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, objects.json, map.json: written by Unity, Madlands > Export Map). |
+| `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests, world objects (gathered things and chests) (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, objects.json, map.json: written by Unity, Madlands > Export Map). |
 
 ## Commands (PowerShell; dotnet may need PATH refresh in old shells)
 
@@ -65,7 +65,7 @@ builds/client/Madlands.exe -screen-fullscreen 0 -screenshot builds/screenshots/l
 builds/client/Madlands.exe -screen-fullscreen 0 -autoconnect -name Magetest -class shardmage -exec ".level 3;.tele -60 -62" -autofight -screenshot builds/screenshots/fight.png -screenshotdelay 10 -quitafter 20
 # Spell effects are quick: -screenshotburst 40 takes 40 pictures a quarter second apart (fight_1.png .. fight_40.png).
 # Items and quests: -open bags,character,questlog,spellbook,map opens windows, -talkto "Old Tamsin" (+ -quest 1) opens an NPC dialog,
-# -loot opens loot of corpses in reach, -gather gathers objects in reach (mushrooms), -tooltip <item id> shows a bag item's
+# -loot opens loot of corpses in reach, -gather gathers objects in reach (mushrooms) or opens a chest, -tooltip <item id> shows a bag item's
 # tooltip, -equip 1020,1210 equips from the bags, -baritems "7=4003,13=4008" puts items onto action buttons 1-24 and
 # -pressbar 13,7 presses buttons (a second apart). -face 180 turns the character to a compass direction (framing).
 # -autorun runs forward from the start, -sprint holds the sprint key (test sprint and stamina against the server).

@@ -33,6 +33,12 @@
 - Loot is rolled when a creature dies, for the player who tapped it. Quest items (class `quest`) only drop while that player still needs them for a quest.
 - Only the owner sees the corpse sparkle (`LootableUpdate` is private) and may open it within 6 m (`LootOpen`, `LootTake`). A corpse with loot stays at least 90 s; an emptied one goes on its normal timer.
 - Groups (Phase 6) will extend "the owner" to a list of players and add loot rules.
+- Chests (2026-11-10) are world objects (`content/objects.json` with a `loot` table) and work the other way round: first
+  come, first served. The loot is rolled when someone first opens one (so a chest's table must always give money and
+  holds no quest items), anyone may take what is left, one player at a time (`LootBusy` while another has it open). An
+  emptied chest disappears for everyone and comes back after its respawn time; one left with leftovers goes 2 minutes
+  after it was first opened. Its places on the map form a pool (`pool` in the map's objects.json): one chest of a pool
+  is out at a time, and it comes back at another place of the pool, so finding one is a small surprise.
 
 **Vendors**
 

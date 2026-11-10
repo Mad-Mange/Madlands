@@ -106,6 +106,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 1bc9c56ad7c35c5418fd413436442634, type: 3}
   - {fileID: 8300000, guid: 0a573e2496369f44e802a25ef53c24ba, type: 3}
   - {fileID: 8300000, guid: 73b35ac9616b46146924c08d50d29e51, type: 3}
+  - {fileID: 8300000, guid: b6b25097397bcb1419ccad96c8600341, type: 3}
+  - {fileID: 8300000, guid: fbac1cbdd2be3114e8bb56b30bd56c54, type: 3}
   - {fileID: 8300000, guid: 48fb30b1b47ac1a4e968f6ea1f76a3e3, type: 3}
   - {fileID: 8300000, guid: 08ab71a149ef0bc4fa29005af7826b21, type: 3}
   - {fileID: 8300000, guid: 00a011c715d9e464181283f36cd1d4e6, type: 3}

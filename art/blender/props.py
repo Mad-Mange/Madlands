@@ -460,6 +460,179 @@ def barrel():
     return mb.finish()
 
 
+# ---- chests: the lid is a child object "Lid" whose origin is the hinge at the back; the client swings it open
+# while a player's loot window shows what is inside (ObjectView.cs).
+
+
+def _ellipse(y0, a, b, t):
+    """A point (y, z) on the half ellipse over y0 (half-width a, height b), from the back (t = 0) to the front (t = pi)."""
+    return y0 + a * math.cos(t), b * math.sin(t)
+
+
+def _arched_lid(name, m, width, depth, rise, wood, strap, steps=5, overhang=0.016):
+    """
+    An arched lid of planks in two tones with gaps between them, solid ends, and two straps over the arch. Built
+    around its hinge: the back edge at the origin, the front edge at y = -depth.
+    """
+    mb = lp.MeshBuilder(name)
+    a, b, y0 = depth / 2 + overhang, rise, -depth / 2
+    x0, x1 = -width / 2 - overhang + 0.03, width / 2 + overhang - 0.03
+    t, gap = 0.032, 0.045
+    for k in range(steps):
+        t0, t1 = math.pi * k / steps + gap / 2, math.pi * (k + 1) / steps - gap / 2
+        outer = [_ellipse(y0, a, b, s) for s in (t0, t1)]
+        inner = [_ellipse(y0, a - t, b - t, s) for s in (t0, t1)]
+        ring = [outer[0], outer[1], inner[1], inner[0]]
+        mb.loft([[(x, y, z) for y, z in ring] for x in (x0, x1)], wood[k % 2])
+    arc = [_ellipse(y0, a, b, math.pi * k / 10) for k in range(11)]
+    for x in (x0 - 0.03, x1):
+        mb.hull([(x + dx, y, z) for y, z in arc for dx in (0.0, 0.03)], m["WoodDark"])
+    for xs in (-width * 0.3, width * 0.3):
+        rings = []
+        for k in range(13):
+            s = math.pi * k / 12
+            (yo, zo), (yi, zi) = _ellipse(y0, a + 0.014, b + 0.014, s), _ellipse(y0, a - 0.004, b - 0.004, s)
+            rings.append([(xs - 0.04, yo, zo), (xs + 0.04, yo, zo), (xs + 0.04, yi, zi), (xs - 0.04, yi, zi)])
+        mb.loft(rings, strap)
+        mb.frustum((xs - 0.05, overhang + 0.006, 0.0), (xs + 0.05, overhang + 0.006, 0.0), 0.016, 0.016, m["Metal"], sides=6)
+    # The hasp hangs from the front edge over the lock on the body.
+    mb.box((0, -depth - overhang - 0.006, -0.035), (0.075, 0.012, 0.11), m["Metal"])
+    mb.frustum((-0.045, -depth - overhang - 0.006, 0.01), (0.045, -depth - overhang - 0.006, 0.01), 0.013, 0.013, m["Metal"], sides=6)
+    return mb.finish()
+
+
+def _treasure(mb, gold, floor, spread, coins, rng, gem=None):
+    """A heap of coins on the chest's floor with a few strays around it (and a gem)."""
+    sx, sy = spread
+    mb.sphere((-sx * 0.25, 0.0, floor), (sx * 0.38, sy * 0.36, 0.07), gold, segments=7, rings=4)
+    mb.sphere((sx * 0.12, sy * 0.1, floor), (sx * 0.22, sy * 0.24, 0.045), gold, segments=6, rings=3)
+    for _ in range(coins):
+        x, y = rng.uniform(-sx * 0.45, sx * 0.45), rng.uniform(-sy * 0.4, sy * 0.4)
+        z = floor + 0.02 + rng.uniform(0.0, 0.02)
+        tilt = (rng.uniform(-0.012, 0.012), rng.uniform(-0.012, 0.012))
+        mb.frustum((x, y, z), (x + tilt[0], y + tilt[1], z + 0.008), 0.026, 0.026, gold, sides=6)
+    if gem is not None:
+        mb.hull([(sx * 0.2 + dx * 0.035, -sy * 0.1 + dy * 0.035, floor + 0.07 + dz * 0.045)
+                 for dx, dy, dz in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))], gem)
+
+
+def chest():
+    """
+    A weathered chest: boards in two tones between dark corner posts with iron brackets, rope handles, a lock plate,
+    and an arched lid of planks under two wooden straps. Inside, coins on a bundle of cloth.
+    """
+    m = mats()
+    gold = lp.material("Gold", "#d9ab3e", metallic=0.7, roughness=0.35)
+    rope = lp.material("Rope", "#a88a5a")
+    rng = random.Random(11)
+    mb = lp.MeshBuilder("Chest")
+    w, d, h = 0.95, 0.6, 0.46
+    floor = h - 0.11
+    # A dark core shows between the boards; its top is the floor the contents lie on.
+    mb.box((0, 0, floor / 2), (w - 0.1, d - 0.1, floor), m["WoodDark"])
+    hb = h / 3
+    for i in range(3):
+        z = hb * (i + 0.5)
+        for s in (-1, 1):
+            tilt = rng.uniform(-2.5, 2.5)
+            mb.box((0, s * (d / 2 - 0.016), z), (w - 0.13, 0.032, hb - 0.014), m["Plank"] if (i + (s > 0)) % 2 else m["Wood"], rotation=(tilt, 0, 0))
+            mb.box((s * (w / 2 - 0.016), 0, z), (0.032, d - 0.13, hb - 0.014), m["Wood"] if i % 2 else m["Plank"], rotation=(0, tilt, 0))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            mb.box((sx * (w / 2 - 0.035), sy * (d / 2 - 0.035), h / 2), (0.075, 0.075, h), m["WoodDark"])
+            for z in (0.06, h - 0.06):
+                mb.box((sx * (w / 2 - 0.05), sy * (d / 2 + 0.006), z), (0.11, 0.012, 0.075), m["Metal"])
+                mb.box((sx * (w / 2 + 0.006), sy * (d / 2 - 0.05), z), (0.012, 0.11, 0.075), m["Metal"])
+        # A rope handle through two iron eyes on each end.
+        za, x = h * 0.72, sx * (w / 2 + 0.012)
+        mb.tube([((x, -0.1, za), 0.014), ((x + sx * 0.035, -0.07, za - 0.06), 0.015), ((x + sx * 0.045, 0.0, za - 0.085), 0.015),
+                 ((x + sx * 0.035, 0.07, za - 0.06), 0.015), ((x, 0.1, za), 0.014)], rope, sides=5)
+        for y in (-0.1, 0.1):
+            mb.box((x, y, za), (0.014, 0.045, 0.045), m["Metal"])
+    mb.box((0, -d / 2 - 0.008, h - 0.07), (0.1, 0.016, 0.1), m["Metal"])
+    mb.box((0, -d / 2 - 0.02, h - 0.075), (0.028, 0.012, 0.035), m["WoodDark"])
+    # A bundle of cloth with coins on it, a heap of coins beside it.
+    mb.box((0.19, 0.03, floor + 0.035), (0.27, 0.24, 0.07), m["CanvasRed"], top=(0.75, 0.8), rotation=(0, 0, 14))
+    _treasure(mb, gold, floor, (w - 0.15, d - 0.15), 5, rng)
+    body = mb.finish()
+    lid = _arched_lid("Lid", m, w, d, 0.2, (m["Wood"], m["Plank"]), m["WoodDark"])
+    lid.parent = body
+    lid.location = (0, d / 2, h)
+    return body
+
+
+def strongbox():
+    """
+    A bandit strongbox: heavy dark boards bound in iron (corner angles, two bands over body and lid, rivets), ring
+    handles, a lock plate with a keyhole, a coffer lid. Inside, a heap of coins and a red gem.
+    """
+    m = mats()
+    iron = lp.material("Iron", "#3b3a3e")
+    dark = lp.material("WoodStained", "#4a3424")
+    gold = lp.material("Gold", "#d9ab3e", metallic=0.7, roughness=0.35)
+    ruby = lp.material("Ruby", "#b4233a", emission=0.4)
+    keyhole = lp.material("Keyhole", "#141210")
+    rng = random.Random(12)
+    mb = lp.MeshBuilder("Strongbox")
+    w, d, h, oh = 0.78, 0.5, 0.4, 0.014
+    floor = h - 0.1
+    mb.box((0, 0, floor / 2), (w - 0.08, d - 0.08, floor), m["WoodDark"])
+    hb = h / 2
+    for i in range(2):
+        z = hb * (i + 0.5)
+        for s in (-1, 1):
+            mb.box((0, s * (d / 2 - 0.018), z), (w - 0.04, 0.036, hb - 0.012), dark if (i + (s > 0)) % 2 else m["WoodDark"])
+            mb.box((s * (w / 2 - 0.018), 0, z), (0.036, d - 0.04, hb - 0.012), m["WoodDark"] if i % 2 else dark)
+
+    def rivet(c):
+        mb.sphere(c, 0.011, m["Metal"], segments=4, rings=2)
+
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            mb.box((sx * (w / 2 - 0.035), sy * (d / 2 + 0.006), h / 2), (0.085, 0.014, h + 0.004), iron)
+            mb.box((sx * (w / 2 + 0.006), sy * (d / 2 - 0.035), h / 2), (0.014, 0.085, h + 0.004), iron)
+            for z in (0.06, h - 0.06):
+                rivet((sx * (w / 2 - 0.04), sy * (d / 2 + 0.014), z))
+        # A ring handle hanging from a plate on each end.
+        x, zc = sx * (w / 2 + 0.024), h * 0.62
+        mb.box((sx * (w / 2 + 0.007), 0, zc + 0.02), (0.014, 0.09, 0.07), iron)
+        mb.tube([((x, 0.055 * math.sin(s), zc - 0.055 + 0.055 * math.cos(s)), 0.011)
+                 for s in (2 * math.pi * k / 8 for k in range(9))], iron, sides=4)
+    for xb in (-w * 0.27, w * 0.27):
+        for sy in (-1, 1):
+            mb.box((xb, sy * (d / 2 + 0.007), h / 2), (0.065, 0.014, h + 0.004), iron)
+            for z in (0.08, h / 2, h - 0.08):
+                rivet((xb, sy * (d / 2 + 0.015), z))
+    mb.box((0, -d / 2 - 0.01, h - 0.085), (0.15, 0.02, 0.13), iron)
+    mb.box((0, -d / 2 - 0.021, h - 0.1), (0.016, 0.004, 0.04), keyhole)
+    mb.sphere((0, -d / 2 - 0.021, h - 0.072), 0.013, keyhole, segments=6, rings=2)
+    for dx in (-0.055, 0.055):
+        for dz in (-0.045, 0.045):
+            rivet((dx, -d / 2 - 0.021, h - 0.085 + dz))
+    _treasure(mb, gold, floor, (w - 0.12, d - 0.12), 7, rng, gem=ruby)
+    body = mb.finish()
+
+    lid = lp.MeshBuilder("Lid")
+    front, top = -d - oh, 0.16
+    profile = [(oh, 0.0), (oh, 0.07), (oh - 0.09, top), (front + 0.09, top), (front, 0.07), (front, 0.0)]
+    lid.loft([[(x, y, z) for y, z in profile] for x in (-w / 2 - oh, w / 2 + oh)], dark)
+    for x0, x1 in ((-w / 2 + 0.06, -w * 0.12), (w * 0.12, w / 2 - 0.06)):
+        lid.box(((x0 + x1) / 2, (oh + front) / 2, top + 0.006), (x1 - x0, -front - 0.2, 0.012), m["WoodDark"])
+    band = [(oh + 0.012, 0.012), (oh + 0.012, 0.075), (oh - 0.085, top + 0.012), (front + 0.085, top + 0.012), (front - 0.012, 0.075),
+            (front - 0.012, 0.012)]
+    for xb in (-w * 0.27, w * 0.27):
+        lid.loft([[(x, y, z) for y, z in band] for x in (xb - 0.0325, xb + 0.0325)], iron)
+        for y in (oh - 0.12, (oh + front) / 2, front + 0.12):
+            lid.sphere((xb, y, top + 0.016), 0.011, m["Metal"], segments=4, rings=2)
+        lid.frustum((xb - 0.045, oh + 0.014, 0.0), (xb + 0.045, oh + 0.014, 0.0), 0.016, 0.016, iron, sides=6)
+    lid.box((0, front - 0.016, -0.025), (0.07, 0.014, 0.1), iron)
+    lid.sphere((0, front - 0.024, -0.05), 0.012, m["Metal"], segments=4, rings=2)
+    lid = lid.finish()
+    lid.parent = body
+    lid.location = (0, d / 2, h)
+    return body
+
+
 def sacks():
     """Three grain sacks slumped against each other, tied at the neck, one spilling a little grain."""
     m = mats()
@@ -700,7 +873,7 @@ PROPS = {
     "CrystalCluster": crystal_cluster,
     "Palisade": palisade, "Gate": gate,
     "Tent": tent, "Signpost": signpost, "Fence": fence,
-    "Crate": crate, "Barrel": barrel, "Sacks": sacks, "Campfire": campfire, "BannerPole": banner_pole,
+    "Crate": crate, "Barrel": barrel, "Chest": chest, "Strongbox": strongbox, "Sacks": sacks, "Campfire": campfire, "BannerPole": banner_pole,
     "Cauldron": cauldron, "Bridge": bridge, "Dock": dock, "LanternPost": lantern_post,
     "RuinPillar": ruin_pillar, "RuinWall": ruin_wall,
     "SlagPool": slag_pool, "SlagRock": slag_rock, "BeastSkull": beast_skull,

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://madlands.local/schemas/objects.schema.json",
-  "title": "Gatherable objects (content/objects.json)",
-  "description": "Things in the world players gather with a right-click (mushrooms, herbs). Where they grow is in each map's objects.json.",
+  "title": "World objects (content/objects.json)",
+  "description": "Things in the world players use with a right-click: gathered objects (mushrooms, herbs) give an item, chests are filled from a loot table when first opened (first come, first served). Where they stand is in each map's objects.json.",
   "type": "object",
   "required": [
     "objects"
@@ -19,8 +19,7 @@
         "required": [
           "id",
           "name",
-          "displayId",
-          "item"
+          "displayId"
         ],
         "additionalProperties": false,
         "properties": {
@@ -41,7 +40,7 @@
           "item": {
             "type": "integer",
             "minimum": 1,
-            "description": "The item it gives."
+            "description": "The item a gathered object gives."
           },
           "minCount": {
             "type": "integer",
@@ -53,18 +52,35 @@
             "minimum": 1,
             "default": 1
           },
+          "loot": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "A chest: the loot table (loot.json) it is filled from when someone first opens it. The table must always give money and no quest items."
+          },
           "respawnSeconds": {
             "type": "integer",
             "minimum": 5,
             "default": 60,
-            "description": "Grows back this long after it was gathered."
+            "description": "Comes back this long after it was gathered or emptied."
           },
           "questOnly": {
             "type": "boolean",
             "default": true,
-            "description": "Only players who still need the item for a quest can gather it (and see it shine)."
+            "description": "Only players who still need the item for a quest can gather it (and see it shine). Not used by chests."
           }
-        }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "item"
+            ]
+          },
+          {
+            "required": [
+              "loot"
+            ]
+          }
+        ]
       }
     }
   }

@@ -79,10 +79,11 @@ namespace Madlands.Client
             bool click = _movedPixels <= ClickMaxPixels && Time.unscaledTime - _pressTime <= ClickMaxSeconds;
             if (!click || UiPointer.IsOverInteractive(_pressPosition)) return;
 
-            // Right-click on something to gather (mushrooms): the server says whether a quest needs it.
+            // Right-click on something to gather (mushrooms: the server says whether a quest needs it) or a chest to open.
             if (rightUp && PickObject(_pressPosition) is { } obj)
             {
                 Client.Interact(obj.Guid);
+                if (obj.IsChest) TakeAllIfShift();
                 return;
             }
             var unit = PickUnit(_pressPosition);
@@ -105,12 +106,18 @@ namespace Madlands.Client
             {
                 if (!Client.IsLootable(guid)) return;
                 Client.OpenLoot(guid);
-                var keyboard = Keyboard.current;
-                if (keyboard != null && keyboard.shiftKey.isPressed) Client.TakeLoot(Shared.Net.LootTake.AllSlots);
+                TakeAllIfShift();
                 return;
             }
             if (Client.CanAttack(guid)) Attack(guid);
             else if (unit.Values.NpcFlags != NpcFlags.None) Client.Interact(guid);
+        }
+
+        /// <summary>Shift-right-click on loot takes everything at once (the server handles the open first).</summary>
+        private void TakeAllIfShift()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.shiftKey.isPressed) Client.TakeLoot(Shared.Net.LootTake.AllSlots);
         }
 
         /// <summary>Starts auto-attack on <paramref name="guid"/> (the Attack spell).</summary>

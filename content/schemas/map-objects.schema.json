@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://madlands.local/schemas/map-objects.schema.json",
-  "title": "Where gatherable objects grow (content/maps/<id>/objects.json)",
+  "title": "Where world objects stand (content/maps/<id>/objects.json)",
   "description": "Written by Unity (Madlands > Export Map) from ObjectSpawnPoint markers. The scene is the source of truth.",
   "type": "object",
   "required": [
@@ -40,6 +40,12 @@
           "yawDegrees": {
             "type": "number",
             "default": 0
+          },
+          "pool": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "0 = always here. Spawns sharing a pool take turns: one of them is out at a time, and once it is gathered or looted it comes back at another place of the pool. A pool holds one object id."
           }
         }
       }

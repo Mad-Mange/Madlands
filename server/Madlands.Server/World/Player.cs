@@ -46,8 +46,8 @@ public sealed class Player : Unit
     /// <summary>Equipment, bags and money.</summary>
     public Inventory Inventory { get; } = new();
     public QuestLog Quests { get; } = new();
-    /// <summary>The corpse whose loot window is open, if any.</summary>
-    public Creature? Looting;
+    /// <summary>The corpse or chest whose loot window is open, if any.</summary>
+    public ILootSource? Looting;
     /// <summary>The class's starting items were handed out (first login).</summary>
     public bool StarterKitGiven;
     public long NextExploreCheckMs;

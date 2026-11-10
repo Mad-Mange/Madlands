@@ -9,7 +9,7 @@ using Madlands.Shared.Movement;
 namespace Madlands.Server.World;
 
 /// <summary>A server-controlled unit spawned from a <see cref="CreatureDefinition"/>.</summary>
-public sealed class Creature : Unit
+public sealed class Creature : Unit, ILootSource
 {
     private readonly AuraModifiers _mods = new();
 
@@ -49,9 +49,9 @@ public sealed class Creature : Unit
     public long DespawnAtMs;
     public long DiedAtMs;
     /// <summary>What the corpse still holds for <see cref="Tapper"/>; null = nothing (or not dead).</summary>
-    public Loot? Loot;
+    public Loot? Loot { get; set; }
     /// <summary>The player with this corpse's loot window open.</summary>
-    public Player? Looter;
+    public Player? Looter { get; set; }
 
     public bool IsDummy => Template.Ai == CreatureAi.Dummy;
 

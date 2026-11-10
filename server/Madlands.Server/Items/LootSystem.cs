@@ -6,9 +6,11 @@ using Madlands.Shared.Net;
 namespace Madlands.Server.Items;
 
 /// <summary>
-/// Corpse loot for one map instance (ADR 0010). Loot is rolled when a creature dies, for the player
-/// who tapped it (groups share it later); that player sees the corpse sparkle, opens it in range and
-/// takes the money and items one by one or all at once.
+/// Loot of corpses and chests for one map instance (ADR 0010). A creature's loot is rolled when it dies, for the
+/// player who tapped it (groups share it later); that player sees the corpse sparkle, opens it in range and takes
+/// the money and items one by one or all at once. A chest is first come, first served: its loot is rolled when
+/// someone first opens it, anyone may take what is left (one player at a time), and once it is empty it
+/// disappears and comes back later, at another place of its pool.
 /// </summary>
 public sealed class LootSystem
 {
@@ -16,11 +18,15 @@ public sealed class LootSystem
     public const long LootCorpseMs = 90_000;
     /// <summary>A looted corpse disappears this soon (unless its normal time is later).</summary>
     public const long EmptiedCorpseMs = 3_000;
+    /// <summary>A chest that was opened but not emptied disappears this long after it was first opened.</summary>
+    public const long OpenedChestMs = 120_000;
 
     private readonly MapInstance _map;
     private readonly LootWindow _windowMsg = new();
     private readonly LootableUpdate _lootableMsg = new();
     private readonly List<Player> _closeScratch = new();
+    /// <summary>Chests that were opened and still hold something.</summary>
+    private readonly List<WorldObject> _openedChests = new();
 
     public LootSystem(MapInstance map)
     {
@@ -45,17 +51,24 @@ public sealed class LootSystem
         if (creature.Loot is { } loot && loot.Owner == observer.Guid) SendLootable(observer, creature, true);
     }
 
-    /// <summary>The corpse is leaving the map: close its loot window.</summary>
-    public void OnCreatureRemoved(Creature creature)
+    /// <summary>The corpse or chest is leaving the map: close its loot window.</summary>
+    public void OnSourceRemoved(ILootSource source)
     {
-        if (creature.Looter is { } looter) Close(looter, notify: true);
-        creature.Loot = null;
+        if (source.Looter is { } looter) Close(looter, notify: true);
+        source.Loot = null;
+        if (source is WorldObject chest) _openedChests.Remove(chest);
     }
 
-    public void Open(Player player, EntityGuid corpseGuid)
+    /// <summary>The player asks to open a corpse (or a chest) by its guid.</summary>
+    public void Open(Player player, EntityGuid guid)
     {
+        if (_map.Find(guid) is WorldObject chest)
+        {
+            OpenChest(player, chest);
+            return;
+        }
         if (player.Looting is not null) Close(player, notify: false);
-        var creature = _map.FindInteractable(player, corpseGuid, out var error, corpse: true);
+        var creature = _map.FindInteractable(player, guid, out var error, corpse: true);
         if (creature is null)
         {
             _map.Items.Fail(player, error);
@@ -72,15 +85,53 @@ public sealed class LootSystem
             return;
         }
         if (creature.Looter is { } other && other != player) Close(other, notify: true);
-        player.Looting = creature;
-        creature.Looter = player;
-        SendWindow(player, creature, loot);
+        Show(player, creature, loot);
+    }
+
+    /// <summary>Right-click on a chest: the first opener rolls its loot; later ones see what is left.</summary>
+    public void OpenChest(Player player, WorldObject chest)
+    {
+        if (player.Looting is not null) Close(player, notify: false);
+        if (!chest.Template.IsChest || chest.Map != _map || player.IsDead)
+        {
+            _map.Items.Fail(player, ActionError.CantInteract);
+            return;
+        }
+        if (Vec3.Distance(player.Position, chest.Position) > GameConstants.InteractRange + MapInstance.InteractLeeway)
+        {
+            _map.Items.Fail(player, ActionError.TooFarAway);
+            return;
+        }
+        if (chest.Looter is { } other && other != player)
+        {
+            _map.Items.Fail(player, ActionError.LootBusy);
+            return;
+        }
+        var loot = chest.Loot;
+        if (loot is null)
+        {
+            if (!_map.Content.LootTables.TryGetValue(chest.Template.Loot, out var table))
+            {
+                _map.Items.Fail(player, ActionError.CantInteract);
+                return;
+            }
+            // Chest tables hold no quest items (content validation), so nothing depends on who opens it first.
+            loot = chest.Loot = Loot.Roll(table, _map.Content.Items, _map.Random, EntityGuid.Empty, _ => false);
+            chest.OpenedAtMs = _map.NowMs;
+            _openedChests.Add(chest);
+        }
+        if (loot.IsEmpty)
+        {
+            _map.Gathered(chest, _map.NowMs);
+            return;
+        }
+        Show(player, chest, loot);
     }
 
     public void Take(Player player, byte slot)
     {
-        if (player.Looting is not { Loot: { } loot } creature) return;
-        if (Vec3.Distance(player.Position, creature.Position) > GameConstants.InteractRange + MapInstance.InteractLeeway || player.IsDead)
+        if (player.Looting is not { Loot: { } loot } source) return;
+        if (Vec3.Distance(player.Position, source.Position) > GameConstants.InteractRange + MapInstance.InteractLeeway || player.IsDead)
         {
             Close(player, notify: true);
             _map.Items.Fail(player, ActionError.TooFarAway);
@@ -110,51 +161,71 @@ public sealed class LootSystem
         if (!changed) return;
         _map.Items.Flush(player);
 
-        if (loot.IsEmpty)
+        if (!loot.IsEmpty)
         {
-            creature.Loot = null;
+            SendWindow(player, source, loot);
+            return;
+        }
+        source.Loot = null;
+        Close(player, notify: true);
+        if (source is Creature creature)
+        {
             creature.DespawnAtMs = Math.Min(creature.DespawnAtMs,
                 Math.Max(_map.NowMs + EmptiedCorpseMs, creature.DiedAtMs + creature.Template.CorpseSeconds * 1000L));
-            Close(player, notify: true);
             SendLootable(player, creature, false);
         }
-        else
+        else if (source is WorldObject chest)
         {
-            SendWindow(player, creature, loot);
+            _map.Gathered(chest, _map.NowMs);
         }
     }
 
     /// <summary>Closes the player's loot window; with <paramref name="notify"/> the client is told (the server closed it).</summary>
     public void Close(Player player, bool notify)
     {
-        if (player.Looting is not { } creature) return;
+        if (player.Looting is not { } source) return;
         player.Looting = null;
-        if (creature.Looter == player) creature.Looter = null;
+        if (source.Looter == player) source.Looter = null;
         if (!notify) return;
-        _windowMsg.Corpse = creature.Guid;
+        _windowMsg.Corpse = source.Guid;
         _windowMsg.Open = false;
         _windowMsg.Money = 0;
         _windowMsg.Entries.Clear();
         _map.Send(player, _windowMsg);
     }
 
-    /// <summary>Closes loot windows whose looter walked away or died.</summary>
+    /// <summary>Closes loot windows whose looter walked away or died, and takes away chests left open too long.</summary>
     public void Update()
     {
         _closeScratch.Clear();
         foreach (var player in _map.Players)
         {
-            if (player.Looting is not { } creature) continue;
-            if (player.IsDead || creature.Map != _map ||
-                Vec3.Distance(player.Position, creature.Position) > GameConstants.InteractRange + MapInstance.InteractLeeway)
+            if (player.Looting is not { } source) continue;
+            if (player.IsDead || source.Map != _map ||
+                Vec3.Distance(player.Position, source.Position) > GameConstants.InteractRange + MapInstance.InteractLeeway)
                 _closeScratch.Add(player);
         }
         foreach (var player in _closeScratch) Close(player, notify: true);
+
+        for (int i = _openedChests.Count - 1; i >= 0; i--)
+        {
+            var chest = _openedChests[i];
+            if (_map.NowMs - chest.OpenedAtMs < OpenedChestMs) continue;
+            _openedChests.RemoveAt(i);
+            if (chest.Map == _map) _map.Gathered(chest, _map.NowMs);
+        }
     }
 
-    private void SendWindow(Player player, Creature creature, Loot loot)
+    private void Show(Player player, ILootSource source, Loot loot)
     {
-        _windowMsg.Corpse = creature.Guid;
+        player.Looting = source;
+        source.Looter = player;
+        SendWindow(player, source, loot);
+    }
+
+    private void SendWindow(Player player, ILootSource source, Loot loot)
+    {
+        _windowMsg.Corpse = source.Guid;
         _windowMsg.Open = true;
         _windowMsg.Money = loot.Money;
         _windowMsg.Entries.Clear();

@@ -120,6 +120,7 @@ namespace Madlands.Client.Editor
             PaintUnderProps(terrain);
             PlantGroundCover(terrain, new System.Random(2032));
             CreateSpawns(terrain, new System.Random(2030));
+            CreateChests();
             CreateMapInfo(terrain);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -1152,17 +1153,83 @@ namespace Madlands.Client.Editor
         private const int BrannocIronvein = 15, ScoutRennick = 16, FishermanPell = 17, BrotherAldous = 18, SmithGerta = 19;
         private const int GreywoodBear = 20, DrownedDead = 21, Shardling = 22, LieutenantVorn = 23, Gloomjaw = 24, MireSnapper = 25;
         private const int RuukharTheSlagborn = 26;
-        private const int GlowcapMushrooms = 1;
+        private const int GlowcapMushrooms = 1, WeatheredChest = 2, BanditStrongbox = 3;
 
-        /// <summary>A gatherable object (exported to objects.json): the server spawns it and the client draws it.</summary>
-        private static void ObjectSpawn(int objectId, float x, float z, float yaw)
+        /// <summary>A world object (exported to objects.json): the server spawns it and the client draws it.</summary>
+        private static void ObjectSpawn(int objectId, float x, float z, float yaw, int pool = 0)
         {
             var parent = GameObject.Find("ObjectSpawns");
             if (parent == null) parent = new GameObject("ObjectSpawns") { tag = "EditorOnly" };
-            var go = new GameObject("Object " + objectId) { tag = "EditorOnly" };
+            var go = new GameObject(pool > 0 ? $"Object {objectId} pool {pool}" : "Object " + objectId) { tag = "EditorOnly" };
             go.transform.SetParent(parent.transform);
             go.transform.SetPositionAndRotation(new Vector3(x, GroundAt(x, z), z), Quaternion.Euler(0f, yaw, 0f));
-            go.AddComponent<ObjectSpawnPoint>().objectId = objectId;
+            var marker = go.AddComponent<ObjectSpawnPoint>();
+            marker.objectId = objectId;
+            marker.pool = pool;
+        }
+
+        /// <summary>
+        /// Chests: one chest of each pool is out at a time and, once emptied, comes back at another place of its pool.
+        /// Weathered chests lie about Westbrook and the old mill, the Greywood and Reedfen's mireling camps; bandit
+        /// strongboxes in the bandit camp and the quarry. Each faces the heart of its place.
+        /// </summary>
+        private static void CreateChests()
+        {
+            Physics.SyncTransforms();
+            void Chest(int objectId, int pool, Vector2 at, Vector2 facing)
+            {
+                var p = FreeSpot(at);
+                var d = facing - p;
+                ObjectSpawn(objectId, p.x, p.y, Mathf.Atan2(d.x, d.y) * Mathf.Rad2Deg, pool);
+            }
+
+            Chest(WeatheredChest, 1, OldMill + new Vector2(-2.5f, -3f), OldMill);
+            Chest(WeatheredChest, 1, Farm + new Vector2(-6.4f, -22.8f), Farm);
+            Chest(WeatheredChest, 1, Farm + new Vector2(10.4f, 5.6f), Farm);
+
+            Chest(WeatheredChest, 2, new Vector2(-268f, 262f), new Vector2(-265f, 255f));
+            Chest(WeatheredChest, 2, new Vector2(-300f, 335f), new Vector2(-292f, 329f));
+            Chest(WeatheredChest, 2, new Vector2(-372f, 360f), new Vector2(-361f, 341f));
+
+            foreach (var camp in new[] { new Vector2(235f, -95f), new Vector2(325f, -70f), new Vector2(255f, 40f) })
+                Chest(WeatheredChest, 3, camp + new Vector2(0f, 6.5f), camp);
+
+            Chest(BanditStrongbox, 4, BanditCamp + new Vector2(4f, 10.5f), BanditCamp);
+            Chest(BanditStrongbox, 4, BanditCamp + new Vector2(-10f, 3f), BanditCamp);
+            Chest(BanditStrongbox, 4, BanditCamp + new Vector2(12.5f, -1f), BanditCamp);
+
+            Chest(BanditStrongbox, 5, Quarry + new Vector2(1.6f, 9.6f), Quarry);
+            Chest(BanditStrongbox, 5, new Vector2(325f, 318f), Quarry);
+            Chest(BanditStrongbox, 5, new Vector2(280f, 290f), Quarry);
+        }
+
+        /// <summary>
+        /// The nearest spot to <paramref name="p"/> (within 4 m) where a chest stands on dry ground and touches no prop's
+        /// collider (walls, tents, crates, rocks, tree trunks).
+        /// </summary>
+        private static Vector2 FreeSpot(Vector2 p)
+        {
+            for (int ring = 0; ring <= 8; ring++)
+            {
+                int steps = ring == 0 ? 1 : 8 + ring * 2;
+                for (int i = 0; i < steps; i++)
+                {
+                    float a = i * Mathf.PI * 2f / steps;
+                    var q = p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * (ring * 0.5f);
+                    float ground = GroundAt(q.x, q.y);
+                    if (ground < WaterLevel + 0.15f) continue;
+                    bool blocked = false;
+                    foreach (var hit in Physics.OverlapBox(new Vector3(q.x, ground + 0.5f, q.y), new Vector3(0.8f, 0.4f, 0.8f)))
+                    {
+                        if (hit is TerrainCollider) continue;
+                        blocked = true;
+                        break;
+                    }
+                    if (!blocked) return q;
+                }
+            }
+            Debug.LogWarning($"[HollowmereBuilder] No free spot for a chest near {p}");
+            return p;
         }
 
         /// <summary>Spawn markers (exported to spawns.json). EditorOnly: they are not part of player builds.</summary>

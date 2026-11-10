@@ -142,6 +142,71 @@ public class ItemIntegrationTests
     }
 
     [Fact]
+    public async Task Chests_are_first_come_first_served_and_come_back_elsewhere_in_their_pool()
+    {
+        // A chest that always holds 7 copper and a loaf, with two places in one pool, both in reach of the spawn.
+        var repo = TestRealm.CombatContent();
+        var table = new LootTableDefinition
+        {
+            Id = 900, Name = "Test Chest", Money = new LootMoney { Min = 7, Max = 7 },
+            Items = { new LootItemDefinition { Item = Hearthbread } },
+        };
+        var chestObject = new GameObjectDefinition { Id = 900, Name = "Test Chest", DisplayId = 2, Loot = table.Id, RespawnSeconds = 300 };
+        var places = new[]
+        {
+            new ObjectSpawnDefinition { Object = chestObject.Id, X = -2, Z = 3, Pool = 1 },
+            new ObjectSpawnDefinition { Object = chestObject.Id, X = 2, Z = 3, Pool = 1 },
+        };
+        var arena = repo.Maps[1];
+        var content = new ContentDatabase(new[] { new LoadedMap(arena.Definition, arena.HeightMap, null, arena.Spawns, places) },
+            repo.Races.Values, repo.Classes.Values, repo.Factions.Values, repo.Spells.Values, repo.Creatures.Values, repo.Levels,
+            repo.Items.Values, repo.LootTables.Values.Append(table), repo.Quests.Values, repo.Objects.Values.Append(chestObject));
+        await using var realm = await TestRealm.StartAsync(content: content, gmAll: true);
+        var (account, character) = await realm.NewPlayerAsync("finder", "Finder", Warrior);
+        var (rivalAccount, rivalCharacter) = await realm.NewPlayerAsync("rival", "Rival", Warrior);
+        using var s = new Session(realm, realm.Enter(account, character));
+        using var r = new Session(realm, realm.Enter(rivalAccount, rivalCharacter));
+        var c = s.Client;
+        s.Pump(() => c.State == ClientState.InWorld && c.Inventory.All.Any());
+        r.Pump(() => r.Client.State == ClientState.InWorld && r.Client.Inventory.All.Any());
+
+        // One place of the pool has the chest.
+        RemoteEntity? chest = null;
+        s.Pump(() => (chest = c.World.Entities.FirstOrDefault(e => e.IsObject)) is not null);
+        r.Pump(() => r.Client.World.Entities.Any(e => e.Guid == chest!.Guid));
+        Assert.Equal(("Test Chest", 0u), (chest!.Name, chest.ObjectItem));
+        Assert.Single(c.World.Entities, e => e.IsObject);
+        var firstPlace = chest.Movement.Newest.Position;
+
+        // The first to open it rolls what is in it; nobody else can look in while it is open.
+        c.Interact(chest.Guid);
+        s.Pump(() => c.Loot.Corpse == chest.Guid);
+        Assert.Equal(7, c.Loot.Money);
+        Assert.Equal(Hearthbread, Assert.Single(c.Loot.Items).ItemId);
+        r.ExpectError(ActionError.LootBusy, () => r.Client.Interact(chest.Guid));
+
+        // The finder takes the money and leaves the loaf: it is for whoever comes next.
+        c.TakeLoot(LootTake.MoneySlot);
+        s.Pump(() => c.Inventory.Money == 7 && c.Loot.Money == 0);
+        c.CloseLoot();
+        realm.PumpFor(new[] { c, r.Client }, 300);
+        r.Client.Interact(chest.Guid);
+        r.Pump(() => r.Client.Loot.Corpse == chest.Guid);
+        Assert.Equal(0, r.Client.Loot.Money);
+        int loaves = r.Count(Hearthbread);
+        r.Client.TakeLoot(LootTake.AllSlots);
+        r.Pump(() => r.Count(Hearthbread) == loaves + 1 && !r.Client.Loot.IsOpen);
+
+        // Emptied, it is gone for everyone, and comes back (a GM respawn instead of five minutes) at the pool's other place.
+        r.Pump(() => r.Client.World.Entities.All(e => !e.IsObject));
+        s.Pump(() => c.World.Entities.All(e => !e.IsObject));
+        s.Command(".respawn");
+        RemoteEntity? back = null;
+        s.Pump(() => (back = c.World.Entities.FirstOrDefault(e => e.IsObject)) is not null);
+        Assert.NotEqual(firstPlace.X, back!.Movement.Newest.Position.X);
+    }
+
+    [Fact]
     public async Task New_characters_start_equipped_and_gear_changes_stats_and_looks()
     {
         var (realm, s) = await StartAsync();

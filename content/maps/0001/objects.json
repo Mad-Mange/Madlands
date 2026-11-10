@@ -122,6 +122,21 @@
     { "object": 1, "x": -118.07, "z": 183.52, "yawDegrees": 199 },
     { "object": 1, "x": -74.70, "z": 246.04, "yawDegrees": 203 },
     { "object": 1, "x": -70.41, "z": 329.60, "yawDegrees": 136 },
-    { "object": 1, "x": -69.53, "z": 212.42, "yawDegrees": 257 }
+    { "object": 1, "x": -69.53, "z": 212.42, "yawDegrees": 257 },
+    { "object": 2, "x": -392.50, "z": -43.00, "yawDegrees": 40, "pool": 1 },
+    { "object": 2, "x": -266.40, "z": -172.80, "yawDegrees": 16, "pool": 1 },
+    { "object": 2, "x": -249.60, "z": -144.40, "yawDegrees": 242, "pool": 1 },
+    { "object": 2, "x": -372.00, "z": 360.00, "yawDegrees": 150, "pool": 2 },
+    { "object": 2, "x": -300.00, "z": 335.00, "yawDegrees": 127, "pool": 2 },
+    { "object": 2, "x": -268.00, "z": 262.00, "yawDegrees": 157, "pool": 2 },
+    { "object": 2, "x": 235.00, "z": -88.50, "yawDegrees": 180, "pool": 3 },
+    { "object": 2, "x": 254.50, "z": 46.50, "yawDegrees": 176, "pool": 3 },
+    { "object": 2, "x": 326.85, "z": -62.73, "yawDegrees": 194, "pool": 3 },
+    { "object": 3, "x": 215.00, "z": 218.00, "yawDegrees": 107, "pool": 4 },
+    { "object": 3, "x": 230.00, "z": 225.50, "yawDegrees": 205, "pool": 4 },
+    { "object": 3, "x": 237.50, "z": 214.00, "yawDegrees": 275, "pool": 4 },
+    { "object": 3, "x": 280.00, "z": 290.00, "yawDegrees": 63, "pool": 5 },
+    { "object": 3, "x": 301.60, "z": 309.60, "yawDegrees": 189, "pool": 5 },
+    { "object": 3, "x": 325.00, "z": 318.00, "yawDegrees": 234, "pool": 5 }
   ]
 }

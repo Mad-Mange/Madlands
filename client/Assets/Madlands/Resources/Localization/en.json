@@ -123,6 +123,7 @@
   "error.inventoryFull": "Inventory is full.",
   "error.itemNotFound": "Item not found.",
   "error.levelTooLow": "You must reach level {0} to use that item.",
+  "error.lootBusy": "Someone else is already looting that.",
   "error.lootNotYours": "You can not loot that.",
   "error.noRoomForReward": "Make room in your bags for the reward.",
   "error.notABag": "Only bags go in bag slots.",
