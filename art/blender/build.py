@@ -24,6 +24,7 @@ import items  # noqa: E402
 import landscape  # noqa: E402
 import lowpoly as lp  # noqa: E402
 import motions  # noqa: E402
+import nature  # noqa: E402
 import preview  # noqa: E402
 import props  # noqa: E402
 import tripo  # noqa: E402
@@ -51,6 +52,7 @@ ASSETS = {
 ASSETS.update({name: ("Creatures", tripo.builder(name), True) if "quad" in model else ("Characters", tripo.builder(name), False)
                for name, model in tripo.MODELS.items()})
 ASSETS.update({name: ("Items", builder, False) for name, builder in items.WEAPONS.items()})
+ASSETS.update({name: ("Props", builder, False) for name, builder in nature.PROPS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in props.PROPS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in buildings.BUILDINGS.items()})
 ASSETS.update({name: ("Props", builder, False) for name, builder in landscape.PROPS.items()})

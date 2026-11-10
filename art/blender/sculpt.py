@@ -529,3 +529,71 @@ def sweep_mesh(mb, shape, path, sides, mat, bone, smooth=True, material_at=None,
         best = min(range(len(pts)), key=lambda i: (pts[i] - c).length)
         return pts[best]
     return grid_mesh(mb, rows, mat, bone, closed=True, smooth=smooth, material_at=material_at, inside=inside)
+
+
+def surface_net(shape, lo, hi, cell):
+    """
+    The surface of any shape as quads, not only star-shaped ones (a tree with its roots and branches, a log
+    with a branch stub): the shape is sampled on a grid of `cell` meters over the box `lo`..`hi`, which must
+    hold all of it with a margin. Every grid cell the surface passes through gets one vertex, the mean of where
+    the surface crosses the cell's edges, and every grid edge it crosses gives a quad joining the four cells
+    around that edge (surface nets). Returns (vertices, faces), the faces facing out.
+    """
+    lo, hi = _arr(lo), _arr(hi)
+    n = np.maximum(np.ceil((hi - lo) / cell).astype(int), 2)
+    axes = [lo[i] + cell * np.arange(n[i] + 1) for i in range(3)]
+    grid = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1).reshape(-1, 3)
+    d = np.concatenate([shape.f(grid[i:i + 200000]) for i in range(0, len(grid), 200000)]).reshape(tuple(n + 1))
+    d = np.where(d == 0.0, 1e-9, d)  # no corner exactly on the surface: every crossing has a side
+
+    # Vertices: per cell, the mean crossing point of its twelve edges (in cell units from the cell's corner).
+    total = np.zeros(tuple(n) + (3,))
+    count = np.zeros(tuple(n))
+    for a in range(3):
+        b, c = (a + 1) % 3, (a + 2) % 3
+        for ob in (0, 1):
+            for oc in (0, 1):
+                start = [0, 0, 0]
+                start[b], start[c] = ob, oc
+                end = list(start)
+                end[a] = 1
+                d0 = d[start[0]:start[0] + n[0], start[1]:start[1] + n[1], start[2]:start[2] + n[2]]
+                d1 = d[end[0]:end[0] + n[0], end[1]:end[1] + n[1], end[2]:end[2] + n[2]]
+                cross = (d0 < 0) != (d1 < 0)
+                t = np.where(cross, d0 / np.where(cross, d0 - d1, 1.0), 0.0)
+                point = np.zeros(tuple(n) + (3,))
+                point[..., b], point[..., c], point[..., a] = ob, oc, t
+                total += point * cross[..., None]
+                count += cross
+    active = count > 0
+    index = np.full(tuple(n), -1, dtype=np.int64)
+    index[active] = np.arange(int(active.sum()))
+    cells = np.argwhere(active)
+    verts = lo + (cells + total[active] / count[active][:, None]) * cell
+
+    # Faces: a quad around every grid edge the surface crosses, wound to face from inside to outside.
+    faces = []
+    for a in range(3):
+        b, c = (a + 1) % 3, (a + 2) % 3
+        s0, s1 = [None] * 3, [None] * 3
+        s0[a], s1[a] = slice(0, n[a]), slice(1, n[a] + 1)
+        for o in (b, c):
+            s0[o] = s1[o] = slice(1, n[o])
+        d0, d1 = d[tuple(s0)], d[tuple(s1)]
+        cross = (d0 < 0) != (d1 < 0)
+        at = np.argwhere(cross)
+        at[:, b] += 1
+        at[:, c] += 1
+
+        def around(db, dc):
+            q = at.copy()
+            q[:, b] += db
+            q[:, c] += dc
+            return index[q[:, 0], q[:, 1], q[:, 2]]
+        # Counter-clockwise seen from +a ((b, c, a) is right-handed): facing +a, out of a shape behind the edge.
+        quads = np.stack([around(-1, -1), around(0, -1), around(0, 0), around(-1, 0)], axis=1)
+        backwards = d0[cross] >= 0
+        quads[backwards] = quads[backwards][:, ::-1]
+        faces.append(quads)
+    faces = np.concatenate(faces)
+    return [tuple(v) for v in verts.tolist()], [tuple(f) for f in faces.tolist()]
