@@ -25,9 +25,12 @@ namespace Madlands.Client
         private const float StaffForward = 8f;
         private const float StaffOut = 10f;
         private const float StaffSlide = 0.4f;
+        /// <summary>A held weapon out of attacks points forward and this far out to its hand's side (degrees), clear of the legs.</summary>
+        private const float WeaponOut = 22f;
 
         private float _bareHand;
         private float _weaponForward;
+        private float _armsOut;
         private Transform _visual;
         private DisplayModel _model;
         private UnitAnimator _animator;
@@ -218,9 +221,26 @@ namespace Madlands.Client
         }
 
         /// <summary>
+        /// Holds a bulky model's upper arms out from its sides (DisplayModel.ArmsOut) while it stands, walks or runs, each
+        /// turned about the body's forward line. Attacks, casts and sitting play as the clip has them.
+        /// </summary>
+        private void HoldArmsOut()
+        {
+            if (_model.ArmsOut <= 0f) return;
+            bool holding = !_dead && !_sitting && !_animator.ActionPlaying;
+            _armsOut = Mathf.MoveTowards(_armsOut, holding ? 1f : 0f, Time.deltaTime * 5f);
+            if (_armsOut <= 0f) return;
+            float angle = _model.ArmsOut * Mathf.SmoothStep(0f, 1f, _armsOut);
+            // A positive turn about forward lifts the right (+X) hand outward; the left arm turns the other way.
+            var forward = _visual.forward;
+            if (_model.RightUpperArm != null) _model.RightUpperArm.rotation = Quaternion.AngleAxis(angle, forward) * _model.RightUpperArm.rotation;
+            if (_model.LeftUpperArm != null) _model.LeftUpperArm.rotation = Quaternion.AngleAxis(-angle, forward) * _model.LeftUpperArm.rotation;
+        }
+
+        /// <summary>
         /// The motion-captured clips (art/blender/motions.py) hold the main hand as if it were empty, palm to the thigh,
         /// so a held weapon would point back past the hip. Out of an attack or a cast the forearm turns about its own
-        /// line until the weapon points forward; the scripted clips bend the wrist for it already, leaving little to turn.
+        /// line until the weapon points forward and a little out (WeaponOut); the scripted clips bend the wrist for it already, leaving little to turn.
         /// </summary>
         private void TurnWeaponForward()
         {
@@ -231,7 +251,7 @@ namespace Madlands.Client
             if (!armed || _weaponForward <= 0f) return;
             var axis = (hand.position - forearm.position).normalized;
             var blade = Vector3.ProjectOnPlane(_mainHand.rotation * Vector3.up, axis);
-            var wanted = Vector3.ProjectOnPlane(_visual.forward, axis);
+            var wanted = Vector3.ProjectOnPlane(Quaternion.AngleAxis(WeaponOut, _visual.up) * _visual.forward, axis);
             if (blade.sqrMagnitude < 1e-4f || wanted.sqrMagnitude < 1e-4f) return;
             float angle = Vector3.SignedAngle(blade, wanted, axis) * Mathf.SmoothStep(0f, 1f, _weaponForward);
             forearm.rotation = Quaternion.AngleAxis(angle, axis) * forearm.rotation;
@@ -323,6 +343,7 @@ namespace Madlands.Client
                 _animator.Update(Time.deltaTime);
                 _turn = Mathf.MoveTowards(_turn, _dead ? 0f : _turnTarget, Time.deltaTime * 240f);
                 _visual.localRotation = Quaternion.Euler(0f, _turn, 0f);
+                HoldArmsOut();
                 TurnWeaponForward();
                 HoldStaff();
                 RelaxBareHand();

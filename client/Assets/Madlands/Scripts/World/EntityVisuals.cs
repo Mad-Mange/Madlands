@@ -32,6 +32,14 @@ namespace Madlands.Client
         public Transform RightHand;
         public Quaternion RightHandRest;
         public Transform RightLowerArm;
+        public Transform LeftUpperArm;
+        public Transform RightUpperArm;
+        /// <summary>
+        /// Degrees a humanoid holds its upper arms away from its sides out of attacks and casts. The motion-captured
+        /// clips were made on a slim body: a bulky model's arms (plate, fur, wide sleeves) would hang into its sides
+        /// and its weapon into its legs.
+        /// </summary>
+        public float ArmsOut;
         /// <summary>Weapon rotation relative to each grip: the weapon's +Y points forward in the rest pose.</summary>
         public Quaternion MainHandOffset;
         public Quaternion OffHandOffset;
@@ -474,13 +482,14 @@ namespace Madlands.Client
                     return Humanoid(parent, "BrightvaleHuman", out model);
                 case KorrinDisplay:
                     return Humanoid(parent, "Korrin", out model);
-                // The classes' looks: painted models with their armor in the textures (art/blender/tripo.py).
+                // The classes' looks: painted models with their armor in the textures (art/blender/tripo.py). Bulkier
+                // than the body the clips were captured on, so they hold their arms out from their sides.
                 case WarriorDisplay:
-                    return Humanoid(parent, "Warrior", out model);
+                    return ArmsOut(Humanoid(parent, "Warrior", out model), model, 14f);
                 case ShardmageDisplay:
-                    return Humanoid(parent, "Shardmage", out model);
+                    return ArmsOut(Humanoid(parent, "Shardmage", out model), model, 9f);
                 case KorrinWardenDisplay:
-                    return Humanoid(parent, "KorrinWarden", out model);
+                    return ArmsOut(Humanoid(parent, "KorrinWarden", out model), model, 16f);
                 case BanditDisplay:
                     // Red rags, a dark hood and a stolen shard glowing on the chest.
                     shape = Humanoid(parent, "BrightvaleHuman", out model);
@@ -691,6 +700,13 @@ namespace Madlands.Client
             if (feet != null) model.Tint("Feet", Hex(feet));
         }
 
+        /// <summary>Holds a humanoid's arms this many degrees out from its sides (DisplayModel.ArmsOut).</summary>
+        private static DisplayShape ArmsOut(DisplayShape shape, DisplayModel model, float degrees)
+        {
+            if (model != null) model.ArmsOut = degrees;
+            return shape;
+        }
+
         /// <summary>Scales a model (after its attachments are placed); bigger strides play slower.</summary>
         private static DisplayShape Scaled(DisplayShape shape, DisplayModel model, float scale)
         {
@@ -768,6 +784,8 @@ namespace Madlands.Client
             {
                 model.RightHand = model.Bone("RightHand");
                 model.RightLowerArm = model.Bone("RightLowerArm");
+                model.LeftUpperArm = model.Bone("LeftUpperArm");
+                model.RightUpperArm = model.Bone("RightUpperArm");
                 if (model.RightHand != null) model.RightHandRest = model.RightHand.localRotation;
                 model.FindFingers();
             }

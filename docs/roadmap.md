@@ -212,6 +212,8 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] Motion-captured clips (2026-11-09, ADR 0015): idling, running, jumping, attacks, casts, hits and deaths from
   Quaternius's CC0 Universal Animation Library (`motions.py`), retargeted onto every humanoid; walking, strafing and
   sitting stay scripted. Held weapons turn forward and staffs stand upright whatever the clip does with the arm
+- [x] Arms clear of the body (2026-11-10, ADR 0015): the classes' bulky models hold their upper arms out from their
+  sides out of attacks and casts, and a held weapon points a little outward, so neither sinks into the body or legs
 - [ ] Replace the other NPC models with Tripo models, one at a time
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)

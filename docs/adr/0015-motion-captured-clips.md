@@ -28,7 +28,11 @@ chair.
 - The library's jog moves 5.36 m/s at normal speed (measured from its root-motion files), the Run's nominal speed for
   humanoids. Its walk moves 0.97 m/s: at our 2.5 m/s it would play 2.6 times too fast, so Walk stays scripted.
 - The library holds a weapon hand as if it were empty. Out of an action, `UnitView` turns the forearm about its own line
-  until a held weapon points forward, and stands a staff upright in world space instead of relative to the hand.
+  until a held weapon points forward and a little out to the side, and stands a staff upright in world space instead
+  of relative to the hand.
+- The library was captured on a slim body: the arms hang close to the sides. A bulkier model (the classes' plate, fur
+  and wide sleeves) gets `DisplayModel.ArmsOut`, degrees `UnitView` turns its upper arms out from its sides while it
+  stands, walks or runs (the warrior 14, the shardmage 9, the warden 16); attacks, casts and sitting play as captured.
 
 ## Consequences
 
