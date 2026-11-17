@@ -1,7 +1,9 @@
 """
 Characters from Tripo (ADR 0014): a textured FBX standing in a T-pose or an A-pose becomes a character like the scripted
 races. It gets the humanoid skeleton, so it plays the shared humanoid clips and can hold weapons. An unrigged model gets
-joints read by hand and automatic weights; a model rigged by Tripo ("rigged": True) brings its own Mixamo skeleton.
+joints read by hand and automatic weights; a model rigged by Tripo ("rigged": True) brings its own Mixamo skeleton, and
+one rigged in AccuRIG (a USD export, "rigged": True as well) brings AccuRIG's skeleton, whose extra bones (twists, face,
+toes) are folded into ours. Only the joints and the weights are taken from a rig, never its motions or face shapes.
 
     MODELS row -> three levels of detail, skin weights, Art/Characters/<Name>.fbx and Art/Textures/<Name>_*.png
 
@@ -75,6 +77,50 @@ MODELS = {
         "trunk_x": 0.165,
         "skirt": {"top": 0.40, "hem": 0.20, "legs": 0.07},
     },
+    # The bandits of Shardscar, rigged in AccuRIG and exported as USD (its textures beside it, under Materials/).
+    "ShardBandit": {
+        "source": "ShardBandit/ShardBandit.usd",
+        "rigged": True,
+        "height": 1.80,
+    },
+    "BanditShardcaster": {
+        "source": "BanditShardcaster/Rigged/BanditShardcasterRigged.usd",
+        "rigged": True,
+        "height": 1.74,
+        "skirt": {"top": 0.50, "hem": 0.25, "legs": 0.065},  # the coat, split at the front and back, to the knees
+    },
+    # Lieutenant Vorn, their leader: built with a human's hips (his legs are long) and scaled up in the client.
+    "LieutenantVorn": {
+        "source": "LieutenantVorn/Rigged/LieutenantVornRigged.usd",
+        "rigged": True,
+        "height": 1.75,
+    },
+    # Mirewatch's folk, rigged in AccuRIG. (Old Tamsin's file kept the Captain's name when it was exported.)
+    "CaptainEddaBrand": {
+        "source": "CaptainEddaBrand/Rigged/CaptainEddaBrandRigged.usd",
+        "rigged": True,
+        "height": 1.76,
+    },
+    "OldTamsin": {
+        "source": "OldTamsin/Rigged/CaptainEddaBrandRigged.usd",
+        "rigged": True,
+        "height": 1.75,  # her hat included
+        "skirt": {"top": 0.40, "hem": 0.13, "legs": 0.07},  # the coat, split at the back, to the shins
+    },
+    # The fish-folk of the Reedfen (the scripted race keeps the name "Mireling"): built with a human's hips, as their legs
+    # are short, and scaled down in the client. Their hands have four fingers.
+    "ReedfenMireling": {
+        "source": "Mireling/Rigged/MirelingRigged.usd",
+        "rigged": True,
+        "height": 1.95,
+    },
+    # Their oracles: the same model, its scales turned from green and teal to blue and violet.
+    "ReedfenOracle": {
+        "source": "Mireling/Rigged/MirelingRigged.usd",
+        "rigged": True,
+        "height": 1.95,
+        "hue_shift": (75, 95, 100),  # scales (hues 90-160) to blue and violet; the belly, eyes and straw stay
+    },
     # Ruukhar the Slagborn, the boss of the Cinder Cut: a one-eyed brute, built so his hips stand as high as a human's
     # (the shared clips' strides fit) and scaled up in the client (EntityVisuals).
     "Ruukhar": {
@@ -126,6 +172,34 @@ MIXAMO_BONES = {
 MIXAMO_DROPPED = ("HeadTop_End", "LeftToe_End", "RightToe_End")
 
 
+def _accurig_names():
+    """
+    An AccuRIG skeleton (USD export) under Mixamo's names, so the rest of the build treats it like a Tripo rig, and for
+    each of those bones the joint it points to (AccuRIG's own tails are stubs). AccuRIG's other bones (twists, the face,
+    toes, elbow and knee helpers) give their weights to the nearest of these above them.
+    """
+    names = {"Hip": "Hips", "Pelvis": "Hips", "Waist": "Spine", "Spine01": "Spine1", "Spine02": "Spine2",
+             "NeckTwist01": "Neck", "Head": "Head"}
+    tails = {"Hip": "Waist", "Waist": "Spine01", "Spine01": "Spine02", "Spine02": "NeckTwist01", "NeckTwist01": "Head"}
+    for side, mixamo in (("L_", "Left"), ("R_", "Right")):
+        limbs = (("Clavicle", "Shoulder", "Upperarm"), ("Upperarm", "Arm", "Forearm"), ("Forearm", "ForeArm", "Hand"),
+                 ("Hand", "Hand", "Mid1"), ("Thigh", "UpLeg", "Calf"), ("Calf", "Leg", "Foot"), ("Foot", "Foot", "ToeBase"),
+                 ("ToeBase", "ToeBase", None))
+        for bone, ours, toward in limbs:
+            names[side + bone] = mixamo + ours
+            if toward:
+                tails[side + bone] = side + toward
+        for finger, theirs in (("Thumb", "Thumb"), ("Index", "Index"), ("Mid", "Middle"), ("Ring", "Ring"), ("Pinky", "Pinky")):
+            for joint in (1, 2, 3):
+                names["%s%s%d" % (side, finger, joint)] = "%sHand%s%d" % (mixamo, theirs, joint)
+                if joint < 3:
+                    tails["%s%s%d" % (side, finger, joint)] = "%s%s%d" % (side, finger, joint + 1)
+    return names, tails
+
+
+ACCURIG_BONES, ACCURIG_TAILS = _accurig_names()
+
+
 class MissingSource(Exception):
     """The original of a model is not on this machine."""
 
@@ -156,7 +230,10 @@ def _build(name, model):
     path = os.path.join(SOURCE_DIR, *model["source"].split("/"))
     if not os.path.exists(path):
         raise MissingSource(path + " not found (set MADLANDS_TRIPO_DIR)")
-    bpy.ops.import_scene.fbx(filepath=path)
+    if path.lower().endswith((".usd", ".usda", ".usdc")):
+        bpy.ops.wm.usd_import(filepath=path)
+    else:
+        bpy.ops.import_scene.fbx(filepath=path)
     meshes = [o for o in bpy.data.objects if o.type == "MESH"]
     if len(meshes) != 1:
         raise ValueError("%s: expected one mesh, found %d" % (path, len(meshes)))
@@ -197,15 +274,22 @@ def _build_rigged(name, model, source):
     if rig is None or rig.type != "ARMATURE":
         raise ValueError("%s: a rigged model needs an armature" % name)
     world = rig.matrix_world.copy()
-    joints = {bone.name.replace("mixamorig:", ""): (world @ bone.head_local, world @ bone.tail_local) for bone in rig.data.bones}
-    parents = {bone.name.replace("mixamorig:", ""): bone.parent.name.replace("mixamorig:", "") if bone.parent else None for bone in rig.data.bones}
-    for group in list(source.vertex_groups):
-        group.name = group.name.replace("mixamorig:", "")
+    if "L_Upperarm" in rig.data.bones:
+        joints, parents = _accurig_as_mixamo(rig, source)
+    else:
+        joints = {bone.name.replace("mixamorig:", ""): (world @ bone.head_local, world @ bone.tail_local) for bone in rig.data.bones}
+        parents = {bone.name.replace("mixamorig:", ""): bone.parent.name.replace("mixamorig:", "") if bone.parent else None for bone in rig.data.bones}
+        for group in list(source.vertex_groups):
+            group.name = group.name.replace("mixamorig:", "")
     placed = source.matrix_world.copy()
     source.parent = None
     source.matrix_world = placed
     source.modifiers.clear()
+    if source.data.shape_keys:
+        source.shape_key_clear()  # an AccuRIG export's face shapes: nothing in the game uses them
     bpy.data.objects.remove(rig)
+    for leftover in [o for o in bpy.data.objects if o.type == "EMPTY"]:  # a USD file's grouping nodes
+        bpy.data.objects.remove(leftover)
 
     scale, floor = _normalize(source, model["height"])
 
@@ -345,6 +429,59 @@ def _rigged_skeleton(joints, parents, at):
     return bones
 
 
+def _accurig_as_mixamo(rig, mesh):
+    """
+    An AccuRIG rig as if Tripo had rigged it: its joints and parents under Mixamo's names (ACCURIG_BONES), and the mesh's
+    weights moved onto those bones. A bone points at the next joint of its chain; a fingertip and the toes end where
+    AccuRIG's last bone there ends, and the head reaches up twice the neck's length.
+    """
+    world = rig.matrix_world
+    bones = rig.data.bones
+
+    def head(bone):
+        return world @ bones[bone].head_local
+
+    def ours(bone):
+        while bone is not None and bone.name not in ACCURIG_BONES:
+            bone = bone.parent
+        return ACCURIG_BONES[bone.name] if bone is not None else None
+
+    joints, parents = {}, {}
+    for theirs, mixamo in ACCURIG_BONES.items():
+        # Pelvis is a second hip bone without weights (the legs hang from Hip's joint); a hand of four fingers has no
+        # ring finger.
+        if theirs == "Pelvis" or theirs not in bones:
+            continue
+        start = head(theirs)
+        if theirs in ACCURIG_TAILS:
+            end = head(ACCURIG_TAILS[theirs])
+        elif theirs == "Head":
+            end = start + Vector((0, 0, 2 * (start - head("NeckTwist01")).length))
+        else:
+            end = max((world @ b.tail_local for b in [bones[theirs]] + list(bones[theirs].children_recursive)),
+                      key=lambda tip: (tip - start).length)
+        joints[mixamo] = (start, end)
+        parents[mixamo] = ours(bones[theirs].parent)
+    for side in ("Left", "Right"):
+        tip = joints[side + "HandMiddle3"][1]
+        joints[side + "HandMiddle4"] = (tip, tip)  # where _joints_of_rig finds the fingertip
+        parents[side + "HandMiddle4"] = side + "HandMiddle3"
+
+    names = {group.index: group.name for group in mesh.vertex_groups}
+    target = {group: ours(bones[group]) if group in bones else None for group in names.values()}
+    weights = []
+    for vertex in mesh.data.vertices:
+        w = {}
+        for g in vertex.groups:
+            bone = target[names[g.group]]
+            if bone is not None and g.weight > 0.0:
+                w[bone] = w.get(bone, 0.0) + g.weight
+        weights.append(w if w else {"Hips": 1.0})
+    mesh.vertex_groups.clear()
+    _store_weights(mesh, weights)
+    return joints, parents
+
+
 def _merge_groups(mesh):
     """Renames the source's vertex groups to our bones, adding up those that become one bone."""
     names = {group.index: group.name for group in mesh.vertex_groups}
@@ -405,14 +542,34 @@ def _aim_along_x(arm, bone, s):
     bpy.context.view_layer.update()
 
 
+# A texture's kind by how its file name ends: Tripo's names, then AccuRIG's.
+TEXTURE_KINDS = {"basecolor": ("basecolor", "diffuse"), "normal": ("normal",), "roughness": ("roughness", "rough"),
+                 "metallic": ("metallic", "metal")}
+
+
+def _texture_kind(file_name):
+    stem = file_name.lower().rsplit(".", 1)[0]
+    for kind, endings in TEXTURE_KINDS.items():
+        if stem.endswith(tuple("_" + ending for ending in endings)):
+            return kind
+    return None
+
+
 def _source_maps(path):
-    """The source's texture maps by kind, from the images its FBX refers to."""
+    """
+    The source's texture maps by kind: the images its FBX refers to, or (a USD file, whose materials Blender does not
+    read) the image files in its folder and below.
+    """
     maps = {}
     for image in bpy.data.images:
-        stem = image.name.lower().rsplit(".", 1)[0]
-        for kind in ("basecolor", "normal", "roughness", "metallic"):
-            if stem.endswith("_" + kind):
-                maps[kind] = image
+        kind = _texture_kind(image.name)
+        if kind is not None:
+            maps[kind] = image
+    for folder, _, files in os.walk(os.path.dirname(path)):
+        for file_name in sorted(files):
+            kind = _texture_kind(file_name)
+            if kind is not None and kind not in maps and file_name.lower().endswith((".png", ".jpg", ".jpeg")):
+                maps[kind] = bpy.data.images.load(os.path.join(folder, file_name))
     missing = {"basecolor", "normal", "roughness", "metallic"} - set(maps)
     if missing:
         raise ValueError("%s: no %s texture found next to it" % (path, ", ".join(sorted(missing))))

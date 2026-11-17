@@ -177,9 +177,11 @@ namespace Madlands.Client.Editor
                         changed = $"{t.name} moved from {stored[i].position:F3} to {t.localPosition:F3}";
                 }
                 // A new model's first import has no skeleton to map with: Unity then guesses the mapping itself
-                // (without the chest and shoulders).
+                // (usually without the chest and shoulders, sometimes with the fingers, which no clip should move:
+                // DisplayModel.CloseHand turns them).
                 var mapped = importer.humanDescription.human ?? new HumanBone[0];
-                if (changed == null && HumanBones.Any(name => !mapped.Any(b => b.humanName == name && b.boneName == name)))
+                if (changed == null && (mapped.Length != HumanBones.Length
+                        || HumanBones.Any(name => !mapped.Any(b => b.humanName == name && b.boneName == name))))
                     changed = "not every bone is mapped by name";
                 if (changed == null) continue;
 

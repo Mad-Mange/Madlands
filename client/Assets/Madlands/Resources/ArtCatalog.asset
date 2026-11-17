@@ -13,8 +13,12 @@ MonoBehaviour:
   m_Name: ArtCatalog
   m_EditorClassIdentifier: Madlands.Client::Madlands.Client.ArtCatalog
   Models:
+  - Name: BanditShardcaster
+    Prefab: {fileID: 919132149155446097, guid: f2c7c1436e475ac49a358305286a1740, type: 3}
   - Name: BrightvaleHuman
     Prefab: {fileID: 919132149155446097, guid: ef57b53b30faec7458a8bfba02bb6d2c, type: 3}
+  - Name: CaptainEddaBrand
+    Prefab: {fileID: 919132149155446097, guid: 1085bc53c6f8096408ea063c1cf0e09d, type: 3}
   - Name: HumanoidAnimations
     Prefab: {fileID: 919132149155446097, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Name: HumanoidMotions
@@ -23,12 +27,22 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: fdd01bc74c2bfe94a86127afb0f03224, type: 3}
   - Name: KorrinWarden
     Prefab: {fileID: 919132149155446097, guid: 359c8a43871b77546843e38a2ea8de6e, type: 3}
+  - Name: LieutenantVorn
+    Prefab: {fileID: 919132149155446097, guid: 09a198c0782558948b4f36a9cfb6fb7a, type: 3}
   - Name: MireCroaker
     Prefab: {fileID: 919132149155446097, guid: f812c4c6d6337d04c9300ff11b61c569, type: 3}
   - Name: Mireling
     Prefab: {fileID: 919132149155446097, guid: 618b11371cdbde44fb7f69b154f8e10e, type: 3}
+  - Name: OldTamsin
+    Prefab: {fileID: 919132149155446097, guid: befd12c64f5c0fe4a8a6c2c2752ca3f0, type: 3}
+  - Name: ReedfenMireling
+    Prefab: {fileID: 919132149155446097, guid: fa279c4f7fda52c4089be4fac602260c, type: 3}
+  - Name: ReedfenOracle
+    Prefab: {fileID: 919132149155446097, guid: d183becc0563f884f9c2e978c19c080f, type: 3}
   - Name: Ruukhar
     Prefab: {fileID: 919132149155446097, guid: 25a0f2420c768c048a730e1873e12ad6, type: 3}
+  - Name: ShardBandit
+    Prefab: {fileID: 919132149155446097, guid: 252b008f3660fee45bcd916b260f4217, type: 3}
   - Name: Shardmage
     Prefab: {fileID: 919132149155446097, guid: 51d96a5f896089e4cb6ef2ab296780c0, type: 3}
   - Name: Warrior
@@ -352,6 +366,9 @@ MonoBehaviour:
     Name: Death
     Clip: {fileID: -982115091633673366, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
   - Set: Gloomjaw
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
+  - Set: Gloomjaw
     Name: Idle
     Clip: {fileID: -8945691123924629249, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
   - Set: Gloomjaw
@@ -363,18 +380,6 @@ MonoBehaviour:
   - Set: Gloomjaw
     Name: Hit
     Clip: {fileID: -5578746458225771231, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
-  - Set: Gloomjaw
-    Name: Attack
-    Clip: {fileID: 4723146814002874508, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
-  - Set: Shardling
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
-  - Set: Shardling
-    Name: Attack
-    Clip: {fileID: 4723146814002874508, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
-  - Set: Shardling
-    Name: Death
-    Clip: {fileID: -982115091633673366, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
   - Set: Shardling
     Name: Run
     Clip: {fileID: -7551964380084998518, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
@@ -384,6 +389,15 @@ MonoBehaviour:
   - Set: Shardling
     Name: Idle
     Clip: {fileID: -8945691123924629249, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Attack
+    Clip: {fileID: 4723146814002874508, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
+  - Set: Shardling
+    Name: Death
+    Clip: {fileID: -982115091633673366, guid: b6c4ef9e728290b48b37d609e5954bbb, type: 3}
   - Set: Spider
     Name: Hit
     Clip: {fileID: -5578746458225771231, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}

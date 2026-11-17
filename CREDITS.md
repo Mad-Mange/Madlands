@@ -10,6 +10,11 @@ the Mire Croaker, the Warrior, the Shardmage, the Korrin Warden, Ruukhar the Sla
 (`client/Assets/Madlands/Art/Characters/MireCroaker.fbx`, `Warrior.fbx`, `Shardmage.fbx`, `KorrinWarden.fbx`, `Ruukhar.fbx`,
 `client/Assets/Madlands/Art/Creatures/Gloomjaw.fbx` and their textures).
 
+Generated the same way and rigged by the project owner in Reallusion's free ActorCore AccuRIG (only the joints and skin
+weights are kept, none of AccuRIG's motions): the Shard Bandit, the Bandit Shardcaster, Lieutenant Vorn, Captain Edda
+Brand, Old Tamsin and the Mirelings (`ShardBandit.fbx`, `BanditShardcaster.fbx`, `LieutenantVorn.fbx`,
+`CaptainEddaBrand.fbx`, `OldTamsin.fbx`, `ReedfenMireling.fbx`, `ReedfenOracle.fbx` and their textures).
+
 ## Animations
 
 Motion-captured humanoid clips from [Quaternius](https://quaternius.com)'s Universal Animation Library and Universal

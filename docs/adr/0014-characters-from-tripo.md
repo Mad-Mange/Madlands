@@ -88,6 +88,30 @@ weapon's grip in the palm. All three classes and the Mire Croaker are rigged thi
   fingers. They take the corrections, which keep a rig's weights for the arm's bones and fingers and only remove what is
   mixed in.
 
+**A model rigged in AccuRIG** (2026-11-17: the bandits of Shardscar, Lieutenant Vorn, Captain Edda Brand, Old Tamsin and
+the Mirelings), Reallusion's free auto-rigger,
+comes as its USD export: the mesh in a T-pose, the skeleton, and the four textures as files under `Materials/`. It is
+also `"rigged": True`. `tripo.py` names AccuRIG's main bones as Mixamo's, so it then goes the way of a Tripo rig, and
+gives the weights of its other bones (twists, the face, toes, elbow and knee helpers) to the nearest main bone above
+them. Only joints and weights are taken: AccuRIG's preview motions and face shapes are dropped, so nothing of
+Reallusion's reaches the repository.
+
+- AccuRIG weights cleanly: none of the six has a vertex following both an arm and a leg. Most test poses tear at most a
+  few edges of 12,000; Vorn's spiked elbow guards tear 19 with the elbow bent square.
+- AccuRIG's preview plays a motion with the hands clasped in front: on a bulky model they cross into each other. That
+  is the preview only; the exported skeleton and its T-pose are right.
+- The Shardcaster's and Old Tamsin's coats reach the knees or below, and AccuRIG ties each half to its thigh, so a stride
+  swung them like splints (Tamsin's tore 17 times its length at the back slit). The skirt correction hangs them from the
+  hips again.
+- Cloth on a shoulder follows the upper arm: Vorn's red rags and the Captain's cape lift with arms raised over the head.
+  The clips seldom raise them that far; nothing corrects it yet.
+- The Mireling's hands have four fingers: a missing AccuRIG bone is skipped, and the client closes the fingers it finds.
+  The oracles are the same model with their scales turned blue and violet (`hue_shift`), another model and textures.
+- Vorn and the Mirelings are built with a human's hips, as Ruukhar is, and scaled in `EntityVisuals` (1.17 and 0.85),
+  so their strides fit the speeds the clips are played at. Edda and Tamsin stand still and are built at their height.
+- The FBX export holds less well: the mesh in AccuRIG's own A-pose, a 1800-frame preview motion, 92 face shapes, and
+  the roughness only packed into an ORM map. The USD export holds just what we take.
+
 ## A boss: Ruukhar the Slagborn
 
 Ruukhar (2026-11-08) is the first Tripo model much larger than a hero: an unrigged one-eyed brute in a T-pose, its joints

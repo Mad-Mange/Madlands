@@ -490,57 +490,26 @@ namespace Madlands.Client
                     return ArmsOut(Humanoid(parent, "Shardmage", out model), model, 9f);
                 case KorrinWardenDisplay:
                     return ArmsOut(Humanoid(parent, "KorrinWarden", out model), model, 16f);
+                // The bandits of Shardscar and Mirewatch's folk: painted models (art/blender/tripo.py, rigged in AccuRIG).
                 case BanditDisplay:
-                    // Red rags, a dark hood and a stolen shard glowing on the chest.
-                    shape = Humanoid(parent, "BrightvaleHuman", out model);
-                    if (model == null) return shape;
-                    model.Tint("Chest", Hex("#7a2c22"));
-                    model.Tint("Arms", Hex("#4a3a32"));
-                    model.Tint("Legs", Hex("#3b3230"));
-                    model.Tint("Hair", Hex("#2a2422"));
-                    model.Tint("Feet", Hex("#2e2622"));
-                    Wear(model, "#2f2a28", "Hood");
-                    model.Attach("Chest", Effects.Spawn("FxShard", null, Vector3.zero, 0.17f, new Color(0.4f, 0.95f, 1f)), new Vector3(0f, 1.32f, 0.14f), new Vector3(0f, 0f, 35f));
-                    return shape;
+                    // Red rags, a dark hood and a stolen shard on a cord.
+                    return ArmsOut(Humanoid(parent, "ShardBandit", out model), model, 8f);
                 case ShardcasterDisplay:
                 {
-                    // A violet robe and a crystal turning over the head.
-                    shape = Humanoid(parent, "BrightvaleHuman", out model);
+                    // A violet coat with crystals on the sleeves, and a crystal turning over the head.
+                    shape = ArmsOut(Humanoid(parent, "BanditShardcaster", out model), model, 8f);
                     if (model == null) return shape;
-                    model.Tint("Chest", Hex("#55357a"));
-                    model.Tint("Arms", Hex("#55357a"));
-                    model.Tint("Legs", Hex("#3e2a5a"));
-                    model.Tint("Waist", Hex("#c9a23e"));
-                    model.Tint("Hair", Hex("#d8d4cc"));
-                    Wear(model, "#55357a", "RobeSkirt", "RobeCuffs");
                     var crystal = Effects.Spawn("FxShard", parent, new Vector3(0f, shape.Height + 0.45f, 0f), 0.5f, new Color(0.45f, 1f, 1f));
                     crystal.gameObject.AddComponent<Spinner>();
                     shape.Height += 0.6f;
                     return shape;
                 }
                 case CaptainDisplay:
-                {
-                    // Gilded steel with Mirewatch's star, a helmet, a blue tabard and cloak: the outpost's commander.
-                    shape = Humanoid(parent, "BrightvaleHuman", out model);
-                    if (model == null) return shape;
-                    Dress(model, chest: "#3a4a6e", arms: "#3b3c44", legs: "#2f3d66", hands: "#6d7480", feet: "#4a4f58");
-                    Wear(model, "#9aa3b2", "Helm", "Pauldrons", "Breastplate", "StarEmblem", "Gauntlets", "Greaves");
-                    Wear(model, "#27428a", "Cloak", "Tabard");
-                    return shape;
-                }
+                    // Gilded steel with Mirewatch's star, a helmet and a blue tabard and cape: the outpost's commander.
+                    return ArmsOut(Humanoid(parent, "CaptainEddaBrand", out model), model, 12f);
                 case HerbalistDisplay:
-                {
-                    // Gray hair, a purple robe and a tall wide-brimmed hat.
-                    shape = Humanoid(parent, "BrightvaleHuman", out model);
-                    if (model == null) return shape;
-                    model.Tint("Hair", Hex("#c8c4bc"));
-                    model.Tint("Chest", Hex("#5a4370"));
-                    model.Tint("Arms", Hex("#5a4370"));
-                    model.Tint("Legs", Hex("#4a3a5c"));
-                    Wear(model, "#5a4370", "RobeSkirt", "RobeCuffs");
-                    Wear(model, "#2c2433", "WizardHat");
-                    return shape;
-                }
+                    // Gray hair, a purple coat, an apron full of herbs and a tall wide-brimmed hat with mushrooms on it.
+                    return ArmsOut(Humanoid(parent, "OldTamsin", out model), model, 10f);
                 case FrogDisplay:
                     // The frog-folk of the mere: their own textures, nothing to recolor (art/blender/tripo.py).
                     return Humanoid(parent, "MireCroaker", out model);
@@ -612,20 +581,13 @@ namespace Madlands.Client
                 case MirelingDisplay:
                 case MirelingOracleDisplay:
                 {
-                    // Fish-folk in teal scales with glowing eyes and fins (their fins take the hair color); the
-                    // oracles wear a robe and carry a light on the chest.
-                    shape = Humanoid(parent, "Mireling", out model);
-                    if (model == null) return shape;
+                    // Fish-folk with a fin crest and a straw kilt, built with a human's hips and scaled down, so their
+                    // short legs take short strides. The oracles' scales are blue and violet, and they carry a light.
                     bool oracle = displayId == MirelingOracleDisplay;
-                    var scales = oracle ? "#5a7a9a" : "#4f8a7a";
-                    Dress(model, chest: scales, arms: scales, legs: "#6a9a80", hair: oracle ? "#3a4a6a" : "#2f5a4a", waist: oracle ? "#7a4a8a" : "#5a6a30",
-                        skin: scales, hands: scales, feet: "#3f6a5a");
-                    if (oracle)
-                    {
-                        Wear(model, "#4a3a6a", "RobeSkirt", "RobeCuffs");
-                        model.Attach("Chest", Effects.Spawn("FxOrb", null, Vector3.zero, 0.1f, Hex("#c8f0ff")), new Vector3(0f, 0.98f, 0.2f));
-                    }
-                    return shape;
+                    shape = ArmsOut(Humanoid(parent, oracle ? "ReedfenOracle" : "ReedfenMireling", out model), model, 4f);
+                    if (model == null) return shape;
+                    if (oracle) model.Attach("Chest", Effects.Spawn("FxOrb", null, Vector3.zero, 0.1f, Hex("#c8f0ff")), new Vector3(0f, 1.32f, 0.29f));
+                    return Scaled(shape, model, 0.85f);
                 }
                 case DrownedDisplay:
                     // The drowned dead of old Hollowmere: gray-green skin, rotten clothes, glowing eyes.
@@ -641,15 +603,9 @@ namespace Madlands.Client
                     }
                     return shape;
                 case LieutenantDisplay:
-                {
-                    // Lieutenant Vorn: black and red, a dark helmet, a head taller than his bandits.
-                    shape = Humanoid(parent, "BrightvaleHuman", out model);
-                    if (model == null) return shape;
-                    Dress(model, chest: "#5a1a1a", arms: "#2a2a2c", legs: "#2a2a2c", hair: "#1a1a1a", hands: "#2a2a2c");
-                    Wear(model, "#3a3c42", "HornedHelm", "SpikedPauldrons");
-                    Wear(model, "#5a1a1a", "Cloak");
-                    return Scaled(shape, model, 1.15f);
-                }
+                    // Lieutenant Vorn: spiked black armor and red rags, a horned helmet, a head taller than his bandits
+                    // (built with a human's hips, so his strides grow with him).
+                    return Scaled(ArmsOut(Humanoid(parent, "LieutenantVorn", out model), model, 16f), model, 1.17f);
                 case GloomjawDisplay:
                     // The world boss from Tripo on the beasts' skeleton (art/blender/tripo.py logs its clips' speeds).
                     return Scaled(Creature(parent, displayId, "Gloomjaw", 1.0f, walkSpeed: 0.8f, runSpeed: 1.9f, out model), model, 3f);
