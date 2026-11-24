@@ -23,7 +23,7 @@ namespace Madlands.Client
 
         private static readonly System.Collections.Generic.Dictionary<uint, Display> Displays = new System.Collections.Generic.Dictionary<uint, Display>
         {
-            { 1, new Display { Model = "Mushrooms", Shape = new DisplayShape { Radius = 0.4f, Height = 0.3f } } },
+            { 1, new Display { Model = "GlowcapMushrooms", Shape = new DisplayShape { Radius = 0.4f, Height = 0.3f } } },
             { 2, new Display { Model = "Chest", Shape = new DisplayShape { Radius = 0.75f, Height = 0.75f }, Chest = true, Scale = 1.25f } },
             { 3, new Display { Model = "Strongbox", Shape = new DisplayShape { Radius = 0.7f, Height = 0.7f }, Chest = true, Scale = 1.25f } },
         };

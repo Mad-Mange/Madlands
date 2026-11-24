@@ -163,6 +163,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: c19c7baaf892528428c41b3931e9efc1, type: 3}
   - Name: Gate
     Prefab: {fileID: 919132149155446097, guid: 0442017d8938c744e9ab1e6ba60a7ec9, type: 3}
+  - Name: GlowcapMushrooms
+    Prefab: {fileID: 919132149155446097, guid: bcba1e63dc185294790fea7e12b652d1, type: 3}
   - Name: GroveHouse
     Prefab: {fileID: 919132149155446097, guid: dc82fe7531503284eb0352ae2e25356b, type: 3}
   - Name: LanternPost
@@ -221,6 +223,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 6d0cead8ef7e5f94f88b6c05fe9807c7, type: 3}
   - Name: Watchtower
     Prefab: {fileID: 919132149155446097, guid: 4a8cc7da2d1eafb4eb6fe6d7ee0444f2, type: 3}
+  - Name: Waystone
+    Prefab: {fileID: 919132149155446097, guid: 9f5c433fc2ed7d74dac94b610eaeb70e, type: 3}
   - Name: Well
     Prefab: {fileID: 919132149155446097, guid: 07c3e833ababa7d4bae8a8375afce81d, type: 3}
   Clips:
@@ -264,26 +268,26 @@ MonoBehaviour:
     Name: Sit
     Clip: {fileID: 4724887770959480615, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
     Name: StrafeLeft
     Clip: {fileID: 5222996160109349777, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
     Name: StrafeRight
     Clip: {fileID: 8061675120238250040, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
-    Name: Walk
-    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidMotions
-    Name: A_TPose
-    Clip: {fileID: 4996995007976980875, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Attack1H
-    Clip: {fileID: 8394281637225282446, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Attack2H
-    Clip: {fileID: -8883204860901330040, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Jump
+    Clip: {fileID: 1079665108409675491, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: AttackUnarmed
-    Clip: {fileID: -3425250077569541093, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
     Name: CastLoop
     Clip: {fileID: -8265580086071612076, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
@@ -297,17 +301,17 @@ MonoBehaviour:
     Name: Fall
     Clip: {fileID: -5025487861805838091, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: A_TPose
+    Clip: {fileID: 4996995007976980875, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Idle
-    Clip: {fileID: -8945691123924629249, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Attack1H
+    Clip: {fileID: 8394281637225282446, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Jump
-    Clip: {fileID: 1079665108409675491, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Attack2H
+    Clip: {fileID: -8883204860901330040, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Run
-    Clip: {fileID: -7551964380084998518, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: AttackUnarmed
+    Clip: {fileID: -3425250077569541093, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: Bear
     Name: Walk
     Clip: {fileID: 8349542763059015795, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
@@ -450,3 +454,127 @@ MonoBehaviour:
     Texture: {fileID: 2800000, guid: c0069a1bd22693a4f9da65669a02ae46, type: 3}
   - Name: IconWeapons
     Texture: {fileID: 2800000, guid: 0128580afe91f974ebbe9dcb278828c9, type: 3}
+  - Name: ItemBuckler
+    Texture: {fileID: 2800000, guid: 3aadafe27db8ba64abc8f0bdf2be0159, type: 3}
+  - Name: ItemCleaver
+    Texture: {fileID: 2800000, guid: 7e7e598b9d4201145851aabd2d265bc5, type: 3}
+  - Name: ItemCrystalRod
+    Texture: {fileID: 2800000, guid: ef60638df44e2b14fad216def7d6c9bb, type: 3}
+  - Name: ItemCudgel
+    Texture: {fileID: 2800000, guid: cbaa59bcde1b2044582857da9abb326a, type: 3}
+  - Name: ItemCutlass
+    Texture: {fileID: 2800000, guid: 9f067ba5f9c2c56498a42623c149022b, type: 3}
+  - Name: ItemGreatAxe
+    Texture: {fileID: 2800000, guid: 65e2c6f4c2937f74bb84f78107018ec6, type: 3}
+  - Name: ItemHatchet
+    Texture: {fileID: 2800000, guid: fb9e2119756d68948951597d0218abc6, type: 3}
+  - Name: ItemIcon1101
+    Texture: {fileID: 2800000, guid: fde7c8dcb42e94748873a08952912e64, type: 3}
+  - Name: ItemIcon1102
+    Texture: {fileID: 2800000, guid: 2b8c26ba0d97a924c9a00baa85e90080, type: 3}
+  - Name: ItemIcon1103
+    Texture: {fileID: 2800000, guid: 79c91947085930d4a97cfff93cd1ec41, type: 3}
+  - Name: ItemIcon1301
+    Texture: {fileID: 2800000, guid: 6967898e83dba50459a7a6bdb5bcb8be, type: 3}
+  - Name: ItemIcon1302
+    Texture: {fileID: 2800000, guid: cc35457cdda4fba49b19097c9b7f2deb, type: 3}
+  - Name: ItemIcon1303
+    Texture: {fileID: 2800000, guid: fa75d8fc8b4c8a14e942fb5900a91f0c, type: 3}
+  - Name: ItemIcon2002
+    Texture: {fileID: 2800000, guid: b0892794dfc53384fa09023ecab66b04, type: 3}
+  - Name: ItemIcon2004
+    Texture: {fileID: 2800000, guid: 349be3f90e33bbb4199b3ba6ee0b1e16, type: 3}
+  - Name: ItemIcon3001
+    Texture: {fileID: 2800000, guid: 15dd26e764ce0714288efa43079e5660, type: 3}
+  - Name: ItemIcon3002
+    Texture: {fileID: 2800000, guid: 2904ddf460d98d8409bde95ae991f3da, type: 3}
+  - Name: ItemIcon3003
+    Texture: {fileID: 2800000, guid: 39b224b37cd465b438fceb6a3920cca5, type: 3}
+  - Name: ItemIcon3004
+    Texture: {fileID: 2800000, guid: d8ccbda0d68bb334b87c5bdc067c19ed, type: 3}
+  - Name: ItemIcon3005
+    Texture: {fileID: 2800000, guid: 9122609ea43657c45952364737784ee3, type: 3}
+  - Name: ItemIcon3006
+    Texture: {fileID: 2800000, guid: e895b7d52e687664087eebaf47b7b83c, type: 3}
+  - Name: ItemIcon3007
+    Texture: {fileID: 2800000, guid: 6ff1ad3503428a94fa711559c1d77557, type: 3}
+  - Name: ItemIcon3008
+    Texture: {fileID: 2800000, guid: 61221945a9dc93540ab9ced14ff775c7, type: 3}
+  - Name: ItemIcon3009
+    Texture: {fileID: 2800000, guid: f8f02c9e85d99084b98b15f8e80314b8, type: 3}
+  - Name: ItemIcon4001
+    Texture: {fileID: 2800000, guid: bc413e301f1f4b24fb6d59a36aac721a, type: 3}
+  - Name: ItemIcon4002
+    Texture: {fileID: 2800000, guid: 5c1a253f1375d3a4db12832da236f4fc, type: 3}
+  - Name: ItemIcon4003
+    Texture: {fileID: 2800000, guid: d00c9c61d8f1fd24581bf14c75335718, type: 3}
+  - Name: ItemIcon4004
+    Texture: {fileID: 2800000, guid: eda15b92e9307ce47b67be0df441c20f, type: 3}
+  - Name: ItemIcon4005
+    Texture: {fileID: 2800000, guid: 500d314338c516846b15e8e48deda2c1, type: 3}
+  - Name: ItemIcon4006
+    Texture: {fileID: 2800000, guid: da2480f9c5a7edd4492087e5a369da84, type: 3}
+  - Name: ItemIcon4007
+    Texture: {fileID: 2800000, guid: a2f8a15c15129ae4d82757f1725902c7, type: 3}
+  - Name: ItemIcon4008
+    Texture: {fileID: 2800000, guid: 73e3907a765b6fc4aa4c40da9531c3ce, type: 3}
+  - Name: ItemIcon4009
+    Texture: {fileID: 2800000, guid: 601f1b662f452b14390329e2f1cf3100, type: 3}
+  - Name: ItemIcon4010
+    Texture: {fileID: 2800000, guid: 2885ca4fa68cd604dbdef8fcfee4a3b8, type: 3}
+  - Name: ItemIcon4011
+    Texture: {fileID: 2800000, guid: 0ddbd797a660c3248a4c31566684b9fe, type: 3}
+  - Name: ItemIcon5001
+    Texture: {fileID: 2800000, guid: 280043f9dd908c04db7c629fef1584c0, type: 3}
+  - Name: ItemIcon5002
+    Texture: {fileID: 2800000, guid: b50b65a693ec73e41ad4d5d0dd82115c, type: 3}
+  - Name: ItemIcon5003
+    Texture: {fileID: 2800000, guid: ad18769829c4e404fbb8395d541d4b8e, type: 3}
+  - Name: ItemIcon5004
+    Texture: {fileID: 2800000, guid: 603e6a2b952ddf74b9d644464ead88de, type: 3}
+  - Name: ItemKnightShield
+    Texture: {fileID: 2800000, guid: 7c0d979ae4699fd44986614b821536b9, type: 3}
+  - Name: ItemOrnateMace
+    Texture: {fileID: 2800000, guid: c01e0f8b98dd0e046ac9e7334e235da5, type: 3}
+  - Name: ItemShortsword
+    Texture: {fileID: 2800000, guid: d250b00a6f556ee41955105f1fd42029, type: 3}
+  - Name: ItemStaff
+    Texture: {fileID: 2800000, guid: e81cabecce523db418569ed5a7321288, type: 3}
+  - Name: ItemWardenShield
+    Texture: {fileID: 2800000, guid: 01659bcd93568ab469e171d7b62229a3, type: 3}
+  - Name: SpellIcon1
+    Texture: {fileID: 2800000, guid: 23045e97271430c448201034c3eab07d, type: 3}
+  - Name: SpellIcon100
+    Texture: {fileID: 2800000, guid: 85c39323ee931b746aff99a4e57838d3, type: 3}
+  - Name: SpellIcon101
+    Texture: {fileID: 2800000, guid: 0fd80941996cf4d43b3586fbc372526a, type: 3}
+  - Name: SpellIcon102
+    Texture: {fileID: 2800000, guid: 6230db0c4051c8b4d9b5a09726ce7b11, type: 3}
+  - Name: SpellIcon103
+    Texture: {fileID: 2800000, guid: cc540b094c5a80344af19e6bc9bd5292, type: 3}
+  - Name: SpellIcon104
+    Texture: {fileID: 2800000, guid: fd28fd61803717b4780cc4a9ddffdf0e, type: 3}
+  - Name: SpellIcon200
+    Texture: {fileID: 2800000, guid: b682b483903b4c746bcf695d0805e6c8, type: 3}
+  - Name: SpellIcon201
+    Texture: {fileID: 2800000, guid: abfa23696c863b54c982b95ef047bcc9, type: 3}
+  - Name: SpellIcon202
+    Texture: {fileID: 2800000, guid: 7bbe8dbc314a9b5459a40a207a4dd6e8, type: 3}
+  - Name: SpellIcon203
+    Texture: {fileID: 2800000, guid: 30e6c97025efa7e40b562510d5cc7b7a, type: 3}
+  - Name: SpellIcon204
+    Texture: {fileID: 2800000, guid: e2b2fa09b1c7aaa41bbd8c0e68fc2076, type: 3}
+  - Name: SpellIcon205
+    Texture: {fileID: 2800000, guid: 17cd63ba7848f004ba637f22dd0c16ef, type: 3}
+  - Name: SpellIcon300
+    Texture: {fileID: 2800000, guid: 83366b36feb088247a6bce8bed425e72, type: 3}
+  - Name: SpellIcon301
+    Texture: {fileID: 2800000, guid: bb5e7b2562da28f49829ad1e0e44f81e, type: 3}
+  - Name: SpellIcon302
+    Texture: {fileID: 2800000, guid: 10c56237bc2928c46aaacdb3f615dda5, type: 3}
+  - Name: SpellIcon303
+    Texture: {fileID: 2800000, guid: 5fb4aa782eb9c274ca3fce6b9623a87e, type: 3}
+  - Name: SpellIcon304
+    Texture: {fileID: 2800000, guid: 185daa706e7bde74ebe82482611699e6, type: 3}
+  - Name: SpellIcon305
+    Texture: {fileID: 2800000, guid: 203b074561c9032488469ffe7994fc56, type: 3}

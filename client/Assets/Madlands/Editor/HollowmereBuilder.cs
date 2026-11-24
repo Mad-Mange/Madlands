@@ -117,6 +117,7 @@ namespace Madlands.Client.Editor
             CreateCamps(terrain, new System.Random(2028));
             CreateRuins(terrain, new System.Random(2029));
             CreateCinderCut();
+            CreateRoadMarkers();
             PaintUnderProps(terrain);
             PlantGroundCover(terrain, new System.Random(2032));
             CreateSpawns(terrain, new System.Random(2030));
@@ -502,6 +503,41 @@ namespace Madlands.Client.Editor
         }
 
         private static Transform Group(string name) => new GameObject(name).transform;
+
+        /// <summary>Small nonblocking landmarks alongside the existing roads, without changing the exported map.</summary>
+        private static void CreateRoadMarkers()
+        {
+            var parent = Group("RoadMarkers");
+            foreach (var (x, z, yaw) in new[]
+            {
+                (-125f, -155f, 0f), (-235f, -155f, 0f), // Westbrook
+                (-181f, 30f, 65f), (-194f, 120f, 15f),   // Greywood
+                (151f, -27f, 50f), (196f, -97f, 40f),    // east shore and Reedfen
+                (165f, 119f, 25f), (-55f, 283f, 65f),     // quarry road and ruins
+            })
+                Place("Waystone", parent, x, z, yaw, 1f, Collide.None, sink: 0.1f);
+        }
+
+        /// <summary>Add only the visual markers to the existing scene, without regenerating terrain or exports.</summary>
+        public static void InstallRoadMarkersFromCommandLine()
+        {
+            try
+            {
+                var scene = EditorSceneManager.OpenScene(ScenePath);
+                if (GameObject.Find("RoadMarkers") != null) throw new InvalidOperationException("RoadMarkers already exists; refusing to replace it.");
+                _terrain = Terrain.activeTerrain;
+                if (_terrain == null) throw new InvalidOperationException("No active terrain in " + ScenePath);
+                CreateRoadMarkers();
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                EditorApplication.Exit(1);
+            }
+        }
 
         private static float Range(System.Random rng, float min, float max) => min + (float)rng.NextDouble() * (max - min);
 

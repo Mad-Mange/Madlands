@@ -11,11 +11,21 @@ using UnityEngine.UIElements;
 namespace Madlands.Client
 {
     /// <summary>
-    /// Placeholder item icons until real art exists: a tile colored by what the item is, with its
-    /// initials, framed in its quality color. The icon id the server sends maps to a sprite later.
+    /// Item icons use their icon ID, or the held model's picture, with initials for other items.
+    /// Slots are framed in their quality color.
     /// </summary>
     public static class ItemIcons
     {
+        private static readonly Dictionary<uint, string> HeldIcons = new Dictionary<uint, string>
+        {
+            { ItemVisuals.Shortsword, "ItemShortsword" }, { ItemVisuals.Staff, "ItemStaff" },
+            { ItemVisuals.Cudgel, "ItemCudgel" }, { ItemVisuals.Hatchet, "ItemHatchet" },
+            { ItemVisuals.Cutlass, "ItemCutlass" }, { ItemVisuals.Buckler, "ItemBuckler" },
+            { ItemVisuals.CrystalRod, "ItemCrystalRod" }, { ItemVisuals.OrnateMace, "ItemOrnateMace" },
+            { ItemVisuals.GreatAxe, "ItemGreatAxe" }, { ItemVisuals.Cleaver, "ItemCleaver" },
+            { ItemVisuals.KnightShield, "ItemKnightShield" }, { ItemVisuals.WardenShield, "ItemWardenShield" },
+        };
+
         public static string QualityName(ItemQuality quality) => quality.ToString().ToLowerInvariant();
 
         /// <summary>Border class (q-uncommon) for slots.</summary>
@@ -48,6 +58,16 @@ namespace Madlands.Client
         public static void Apply(VisualElement icon, ItemInfo item)
         {
             var label = icon.Q<Label>();
+            Texture2D picture = null;
+            var catalog = ArtCatalog.Instance;
+            if (item != null && catalog != null)
+            {
+                // Items without their own picture (art/blender/icons.py) fall back to the held model's.
+                picture = catalog.GetIcon("ItemIcon" + item.Icon);
+                if (picture == null && HeldIcons.TryGetValue(item.DisplayId, out var name)) picture = catalog.GetIcon(name);
+            }
+            // Slots are reused: clear the previous image and restore the fallback label as needed.
+            icon.style.backgroundImage = picture != null ? new StyleBackground(picture) : new StyleBackground(StyleKeyword.None);
             if (item == null)
             {
                 icon.style.backgroundColor = new StyleColor(new Color(0.2f, 0.2f, 0.25f));
@@ -57,7 +77,7 @@ namespace Madlands.Client
             Color.RGBToHSV(BaseColor(item), out float h, out float s, out float v);
             float shift = ((item.Id * 37) % 11) / 11f - 0.5f;
             icon.style.backgroundColor = new StyleColor(Color.HSVToRGB(Mathf.Repeat(h + shift * 0.06f, 1f), s, Mathf.Clamp01(v * (0.9f + 0.2f * shift))));
-            if (label != null) label.text = SpellIcons.Initials(item.Name);
+            if (label != null) label.text = picture != null ? "" : SpellIcons.Initials(item.Name);
         }
 
         private static Color BaseColor(ItemInfo item)

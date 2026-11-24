@@ -150,8 +150,8 @@ def tree_oak(seed):
 
 def tree_pine(seed):
     """
-    A pine: a straight trunk under tiers of drooping boughs, each a skirt with a jagged, sagging rim,
-    lighter on top and darker underneath, narrowing to a spire.
+    A pine: a straight trunk under uneven whorls of drooping, individually faceted boughs.
+    The highest whorl forms the tip; the silhouette stays within the original tree's footprint.
     """
     def build():
         rng = random.Random(seed)
@@ -165,20 +165,26 @@ def tree_pine(seed):
             f = i / (tiers - 1)
             base = 1.5 + f * (h - 3.6)
             radius = 2.5 * (1 - f * 0.78) * rng.uniform(0.92, 1.05)
-            height = 2.4 - f * 0.9
+            height = 2.4 - f * 0.9 if i < tiers - 1 else 1.9
             twist = rng.uniform(0, 1)
-            top = [(0, 0, base + height)]
-            mid = [(math.cos(2 * math.pi * k / n + twist) * radius * 0.55, math.sin(2 * math.pi * k / n + twist) * radius * 0.55,
-                    base + height * 0.42) for k in range(n)]
-            rim = []
+            mid, rim = [], []
             for k in range(n):
                 a = 2 * math.pi * k / n + twist
-                r = radius * (1.0 if k % 2 == 0 else 0.78) * rng.uniform(0.95, 1.05)
-                rim.append((math.cos(a) * r, math.sin(a) * r, base - (0.28 if k % 2 == 0 else 0.0) * (1 - f * 0.5)))
-            inside = lambda q, base=base: (0, 0, base + 0.3)
-            mb.grid([top, mid, rim], m["Pine"] if i % 2 else m["PineLight"], None, inside, closed=True)
-            mb.grid([rim, [(0, 0, base + 0.25)]], m["PineDark"], None, lambda q, base=base: (0, 0, base + 1.0), closed=True)
-        mb.tube([((0, 0, h - 0.4), 0.18), ((0, 0, h + 0.9), 0.01)], m["PineLight"], sides=6)
+                r = radius * (rng.uniform(0.90, 1.0) if k % 2 == 0 else rng.uniform(0.64, 0.78))
+                mid.append((math.cos(a) * r * 0.55, math.sin(a) * r * 0.55,
+                            base + height * rng.uniform(0.40, 0.50)))
+                rim.append((math.cos(a) * r, math.sin(a) * r,
+                            base - (rng.uniform(0.18, 0.38) if k % 2 == 0 else rng.uniform(-0.08, 0.06)) * (1 - f * 0.5)))
+            # Individual facets break up the uniform stripes while keeping one mesh per tree.
+            for k in range(n):
+                j = (k + 1) % n
+                mat = m["PineLight"] if (k + i * 2 + seed) % 5 == 0 else m["Pine"]
+                mb.grid([[(0, 0, base + height)], [mid[k], mid[j]]], mat, None,
+                        lambda q, base=base: (0, 0, base + 0.3), closed=False)
+                mb.grid([[mid[k], mid[j]], [rim[k], rim[j]]], mat, None,
+                        lambda q, base=base: (0, 0, base + 0.3), closed=False)
+                mb.grid([[rim[k], rim[j]], [(0, 0, base + 0.25)]], m["PineDark"], None,
+                        lambda q, base=base: (0, 0, base + 1.0), closed=False)
         return mb.finish()
     return build
 
@@ -240,11 +246,38 @@ def bush(seed):
         lobes.append(sc.sphere((rng.uniform(-0.15, 0.15), rng.uniform(-0.15, 0.15), 0.88), 0.45))
         shape = _above(sc.lumpy(sc.union(*lobes, k=0.22), 0.06, 0.5, seed), -0.08)
         carved(mb, shape, (-1.5, -1.5, -0.2), (1.5, 1.5, 1.6), 0.04, 260, _leaves(m, 0.55, 0.5))
-        dots = m["MushroomCap"] if seed % 2 else m["Blossom"]
         star = sc.Star(shape, (0, 0, 0.5), limit=2.5)
-        dirs = [sc.direction(rng.uniform(0.25, 1.45), rng.uniform(0, 2 * math.pi)) for _ in range(9)]
-        for p in star.points(dirs, -0.015):
-            mb.sphere(tuple(p), 0.06, dots, segments=4, rings=2)
+        dirs = [sc.direction(rng.uniform(0.3, 1.5), rng.uniform(0, 2 * math.pi)) for _ in range(12)]
+        points = star.points(dirs, 0.025)
+        for index, (p, n) in enumerate(zip(points, star.normals(points))):
+            # Short leaf sprays interrupt the silhouette without replacing the low-poly crown.
+            u = n.cross(Vector((0, 0, 1)))
+            if u.length < 0.01: u = n.cross(Vector((1, 0, 0)))
+            u.normalize()
+            v = n.cross(u).normalized()
+            for k in range(3):
+                a = 2 * math.pi * k / 3 + index * 0.7
+                along = u * math.cos(a) + v * math.sin(a)
+                side = n.cross(along)
+                tip = p + along * 0.16 + n * 0.045
+                center = p + along * 0.07 + n * 0.035
+                mb.add([p, center + side * 0.05, tip, center - side * 0.05], [(0, 1, 2, 3)],
+                       m["LeavesLight"] if k == 0 else m["Leaves"], double_sided=True)
+            if index % 2 == 0:
+                if seed % 2:
+                    for a in (0, 2.1, 4.2):
+                        q = p + (u * math.cos(a) + v * math.sin(a)) * 0.038 + n * 0.045
+                        mb.sphere(tuple(q), 0.038, m["MushroomCap"], segments=5, rings=3)
+                else:
+                    # Five pale petals around a warm center, visible from either side of a leaf.
+                    for k in range(5):
+                        a = 2 * math.pi * k / 5
+                        along = u * math.cos(a) + v * math.sin(a)
+                        side = n.cross(along)
+                        c = p + n * 0.055
+                        mb.add([c, c + along * 0.06 + side * 0.03, c + along * 0.11,
+                                c + along * 0.06 - side * 0.03], [(0, 1, 2, 3)], m["Blossom"], double_sided=True)
+                    mb.sphere(tuple(p + n * 0.065), 0.023, m["Wood"], segments=5, rings=3)
         return mb.finish()
     return build
 
@@ -326,7 +359,7 @@ def rock(seed, size, triangles, leaning=False):
 
 
 def reeds():
-    """A clump of reeds: leaning stems, a few long blade-like leaves, and cattail heads on some of them."""
+    """An irregular clump of reeds, with arching blades and cattails at varied heights."""
     rng = random.Random(3)
     m = mats()
     mb = lp.MeshBuilder("Reeds")
@@ -340,25 +373,31 @@ def reeds():
         if rng.random() < 0.5:
             c0 = tuple(a + (b - a) * 0.78 for a, b in zip((x, y, 0), top))
             c1 = tuple(a + (b - a) * 0.93 for a, b in zip((x, y, 0), top))
-            mb.tube([(c0, 0.035), (c1, 0.035)], m["ReedTop"], sides=6)
-    for _ in range(7):
+            mb.tube([(c0, 0.024), (tuple(a + (b - a) * 0.18 for a, b in zip(c0, c1)), 0.043),
+                     (tuple(a + (b - a) * 0.85 for a, b in zip(c0, c1)), 0.039), (c1, 0.019)], m["ReedTop"], sides=6)
+    for _ in range(13):
         x, y = rng.uniform(-0.5, 0.5), rng.uniform(-0.5, 0.5)
         a = rng.uniform(0, 2 * math.pi)
         d = (math.cos(a), math.sin(a))
-        h = rng.uniform(0.6, 1.1)
-        tip = (x + d[0] * h * 0.6, y + d[1] * h * 0.6, h)
-        mid = (x + d[0] * h * 0.15, y + d[1] * h * 0.15, h * 0.65)
-        w = 0.035
-        mb.add([(x - d[1] * w, y + d[0] * w, 0.0), (x + d[1] * w, y - d[0] * w, 0.0), (mid[0] + d[1] * w * 0.8, mid[1] - d[0] * w * 0.8, mid[2]),
-                tip, (mid[0] - d[1] * w * 0.8, mid[1] + d[0] * w * 0.8, mid[2])], [(0, 1, 2, 3, 4)], m["Leaves"], double_sided=True)
+        h = rng.uniform(0.7, 1.35)
+        tip = (x + d[0] * h * 0.75, y + d[1] * h * 0.75, h * 0.76)
+        mid = (x + d[0] * h * 0.22, y + d[1] * h * 0.22, h * 0.75)
+        w = rng.uniform(0.035, 0.055)
+        # Two segments give the leaf an arch rather than a rigid triangular spear.
+        mb.add([(x - d[1] * w, y + d[0] * w, 0.0), (x + d[1] * w, y - d[0] * w, 0.0),
+                (mid[0] + d[1] * w * 0.75, mid[1] - d[0] * w * 0.75, mid[2]),
+                (mid[0] - d[1] * w * 0.75, mid[1] + d[0] * w * 0.75, mid[2]), tip],
+               [(0, 1, 2, 3), (3, 2, 4)], m["Leaves"] if rng.random() < 0.5 else m["Reed"], double_sided=True)
     return mb.finish()
 
 
-def mushrooms():
-    """A cluster of red-capped mushrooms: domed caps with pale spots and gills underneath, curved stems with a ring."""
+def mushrooms(glow=False):
+    """A cluster of domed mushrooms; Glowcaps are pale and have softly luminous spots."""
     rng = random.Random(5)
     m = mats()
-    mb = lp.MeshBuilder("Mushrooms")
+    mb = lp.MeshBuilder("GlowcapMushrooms" if glow else "Mushrooms")
+    cap_mat = lp.material("Glowcap", "#80bcb0") if glow else m["MushroomCap"]
+    spots = lp.material("GlowcapGlow", "#a7e9d0", emission=0.5) if glow else m["MushroomStem"]
     for _ in range(6):
         x, y = rng.uniform(-0.35, 0.35), rng.uniform(-0.35, 0.35)
         h = rng.uniform(0.12, 0.38)
@@ -370,11 +409,11 @@ def mushrooms():
         cap = [[(top[0] + math.cos(t) * r * f, top[1] + math.sin(t) * r * f, h + dz) for t in (2 * math.pi * k / 9 for k in range(9))]
                for f, dz in ((1.0, -0.01), (0.85, r * 0.35), (0.5, r * 0.6))]
         cap.append([(top[0], top[1], h + r * 0.7)])
-        mb.grid(cap, m["MushroomCap"], None, lambda q, t=top: (t[0], t[1], h - 0.05), closed=True)
+        mb.grid(cap, cap_mat, None, lambda q, t=top: (t[0], t[1], h - 0.05), closed=True)
         mb.grid([cap[0], [(top[0], top[1], h - r * 0.15)]], m["MushroomStem"], None, lambda q, t=top: (t[0], t[1], h + 0.2), closed=True)
         for k in range(3):
             a = rng.uniform(0, 2 * math.pi)
-            mb.sphere((top[0] + math.cos(a) * r * 0.55, top[1] + math.sin(a) * r * 0.55, h + r * 0.42), r * 0.12, m["MushroomStem"], segments=4, rings=3)
+            mb.sphere((top[0] + math.cos(a) * r * 0.55, top[1] + math.sin(a) * r * 0.55, h + r * 0.42), r * 0.16 if glow else r * 0.12, spots, segments=4, rings=3)
     return mb.finish()
 
 
@@ -457,5 +496,5 @@ PROPS = {
     "TreeOak1": tree_oak(1), "TreeOak2": tree_oak(2), "TreePine1": tree_pine(1), "TreePine2": tree_pine(2),
     "TreeDead": tree_dead, "Bush1": bush(1), "Bush2": bush(2),
     "Rock1": rock(1, 1.0, 220), "Rock2": rock(2, 1.4, 260, leaning=True), "Boulder": rock(3, 3.2, 460),
-    "Reeds": reeds, "Mushrooms": mushrooms, "Log": log, "Stump": stump,
+    "Reeds": reeds, "Mushrooms": mushrooms, "GlowcapMushrooms": lambda: mushrooms(glow=True), "Log": log, "Stump": stump,
 }

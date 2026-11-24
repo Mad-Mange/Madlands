@@ -370,6 +370,28 @@ def tent():
             mb.tube([((u, side * (hd + 0.05), 0.05), 0.01), ((u, side * (hd + 0.45), 0.12), 0.01)], m["Plank"], None, sides=4)
     return mb.finish()
 
+def waystone():
+    """A small roadside landmark, with a pale inset and a shard-shaped waymark on both faces."""
+    m = mats()
+    mb = lp.MeshBuilder("Waystone")
+    marking = lp.material("WaystoneMark", "#8dcfca")
+    pale = lp.material("WaystoneInset", "#b6b0a1")
+    mb.hull([(x, y, z) for x, y, z in ((-0.34, -0.20, -0.10), (0.33, -0.20, -0.10),
+             (-0.29, 0.20, -0.10), (0.30, 0.20, -0.10), (-0.25, -0.16, 1.35),
+             (0.21, -0.16, 1.45), (-0.20, 0.16, 1.38), (0.25, 0.16, 1.40),
+             (-0.04, -0.12, 1.66), (0.02, 0.12, 1.64))], m["StoneDark"])
+    for side in (-1, 1):
+        y = side * 0.205
+        mb.add([(-0.18, y, 0.38), (0.18, y, 0.38), (0.16, y, 1.28),
+                (0, y, 1.48), (-0.16, y, 1.28)], [(0, 1, 2, 3, 4)], pale, double_sided=True)
+        y += side * 0.008
+        mb.add([(0, y, 1.30), (0.10, y, 0.95), (0, y, 0.58), (-0.10, y, 0.95)],
+               [(0, 1, 2, 3)], marking, double_sided=True)
+    for x in (-0.30, 0.28):
+        mb.sphere((x, 0, 0.03), (0.18, 0.22, 0.11), m["Moss"], segments=6, rings=4)
+    return mb.finish()
+
+
 def signpost():
     """A signpost: a post under a little peaked cap, three pointed boards nailed on at different heights."""
     m = mats()
@@ -872,7 +894,7 @@ def ruin_wall():
 PROPS = {
     "CrystalCluster": crystal_cluster,
     "Palisade": palisade, "Gate": gate,
-    "Tent": tent, "Signpost": signpost, "Fence": fence,
+    "Tent": tent, "Signpost": signpost, "Waystone": waystone, "Fence": fence,
     "Crate": crate, "Barrel": barrel, "Chest": chest, "Strongbox": strongbox, "Sacks": sacks, "Campfire": campfire, "BannerPole": banner_pole,
     "Cauldron": cauldron, "Bridge": bridge, "Dock": dock, "LanternPost": lantern_post,
     "RuinPillar": ruin_pillar, "RuinWall": ruin_wall,
