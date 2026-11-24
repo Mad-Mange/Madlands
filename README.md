@@ -19,7 +19,7 @@
 
 > [!NOTE]
 > **This is an early-stage, work-in-progress project.** Madlands is a solo project with a big goal: a homemade MMORPG in the spirit of World of Warcraft, with tab-target combat, quests, dungeons and a shared world.
-> What you see today is **a first playable zone in deliberately simple low-poly art**: models, animations, music and sounds are made by scripts (Blender and a small synthesizer) so they can be refined later. Many characters now come from Tripo instead: the three classes, Mirewatch's captain and herbalist, the bandits of Shardscar and their lieutenant, the mirelings, the Mire Croakers and both bosses. Item and spell icons are still colored tiles.
+> What you see today is **a first playable zone in deliberately simple low-poly art**: models, animations, icons and sounds are made by scripts (Blender and a small synthesizer) so they can be refined later. Many characters now come from Tripo instead: the three classes, Mirewatch's captain and herbalist, the bandits of Shardscar and their lieutenant, the mirelings, the Mire Croakers and both bosses. The music is made with Suno.
 > Development is AI-assisted (Claude Code).
 
 ## What is Madlands?
@@ -61,7 +61,7 @@ Everything for the first real zone is in; what is left is putting a realm online
 | Art | Painted models from Tripo for the three classes, Captain Brand and Old Tamsin, the bandits and Lieutenant Vorn, the fish-folk mirelings and their oracles, the frog-folk Mire Croakers and both bosses, some rigged in AccuRIG ([ADR 0014](docs/adr/0014-characters-from-tripo.md)). Everything else is low-poly models made by Python scripts in Blender: two races, creatures, weapons, 40 props and the spell effects, from Mirewatch's gates, palisade and timber grove houses to half-timbered cottages, the Muddy Boot inn, layered pines and leafy oaks ([ADR 0012](docs/adr/0012-art-pipeline-blender.md)). The races are stylized after classic fantasy MMOs and sculpted like clay (shapes blended into each other, shaded smoothly): square jaws and heavy brows, eyes with lids, thick swept hair, the Korrin's great braided beard and topknot, muscled arms that bend at the elbow, chunky fists and boots. Body, hair, beard and every gear piece are meshes of their own, each in three levels of detail |
 | Gear | Worn armor is modeled: helmets, hoods and hats, shoulder pads and mantles, cloaks that trail behind a runner, robes whose skirts follow the legs, breastplates with tassets and gilded rims, gauntlets, greaves, sashes and aprons, and the classes' looks: tabards, a cowl with its hood thrown back, the shardmage's long coat with split tails and a glowing crystal, the warden's laced leather jerkin with a fur collar and belt flaps, a cloak with the Greywood's tree. Built into every race's model from its own proportions and worn by the NPCs; the players' class models have their armor painted on |
 | Animation | Motion-captured humanoid clips from Quaternius's CC0 library (idling, running, jumping, sword and fist attacks, spells, hits, a death) and scripted ones for walking, strafing and sitting, retargeted by Unity onto every humanoid; creatures have their own |
-| Sound | Synthesized music and ambience per area, footsteps that splash in the water, swings, hits, spells by school, jingles; effects from Kenney's CC0 packs ([credits](CREDITS.md)) |
+| Sound | Music per area made with Suno, two takes each played in turn ([ADR 0016](docs/adr/0016-music-from-suno.md)); synthesized ambience, footsteps that splash in the water, swings, hits, spells by school, jingles; effects from Kenney's CC0 packs ([credits](CREDITS.md)) |
 | Getting around | Sprint on stamina (Shift); the world map and minimap circle where each quest objective is done, worked out from where the creatures live (labeled with the quest's level, colored by how hard it is for you), and a gold "?" shows where to turn in a finished quest (on the minimap's rim when it is far away); lootable corpses shimmer; symbols over vendors and the innkeeper; bigger click targets and clickable nameplates |
 | Rested experience | Rest in Mirewatch or log out there and kills give double experience for a while, as in WoW: a darker stretch on the blue experience bar shows how much is left |
 | Interface | Two action bars you arrange yourself (Shift-drag), with potions, food and elixirs on them too, and a spellbook (P); gear tooltips compare with what you wear; 30-minute buffs and elixirs that last through logging out; levels on the character select screen |
@@ -349,6 +349,7 @@ The **core loop** is in: take a quest, go out and fight, loot, get better gear, 
     <td valign="top">
       <b>Dev log</b>
       <ul>
+        <li><sub><b>2026-11-24 – Music from Suno.</b> Hollowmere's valley, Mirewatch and the drowned places have new themes made with Suno: three-minute pieces for cello, harp, flute, lute and fiddle, low strings and bells under water, two takes each. An area's takes play in turn with a pause between them while the ambience goes on (<code>art/audio/suno.py</code>, <a href="docs/adr/0016-music-from-suno.md">ADR 0016</a>). The synthesized themes are retired.</sub></li>
         <li><sub><b>2026-11-17 – Hollowmere's folk from Tripo.</b> Captain Edda Brand, Old Tamsin, the Shard Bandits, their shardcasters, Lieutenant Vorn, the mirelings and their oracles are painted models from Tripo now, rigged in Reallusion's free AccuRIG. <code>art/blender/tripo.py</code> reads AccuRIG's USD export, folds its extra bones into ours and keeps only joints and weights; long coats hang from the hips instead of following each thigh.</sub></li>
         <li><sub><b>2026-11-10 – Chests.</b> Weathered chests and bandit strongboxes with coin, consumables and the odd green piece of gear, first come, first served: the first to open one rolls its loot, anyone takes what is left, one looter at a time. Each chest has a few places and turns up at another once emptied. Modeled in Blender with a lid that swings open in the game, and a synthesized creak.</sub></li>
         <li><sub><b>2026-11-10 – Sculpted nature.</b> Oaks, the dead tree, bushes, rocks, the boulder, the fallen log and the stump are sculpted like clay now, roots and limbs included, then cut by Blender into irregular low-poly facets colored by where they face: sunlit crowns, shaded undersides, moss on stone and roots (<code>art/blender/nature.py</code>).</sub></li>
@@ -425,7 +426,7 @@ More in [docs/architecture.md](docs/architecture.md) and the decision log in [do
 | Part | Choice |
 |---|---|
 | Client | Unity 6 (URP), Input System, UI Toolkit, our own string tables for localization |
-| Art & audio | Blender 5 driven by Python scripts (models, animations, interface symbols), Tripo for some characters, motion-captured CC0 clips from Quaternius, a small synthesizer for music and sounds, CC0 effects from Kenney |
+| Art & audio | Blender 5 driven by Python scripts (models, animations, interface symbols), Tripo for some characters, motion-captured CC0 clips from Quaternius, music from Suno, a small synthesizer for sounds, CC0 effects from Kenney |
 | Server | .NET 10, LiteNetLib (UDP), ASP.NET Core minimal API (account API), Serilog, DotRecast (navmesh) |
 | Persistence | PostgreSQL, Npgsql + Dapper, DbUp migrations, Argon2id |
 | Shared code | C# (netstandard2.1), compiled by both Unity and .NET |
@@ -497,7 +498,7 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 ## 📁 Project structure
 
 ```
-art/                        Low-poly models (Blender scripts) and synthesized music and sounds, exported into the client
+art/                        Low-poly models (Blender scripts), synthesized sounds and the Suno music, exported into the client
 client/                     Unity 6 project (our code in Assets/Madlands)
 shared/Madlands.Shared      Protocol and game rules, shared by server and client
 shared/Madlands.ClientCore  Engine-free networking and unit state, used by the client and bots

@@ -22,6 +22,13 @@ Animation Library 2 (Standard packs, [CC0](https://creativecommons.org/publicdom
 `art/blender/motions.py` into `client/Assets/Madlands/Art/Characters/HumanoidMotions.fbx`: idling, the run, jumping and
 falling, the sword and fist attacks, the cast, a hit and a death ([ADR 0015](docs/adr/0015-motion-captured-clips.md)).
 
+## Music
+
+Generated with [Suno](https://suno.com) on a Pro plan by the project owner and processed by `art/audio/suno.py`
+([ADR 0016](docs/adr/0016-music-from-suno.md)): two takes each of "Hollowmere Valley" (`music_hollowmere_1`, `_2`),
+"Mirewatch" (`music_mirewatch_1`, `_2`) and "The Drowned Ruins" (`music_drowned_1`, `_2`) in
+`client/Assets/Madlands/Audio/Music/`.
+
 ## Sound effects
 
 Footsteps, impacts, coins, cloth, books and interface sounds from **Kenney** (www.kenney.nl), released under

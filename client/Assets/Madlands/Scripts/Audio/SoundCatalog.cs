@@ -30,12 +30,19 @@ namespace Madlands.Client
             }
         }
 
-        /// <summary>The clip with this exact name, or a random variant of it (name_1, name_2, ...); null if none.</summary>
-        public AudioClip Pick(string name)
+        /// <summary>
+        /// The clip with this exact name, or a random variant of it (name_1, name_2, ...), other than
+        /// <paramref name="avoid"/> when there are more; null if none.
+        /// </summary>
+        public AudioClip Pick(string name, AudioClip avoid = null)
         {
             if (_byName == null) Index();
             if (_byName.TryGetValue(name, out var clip)) return clip;
-            return _variants.TryGetValue(name, out var list) ? list[Random.Range(0, list.Count)] : null;
+            if (!_variants.TryGetValue(name, out var list)) return null;
+            int skip = avoid != null && list.Count > 1 ? list.IndexOf(avoid) : -1;
+            if (skip < 0) return list[Random.Range(0, list.Count)];
+            int i = Random.Range(0, list.Count - 1);
+            return list[i >= skip ? i + 1 : i];
         }
 
         private void Index()

@@ -3,15 +3,19 @@ using UnityEngine;
 namespace Madlands.Client
 {
     /// <summary>
-    /// Plays sounds: one-shots in the world (3D) or flat (interface), a music track and an ambience
-    /// loop that cross-fade when they change, with the volumes from <see cref="Preferences"/>. Clips
-    /// come from the <see cref="SoundCatalog"/> by name. Created on first use and kept across scenes.
+    /// Plays sounds: one-shots in the world (3D) or flat (interface), music and an ambience loop that
+    /// cross-fade when they change, with the volumes from <see cref="Preferences"/>. Clips come from
+    /// the <see cref="SoundCatalog"/> by name. Music plays an area's takes (music_x_1, music_x_2, ...)
+    /// one after another with a pause between them; ambience loops. Created on first use and kept
+    /// across scenes.
     /// </summary>
     public sealed class SoundSystem : MonoBehaviour
     {
         private const int Voices = 28;
         private const float MusicFadeSeconds = 3f;
         private const float AmbienceFadeSeconds = 2f;
+        /// <summary>Silence between two pieces of music, in seconds (the ambience goes on).</summary>
+        private const float MusicPauseMin = 15f, MusicPauseMax = 30f;
         /// <summary>World sounds farther from the listener than this are not played at all.</summary>
         private const float Audible = 45f;
 
@@ -22,7 +26,7 @@ namespace Madlands.Client
         private Loop _music;
         private Loop _ambience;
 
-        /// <summary>Two sources that cross-fade from one looping clip to the next.</summary>
+        /// <summary>Two sources that cross-fade from one clip to the next.</summary>
         private sealed class Loop
         {
             public AudioSource A, B;
@@ -31,6 +35,10 @@ namespace Madlands.Client
             public string Current;
             public float Seconds;
             public float Level;
+            /// <summary>Clips play to their end, then another take of the same name follows after a pause.</summary>
+            public bool Playlist;
+            /// <summary>When the next take starts (unscaled time); 0 while one is playing.</summary>
+            public float NextAt;
         }
 
         public static SoundSystem Instance
@@ -60,27 +68,27 @@ namespace Madlands.Client
                 source.dopplerLevel = 0f;
                 _voices[i] = source;
             }
-            _music = NewLoop("Music", MusicFadeSeconds);
-            _ambience = NewLoop("Ambience", AmbienceFadeSeconds);
+            _music = NewLoop("Music", MusicFadeSeconds, playlist: true);
+            _ambience = NewLoop("Ambience", AmbienceFadeSeconds, playlist: false);
             Preferences.Changed += ApplyVolumes;
             ApplyVolumes();
         }
 
         private void OnDestroy() => Preferences.Changed -= ApplyVolumes;
 
-        private Loop NewLoop(string name, float seconds)
+        private Loop NewLoop(string name, float seconds, bool playlist)
         {
             AudioSource Make(string n)
             {
                 var source = new GameObject(n).AddComponent<AudioSource>();
                 source.transform.SetParent(transform, false);
                 source.playOnAwake = false;
-                source.loop = true;
+                source.loop = !playlist;
                 source.spatialBlend = 0f;
                 source.volume = 0f;
                 return source;
             }
-            return new Loop { A = Make(name + " A"), B = Make(name + " B"), Seconds = seconds };
+            return new Loop { A = Make(name + " A"), B = Make(name + " B"), Seconds = seconds, Playlist = playlist };
         }
 
         private void ApplyVolumes()
@@ -113,10 +121,10 @@ namespace Madlands.Client
             Launch(voice, clip, volume, pitchJitter);
         }
 
-        /// <summary>The clip by name; a missing one is reported once (a typo or an unbuilt sound).</summary>
-        private static AudioClip Find(string name)
+        /// <summary>The clip by name (another variant than <paramref name="avoid"/> if there is one); a missing one is reported once (a typo or an unbuilt sound).</summary>
+        private static AudioClip Find(string name, AudioClip avoid = null)
         {
-            var clip = SoundCatalog.Instance != null ? SoundCatalog.Instance.Pick(name) : null;
+            var clip = SoundCatalog.Instance != null ? SoundCatalog.Instance.Pick(name, avoid) : null;
             if (clip == null && Missing.Add(name)) Debug.LogWarning("[Sound] No clip named " + name);
             return clip;
         }
@@ -156,6 +164,7 @@ namespace Madlands.Client
         {
             if (loop.Current == name) return;
             loop.Current = name;
+            loop.NextAt = 0f;
             var clip = name != null ? Find(name) : null;
             var next = loop.Active == loop.A ? loop.B : loop.A;
             next.Stop();
@@ -167,8 +176,33 @@ namespace Madlands.Client
 
         private void Update()
         {
+            Continue(_music);
             Fade(_music);
             Fade(_ambience);
+        }
+
+        /// <summary>After a piece of music ends and a pause has passed, another take of the same music starts.</summary>
+        private static void Continue(Loop loop)
+        {
+            var source = loop.Active;
+            if (!loop.Playlist || source == null || loop.Current == null) return;
+            if (source.isPlaying)
+            {
+                loop.NextAt = 0f;
+                return;
+            }
+            float now = Time.unscaledTime;
+            if (loop.NextAt <= 0f)
+            {
+                loop.NextAt = now + Random.Range(MusicPauseMin, MusicPauseMax);
+                return;
+            }
+            if (now < loop.NextAt) return;
+            loop.NextAt = 0f;
+            var clip = Find(loop.Current, source.clip);
+            if (clip == null) return;
+            source.clip = clip;
+            source.Play();
         }
 
         private static void Fade(Loop loop)

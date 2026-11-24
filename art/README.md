@@ -106,13 +106,15 @@ Ask Tripo for a neutral stance: legs straight under the body, the tail stretched
 
 ## Sound and music
 
-The music, the ambience loops, the spell sounds, swings, splashes and jingles are synthesized by
-`art/audio/*.py` (numpy, run inside Blender for its OGG encoder). Footsteps, impacts, coins, cloth, books and
-interface clicks are CC0 sounds from Kenney ([CREDITS.md](../CREDITS.md)).
+The ambience loops, the spell sounds, swings, splashes and jingles are synthesized by `art/audio/*.py` (numpy, run
+inside Blender for its OGG encoder). Footsteps, impacts, coins, cloth, books and interface clicks are CC0 sounds from
+Kenney. The music is made with Suno on a Pro plan ([ADR 0016](../docs/adr/0016-music-from-suno.md),
+[CREDITS.md](../CREDITS.md)).
 
 ```powershell
 & $blender -b --factory-startup -P art/audio/build.py                          # everything (about 25 s)
-& $blender -b --factory-startup -P art/audio/build.py -- music_mirewatch cast_fire  # some
+& $blender -b --factory-startup -P art/audio/build.py -- amb_marsh cast_fire   # some
+& $blender -b --factory-startup -P art/audio/suno.py                           # re-import the Suno songs
 python art/audio/kenney.py                                                      # re-import the Kenney sounds
 ```
 
@@ -120,12 +122,13 @@ python art/audio/kenney.py                                                      
 |---|---|
 | `audio/synth.py` | The synthesizer: envelopes, noise shaped in the frequency domain, convolution reverb, instruments (pluck, pad, bell, flute, drone). |
 | `audio/sounds.py` | Effects, jingles and ambience loops (`SOUNDS`: clip name -> folder, builder). |
-| `audio/music.py` | The three music loops as data: key, tempo, chords, parts; melodies from a seeded random walk. |
+| `audio/suno.py` | The music: the prompts it was made from (`PROMPTS`) and which Suno song becomes which clip (`TRACKS`). Reads the WAV originals from `MADLANDS_SUNO_DIR` (kept outside the repository), trims, fades and levels them. |
 | `audio/kenney.py` | Which Kenney sounds we use and the names they get. |
 
 Clips land in `client/Assets/Madlands/Audio/{Sfx,Ambience,Music,Kenney}` as OGG (Git LFS). The client plays
 them by name (`SoundSystem`); numbered variants (`step_grass_1` .. `_5`) are picked at random by their base
-name. Music and ambience per area are set on the map (`MapArea.music` / `ambience`, from `HollowmereBuilder`).
+name. Music and ambience per area are set on the map (`MapArea.music` / `ambience`, from `HollowmereBuilder`). An
+area's music takes (`music_mirewatch_1`, `_2`) play one after another with a pause between them; ambience loops.
 
 ## Editing a model by hand
 

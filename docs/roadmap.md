@@ -217,6 +217,9 @@ Every phase ends in something playable and tested. Architectural decisions are i
 - [x] Hollowmere's folk from Tripo (2026-11-17, ADR 0014): Captain Edda Brand, Old Tamsin, the Shard Bandits and their
   shardcasters, Lieutenant Vorn, the mirelings and their oracles (the same model, recolored), rigged in AccuRIG.
   `tripo.py` reads AccuRIG's USD export, folds its extra bones into ours and hangs long coats from the hips
+- [x] Music from Suno (2026-11-24, ADR 0016): two three-minute takes each for the valley, Mirewatch and the drowned
+  places, played in turn with a pause between them; `art/audio/suno.py` trims, fades and levels the WAV originals.
+  The synthesized themes are retired
 - [ ] Replace the other NPC models with Tripo models, one at a time
 - [ ] First deployment to a VPS and playtests with friends (prepared: [deployment.md](deployment.md), Caddy for TLS,
   SIGTERM saves everyone, production database password)

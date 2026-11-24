@@ -18,7 +18,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 | `server/Madlands.Bots` | Headless bot players (register/login via the API, then hunt creatures or wander) for load/integration testing. |
 | `server/Madlands.Server.Tests` | xUnit: protocol roundtrips, world logic, client core, real HTTP+UDP realm tests (`TestRealm`), Postgres tests (`[PostgresFact]`, skipped if no DB). |
 | `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
-| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; characters are sculpted from blended shapes (`blender/sculpt.py`) in three LODs, `blender/lookbook.py` renders them in outfits; `blender/motions.py` takes motion-captured clips from Quaternius (ADR 0015); `audio/` synthesizes the music and sounds (OGG into `Audio/`). |
+| `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; characters are sculpted from blended shapes (`blender/sculpt.py`) in three LODs, `blender/lookbook.py` renders them in outfits; `blender/motions.py` takes motion-captured clips from Quaternius (ADR 0015); `audio/` synthesizes the sounds and imports the Suno music (ADR 0016) as OGG into `Audio/`. |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
 | `docs/zones/` | Zone design: map, story, NPCs, creatures and quest chains (`hollowmere.md`). |
 | `content/` | Game data: races, classes, factions, spells, creatures, levels, items, loot, quests, world objects (gathered things and chests) (JSON + `schemas/`), `maps/<id>/` (height.bin, collision.bin, spawns.json, objects.json, map.json: written by Unity, Madlands > Export Map). |
@@ -41,7 +41,8 @@ $blender = "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 & $blender -b --factory-startup -P art/blender/build.py -- [asset ...] [--preview <dir>]   # FBX into the Unity project (+ pictures)
 & $blender -b --factory-startup -P art/blender/lookbook.py -- [look ...] [--lod N]         # races in outfits -> builds/lookbook/*.png
 & $blender -b --factory-startup -P art/blender/icons.py -- [icon ...]                      # interface symbols as PNG
-& $blender -b --factory-startup -P art/audio/build.py -- [sound ...]                       # synthesized music/sounds as OGG
+& $blender -b --factory-startup -P art/audio/build.py -- [sound ...]                       # synthesized sounds/ambience as OGG
+& $blender -b --factory-startup -P art/audio/suno.py                                       # Suno music (WAVs in MADLANDS_SUNO_DIR) as OGG
 python art/audio/kenney.py                                                                  # re-import the CC0 Kenney sounds
 
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"
@@ -162,7 +163,8 @@ that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unq
   add the English text to `client/Assets/Madlands/Resources/Localization/en.json`. Game content texts come from the
   server (content/) and are not keys.
 - **Sounds are played by name** through `SoundSystem` (`Play`, `PlayAt`, `SetMusic`, `SetAmbience`); game events map
-  to sounds in `GameSounds`. Only CC0 or self-made audio goes in the repo; list third-party sources in `CREDITS.md`.
+  to sounds in `GameSounds`. Only CC0 or self-made audio goes in the repo, plus music made with Suno on the owner's
+  paid plan (ADR 0016: the WAV originals stay out of the repo); list third-party sources in `CREDITS.md`.
 - **Content ids are stable and never reused.** Content is data (`content/`), validated by `ContentLoader`
   (collect all errors, then fail). The server sends `displayId`s, never asset names.
 - Entities live in `(mapId, instanceId)`; map instances share no mutable state (future: one thread/process each).

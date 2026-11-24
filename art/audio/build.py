@@ -1,11 +1,11 @@
 """
-Builds the synthesized sounds and music as OGG Vorbis into the Unity project. Runs inside
+Builds the synthesized sounds and ambience as OGG Vorbis into the Unity project. Runs inside
 Blender for its numpy and its audio encoder (the same tool as the models, art/README.md):
 
     blender -b --factory-startup -P art/audio/build.py -- [name ...]
 
 Without names everything is built. The CC0 sound effects from Kenney are imported separately
-(art/audio/kenney.py).
+(art/audio/kenney.py), the music made with Suno by art/audio/suno.py.
 """
 
 import os
@@ -17,7 +17,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import aud  # noqa: E402
 import numpy as np  # noqa: E402
 
-import music  # noqa: E402
 import sounds  # noqa: E402
 from synth import RATE  # noqa: E402
 
@@ -25,8 +24,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 UNITY_AUDIO = os.path.join(ROOT, "client", "Assets", "Madlands", "Audio")
 
 ALL = dict(sounds.SOUNDS)
-ALL.update(music.MUSIC)
-BITRATES = {"Sfx": 96000, "Ambience": 112000, "Music": 128000}
+BITRATES = {"Sfx": 96000, "Ambience": 112000}
 
 
 def write(path, data, bitrate):
