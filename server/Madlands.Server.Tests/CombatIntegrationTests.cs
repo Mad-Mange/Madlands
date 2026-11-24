@@ -75,6 +75,32 @@ public class CombatIntegrationTests
 
     private static SpawnDefinition At(int creature, float x, float z) => new() { Creature = creature, X = x, Z = z, YawDegrees = 180 };
 
+    [Theory]
+    [InlineData((byte)1, 100u)]
+    [InlineData((byte)2, 200u)]
+    [InlineData((byte)3, 301u)]
+    public async Task New_character_can_defeat_a_croaker_without_gm_help(byte classId, uint ability)
+    {
+        var (realm, s) = await StartAsync(classId, gm: false, At(MireCroaker, 0, 4));
+        await using var _ = realm;
+        using var __ = s;
+        var c = s.Client;
+        var croaker = s.Find("Mire Croaker");
+        Assert.Equal(1, c.Self.Values.Level);
+        c.SetTarget(croaker.Guid);
+        c.CastSpell(1, croaker.Guid);
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        while (!croaker.Unit!.Values.IsDead && !c.Self.Values.IsDead && elapsed.ElapsedMilliseconds < 30000)
+        {
+            s.PumpFor(250);
+            if (c.Self.Cast == null && c.CheckCast(ability, croaker.Guid) == CastResult.Success)
+                c.CastSpell(ability, croaker.Guid);
+        }
+        Assert.False(c.Self.Values.IsDead);
+        Assert.True(croaker.Unit!.Values.IsDead);
+        s.Pump(() => s.Xp > 0);
+    }
+
     [Fact]
     public async Task Auto_attack_kills_a_creature_and_grants_experience()
     {
@@ -321,6 +347,23 @@ public class CombatIntegrationTests
         s.Pump(() => boss.Unit!.Auras.Any(a => a.SpellId == 915), 6000);   // Forgefire Rage
         // Cinder Quake hits everyone around him (an area spell on himself: used with the target in melee reach).
         s.Pump(() => s.Events.Any(e => e.Source == boss.Guid && e.Target == c.LocalGuid && e.Spell == 914), 10000);
+    }
+
+    [Fact]
+    public async Task Interrupted_cinder_quake_clears_the_observers_cast_state()
+    {
+        var (realm, s) = await StartAsync(Warrior, gm: true, At(26, 0, 4));
+        await using var _ = realm;
+        using var __ = s;
+        var boss = s.Find("Ruukhar the Slagborn");
+        s.Client.SetTarget(boss.Guid);
+        s.Command(".damage 1");
+        s.Pump(() => boss.Unit!.Cast?.SpellId == TelegraphHints.CinderQuake, 10000);
+        var map = realm.Game.World.GetInstance(1, 1)!;
+        var serverBoss = map.Creatures.Single(c => c.Guid == boss.Guid);
+        map.Spells.Interrupt(serverBoss, CastResult.Interrupted, map.NowMs);
+        s.Pump(() => s.Failures.Contains(CastResult.Interrupted));
+        Assert.Null(boss.Unit!.Cast);
     }
 
     [Fact]

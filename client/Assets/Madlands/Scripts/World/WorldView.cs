@@ -104,6 +104,10 @@ namespace Madlands.Client
             SpellSchool? school = null;
             if (unit.Cast != null && client.Data.TryGetSpell(unit.Cast.SpellId, out var spell)) school = spell.School;
             view.SetCasting(school);
+            // Cinder Quake's server-side area is 12m (content/spells.json). Track the live cast so an
+            // interruption, death, or despawn removes the warning instead of predicting damage.
+            view.SetCinderQuake(unit.Cast != null && unit.Cast.SpellId == TelegraphHints.CinderQuake && !unit.Values.IsDead,
+                unit.Cast != null ? unit.Cast.Progress(client.LocalTimeMs) : 0f);
         }
 
         private void Place(RemoteEntity entity, Transform t)

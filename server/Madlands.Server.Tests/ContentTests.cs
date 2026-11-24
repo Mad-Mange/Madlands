@@ -187,6 +187,18 @@ public class ContentLoaderTests
     }
 
     [Fact]
+    public void Cinder_quake_warning_matches_authoritative_damage_radius()
+    {
+        var root = ContentPaths.FindContentRoot(AppContext.BaseDirectory);
+        Assert.NotNull(root);
+        var spell = ContentLoader.Load(root!).Spells[TelegraphHints.CinderQuake];
+        var damage = Assert.Single(spell.Effects, e => e.Type == SpellEffectType.SchoolDamage);
+        Assert.Equal(EffectTargets.EnemiesNearCaster, damage.Targets);
+        Assert.Equal(TelegraphHints.CinderQuakeRadius, damage.Radius);
+        Assert.True(spell.CastTimeMs > 0, "A warning needs a cast time to be visible.");
+    }
+
+    [Fact]
     public void Repository_content_is_valid()
     {
         var root = ContentPaths.FindContentRoot(AppContext.BaseDirectory);

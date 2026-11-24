@@ -436,6 +436,11 @@ More in [docs/architecture.md](docs/architecture.md) and the decision log in [do
 
 Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/), Unity 6000.6.5f1 and Docker (for PostgreSQL).
 
+On Windows, after building the client and starting Docker Desktop, `powershell -ExecutionPolicy Bypass -File tools/start-local.ps1`
+starts the persistent local database and realm if needed, waits for the account API and opens the client. It leaves an
+already-running realm alone. Add `-NoClient` to start/check just the server; startup logs are in `builds/local-server*.log`.
+This shortcut uses the default local development database settings.
+
 ```powershell
 # 1. Start PostgreSQL (once; it keeps running in Docker)
 docker compose -f deploy/docker-compose.yml up -d

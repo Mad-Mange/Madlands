@@ -35,6 +35,7 @@ namespace Madlands.Client
         private DisplayModel _model;
         private UnitAnimator _animator;
         private CastGlow _castGlow;
+        private DangerTelegraph _danger;
         private Transform _mainHand;
         private Transform _offHand;
         private Transform _sparkle;
@@ -316,6 +317,19 @@ namespace Madlands.Client
             }
             if (_castGlow != null) return;
             _castGlow = CastGlow.Create(transform, _model, Shape, school.Value);
+        }
+
+        /// <summary>Marks the current Cinder Quake cast; the server remains authoritative for hits.</summary>
+        public void SetCinderQuake(bool casting, float progress)
+        {
+            if (!casting)
+            {
+                if (_danger != null) Destroy(_danger.gameObject);
+                _danger = null;
+                return;
+            }
+            if (_danger == null) _danger = DangerTelegraph.Create(transform);
+            _danger.SetProgress(progress);
         }
 
         /// <summary>A step every stride: grass, wood (docks, floors) or a splash in water.</summary>
