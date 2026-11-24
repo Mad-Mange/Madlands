@@ -43,7 +43,7 @@ namespace Madlands.Client
             GameWindow.Toggled += OnWindowToggled;
         }
 
-        /// <summary>Music and ambience follow the area you stand in.</summary>
+        /// <summary>Music and ambience follow the area you stand in; a boss fighting nearby has its own music.</summary>
         public void Update()
         {
             var map = MapInfo.Current;
@@ -55,8 +55,39 @@ namespace Madlands.Client
                 if (!string.IsNullOrEmpty(area.music)) music = area.music;
                 if (!string.IsNullOrEmpty(area.ambience)) ambience = area.ambience;
             }
-            Sound.SetMusic(string.IsNullOrEmpty(music) ? null : music);
+            bool boss = BossFightNearby(me);
+            if (boss) music = BossMusic;
+            Sound.SetMusic(string.IsNullOrEmpty(music) ? null : music, gapless: boss);
             Sound.SetAmbience(string.IsNullOrEmpty(ambience) ? null : ambience);
+        }
+
+        private const string BossMusic = "music_boss";
+        /// <summary>A boss in combat this close (meters) to a living player plays the boss music.</summary>
+        private const float BossMusicRange = 50f;
+
+        /// <summary>Creatures whose fights get the boss music, by display id like their models.</summary>
+        private static readonly System.Collections.Generic.HashSet<uint> BossDisplays = new System.Collections.Generic.HashSet<uint>
+        {
+            EntityVisuals.GloomjawDisplay, EntityVisuals.SlagbornDisplay,
+        };
+
+        /// <summary>
+        /// A living boss is fighting near you (not running home). The music changes back once it dies, wins
+        /// or gives up, or you leave or die.
+        /// </summary>
+        private bool BossFightNearby(Vec3 me)
+        {
+            if (_client.Self.Values.IsDead) return false;
+            foreach (var entity in _client.World.Entities)
+            {
+                var unit = entity.Unit;
+                if (unit == null || !BossDisplays.Contains(entity.DisplayId)) continue;
+                var values = unit.Values;
+                if (values.IsDead || !values.Has(UnitFlags.InCombat) || values.Has(UnitFlags.Evading)) continue;
+                if (_client.TryGetPosition(entity.Guid, out var position) && Vec3.HorizontalDistance(me, position) <= BossMusicRange)
+                    return true;
+            }
+            return false;
         }
 
         public void Error()

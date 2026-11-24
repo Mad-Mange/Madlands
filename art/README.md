@@ -114,7 +114,7 @@ Kenney. The music is made with Suno on a Pro plan ([ADR 0016](../docs/adr/0016-m
 ```powershell
 & $blender -b --factory-startup -P art/audio/build.py                          # everything (about 25 s)
 & $blender -b --factory-startup -P art/audio/build.py -- amb_marsh cast_fire   # some
-& $blender -b --factory-startup -P art/audio/suno.py                           # re-import the Suno songs
+& $blender -b --factory-startup -P art/audio/suno.py -- [clip ...]            # re-import the Suno songs
 python art/audio/kenney.py                                                      # re-import the Kenney sounds
 ```
 

@@ -25,9 +25,10 @@ falling, the sword and fist attacks, the cast, a hit and a death ([ADR 0015](doc
 ## Music
 
 Generated with [Suno](https://suno.com) on a Pro plan by the project owner and processed by `art/audio/suno.py`
-([ADR 0016](docs/adr/0016-music-from-suno.md)): two takes each of "Hollowmere Valley" (`music_hollowmere_1`, `_2`),
-"Mirewatch" (`music_mirewatch_1`, `_2`) and "The Drowned Ruins" (`music_drowned_1`, `_2`) in
-`client/Assets/Madlands/Audio/Music/`.
+([ADR 0016](docs/adr/0016-music-from-suno.md)): "Hollowmere Valley" (`music_hollowmere_1`, `_2`), "Mirewatch"
+(`music_mirewatch_1`, `_2`), "The Drowned Ruins" (`music_drowned_1`, `_2`), "The Greywood" (`music_greywood_1`),
+"Reedfen" (`music_reedfen_1`, `_2`), the title theme "Madlands" (`music_title_1`) and the boss music "The Slagborn
+Wakes" (`music_boss_1`, `_2`) in `client/Assets/Madlands/Audio/Music/`.
 
 ## Sound effects
 

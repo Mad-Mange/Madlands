@@ -42,7 +42,7 @@ $blender = "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 & $blender -b --factory-startup -P art/blender/lookbook.py -- [look ...] [--lod N]         # races in outfits -> builds/lookbook/*.png
 & $blender -b --factory-startup -P art/blender/icons.py -- [icon ...]                      # interface symbols as PNG
 & $blender -b --factory-startup -P art/audio/build.py -- [sound ...]                       # synthesized sounds/ambience as OGG
-& $blender -b --factory-startup -P art/audio/suno.py                                       # Suno music (WAVs in MADLANDS_SUNO_DIR) as OGG
+& $blender -b --factory-startup -P art/audio/suno.py -- [clip ...]                         # Suno music (WAVs in MADLANDS_SUNO_DIR) as OGG
 python art/audio/kenney.py                                                                  # re-import the CC0 Kenney sounds
 
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"

@@ -37,6 +37,8 @@ namespace Madlands.Client
             public float Level;
             /// <summary>Clips play to their end, then another take of the same name follows after a pause.</summary>
             public bool Playlist;
+            /// <summary>The next take follows at once, without the pause.</summary>
+            public bool Gapless;
             /// <summary>When the next take starts (unscaled time); 0 while one is playing.</summary>
             public float NextAt;
         }
@@ -155,7 +157,17 @@ namespace Madlands.Client
         }
 
         /// <summary>Changes the music (null fades it out).</summary>
-        public void SetMusic(string name) => Switch(_music, name);
+        public void SetMusic(string name) => SetMusic(name, gapless: false);
+
+        /// <summary>
+        /// Changes the music (null fades it out). Gapless music (a boss fight) goes straight on to its next take
+        /// instead of pausing between them.
+        /// </summary>
+        public void SetMusic(string name, bool gapless)
+        {
+            _music.Gapless = gapless;
+            Switch(_music, name);
+        }
 
         /// <summary>Changes the background ambience (null fades it out).</summary>
         public void SetAmbience(string name) => Switch(_ambience, name);
@@ -194,7 +206,7 @@ namespace Madlands.Client
             float now = Time.unscaledTime;
             if (loop.NextAt <= 0f)
             {
-                loop.NextAt = now + Random.Range(MusicPauseMin, MusicPauseMax);
+                loop.NextAt = now + (loop.Gapless ? 0.01f : Random.Range(MusicPauseMin, MusicPauseMax));
                 return;
             }
             if (now < loop.NextAt) return;

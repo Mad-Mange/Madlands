@@ -20665,19 +20665,19 @@ MonoBehaviour:
   - name: Reedfen
     center: {x: 275, y: -40}
     radius: 160
-    music: 
+    music: music_reedfen
     ambience: amb_marsh
     rest: 0
   - name: Rennick's Watch
     center: {x: -175, y: 40}
     radius: 25
-    music: 
+    music: music_greywood
     ambience: amb_forest
     rest: 0
   - name: The Greywood
     center: {x: -285, y: 235}
     radius: 240
-    music: 
+    music: music_greywood
     ambience: amb_forest
     rest: 0
   - name: Ironvein Camp
