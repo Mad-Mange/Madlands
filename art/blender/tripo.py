@@ -76,6 +76,7 @@ MODELS = {
         "arm_reach": (0.10, 0.072, 0.075),
         "trunk_x": 0.165,
         "skirt": {"top": 0.40, "hem": 0.20, "legs": 0.07},
+        "fix_cloak_tail": True,
     },
     # The bandits of Shardscar, rigged in AccuRIG and exported as USD (its textures beside it, under Materials/).
     "ShardBandit": {
@@ -312,6 +313,9 @@ def _build_rigged(name, model, source):
     if "arm_reach" in model:
         _free_arms(name, levels, rig_joints, scale, floor)
     arm = _straighten_arms(arm, levels)
+    if model.get("fix_cloak_tail"):
+        for level in levels:
+            _fix_warden_cloak_tail(level)
     _report(name, levels[0], arm)
     _reset_pose(arm)
     return arm
@@ -773,6 +777,31 @@ def _refine_weights(mesh, model, scale, floor):
 def _distance_to_segment(points, a, b):
     along = np.clip((points - a) @ (b - a) / ((b - a) @ (b - a)), 0.0, 1.0)
     return np.linalg.norm(points - (a + along[:, None] * (b - a)), axis=1)
+
+
+def _fix_warden_cloak_tail(mesh):
+    """Keep the Warden's hanging back cloth with the chest, not the adjacent thigh.
+
+    This small region is specific to KorrinWarden after scaling and straightening its rig.
+    Feather the boundary so adjacent clothing retains its own weights without a hard seam.
+    """
+    names = {group.index: group.name for group in mesh.vertex_groups}
+    weights = [{names[g.group]: g.weight for g in vertex.groups} for vertex in mesh.data.vertices]
+
+    def fade(value, low, high):
+        t = max(0.0, min(1.0, (value - low) / (high - low)))
+        return t * t * (3.0 - 2.0 * t)
+
+    for vertex, weight in zip(mesh.data.vertices, weights):
+        x, y, z = vertex.co
+        blend = (fade(x, 0.075, 0.12) * fade(0.225 - x, 0.0, 0.045)
+                 * fade(y, 0.19, 0.225) * fade(z, 0.54, 0.60) * fade(0.83 - z, 0.0, 0.08))
+        if blend <= 0.0:
+            continue
+        for bone in weight:
+            weight[bone] *= 1.0 - blend
+        weight["Chest"] = weight.get("Chest", 0.0) + blend
+    _store_weights(mesh, weights)
 
 
 def _limit_arms(points, weights, joints, reach, trunk_x, scale, at, keep_arm_weights):
