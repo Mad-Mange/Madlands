@@ -373,15 +373,8 @@ namespace Madlands.Client
         private StyleColor LevelColor(int questLevel) => new StyleColor(DifficultyColor(questLevel, _client.Self.Values.Level));
 
         /// <summary>A quest's color by its level against the player's: gray (trivial), green, yellow, orange, red.</summary>
-        public static UnityEngine.Color DifficultyColor(int questLevel, int playerLevel)
-        {
-            int diff = questLevel - playerLevel;
-            if (diff >= 5) return new UnityEngine.Color(1f, 0.25f, 0.2f);
-            if (diff >= 3) return new UnityEngine.Color(1f, 0.55f, 0.2f);
-            if (diff >= -2) return new UnityEngine.Color(1f, 0.85f, 0.3f);
-            if (diff >= -5) return new UnityEngine.Color(0.35f, 0.9f, 0.35f);
-            return new UnityEngine.Color(0.6f, 0.6f, 0.6f);
-        }
+        public static UnityEngine.Color DifficultyColor(int questLevel, int playerLevel) =>
+            DifficultyColors.Of(Difficulty.OfQuest(questLevel, playerLevel));
 
         /// <summary>"[5]" in the quest's difficulty color (rich text), before its name or objectives on the maps.</summary>
         public static string LevelTag(int questLevel, int playerLevel) =>
