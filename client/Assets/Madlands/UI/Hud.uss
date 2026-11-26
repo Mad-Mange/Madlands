@@ -120,6 +120,25 @@
     color: rgb(255, 230, 160);
 }
 
+/* The target's level is colored by how hard the target is (HudController, DifficultyColors). It is larger and sits
+   on a near-black badge with an outline, so gray and red stay readable inside every portrait: hostile, neutral and
+   friendly rims, and the dark red portrait of a unit in combat. */
+.unit-frame.target .portrait-level {
+    min-width: 38px;
+    height: 32px;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 16px;
+    background-color: rgb(8, 10, 16);
+    font-size: 24px;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(0, 0, 0);
+}
+
 /* In a village: building up rested experience. */
 .portrait-resting {
     position: absolute;

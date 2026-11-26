@@ -162,7 +162,8 @@ Every phase ends in something playable and tested. Architectural decisions are i
   the NPC to talk to stands, worked out from the spawns (protocol v10), also on the minimap. Export Map renders the
   map image from above. A finished quest shows a gold "?" where it is turned in, from anywhere: labeled with the
   NPC and the quests on the world map, on the minimap's rim pointing the way when it is out of sight (protocol v14).
-  The world map's labels show each quest's level in its difficulty color (gray, green, yellow, orange, red)
+  The world map's labels show each quest's level in its difficulty color (gray, green, yellow, orange, red); the
+  target frame shows the target's level in the same colors, gray when a kill gives no experience (ClientCore `Difficulty`)
 - [x] Sound and music: three synthesized music loops (Mirewatch, the valley, the drowned ruins) and five ambience
   loops that cross-fade with the area you are in; footsteps (grass, wood, splashing through water), swings, hits,
   spells by school, loot, coins, windows, quest and level jingles; volume sliders (Settings > Sound). Effects from

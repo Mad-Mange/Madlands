@@ -246,3 +246,48 @@ public class ActionBarLayoutTests
         Assert.Equal(1u, layout[0]);
     }
 }
+
+public class DifficultyTests
+{
+    [Theory]
+    [InlineData(10, 15, LevelDifficulty.VeryHard)]   // five or more above: red
+    [InlineData(10, 20, LevelDifficulty.VeryHard)]
+    [InlineData(10, 14, LevelDifficulty.Hard)]       // three or four above: orange
+    [InlineData(10, 13, LevelDifficulty.Hard)]
+    [InlineData(10, 12, LevelDifficulty.Even)]       // within two levels: yellow
+    [InlineData(10, 10, LevelDifficulty.Even)]
+    [InlineData(10, 8, LevelDifficulty.Even)]
+    [InlineData(10, 7, LevelDifficulty.Easy)]        // lower, still worth experience: green
+    [InlineData(10, 5, LevelDifficulty.Easy)]
+    [InlineData(10, 4, LevelDifficulty.Trivial)]     // gray: 10 - 5 - 1 = 4 gives nothing
+    [InlineData(1, 1, LevelDifficulty.Even)]
+    [InlineData(5, 1, LevelDifficulty.Easy)]         // nothing is gray before level 6
+    [InlineData(6, 1, LevelDifficulty.Trivial)]
+    [InlineData(6, 2, LevelDifficulty.Easy)]
+    public void Creatures_take_the_con_color_of_their_level(int playerLevel, int creatureLevel, LevelDifficulty expected) =>
+        Assert.Equal(expected, Difficulty.OfCreature(creatureLevel, playerLevel));
+
+    [Fact]
+    public void Creatures_are_gray_exactly_when_the_server_gives_no_experience()
+    {
+        for (int player = 1; player <= 50; player++)
+        {
+            Assert.Equal(Madlands.Server.Combat.Experience.GrayLevel(player), Difficulty.GrayLevel(player));
+            for (int creature = 1; creature <= player + 10; creature++)
+            {
+                bool noXp = Madlands.Server.Combat.Experience.ForKill(player, creature) == 0;
+                bool gray = Difficulty.OfCreature(creature, player) == LevelDifficulty.Trivial;
+                Assert.True(noXp == gray, $"player {player}, creature {creature}: no experience {noXp}, gray {gray}");
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(10, 15, LevelDifficulty.VeryHard)]
+    [InlineData(10, 13, LevelDifficulty.Hard)]
+    [InlineData(10, 8, LevelDifficulty.Even)]
+    [InlineData(10, 5, LevelDifficulty.Easy)]        // five below still gives full quest experience
+    [InlineData(10, 4, LevelDifficulty.Trivial)]     // six below: the experience falls off
+    public void Quests_share_the_thresholds_but_turn_gray_when_their_experience_falls_off(int playerLevel, int questLevel, LevelDifficulty expected) =>
+        Assert.Equal(expected, Difficulty.OfQuest(questLevel, playerLevel));
+}

@@ -456,6 +456,8 @@ namespace Madlands.Client
             _targetName.text = guid == Client.LocalGuid ? Client.LocalName
                 : Client.World.TryGet(guid, out var entity) ? entity.Name : "";
             _targetLevel.text = v.Level.ToString(CultureInfo.InvariantCulture);
+            // The level in its "con" color: how hard the target is for the player (the portrait keeps the reaction).
+            _targetLevel.style.color = DifficultyColors.Of(Difficulty.OfCreature(v.Level, Client.Self.Values.Level));
             SetBar(_targetHealthFill, _targetHealthText, v.Health, v.MaxHealth, true);
             SetPower(_targetPower, _targetPowerFill, _targetPowerText, v);
         }
