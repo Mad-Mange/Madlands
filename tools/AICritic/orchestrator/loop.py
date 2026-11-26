@@ -395,7 +395,8 @@ def approve(cfg, run_id, confirm, prompt_user=True):
     o = state["outcome"]
     print(f"Run {run_id}: {o['verdict']} after {o['rounds']} round(s), score {o['overall']}, "
           f"stop reason {o['stop_reason']}")
-    print(gitops.git(["diff", "--stat", state["base_commit"]], wt) or "(no tracked changes)")
+    # Compare trees, not the working copy: `git diff <commit>` would leave out the files the builder added.
+    print(gitops.diff_stat(wt, state["base_commit"], state["final_tree"]) or "(no changes)")
     print(f"Report: {run_dir / 'latest-review.md'}")
     current = gitops.snapshot(wt, gitops.temp_index(wt, "approve"))
     if current != state["final_tree"]:
