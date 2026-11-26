@@ -1,0 +1,58 @@
+# The scripted play session the critic reviews. Each [[shot]] is one run of the built client
+# (builds/client/Madlands.exe) against a fresh in-memory realm (--db memory --gm-all --seed).
+# Only flags the client already has are used (CLAUDE.md, "Visual end-to-end checks"):
+#   class        -class for the new character
+#   exec         chat lines / GM commands sent after entering the world (0.7 s apart)
+#   args         any other client flags
+#   delay        seconds after entering the world before the (first) screenshot
+#   burst        number of screenshots 0.25 s apart (a short recording); 1 = a single picture
+#   quit_after   seconds after startup before the client quits (default: delay + burst/4 + 9)
+# Every shot gets its own new character. The debug overlay (fps, ping) stays visible unless -hidedebug.
+
+name = "hollowmere_smoke"
+resolution = [1600, 900]
+
+[[shot]]
+name = "village_hud"
+description = "New character at the Mirewatch start point, default camera, HUD and debug overlay (fps, ping) visible."
+args = ["-face", "0"]
+delay = 6
+
+[[shot]]
+name = "village_overview"
+description = "The same start area framed from higher up, HUD and debug overlay hidden: art, lighting, composition."
+args = ["-face", "150", "-campitch", "30", "-camdistance", "22", "-hidedebug", "-hidehud"]
+delay = 6
+
+[[shot]]
+name = "quest_dialog"
+description = "Next to the quest giver Old Tamsin, her first quest open (quest 1, 'Trouble in the Mire')."
+# She stands at (-20, -160): out of reach from the start point.
+exec = [".tele -17 -157"]
+args = ["-talkto", "Old Tamsin", "-quest", "1", "-hidedebug"]
+delay = 8
+
+[[shot]]
+name = "vendor"
+description = "A character with 50 gold at Quartermaster Holt's supply tent, the vendor window open."
+exec = [".money 5000", ".tele 10 -142"]
+args = ["-talkto", "Quartermaster Holt", "-hidedebug"]
+delay = 9
+
+[[shot]]
+name = "combat"
+description = "A level 3 Shardmage on the mere's south-west shore attacking the nearest Mire Croaker with the action bar (-autofight); debug overlay visible."
+class = "shardmage"
+# Open ground south of two croaker spawns at (-55, -83..-86); trees hide the fight at the README's (-60, -62).
+exec = [".level 3", ".tele -55 -97"]
+args = ["-autofight", "-face", "0", "-campitch", "28", "-camdistance", "11"]
+delay = 9
+burst = 12
+
+[[shot]]
+name = "running"
+description = "A character running across the open village square from the start point (-autorun): run cycle, ground contact, camera follow."
+# Facing north the character runs into the well after a second.
+args = ["-autorun", "-face", "150", "-hidedebug"]
+delay = 2
+burst = 8

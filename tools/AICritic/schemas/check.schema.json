@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["image_color", "write_attempted", "write_blocked", "note"],
+  "properties": {
+    "image_color": { "type": "string" },
+    "write_attempted": { "type": "boolean" },
+    "write_blocked": { "type": "boolean" },
+    "note": { "type": "string" }
+  }
+}

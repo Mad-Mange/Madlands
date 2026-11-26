@@ -1,0 +1,61 @@
+# Copy to tools/AICritic/config.toml (gitignored) or pass --config <file>. Every key is optional:
+# anything left out keeps the built-in default shown here (orchestrator/config.py).
+
+[paths]
+unity = "C:/Program Files/Unity/Hub/Editor/6000.6.5f1/Editor/Unity.exe"
+worktree_root = "../Madlands-aicritic"   # relative to the repo root; must lie outside every Git repository
+runs_dir = "builds/aicritic"             # reports, prompts, logs, screenshots (gitignored)
+
+[git]
+base_ref = "main"                        # every run branches from here
+branch_prefix = "aicritic/"
+seed_library = true                      # copy an existing Unity Library into new worktrees
+
+[loop]
+max_rounds = 3                           # 1..3: the loop never runs more than three evaluation rounds
+pass_score = 8.0
+max_run_minutes = 240
+
+[budget]
+builder_usd_per_round = 5.0              # Claude --max-budget-usd for one builder call
+builder_usd_total = 12.0                 # the run stops before a builder call that has less than $0.50 left
+critic_tokens_total = 3000000            # the run stops before a critic call once Codex used this many tokens
+
+[builder]
+command = "claude"
+model = ""                               # empty: the CLI's default model
+effort = ""
+protected_paths = ["tools/AICritic/", ".github/"]
+
+[critic]
+command = "codex"
+model = "gpt-6.1-terra"
+reasoning_effort = "high"
+windows_sandbox = "elevated"
+max_images = 10
+
+[timeouts]                               # seconds
+builder = 1800
+dotnet_build = 900
+dotnet_test = 1500
+content_validate = 300
+unity_build = 3600
+critic = 1800
+
+[weights]                                # must add up to 100
+visual_quality = 25
+gameplay = 30
+animation_physics = 20
+bugs_stability = 15
+performance = 10
+
+[realm]                                  # the test realm (fresh, in memory, fixed seed)
+port = 7787
+http_port = 7790
+seed = 1
+stats_interval = 5
+bots = 20                                # bot load phase after the shots (0 = none)
+bot_seconds = 20
+
+[scene]
+file = "scenes/hollowmere_smoke.toml"
