@@ -426,7 +426,8 @@ def discard(cfg, run_id, confirm):
         return False
     wt = Path(state["worktree"])
     if wt.exists():
-        gitops.remove_worktree(REPO_ROOT, wt)
+        gitops.remove_worktree(REPO_ROOT, wt, resolve(cfg, "worktree_root"))
+    gitops.git(["worktree", "prune"], REPO_ROOT)
     if gitops.branch_exists(REPO_ROOT, state["branch"]):
         gitops.delete_branch(REPO_ROOT, state["branch"])
     state["approval"] = {"state": "discarded", "at": utc()}

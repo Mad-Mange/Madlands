@@ -2,7 +2,10 @@
 
 import hashlib
 import os
+import shutil
+import stat
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -11,7 +14,9 @@ class GitError(Exception):
 
 
 def git(args, cwd, env=None, check=True, binary=False):
-    p = subprocess.run(["git", *args], cwd=str(cwd), env=env, capture_output=True)
+    # Unity's Library holds paths longer than Windows' 260-character limit: without core.longpaths git can
+    # neither check out nor delete such a worktree completely.
+    p = subprocess.run(["git", "-c", "core.longpaths=true", *args], cwd=str(cwd), env=env, capture_output=True)
     out = p.stdout if binary else p.stdout.decode("utf-8", errors="replace")
     if check and p.returncode != 0:
         raise GitError(f"git {' '.join(args)} failed ({p.returncode}): "
@@ -45,8 +50,35 @@ def add_worktree(repo, path, base_ref, new_branch=None):
         git(["worktree", "add", "--detach", str(path), base_ref], repo)
 
 
-def remove_worktree(repo, path):
-    git(["worktree", "remove", "--force", str(path)], repo)
+def remove_worktree(repo, path, allowed_root):
+    """Removes a worktree and its folder. If git stops halfway (it may have unregistered the worktree
+    already), the rest of the folder is deleted directly, but only inside allowed_root."""
+    path = Path(path).resolve()
+    allowed_root = Path(allowed_root).resolve()
+    if allowed_root not in path.parents:
+        raise GitError(f"refusing to delete {path}: it is not inside {allowed_root}")
+    try:
+        git(["worktree", "remove", "--force", str(path)], repo)
+    except GitError:
+        if not path.exists():
+            raise
+    if path.exists():
+        _rmtree_long(path)
+    git(["worktree", "prune"], repo)
+
+
+def _rmtree_long(path):
+    def make_writable(func, p, _exc):
+        os.chmod(p, stat.S_IWRITE)
+        func(p)
+
+    target = str(path)
+    if os.name == "nt" and not target.startswith("\\\\?\\"):
+        target = "\\\\?\\" + target  # the extended-length prefix lifts the 260-character limit
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(target, onexc=make_writable)
+    else:
+        shutil.rmtree(target, onerror=make_writable)
 
 
 def delete_branch(repo, name):
