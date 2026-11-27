@@ -18,11 +18,13 @@ public sealed class ChatHandler
     private sealed record Command(string Usage, string Help, Func<Player, string[], long, string?> Run);
 
     private readonly GameServer _server;
+    private readonly GmCommandService? _gm;
     private readonly SortedDictionary<string, Command> _commands = new(StringComparer.OrdinalIgnoreCase);
 
-    public ChatHandler(GameServer server)
+    public ChatHandler(GameServer server, GmCommandService? gm = null)
     {
         _server = server;
+        _gm = gm;
         Add("help", "[command]", "Lists the commands, or explains one.", Help);
         Add("gps", "", "Shows where you are.", Gps);
         Add("tele", "<x> <z> | spawn | <player>", "Teleports you.", Tele);
@@ -83,6 +85,8 @@ public sealed class ChatHandler
             reply = $"Usage: .{parts[0]} {command.Usage}";
         }
         if (reply is not null && player.Map is { } after) after.SendSystemMessage(player, reply);
+        // Console commands change the same state the developer menu shows (.god, .speed, ...): keep it current.
+        _gm?.SendStatus(player);
     }
 
     /// <summary>Trims and drops control characters; the wire already limits the length.</summary>
@@ -155,14 +159,7 @@ public sealed class ChatHandler
             : creatures.FirstOrDefault(c => c.Name.Contains(args[0], StringComparison.OrdinalIgnoreCase));
         if (template is null) return $"No creature '{args[0]}'. Known: " + string.Join(", ", creatures.Select(c => $"{c.Id} {c.Name}"));
         int count = args.Length == 2 ? Math.Clamp(ParseInt(args[1]), 1, 20) : 1;
-        var forward = MathUtil.YawToDirection(player.Yaw);
-        for (int i = 0; i < count; i++)
-        {
-            var offset = forward * 6f + MathUtil.YawToDirection(player.Yaw + MathUtil.Pi / 2) * ((i - (count - 1) / 2f) * 2.5f);
-            var position = player.Position + offset;
-            if (!map.HeightMap.Contains(position.X, position.Z)) continue;
-            map.SpawnCreature(template, position, player.Yaw + MathUtil.Pi, null, now);
-        }
+        GmCommandService.SpawnInFront(player, template, count, now, snapToNavMesh: false);
         return $"Spawned {count} x {template.Name}.";
     }
 
@@ -173,9 +170,7 @@ public sealed class ChatHandler
         int level = ParseInt(args[0]);
         int max = player.Map!.Content.Levels.MaxLevel;
         if (level < 1 || level > max) return $"Levels go from 1 to {max}.";
-        who.Xp = 0;
-        player.Map.Combat.SetLevel(who, level, now);
-        who.StatsDirty = true;
+        GmCommandService.ApplyLevel(who, level, now);
         return $"{who.Name} is now level {level}.";
     }
 
@@ -215,8 +210,7 @@ public sealed class ChatHandler
     {
         var who = TargetOrSelf(player);
         if (who.IsDead) return $"{who.Name} is dead. Use .revive.";
-        who.Health = who.MaxHealth;
-        if (who.PowerType != PowerType.Rage) who.Power = who.MaxPower;
+        GmCommandService.HealFully(who);
         return $"{who.Name} is fully healed.";
     }
 
@@ -224,8 +218,7 @@ public sealed class ChatHandler
     {
         var who = Target(player) as Player ?? player;
         if (who.IsAlive) return $"{who.Name} is not dead.";
-        player.Map!.Combat.Resurrect(who, now, atGraveyard: false);
-        who.Health = who.MaxHealth;
+        GmCommandService.ReviveInPlace(who, now);
         return $"{who.Name} lives again.";
     }
 
@@ -237,8 +230,7 @@ public sealed class ChatHandler
 
     private static string? God(Player player, string[] args, long now)
     {
-        player.GodMode = !player.GodMode;
-        if (player.GodMode) player.Map!.Combat.ClearAttackers(player);
+        GmCommandService.SetGodMode(player, !player.GodMode);
         return player.GodMode ? "God mode on." : "God mode off.";
     }
 
@@ -246,8 +238,7 @@ public sealed class ChatHandler
     {
         if (args.Length != 1) throw new FormatException();
         float percent = Math.Clamp(ParseFloat(args[0]), 10f, 1000f);
-        player.GmSpeed = percent / 100f;
-        player.RecalculateStats();
+        GmCommandService.ApplySpeed(player, percent);
         return string.Format(CultureInfo.InvariantCulture, "Speed {0:0}%.", percent);
     }
 
@@ -316,37 +307,9 @@ public sealed class ChatHandler
     private static string? Quest(Player player, string[] args, long now)
     {
         if (args.Length != 2) throw new FormatException();
-        var map = player.Map!;
-        if (!map.Content.Quests.TryGetValue((uint)ParseInt(args[1]), out var quest)) return $"No quest {args[1]}.";
-        switch (args[0].ToLowerInvariant())
-        {
-            case "add":
-                if (player.Quests.Find(quest.Id) is not null) return $"{quest.Title} is already in your log.";
-                if (player.Quests.IsFull) return "Your quest log is full.";
-                player.Quests.Unreward(quest.Id);
-                player.Quests.Add(quest);
-                break;
-            case "complete":
-                if (player.Quests.Find(quest.Id) is not { } progress) return $"{quest.Title} is not in your log.";
-                for (int i = 0; i < quest.Objectives.Count; i++)
-                {
-                    var o = quest.Objectives[i];
-                    if (o.Type == ObjectiveType.Collect && map.Content.Items.TryGetValue(o.Item, out var item))
-                        map.Items.Give(player, item, Math.Max(0, o.Count - player.Inventory.Count(o.Item)), ReceiveSource.Other);
-                    else progress.Counts[i] = o.Count;
-                }
-                map.Items.Flush(player);
-                break;
-            case "reset":
-                player.Quests.Remove(quest.Id);
-                player.Quests.Unreward(quest.Id);
-                break;
-            default:
-                throw new FormatException();
-        }
-        map.Quests.SendLog(player);
-        map.Quests.RefreshStatuses(player);
-        return $"Quest {quest.Id} '{quest.Title}': {args[0].ToLowerInvariant()} done.";
+        string action = args[0].ToLowerInvariant();
+        if (action is not ("add" or "complete" or "reset")) throw new FormatException();
+        return GmCommandService.QuestAction(player, action, (uint)ParseInt(args[1])).Message;
     }
 
     private string? Who(Player player, string[] args, long now)

@@ -69,6 +69,7 @@ public sealed class MapInstance
         Map = map;
         InstanceId = instanceId;
         _world = world;
+        NavMesh = navMesh;
         Nav = navMesh.CreateQuery();
         Collision = collision;
         Random = randomSeed is { } seed ? new Random(seed) : new Random();
@@ -98,6 +99,8 @@ public sealed class MapInstance
     public HeightMap HeightMap => Map.HeightMap;
     public ContentDatabase Content => _world.Content;
     public NavQuery Nav { get; }
+    /// <summary>The map's navmesh itself (debug overlays; queries go through <see cref="Nav"/>).</summary>
+    public NavMesh NavMesh { get; }
     public CollisionWorld Collision { get; }
     public Random Random { get; }
     public CombatSystem Combat { get; }

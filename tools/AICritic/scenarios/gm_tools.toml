@@ -1,0 +1,120 @@
+name = "gm_tools"
+description = "Developer GM menu commands driven through the Playtest Controller (CHEATS ENABLED: setup, not gameplay evidence)."
+goal = """Exercise the developer GM menu's command path the way a test setup would: teleport to the Mire Croakers'
+first spawn point (creature 1), raise the test character to level 8, spawn a Dusk Wolf (creature 2) as a debug
+spawn while in god mode, inspect its AI state, then turn god mode off, step next to the wolf and fight it for
+real. Afterwards show the server's navmesh there, and the collision geometry and spawn points in Mirewatch,
+open the menu for a picture, remove the debug spawn and reset every override, and check the Esc chain
+(developer menu, game menu, bags). Judge the gameplay you see (the
+fight, the overlays, the menu), not the fact that the commands answered OK."""
+class = "warrior"
+setup = []
+start = "mirewatch_square"
+# The script is the point: Codex never sends GM commands, so this scenario always runs scripted.
+scripted_only = true
+max_actions = 34
+
+[[script]]
+action = "gm_command"
+command = "teleport.location"
+args = { location = "creature:1" }
+[[script]]
+action = "gm_command"
+command = "player.set_level"
+args = { level = 8 }
+[[script]]
+action = "gm_command"
+command = "player.god_mode"
+args = { enabled = true }
+[[script]]
+action = "gm_command"
+command = "spawn.entity"
+args = { creature = 2, count = 1 }
+[[script]]
+action = "target"
+name = "Dusk Wolf"
+[[script]]
+action = "gm_command"
+command = "debug.inspect_target"
+[[script]]
+action = "gm_command"
+command = "player.god_mode"
+args = { enabled = false }
+[[script]]
+action = "gm_command"
+command = "teleport.target"
+[[script]]
+action = "attack"
+seconds = 10
+[[script]]
+action = "gm_command"
+command = "debug.inspect_target"
+[[script]]
+action = "gm_command"
+command = "debug.navmesh"
+args = { enabled = true }
+[[script]]
+action = "camera"
+pitch = 55
+distance = 18
+[[script]]
+action = "gm_command"
+command = "debug.navmesh"
+args = { enabled = false }
+[[script]]
+action = "gm_command"
+command = "teleport.location"
+args = { location = "start" }
+[[script]]
+action = "gm_command"
+command = "debug.collision"
+args = { enabled = true }
+[[script]]
+action = "gm_command"
+command = "debug.spawn_points"
+args = { enabled = true }
+[[script]]
+action = "camera"
+pitch = 45
+distance = 22
+[[script]]
+action = "open_developer_menu"
+[[script]]
+action = "gm_command"
+command = "debug.collision"
+args = { enabled = false }
+[[script]]
+action = "gm_command"
+command = "debug.spawn_points"
+args = { enabled = false }
+[[script]]
+action = "gm_command"
+command = "spawn.despawn_debug"
+[[script]]
+action = "gm_command"
+command = "dev.reset_overrides"
+# Esc chain (real key presses): nothing open -> developer menu; again -> closed; Shift+Esc -> game menu;
+# Esc -> closed; with the bags open the first Esc closes the bags, the second opens the developer menu.
+[[script]]
+action = "close_windows"
+[[script]]
+action = "press_escape"
+[[script]]
+action = "press_escape"
+[[script]]
+action = "press_escape"
+shift = true
+[[script]]
+action = "press_escape"
+[[script]]
+action = "open_window"
+window = "bags"
+[[script]]
+action = "press_escape"
+[[script]]
+action = "press_escape"
+[[script]]
+action = "press_escape"
+[[script]]
+action = "gm_command"
+command = "player.make_coffee"

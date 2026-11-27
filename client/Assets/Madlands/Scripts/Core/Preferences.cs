@@ -161,6 +161,19 @@ namespace Madlands.Client
             catch (Exception ex) { Debug.LogWarning("[Prefs] " + ex.Message); }
         }
 
+        /// <summary>Small per-machine developer settings (the developer menu's open sections, its Esc choice).</summary>
+        public static string GetDeveloperSetting(string key, string fallback) => GetString("developer." + key, fallback);
+
+        public static void SetDeveloperSetting(string key, string value)
+        {
+            try
+            {
+                PlayerPrefs.SetString(Prefix + "developer." + key, value);
+                PlayerPrefs.Save();
+            }
+            catch (Exception ex) { Debug.LogWarning("[Prefs] " + ex.Message); }
+        }
+
         public static void SetLanguage(string code)
         {
             Language = code;

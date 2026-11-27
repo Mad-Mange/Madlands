@@ -322,4 +322,63 @@ public class ProtocolTests
         Assert.Equal(123456789UL, guid.Counter);
         Assert.Throws<ArgumentOutOfRangeException>(() => EntityGuid.Create(EntityType.Player, EntityGuid.CounterMask + 1));
     }
+
+    [Fact]
+    public void Gm_messages_roundtrip()
+    {
+        var command = new GmCommand { RequestId = 77, CommandId = GmCommands.AddItem };
+        command.Args.Add(new KeyValuePair<string, string>("item", "1020"));
+        command.Args.Add(new KeyValuePair<string, string>("count", "3"));
+        var commandCopy = Roundtrip(command);
+        Assert.Equal(77u, commandCopy.RequestId);
+        Assert.Equal(GmCommands.AddItem, commandCopy.CommandId);
+        Assert.Equal(command.Args, commandCopy.Args);
+
+        var result = new GmCommandResult { RequestId = 77, CommandId = GmCommands.AddItem, Code = GmResultCode.Partial, Message = "Added 2 of 3." };
+        result.Data.Add(new KeyValuePair<string, string>("added", "2"));
+        var resultCopy = Roundtrip(result);
+        Assert.Equal(GmResultCode.Partial, resultCopy.Code);
+        Assert.True(resultCopy.Ok);
+        Assert.Equal("Added 2 of 3.", resultCopy.Message);
+        Assert.Equal(result.Data, resultCopy.Data);
+
+        var status = Roundtrip(new GmStatus { GmLevel = 3, Overrides = GmOverrides.GodMode | GmOverrides.NoCooldowns, SpeedPercent = 250, DamagePercent = 0, DebugSpawns = 4 });
+        Assert.Equal((byte)3, status.GmLevel);
+        Assert.Equal(GmOverrides.GodMode | GmOverrides.NoCooldowns, status.Overrides);
+        Assert.Equal((ushort)250, status.SpeedPercent);
+        Assert.Equal((ushort)0, status.DamagePercent);
+        Assert.Equal((ushort)4, status.DebugSpawns);
+
+        var catalog = new GmCatalog { MapId = 1 };
+        catalog.Creatures.Add(new GmCreatureEntry { Id = 15, Name = "Brannoc Ironvein", MinLevel = 10, MaxLevel = 10, Reaction = Reaction.Friendly });
+        catalog.Destinations.Add(new GmDestination { Id = "npc:15", Name = "Brannoc Ironvein", Kind = GmDestinationKind.Npc, X = 159f, Z = 123f });
+        var catalogCopy = Roundtrip(catalog);
+        Assert.Equal(catalog.Creatures, catalogCopy.Creatures);
+        Assert.Equal(catalog.Destinations, catalogCopy.Destinations);
+
+        var geometry = new GmDebugGeometry { Kind = GmGeometryKind.NavMesh, Center = new Vec3(100f, 20f, -50f), Radius = 40f, Truncated = true };
+        geometry.Points.Add(new Vec3(101.5f, 20.25f, -49f));
+        geometry.Points.Add(new Vec3(70f, 18f, -80.0625f));
+        var geometryCopy = Roundtrip(geometry);
+        Assert.Equal(GmGeometryKind.NavMesh, geometryCopy.Kind);
+        Assert.True(geometryCopy.Truncated);
+        Assert.Equal(1, geometryCopy.SegmentCount);
+        Assert.Equal(geometry.Points, geometryCopy.Points); // all on the 1/16 m grid
+    }
+
+    [Fact]
+    public void Gm_command_rejects_too_many_arguments()
+    {
+        var command = new GmCommand { RequestId = 1, CommandId = GmCommands.HealFull };
+        for (int i = 0; i <= GmCommands.MaxArgs; i++) command.Args.Add(new KeyValuePair<string, string>("k" + i, "v"));
+        var writer = new PacketWriter();
+        Packet.Encode(writer, command);
+        var bytes = writer.ToArray();
+        Assert.Throws<PacketException>(() =>
+        {
+            var r = new PacketReader(bytes);
+            Packet.ReadOpcode(ref r);
+            new GmCommand().Read(ref r);
+        });
+    }
 }

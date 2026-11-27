@@ -62,6 +62,10 @@ namespace Madlands.ClientCore
         private readonly SetTarget _setTarget = new SetTarget();
         private readonly CastSpell _castSpell = new CastSpell();
         private readonly ChatInput _chatInput = new ChatInput();
+        private readonly GmCommand _gmCommand = new GmCommand();
+        private readonly GmCommandResult _gmResult = new GmCommandResult();
+        private readonly GmStatus _gmStatusMsg = new GmStatus();
+        private readonly GmDebugGeometry _gmGeometry = new GmDebugGeometry();
         private readonly CancelAura _cancelAura = new CancelAura();
         private readonly InventoryUpdate _inventoryUpdate = new InventoryUpdate();
         private readonly MoneyUpdate _moneyUpdate = new MoneyUpdate();
@@ -114,6 +118,7 @@ namespace Madlands.ClientCore
             _manualMode = manualMode;
             _log = log;
             Inventory = new ClientInventory(Data);
+            Gm = new GmCommandClient(this);
             _net = new NetManager(_listener)
             {
                 AutoRecycle = true,
@@ -150,6 +155,12 @@ namespace Madlands.ClientCore
         /// <summary>The last vendor's wares.</summary>
         public VendorInventory Vendor => _vendor;
         public EntityGuid Target { get; private set; }
+        /// <summary>GM rights and overrides as the server last reported them (level 0: not a GM).</summary>
+        public GmStatus GmStatus { get; } = new GmStatus();
+        /// <summary>Spawnable creatures and teleport destinations (GMs only; empty otherwise).</summary>
+        public GmCatalog GmCatalog { get; } = new GmCatalog();
+        /// <summary>The GM command service of this client: the developer menu and automation both use it.</summary>
+        public GmCommandClient Gm { get; }
         /// <summary>The local player's latest movement (set by <see cref="SendMovement"/> or <see cref="SetLocalMovement"/>).</summary>
         public MovementState LocalMovement { get; private set; }
         public string LastError { get; private set; }
@@ -202,6 +213,12 @@ namespace Madlands.ClientCore
         public event Action<QuestCompleted> QuestCompleted;
         /// <summary>The "!"/"?" mark of an NPC changed.</summary>
         public event Action<EntityGuid> QuestGiverStatusChanged;
+        /// <summary>The server sent the GM state (rights and overrides): only GM accounts get it.</summary>
+        public event Action GmStatusChanged;
+        public event Action GmCatalogReceived;
+        /// <summary>The answer to a <see cref="SendGmCommand"/> (the object is reused: copy what you keep).</summary>
+        public event Action<GmCommandResult> GmResultReceived;
+        public event Action<GmDebugGeometry> GmGeometryReceived;
 
         /// <summary>Enters the world with a session token from <see cref="AccountClient"/> and a character id.</summary>
         public void Connect(string host, int port, string sessionToken, ulong characterId)
@@ -242,6 +259,7 @@ namespace Madlands.ClientCore
 
             if (_manualMode) _net.ManualUpdate(now - _lastUpdateMs);
             _lastUpdateMs = now;
+            Gm.Update(now);
         }
 
         public void SendMovement(in MovementState state)
@@ -324,6 +342,19 @@ namespace Madlands.ClientCore
         }
 
         public void ReleaseSpirit() => Send(new ReleaseSpirit(), DeliveryMethod.ReliableOrdered);
+
+        /// <summary>
+        /// Sends a GM command as is. Use <see cref="Gm"/> instead: it validates, tracks the request and
+        /// runs client-side commands; this raw call exists for it and for tests of the server's own checks.
+        /// </summary>
+        public void SendGmCommand(uint requestId, string commandId, IReadOnlyList<KeyValuePair<string, string>> args)
+        {
+            _gmCommand.RequestId = requestId;
+            _gmCommand.CommandId = commandId;
+            _gmCommand.Args.Clear();
+            if (args != null) _gmCommand.Args.AddRange(args);
+            Send(_gmCommand, DeliveryMethod.ReliableOrdered);
+        }
 
         public void CancelAura(uint spellId)
         {
@@ -600,6 +631,9 @@ namespace Madlands.ClientCore
             _questGivers.Clear();
             _gossip.Npc = EntityGuid.Empty;
             _vendor.Vendor = EntityGuid.Empty;
+            GmStatus.CopyFrom(new GmStatus());
+            GmCatalog.Creatures.Clear();
+            GmCatalog.Destinations.Clear();
         }
 
         private void ResetLoot()
@@ -648,6 +682,23 @@ namespace Madlands.ClientCore
                     case Opcode.QuestLogUpdate: HandleQuestLog(ref r); break;
                     case Opcode.QuestGiverStatusUpdate: HandleQuestStatus(ref r); break;
                     case Opcode.QuestCompleted: HandleQuestCompleted(ref r); break;
+                    case Opcode.GmCommandResult:
+                        _gmResult.Read(ref r);
+                        GmResultReceived?.Invoke(_gmResult);
+                        break;
+                    case Opcode.GmStatus:
+                        _gmStatusMsg.Read(ref r);
+                        GmStatus.CopyFrom(_gmStatusMsg);
+                        GmStatusChanged?.Invoke();
+                        break;
+                    case Opcode.GmCatalog:
+                        GmCatalog.Read(ref r);
+                        GmCatalogReceived?.Invoke();
+                        break;
+                    case Opcode.GmDebugGeometry:
+                        _gmGeometry.Read(ref r);
+                        GmGeometryReceived?.Invoke(_gmGeometry);
+                        break;
                     default: _log?.Invoke("Unknown opcode from server: " + opcode); break;
                 }
             }

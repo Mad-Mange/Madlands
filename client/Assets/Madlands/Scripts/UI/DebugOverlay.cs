@@ -17,6 +17,8 @@ namespace Madlands.Client
         private NetworkController _network;
         private bool _visible = true;
         private float _fps;
+        // Longest frame of the last full second (debug.performance).
+        private float _worstFrame, _worstFrameShown, _worstWindowEnds;
         private int _screenshotsTaken;
         private float _nextScreenshotAt;
         private VisualElement _panel;
@@ -55,6 +57,13 @@ namespace Madlands.Client
         {
             if (!InputGate.KeyboardBlocked && KeyBindings.WasPressed(GameAction.ToggleDebug)) _visible = !_visible;
             _fps = Mathf.Lerp(_fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
+            _worstFrame = Mathf.Max(_worstFrame, Time.unscaledDeltaTime);
+            if (Time.unscaledTime >= _worstWindowEnds)
+            {
+                _worstFrameShown = _worstFrame;
+                _worstFrame = 0f;
+                _worstWindowEnds = Time.unscaledTime + 1f;
+            }
             UpdatePanel();
 
             var settings = _network.Settings;
@@ -78,6 +87,28 @@ namespace Madlands.Client
             if (settings.QuitAfter > 0f && Time.realtimeSinceStartup >= settings.QuitAfter) Application.Quit();
         }
 
+        /// <summary>The F3 panel is shown. The developer menu's "Show FPS / Stats" (debug.fps) binds to this.</summary>
+        public bool Visible
+        {
+            get => _visible;
+            set => _visible = value;
+        }
+
+        /// <summary>Adds the worst frame time, memory and unit count to the panel (debug.performance).</summary>
+        public bool Detailed { get; set; }
+
+        private string PerformanceText(GameClient client)
+        {
+            long gcBytes = System.GC.GetTotalMemory(false);
+            long unityBytes = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong();
+            int units = 0;
+            foreach (var e in client.World.Entities)
+                if (e.Unit != null) units++;
+            return $"\nWorst frame (1 s): {_worstFrameShown * 1000f:0.0} ms" +
+                   $"\nManaged heap: {gcBytes / 1048576f:0} MB" + (unityBytes > 0 ? $"  Unity: {unityBytes / 1048576f:0} MB" : "") +
+                   $"\nUnits in view: {units}";
+        }
+
         private void UpdatePanel()
         {
             if (_panel == null) return;
@@ -89,11 +120,12 @@ namespace Madlands.Client
 
             var player = _network.LocalPlayer;
             // Our own Ping/Pong round trip (includes server tick wait): what gameplay actually feels.
-            _text.text = $"<b>Madlands</b>  {_fps:0} fps\n" +
+            _text.text = $"<b>Madlands</b>  {_fps:0} fps  {1000f / Mathf.Max(_fps, 0.01f):0.0} ms\n" +
                          $"Ping: {client.Clock.LastRttMs:0} ms  (best {client.Clock.BestRttMs:0} ms)\n" +
                          $"Map {client.MapId}:{client.InstanceId}  Entities: {client.World.Count}\n" +
                          (player != null ? $"Pos: {player.State.Position}\nFlags: {player.State.Flags}\n" : "") +
-                         $"Server time: {client.ServerTimeMs / 1000.0:0.0} s";
+                         $"Server time: {client.ServerTimeMs / 1000.0:0.0} s" +
+                         (Detailed ? PerformanceText(client) : "");
         }
     }
 }

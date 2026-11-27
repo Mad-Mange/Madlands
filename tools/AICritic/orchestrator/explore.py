@@ -21,7 +21,8 @@ from .loop import _finish_run, finish_round, letters_salt, make_run_id, new_roun
 from .report import fill
 from .review import _prepare
 
-SCENARIO_NAMES = ("smoke", "world", "combat", "ui", "navigation")
+# gm_tools drives the developer GM menu's commands (cheats; always scripted, never part of "all").
+SCENARIO_NAMES = ("smoke", "world", "combat", "ui", "navigation", "gm_tools")
 ALL_SCENARIOS = ("world", "combat", "ui", "navigation")
 MAX_HISTORY = 10
 
@@ -147,7 +148,8 @@ def run_scenario(cfg, run_id, scenario, session, mode, max_actions, deadline, co
         record({"step": "setup-start", "source": "setup", "action": "goto", "params": {"location": scenario["start"]},
                 "ok": obs.get("ok"), "result": obs.get("result"), "screenshot": obs.get("screenshot"), "seq": obs.get("seq")})
 
-        explorer = None if mode == "scripted" or dry_run else _Explorer(cfg, run_id, scenario, ex_dir / "codex", deadline, costs)
+        scripted = mode == "scripted" or dry_run or scenario.get("scripted_only", False)
+        explorer = None if scripted else _Explorer(cfg, run_id, scenario, ex_dir / "codex", deadline, costs)
         script = _scripted_decisions(scenario)
         for step_no in range(1, max_actions + 1):
             if time.time() > deadline:
@@ -176,7 +178,7 @@ def run_scenario(cfg, run_id, scenario, session, mode, max_actions, deadline, co
                 break
             name = decision["action"]
             try:
-                params = playtest.validate_action(name, decision.get("params"), scenario["locations"])
+                params = playtest.validate_action(name, decision.get("params"), scenario["locations"], script=source == "script")
             except playtest.ActionError as e:
                 record({"step": step_no, "source": source, "action": name, "params": decision.get("params") or {},
                         "ok": False, "rejected": str(e), "result": "", "notes": decision.get("observation_notes")})
@@ -187,7 +189,8 @@ def run_scenario(cfg, run_id, scenario, session, mode, max_actions, deadline, co
                     "frames": obs.get("frames", []),
                     "moved": obs.get("moved"), "stuck": obs.get("stuck"), "fps_avg": obs.get("fps_avg"),
                     "fps_p5": obs.get("fps_p5"), "fps_min": obs.get("fps_min"), "events": obs.get("events", [])[:12],
-                    "log_errors": obs.get("log_errors", []), "notes": decision.get("observation_notes")})
+                    "log_errors": obs.get("log_errors", []), "notes": decision.get("observation_notes"),
+                    **({"gm": obs.get("gm_result")} if obs.get("has_gm_result") else {})})
         return steps, findings, None
     except playtest.ClientGone as e:
         return steps, findings, str(e)
@@ -346,7 +349,8 @@ def explore(cfg, scenarios, mode="ai", max_actions=None, max_minutes=None, ref="
                 if fake:
                     fake.stop()
             executed = [s for s in steps_run if s.get("seq") and s.get("source") != "setup"]
-            exploration[scenario["name"]] = {"character": char, "class": scenario.get("class"), "mode": mode,
+            exploration[scenario["name"]] = {"character": char, "class": scenario.get("class"),
+                                             "mode": "scripted" if scenario.get("scripted_only") else mode,
                                              "steps": steps_run, "failure": failure}
             all_findings += findings
             results.append({"shot": scenario["name"], "name": f"explore_{scenario['name']}", "ok": failure is None and bool(executed),
@@ -482,11 +486,16 @@ def _review_images(names, media, exploration, max_images):
     return picked[:max_images]
 
 
+def uses_gm_commands(scenario):
+    return any(step.get("action") == "gm_command" for step in scenario.get("script", []))
+
+
 def _scenario_text(loaded, exploration, results):
     lines = []
     for s, r in zip(loaded, results):
         e = exploration.get(s["name"], {})
-        lines.append(f"- `{s['name']}` ({e.get('mode')}, {e.get('class')} {e.get('character')}): {s['description']} "
+        cheats = " CHEATS ENABLED: the script uses GM commands (setup, not evidence)." if uses_gm_commands(s) else ""
+        lines.append(f"- `{s['name']}` ({e.get('mode')}, {e.get('class')} {e.get('character')}): {s['description']}{cheats} "
                      f"{r.get('actions_executed', 0)} actions executed, {r.get('actions_failed', 0)} failed, "
                      f"{r.get('actions_rejected', 0)} rejected" + (f"; stopped: {r['error']}" if r.get("error") else ""))
         for step in e.get("steps", []):

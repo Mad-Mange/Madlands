@@ -70,6 +70,9 @@ public sealed class GameServer : IDisposable
     private readonly QuestTurnIn _questTurnIn = new();
     private readonly QuestAbandon _questAbandon = new();
     private readonly ChatHandler _chat;
+    private readonly GmCommand _gmCommand = new();
+    /// <summary>Typed GM commands of the developer menu and automation (docs/GMMenu).</summary>
+    private readonly GmCommandService _gm = new();
     /// <summary>Client display data, encoded once at startup and sent to everyone before Welcome.</summary>
     private readonly byte[] _gameData;
 
@@ -84,7 +87,7 @@ public sealed class GameServer : IDisposable
         if (World.GetInstance(options.StartMapId, WorldManager.OpenWorldInstance) is null)
             throw new ArgumentException($"Start map {options.StartMapId} does not exist in content.");
         _gameData = BuildGameData(content);
-        _chat = new ChatHandler(this);
+        _chat = new ChatHandler(this, _gm);
 
         _net = new NetManager(_listener)
         {
@@ -242,6 +245,7 @@ public sealed class GameServer : IDisposable
     {
         if (session.Player is not { } player) return;
         _saver.Enqueue(Snapshot(player));
+        _gm.OnLeavingWorld(player);
         player.Map?.RemoveEntity(player);
         // Only unregister if this session still owns the character (a re-login may have taken over).
         _onlineCharacters.TryRemove(new KeyValuePair<long, ClientSession>(player.CharacterId, session));
@@ -346,6 +350,17 @@ public sealed class GameServer : IDisposable
                     _chat.Handle(session.Player!, _chatInput.Text, now);
                     break;
                 }
+
+                case Opcode.GmCommand when session.State == SessionState.InWorld:
+                    // Same budget as GM chat lines; the service itself refuses non-GMs (Unauthorized).
+                    if (!session.GmCommandLimiter.TryConsume(now))
+                    {
+                        AddViolation(session, "GM command rate");
+                        break;
+                    }
+                    _gmCommand.Read(ref reader);
+                    _gm.Handle(session.Player!, _gmCommand, now);
+                    break;
 
                 default:
                     AddViolation(session, $"unexpected {opcode} in state {session.State}");
@@ -589,6 +604,7 @@ public sealed class GameServer : IDisposable
         map.Items.SendAll(player);
         map.Quests.SendLog(player);
         map.SendOwnAuras(player, now);
+        _gm.OnEnteredWorld(player);
         Log.Information("{Player} entered map {MapId} from {Address}", player, map.MapId, session.Peer);
     }
 

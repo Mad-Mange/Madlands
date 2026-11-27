@@ -178,7 +178,7 @@ public sealed class SpellSystem
             caster.Power -= spell.Cost;
             if (spell.PowerType == PowerType.Mana) caster.LastManaSpendMs = now;
         }
-        if (spell.CooldownMs > 0 && !god)
+        if (spell.CooldownMs > 0 && !god && caster is not Player { GmNoCooldowns: true })
         {
             caster.Cooldowns[spell.Id] = now + spell.CooldownMs;
             if (caster is Player player)

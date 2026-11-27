@@ -115,9 +115,24 @@ python -m unittest discover -s tools/AICritic/tests     # the tool's own tests (
   `ACTIONS`/`ACTION_HELP` in `tools/AICritic/orchestrator/playtest.py` (validation) and ideally a scenario step.
 - Scenarios are `tools/AICritic/scenarios/*.toml` (goal, class, GM setup lines, start location, script);
   named places are in `locations.toml`. Codex can only pick allowlisted actions; GM commands come only from
-  scenario files.
+  scenario files. Scripts may also use `gm_command` (a developer-menu command by id, e.g.
+  `{ action = "gm_command", command = "spawn.entity", args = { creature = 2, count = 1 } }`) and
+  `open_developer_menu`; `gm_tools` is the sample (always scripted, marked as cheats for the critic).
 - Never run `aicritic.py run` from inside Claude Code (it starts another Claude and refuses to): use
   `/critic-loop`. Audit, review and explore never change the game; approving and merging stay with the user.
+
+## Developer GM menu (docs/GMMenu)
+
+GM sessions (account GM level, or `--gm-all` locally) get a left-docked developer menu: Esc opens it when
+nothing else needs closing, Shift+Esc opens the normal game menu, `-open gm` opens it for screenshots.
+Commands have stable ids (`player.god_mode`, `spawn.entity`, `teleport.location` ...) and a typed schema in
+`shared/Madlands.Shared/Game/GmCommands.cs`. Every caller (the menu, the Playtest Controller's `gm_command`)
+goes through `GameClient.Gm` (`GmCommandClient`), and every server command through
+`server/Madlands.Server/Commands/GmCommandService.cs`. The server checks rights and arguments and logs each
+call. A new command needs: an entry in `GmCommands`, a handler in `GmCommandService` (or a client handler
+registered with `GameClient.Gm.RegisterLocal` for overlays), a row in `DeveloperMenu.cs`, a test in
+`GmCommandIntegrationTests`, and a line in `docs/GMMenu/README.md`. Don't fake unsupported features: show
+them as unavailable, with the reason.
 
 ## Gotchas learned the hard way
 

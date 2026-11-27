@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Madlands.ClientCore;
 using Madlands.Shared;
@@ -9,6 +10,8 @@ using Madlands.Shared.Game;
 using Madlands.Shared.Movement;
 using Madlands.Shared.Net;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 
 namespace Madlands.Client
 {
@@ -22,10 +25,14 @@ namespace Madlands.Client
     ///   &lt;folder&gt;/observations/0001.json  written here once the action has finished
     ///   &lt;folder&gt;/screenshots/0001.png    the game at that moment
     ///   &lt;folder&gt;/status.json             heartbeat: in the world yet, busy or idle
+    ///   &lt;folder&gt;/gm_commands.json        the GM commands and their argument schemas (discovery)
+    ///   &lt;folder&gt;/gm_catalog.json         spawnable creatures and teleport destinations (GM sessions)
     ///
     /// Movement goes through KeyBindings, the same path as the keyboard; everything else uses the client's
     /// own methods (targeting, interaction, windows, spells), like AutoPlay. Only the actions below exist,
     /// and GM chat lines are limited to a few scenario commands (the test realm runs with --gm-all).
+    /// gm_command runs a developer-menu command by its stable id through the same GmCommandClient the menu
+    /// uses (docs/GMMenu), and puts the structured result into the observation.
     /// </summary>
     public sealed class PlaytestController : MonoBehaviour
     {
@@ -53,6 +60,56 @@ namespace Madlands.Client
             public float pitch, distance, yaw_offset;
             public bool sprint;
             public string text;
+            public string command_id;
+            public bool shift;
+            public List<string> arg_keys = new List<string>();
+            public List<string> arg_values = new List<string>();
+        }
+
+        [Serializable]
+        private sealed class GmResultObs
+        {
+            public uint request_id;
+            public string command_id, code, message;
+            public bool ok;
+            public List<string> data = new List<string>();
+        }
+
+        [Serializable]
+        private sealed class GmStateObs
+        {
+            public int gm_level, speed_percent, damage_percent, debug_spawns;
+            public bool god_mode, no_cooldowns;
+        }
+
+        [Serializable]
+        private sealed class GmArgSpecObs
+        {
+            public string name, type;
+            public double min, max;
+            public bool optional;
+        }
+
+        [Serializable]
+        private sealed class GmCommandSpecObs
+        {
+            public string id, category, side;
+            public bool persistent;
+            public int min_gm_level;
+            public List<GmArgSpecObs> args = new List<GmArgSpecObs>();
+        }
+
+        [Serializable]
+        private sealed class GmCommandsFile
+        {
+            public List<GmCommandSpecObs> commands = new List<GmCommandSpecObs>();
+        }
+
+        [Serializable]
+        private sealed class GmCatalogFile
+        {
+            public List<string> creatures = new List<string>();
+            public List<string> destinations = new List<string>();
         }
 
         [Serializable]
@@ -96,6 +153,11 @@ namespace Madlands.Client
             public List<string> events = new List<string>();
             public int log_error_count, log_warning_count;
             public List<string> log_errors = new List<string>();
+            public GmStateObs gm;
+            public bool has_gm_result;
+            public GmResultObs gm_result;
+            /// <summary>Menus and input focus: the developer menu, the game (Esc) menu, a text field with the keyboard.</summary>
+            public bool developer_menu_open, game_menu_open, typing;
         }
 
         [Serializable]
@@ -154,6 +216,7 @@ namespace Madlands.Client
             KeyBindings.SimulatedPressed = action => _pressed.Contains(action);
             Application.logMessageReceived += OnLog;
             Application.runInBackground = true;
+            WriteGmCommands();
             Debug.Log("[Playtest] Controller active, mailbox " + dir);
         }
 
@@ -459,6 +522,65 @@ namespace Madlands.Client
                     else Fail(o, "the loot of " + NameOf(guid) + " did not open");
                     break;
                 }
+                case "gm_command":
+                {
+                    // The same service the developer menu uses: client-side validation, then the server decides.
+                    var args = new List<KeyValuePair<string, string>>();
+                    for (int i = 0; i < Math.Min(c.arg_keys.Count, c.arg_values.Count); i++)
+                        args.Add(new KeyValuePair<string, string>(c.arg_keys[i], c.arg_values[i]));
+                    GmCommandResult result = null;
+                    client.Gm.Execute(c.command_id ?? "", args, r => result = r);
+                    float until = Time.realtimeSinceStartup + GmCommandClient.TimeoutMs / 1000f + 1f;
+                    while (result == null && Time.realtimeSinceStartup < until) yield return null;
+                    if (result == null)
+                    {
+                        Fail(o, "no answer to " + c.command_id);
+                        yield break;
+                    }
+                    o.has_gm_result = true;
+                    o.gm_result = new GmResultObs
+                    {
+                        request_id = result.RequestId, command_id = result.CommandId, code = result.Code.ToString(),
+                        message = result.Message, ok = result.Ok,
+                    };
+                    foreach (var d in result.Data) o.gm_result.data.Add(d.Key + "=" + d.Value);
+                    // Let teleports, spawns and overlays show before the picture.
+                    yield return new WaitForSeconds(0.6f);
+                    if (result.Ok) Ok(o, $"{result.Code}: {result.Message}");
+                    else Fail(o, $"{result.Code}: {result.Message}");
+                    break;
+                }
+
+                case "press_escape":
+                {
+                    // A real key press through the Input System (the same path as the keyboard), so the whole
+                    // Esc chain runs: front end, HUD, developer menu, game menu.
+                    var keyboard = Keyboard.current;
+                    if (keyboard == null)
+                    {
+                        Fail(o, "no keyboard device");
+                        yield break;
+                    }
+                    InputSystem.QueueStateEvent(keyboard, c.shift ? new KeyboardState(Key.LeftShift, Key.Escape) : new KeyboardState(Key.Escape));
+                    yield return null;
+                    yield return null;
+                    InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                    yield return new WaitForSeconds(0.4f);
+                    Ok(o, (c.shift ? "pressed Shift+Esc" : "pressed Esc") + $": developer menu {(_hud.DeveloperMenu.IsOpen ? "open" : "closed")}, game menu {(InputGate.MenuOpen ? "open" : "closed")}");
+                    break;
+                }
+
+                case "open_developer_menu":
+                    if (_hud.DeveloperMenu == null || !_hud.DeveloperMenu.IsAvailable)
+                    {
+                        Fail(o, "the developer menu needs GM rights");
+                        yield break;
+                    }
+                    _hud.DeveloperMenu.Open();
+                    yield return new WaitForSeconds(0.5f);
+                    Ok(o, "developer menu open");
+                    break;
+
                 case "open_window":
                     _hud.OpenWindow(c.window ?? "");
                     yield return new WaitForSeconds(0.8f);
@@ -661,6 +783,19 @@ namespace Madlands.Client
                 o.fps_p5 = p95 > 0f ? 1f / p95 : 0f;
             }
             o.in_world = _network != null && _network.InWorld;
+            o.developer_menu_open = _hud != null && _hud.DeveloperMenu != null && _hud.DeveloperMenu.IsOpen;
+            o.game_menu_open = o.in_world && InputGate.MenuOpen;
+            o.typing = InputGate.Typing;
+            if (Client != null)
+            {
+                var gm = Client.GmStatus;
+                o.gm = new GmStateObs
+                {
+                    gm_level = gm.GmLevel, god_mode = (gm.Overrides & GmOverrides.GodMode) != 0,
+                    no_cooldowns = (gm.Overrides & GmOverrides.NoCooldowns) != 0, speed_percent = gm.SpeedPercent,
+                    damage_percent = gm.DamagePercent, debug_spawns = gm.DebugSpawns,
+                };
+            }
             var client = Client;
             if (o.in_world)
             {
@@ -730,6 +865,7 @@ namespace Madlands.Client
         {
             _subscribed = true;
             var c = Client;
+            c.GmCatalogReceived += WriteGmCatalog;
             c.ChatReceived += m =>
             {
                 AddEvent($"chat {m.Channel}: " + (string.IsNullOrEmpty(m.SenderName) ? "" : m.SenderName + ": ") + m.Text);
@@ -854,6 +990,34 @@ namespace Madlands.Client
             {
                 // The orchestrator may be reading it; the next heartbeat follows in half a second.
             }
+        }
+
+        /// <summary>Discovery for automation: every GM command with its argument schema (from the shared table).</summary>
+        private void WriteGmCommands()
+        {
+            var file = new GmCommandsFile();
+            foreach (var info in GmCommands.All)
+            {
+                var spec = new GmCommandSpecObs
+                {
+                    id = info.Id, category = info.Category.ToString(), side = info.Side.ToString(),
+                    persistent = info.Persistent, min_gm_level = info.MinGmLevel,
+                };
+                foreach (var a in info.Args)
+                    spec.args.Add(new GmArgSpecObs { name = a.Name, type = a.Type.ToString(), min = a.Min, max = a.Max, optional = a.Optional });
+                file.commands.Add(spec);
+            }
+            WriteJson(Path.Combine(_dir, "gm_commands.json"), JsonUtility.ToJson(file, true));
+        }
+
+        private void WriteGmCatalog()
+        {
+            var file = new GmCatalogFile();
+            var catalog = Client.GmCatalog;
+            foreach (var c in catalog.Creatures) file.creatures.Add($"{c.Id}|{c.Name}|{c.MinLevel}-{c.MaxLevel}|{c.Reaction}");
+            foreach (var d in catalog.Destinations)
+                file.destinations.Add($"{d.Id}|{d.Name}|{d.Kind}|{d.X.ToString("0.0", CultureInfo.InvariantCulture)}|{d.Z.ToString("0.0", CultureInfo.InvariantCulture)}");
+            WriteJson(Path.Combine(_dir, "gm_catalog.json"), JsonUtility.ToJson(file, true));
         }
 
         private static void WriteJson(string path, string json)

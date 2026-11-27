@@ -1,0 +1,514 @@
+/* Developer GM menu (docs/GMMenu, DeveloperMenu.cs): dark metal, red section headers, gold icons, rivets
+   and a hazard stripe. Loaded at runtime from Resources. Sizes are in reference pixels (1920x1080). */
+
+.dev-menu {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 28%;
+    min-width: 400px;
+    max-width: 540px;
+    flex-direction: row;
+}
+
+.dev-stripe {
+    width: 12px;
+    background-repeat: repeat repeat;
+    background-size: 32px 32px;
+    border-right-width: 1px;
+    border-right-color: rgb(20, 18, 16);
+}
+
+.dev-frame {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-direction: column;
+    /* Opaque: with linear color space even 5% transparency lets bright text behind show through. */
+    background-color: rgb(26, 25, 25);
+    background-repeat: repeat repeat;
+    background-size: 128px 128px;
+    border-right-width: 3px;
+    border-right-color: rgb(58, 52, 44);
+}
+
+/* ---------------------------------------------------------------- header */
+
+.dev-brand {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    margin: 6px 8px 0 8px;
+    background-color: rgb(40, 22, 20);
+    border-width: 1px;
+    border-color: rgb(96, 40, 32);
+    border-radius: 4px;
+}
+
+.dev-logo {
+    font-size: 30px;
+    -unity-font-style: bold;
+    letter-spacing: 6px;
+    color: rgb(214, 202, 184);
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(16, 10, 8);
+    margin: 0 10px 0 0;
+    padding: 0;
+}
+
+.dev-badge {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: rgb(255, 222, 128);
+    background-color: rgb(120, 26, 20);
+    border-width: 1px;
+    border-color: rgb(200, 80, 60);
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin: 0;
+}
+
+.dev-titlebar {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    height: 40px;
+    margin: 6px 8px 0 8px;
+    padding: 0 6px 0 10px;
+    background-color: rgb(34, 33, 34);
+    border-width: 1px;
+    border-color: rgb(84, 76, 64);
+    border-radius: 4px;
+}
+
+.dev-code-icon {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(233, 196, 106);
+    margin: 0 8px 0 0;
+    padding: 0;
+}
+
+.dev-title {
+    flex-grow: 1;
+    flex-shrink: 1;
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(238, 232, 222);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dev-key {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: rgb(232, 226, 214);
+    background-color: rgb(18, 18, 20);
+    border-width: 1px;
+    border-color: rgb(150, 140, 118);
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin: 0 6px;
+}
+
+.dev-close {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    padding: 0;
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(255, 240, 230);
+    background-color: rgb(128, 30, 24);
+    border-color: rgb(210, 96, 76);
+}
+
+.dev-close:hover {
+    background-color: rgb(170, 40, 30);
+}
+
+.dev-target {
+    flex-shrink: 0;
+    margin: 6px 8px 0 8px;
+    padding: 4px 8px;
+    font-size: 13px;
+    color: rgb(226, 214, 190);
+    background-color: rgb(20, 20, 22);
+    border-left-width: 3px;
+    border-left-color: rgb(233, 196, 106);
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.dev-scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------- sections */
+
+.dev-section {
+    margin: 6px 8px 2px 8px;
+    background-color: rgb(30, 30, 32);
+    border-width: 1px;
+    border-color: rgb(70, 64, 56);
+    border-radius: 4px;
+}
+
+.dev-section-header {
+    flex-direction: row;
+    align-items: center;
+    height: 34px;
+    padding: 0 12px;
+    background-color: rgb(100, 24, 20);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(150, 50, 40);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.dev-section-header:hover {
+    background-color: rgb(124, 30, 24);
+}
+
+.dev-section.collapsed .dev-section-header {
+    border-bottom-width: 0;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+.dev-section.collapsed .dev-section-body {
+    display: none;
+}
+
+.dev-icon {
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.dev-section-title {
+    flex-grow: 1;
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: rgb(244, 236, 224);
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgb(40, 8, 6);
+    margin: 0;
+    padding: 0;
+}
+
+.dev-chevron {
+    font-size: 14px;
+    color: rgb(233, 196, 106);
+    margin: 0;
+    padding: 0;
+}
+
+.dev-section-body {
+    padding: 6px 8px 8px 8px;
+}
+
+.dev-rivet {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    background-color: rgb(156, 146, 126);
+    border-width: 1px;
+    border-color: rgb(36, 32, 28);
+}
+
+.dev-rivet-tl { left: 3px; top: 3px; }
+.dev-rivet-tr { right: 3px; top: 3px; }
+.dev-rivet-bl { left: 3px; bottom: 3px; }
+.dev-rivet-br { right: 3px; bottom: 3px; }
+
+/* ---------------------------------------------------------------- rows and controls */
+
+.dev-row {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    min-height: 32px;
+    margin: 1px 0;
+}
+
+.dev-label {
+    width: 118px;
+    font-size: 14px;
+    color: rgb(222, 214, 202);
+    margin: 0 4px 0 0;
+    padding: 0;
+}
+
+.dev-small-label {
+    font-size: 13px;
+    color: rgb(196, 188, 174);
+    margin: 0 4px;
+    padding: 0;
+}
+
+.dev-grow {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.dev-tag-saved {
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: rgb(30, 22, 10);
+    background-color: rgb(233, 196, 106);
+    border-radius: 2px;
+    padding: 0 4px;
+    margin: 0 6px 0 0;
+}
+
+.dev-button {
+    height: 28px;
+    min-width: 54px;
+    margin: 2px 3px;
+    padding: 0 10px;
+    font-size: 14px;
+    color: rgb(238, 232, 222);
+    background-color: rgb(50, 48, 47);
+    border-width: 1px;
+    border-color: rgb(100, 92, 78);
+    border-radius: 3px;
+    flex-grow: 1;
+}
+
+.dev-button:hover {
+    background-color: rgb(68, 64, 60);
+    border-color: rgb(233, 196, 106);
+}
+
+.dev-button:active {
+    background-color: rgb(100, 24, 20);
+}
+
+.dev-button:disabled {
+    opacity: 0.4;
+}
+
+.dev-button.primary {
+    background-color: rgb(128, 30, 24);
+    border-color: rgb(196, 76, 60);
+}
+
+.dev-button.primary:hover {
+    background-color: rgb(160, 38, 30);
+}
+
+.dev-button.pending {
+    border-color: rgb(233, 196, 106);
+    color: rgb(233, 196, 106);
+}
+
+.dev-button.dev-small {
+    flex-grow: 0;
+    min-width: 0;
+    height: 26px;
+    font-size: 12px;
+    padding: 0 8px;
+}
+
+.dev-close.dev-button {
+    flex-grow: 0;
+}
+
+.dev-tabs {
+    flex-wrap: nowrap;
+}
+
+.dev-tab {
+    background-color: rgb(40, 38, 38);
+}
+
+.dev-tab.selected {
+    background-color: rgb(150, 34, 26);
+    border-color: rgb(210, 96, 76);
+}
+
+.dev-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 52px;
+    margin: 2px 3px;
+}
+
+.dev-field.dev-search {
+    min-width: 120px;
+}
+
+.dev-field .unity-base-text-field__input,
+.dev-dropdown .unity-base-popup-field__input {
+    min-height: 26px;
+    font-size: 14px;
+    color: rgb(236, 230, 220);
+    background-color: rgb(16, 16, 18);
+    border-width: 1px;
+    border-color: rgb(96, 88, 74);
+    border-radius: 3px;
+}
+
+.dev-field:focus .unity-base-text-field__input {
+    border-color: rgb(233, 196, 106);
+}
+
+.dev-dropdown {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 120px;
+    margin: 2px 3px;
+}
+
+.dev-slider {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 120px;
+    margin: 2px 3px;
+}
+
+.dev-slider .unity-base-slider__dragger {
+    background-color: rgb(233, 196, 106);
+    border-color: rgb(110, 80, 30);
+}
+
+.dev-slider .unity-base-slider__tracker {
+    background-color: rgb(60, 56, 50);
+}
+
+.dev-slider .unity-base-text-field__input {
+    min-width: 44px;
+    font-size: 13px;
+    color: rgb(236, 230, 220);
+    background-color: rgb(16, 16, 18);
+}
+
+.dev-toggle {
+    flex-grow: 1;
+    margin: 2px 3px;
+}
+
+.dev-toggle .unity-toggle__text,
+.dev-toggle .unity-base-field__label {
+    font-size: 14px;
+    color: rgb(226, 218, 206);
+}
+
+.dev-toggle .unity-toggle__checkmark {
+    width: 18px;
+    height: 18px;
+    background-color: rgb(16, 16, 18);
+    border-width: 1px;
+    border-color: rgb(150, 140, 118);
+    border-radius: 2px;
+}
+
+.dev-toggle:checked .unity-toggle__checkmark {
+    background-color: rgb(176, 36, 26);
+    border-color: rgb(233, 196, 106);
+}
+
+.dev-toggle.pending .unity-toggle__checkmark {
+    border-color: rgb(233, 196, 106);
+}
+
+.dev-note {
+    font-size: 12px;
+    color: rgb(150, 142, 128);
+}
+
+.dev-hint {
+    font-size: 12px;
+    -unity-font-style: italic;
+    color: rgb(196, 160, 110);
+    margin: 0 4px 2px 4px;
+    padding: 0;
+    white-space: normal;
+}
+
+.dev-unsupported .dev-label {
+    color: rgb(140, 134, 124);
+}
+
+.dev-inspect {
+    font-size: 12px;
+    color: rgb(214, 206, 190);
+    background-color: rgb(18, 18, 20);
+    border-left-width: 3px;
+    border-left-color: rgb(80, 160, 200);
+    padding: 4px 8px;
+    margin: 4px 2px;
+    white-space: normal;
+}
+
+/* ---------------------------------------------------------------- feedback and history */
+
+.dev-feedback {
+    flex-shrink: 0;
+    margin: 6px 8px 2px 8px;
+    padding: 6px 8px;
+    font-size: 13px;
+    color: rgb(226, 218, 206);
+    background-color: rgb(18, 18, 20);
+    border-left-width: 4px;
+    border-left-color: rgb(120, 112, 100);
+    white-space: normal;
+}
+
+.dev-feedback.ok {
+    border-left-color: rgb(96, 186, 96);
+}
+
+.dev-feedback.fail {
+    border-left-color: rgb(214, 70, 56);
+    color: rgb(255, 196, 180);
+}
+
+.dev-history {
+    flex-shrink: 0;
+    margin: 0 8px 8px 8px;
+    padding: 2px 8px 4px 8px;
+}
+
+.dev-history-row {
+    font-size: 11px;
+    color: rgb(170, 162, 150);
+    margin: 0;
+    padding: 0;
+}
+
+.dev-history-row.fail {
+    color: rgb(214, 120, 106);
+}
+
+/* ---------------------------------------------------------------- scroll bar */
+
+.dev-scroll .unity-scroller--vertical {
+    width: 10px;
+    background-color: rgb(20, 20, 22);
+    border-width: 0;
+}
+
+.dev-scroll .unity-scroller--vertical .unity-base-slider__tracker {
+    background-color: rgb(20, 20, 22);
+    border-width: 0;
+}
+
+.dev-scroll .unity-scroller--vertical .unity-base-slider__dragger {
+    background-color: rgb(110, 98, 78);
+    border-width: 0;
+    border-radius: 4px;
+    left: 1px;
+    right: 1px;
+}
+
+.dev-scroll .unity-scroller__low-button,
+.dev-scroll .unity-scroller__high-button {
+    display: none;
+}

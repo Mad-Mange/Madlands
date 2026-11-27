@@ -141,6 +141,7 @@ namespace Madlands.Client
 
         private void Start()
         {
+            if (hud != null && hud.DeveloperMenu != null) hud.DeveloperMenu.GameMenuRequested += () => SetMenuOpen(true);
             _server.value = Settings.Server != "127.0.0.1" ? Settings.Server : PlayerPrefsGet(LastServerKey, Settings.Server);
             _username.value = Settings.User ?? PlayerPrefsGet(LastUserKey, "");
             UpdateQuickLogin();
@@ -165,11 +166,17 @@ namespace Madlands.Client
                 }
                 return;
             }
-            // Esc closes the menu, else the chat line or the target (HUD), else opens the menu.
+            // Esc closes the menu, else the chat line, windows, the developer menu or the target (HUD), else opens
+            // a menu: for GMs the developer menu (docs/GMMenu; Shift+Esc or its "Game menu" button for this one).
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && network.InWorld)
             {
                 if (IsVisible(_gameMenu)) SetMenuOpen(false);
-                else if (hud == null || !hud.HandleEscape()) SetMenuOpen(true);
+                else if (hud == null || !hud.HandleEscape())
+                {
+                    var developer = hud != null ? hud.DeveloperMenu : null;
+                    if (developer != null && developer.IsAvailable && developer.OpensOnEscape && !keyboard.shiftKey.isPressed) developer.Open();
+                    else SetMenuOpen(true);
+                }
             }
             // Enter on the character screen enters the world with the selected character.
             if (keyboard != null && IsVisible(_charactersScreen) && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame))

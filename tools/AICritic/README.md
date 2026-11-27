@@ -107,6 +107,15 @@ death, loot), `ui` (bags, character, quest log, spellbook, map, an NPC dialog an
 `navigation` (walking out through Mirewatch's gates). Each has a goal for the AI explorer, a class, GM setup
 lines, a start location and a script for `--mode scripted`. `all` plays world, combat, ui and navigation.
 
+**Developer GM menu** (`docs/GMMenu/README.md`): scenario scripts, never Codex, may also use `gm_command`
+(a menu command by its stable id, with arguments, through the client's GM command service, the same path
+as the menu), `open_developer_menu` and `press_escape` (a real Esc or Shift+Esc key press). Observations
+carry the GM state (`gm`), the structured result of a `gm_command` (`gm_result`) and whether the developer
+menu, the game menu or a text field is active. The mailbox also gets `gm_commands.json` (every command with
+its argument schema) and `gm_catalog.json` (creature and teleport destination ids). `gm_tools` is the
+sample: always scripted, never part of `all`, and marked CHEATS ENABLED for the critic, whose prompt says
+that an OK answer to a GM command is not evidence that the game works.
+
 ## Safety
 
 - **Separate worktrees.** Every mode builds in `../Madlands-aicritic/<run>`, branched from `git.base_ref`

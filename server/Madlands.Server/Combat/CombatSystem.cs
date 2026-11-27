@@ -201,6 +201,10 @@ public sealed class CombatSystem
             return 0;
         }
 
+        // GM damage multiplier (developer menu): only the GM's own damage changes.
+        if (attacker is Player { GmDamagePercent: not 100 } gm && attacker != victim)
+            amount = (int)Math.Round(amount * gm.GmDamagePercent / 100.0);
+
         int absorbed = _map.Auras.Absorb(victim, ref amount, now);
         if (absorbed > 0) flags |= CombatFlags.Absorb;
         if (victim is Creature { IsDummy: true }) amount = Math.Min(amount, Math.Max(0, victim.Health - 1));

@@ -217,6 +217,51 @@ public sealed class NavMesh
 
     internal static RcVec3f ToRc(Vec3 v) => new(v.X, v.Y, v.Z);
     internal static Vec3 FromRc(RcVec3f v) => new(v.X, v.Y, v.Z);
+
+    /// <summary>
+    /// Debug view: the edges of the walkable polygons near a point (horizontal distance), as point pairs.
+    /// Each shared edge is listed once. Returns false if <paramref name="maxSegments"/> cut the list short.
+    /// </summary>
+    public bool CollectPolygonEdges(Vec3 center, float radius, List<Vec3> points, int maxSegments)
+    {
+        float r2 = radius * radius;
+        int segments = 0;
+        for (int t = 0; t < Mesh.GetMaxTiles(); t++)
+        {
+            var data = Mesh.GetTile(t)?.data;
+            if (data?.header is not { } header) continue;
+            if (header.bmax.X < center.X - radius || header.bmin.X > center.X + radius ||
+                header.bmax.Z < center.Z - radius || header.bmin.Z > center.Z + radius) continue;
+            for (int p = 0; p < header.polyCount; p++)
+            {
+                var poly = data.polys[p];
+                if (poly.GetPolyType() != DtPolyTypes.DT_POLYTYPE_GROUND) continue;
+                for (int j = 0; j < poly.vertCount; j++)
+                {
+                    // An internal edge appears in both polygons: keep it in the one with the lower index.
+                    int neighbour = poly.neis[j];
+                    if ((neighbour & DtDetour.DT_EXT_LINK) == 0 && neighbour != 0 && neighbour - 1 < p) continue;
+                    var a = Vertex(data, poly.verts[j]);
+                    var b = Vertex(data, poly.verts[(j + 1) % poly.vertCount]);
+                    if (HorizontalDistanceSq(a, center) > r2 && HorizontalDistanceSq(b, center) > r2) continue;
+                    if (segments >= maxSegments) return false;
+                    points.Add(a);
+                    points.Add(b);
+                    segments++;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static Vec3 Vertex(DtMeshData data, int index) =>
+        new(data.verts[index * 3], data.verts[index * 3 + 1], data.verts[index * 3 + 2]);
+
+    private static float HorizontalDistanceSq(Vec3 a, Vec3 b)
+    {
+        float dx = a.X - b.X, dz = a.Z - b.Z;
+        return dx * dx + dz * dz;
+    }
 }
 
 public enum PathResult

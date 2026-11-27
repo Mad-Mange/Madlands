@@ -69,6 +69,12 @@ public sealed class Player : Unit
     public bool GodMode;
     /// <summary>GM: extra movement speed factor (1 = normal).</summary>
     public float GmSpeed = 1f;
+    /// <summary>GM: spells start no cooldowns (the global cooldown still applies). Never saved.</summary>
+    public bool GmNoCooldowns;
+    /// <summary>GM: the player's own damage in percent (100 = normal). Never saved.</summary>
+    public int GmDamagePercent = 100;
+    /// <summary>GM: creatures this player spawned with the developer menu (removed when the player leaves).</summary>
+    public List<EntityGuid> GmDebugSpawns { get; } = new();
 
     public bool IsGm => GmLevel > 0;
 

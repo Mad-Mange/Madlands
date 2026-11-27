@@ -1,0 +1,3 @@
+# Prompt for Claude
+
+Implement the MadLands developer GM menu using `docs/GMMenu/IMPLEMENTATION_PLAN.md` and `docs/GMMenu/design-reference.png` as the visual reference. Read both files and repository instructions first. Inspect existing systems and reuse them rather than creating parallel implementations. Start with the P0 vertical slice, then implement the supported backlog incrementally. Preserve existing gameplay and AI Critic behavior. Run relevant builds/tests, capture screenshots where possible, and report actual results, deferred features and limitations. The plan is engine-agnostic until you verify the repository. Do not treat illustrative screenshot content as actual game data.

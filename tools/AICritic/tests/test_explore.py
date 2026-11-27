@@ -66,6 +66,45 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(schema["properties"]["action"]["enum"], list(playtest.ACTIONS))
 
 
+class GmCommandActionTests(unittest.TestCase):
+    """gm_command runs developer-menu commands (docs/GMMenu): scenario scripts only, never the explorer."""
+
+    def test_the_explorer_can_not_send_gm_commands(self):
+        for name in ("gm_command", "open_developer_menu"):
+            with self.assertRaises(playtest.ActionError):
+                playtest.validate_action(name, {"command": "player.god_mode"} if name == "gm_command" else {}, LOCATIONS)
+        schema = explore.explorer_schema()
+        self.assertNotIn("gm_command", json.dumps(schema))
+        self.assertNotIn("gm_command", playtest.allowlist_text(LOCATIONS))
+
+    def test_scripts_may_and_arguments_become_text(self):
+        clean = playtest.validate_action("gm_command", {"command": "spawn.entity", "args": {"creature": 2, "count": 1}},
+                                         LOCATIONS, script=True)
+        self.assertEqual(clean, {"command": "spawn.entity", "args": {"creature": "2", "count": "1"}})
+        self.assertEqual(playtest.to_commands("gm_command", clean, {"locations": LOCATIONS}),
+                         [{"action": "gm_command", "command_id": "spawn.entity", "arg_keys": ["creature", "count"],
+                           "arg_values": ["2", "1"]}])
+        flag = playtest.validate_action("gm_command", {"command": "player.god_mode", "args": {"enabled": True}}, LOCATIONS, script=True)
+        self.assertEqual(flag["args"], {"enabled": "true"})
+
+    def test_bad_ids_and_arguments_are_refused(self):
+        bad = [{"command": "rm -rf"}, {"command": "player"}, {"command": "player.set_level", "args": {"Level!": 5}},
+               {"command": "player.set_level", "args": {"level": [5]}}, {"command": "player.set_level", "args": "level=5"},
+               {"command": "player.add_item", "args": {f"k{i}": 1 for i in range(9)}}]
+        for params in bad:
+            with self.assertRaises(playtest.ActionError, msg=str(params)):
+                playtest.validate_action("gm_command", params, LOCATIONS, script=True)
+
+    def test_the_gm_scenario_is_scripted_and_marked_as_cheats(self):
+        scenario = playtest.load_scenario("gm_tools")
+        self.assertTrue(scenario["scripted_only"])
+        self.assertTrue(explore.uses_gm_commands(scenario))
+        self.assertFalse(explore.uses_gm_commands(playtest.load_scenario("combat")))
+        self.assertNotIn("gm_tools", explore.expand(["all"]))
+        text = explore._scenario_text([scenario], {}, [{"shot": "gm_tools"}])
+        self.assertIn("CHEATS ENABLED", text)
+
+
 class FakeClientExploreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="aicritic-explore-"))

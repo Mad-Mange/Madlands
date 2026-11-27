@@ -68,6 +68,7 @@ namespace Madlands.Client
         private QuestUi _quests;
         private MapUi _map;
         private SpellbookUi _spellbook;
+        private DeveloperMenu _developer;
         private SpellDrag _spellDrag;
         /// <summary>The player's arrangement of the action bar; null until a character is in the world.</summary>
         private ActionBarLayout _layout;
@@ -91,6 +92,8 @@ namespace Madlands.Client
         private GameClient Client => network.Client;
         public ChatPanel Chat => _chat;
         public QuestUi Quests => _quests;
+        /// <summary>The developer GM menu (shown only to GM sessions).</summary>
+        public DeveloperMenu DeveloperMenu => _developer;
 
         private void Awake()
         {
@@ -202,6 +205,9 @@ namespace Madlands.Client
             _bagsButton = MicroButton(menu, MicroText(Loc.T("micro.bags"), GameAction.ToggleBags), () => _inventory.ToggleBags());
             _questsButton = MicroButton(menu, MicroText(Loc.T("micro.quests"), GameAction.ToggleQuestLog), () => _quests.ToggleLog());
             windows.Add(menu);
+
+            bool openDeveloper = network.Settings != null && System.Array.IndexOf(network.Settings.OpenWindows, "gm") >= 0;
+            _developer = new DeveloperMenu(Layer("developer"), Client, openDeveloper);
         }
 
         private VisualElement Layer(string name)
@@ -332,6 +338,8 @@ namespace Madlands.Client
             _deathPanel.EnableInClassList("hidden", !Client.Self.Values.IsDead);
             _inventory.Update(_hud.panel);
             _map.Update();
+            var local = network.LocalPlayer;
+            _developer.Update(local != null ? local.transform.position : (Vector3?)null);
             _sounds.Update();
             _inventory.PlaceCharacter(_vendor.IsOpen || _loot.IsOpen || _quests.DialogOpen);
             _vendor.Update();
@@ -353,6 +361,7 @@ namespace Madlands.Client
             _spellbook.Close();
             _map.Close();
             _itemTooltip.Hide();
+            _developer?.Close();
         }
 
         private void LateUpdate()
@@ -391,6 +400,7 @@ namespace Madlands.Client
                 _chat.Close();
                 return true;
             }
+            if (_developer.HandleEscapeFocus()) return true;
             if (_inventory.IsHolding) return _inventory.HandleEscape();
             if (_loot.IsOpen)
             {
@@ -403,6 +413,11 @@ namespace Madlands.Client
                 return true;
             }
             if (_map.HandleEscape() || _quests.HandleEscape() || _spellbook.HandleEscape() || _inventory.HandleEscape()) return true;
+            if (_developer.IsOpen)
+            {
+                _developer.Close();
+                return true;
+            }
             if (!Client.Target.IsEmpty)
             {
                 Client.SetTarget(EntityGuid.Empty);

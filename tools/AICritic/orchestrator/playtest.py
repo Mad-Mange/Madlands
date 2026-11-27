@@ -63,7 +63,17 @@ ACTION_HELP = {
     "screenshot": "take a picture without doing anything",
     "reset": "revive, heal and teleport back to the scenario's start",
 }
+# Only scenario scripts may use these (the files a person wrote); the Codex explorer never sees them.
+# gm_command runs a typed developer-menu command (docs/GMMenu) through the client's GM command service,
+# exactly as the menu does; the server checks GM rights and arguments again.
+SCRIPT_ONLY_ACTIONS = {
+    "gm_command": {"command": ("gm_id", True, None, None), "args": ("gm_args", False, None, None)},
+    "open_developer_menu": {},
+    "press_escape": {"shift": ("bool", False, None, False)},
+}
 _NAME = re.compile(r"^[A-Za-z][A-Za-z '\-]{0,39}$")
+_GM_ID = re.compile(r"^[a-z_]+\.[a-z_]+$")
+_GM_KEY = re.compile(r"^[a-z_]{1,32}$")
 HARD_MAX_ACTIONS = 40
 
 
@@ -71,12 +81,13 @@ class ActionError(Exception):
     pass
 
 
-def validate_action(name, params, locations):
-    """Returns the cleaned parameters, or raises ActionError. params may hold nulls for unused fields."""
-    if name not in ACTIONS:
-        raise ActionError(f"unknown action '{name}'")
+def validate_action(name, params, locations, script=False):
+    """Returns the cleaned parameters, or raises ActionError. params may hold nulls for unused fields.
+    script: the action comes from a scenario file (which may also use SCRIPT_ONLY_ACTIONS)."""
+    if name not in ACTIONS and not (script and name in SCRIPT_ONLY_ACTIONS):
+        raise ActionError(f"unknown action '{name}'" if name not in SCRIPT_ONLY_ACTIONS else f"{name} is for scenario scripts only")
     params = {k: v for k, v in (params or {}).items() if v is not None}
-    spec = ACTIONS[name]
+    spec = ACTIONS[name] if name in ACTIONS else SCRIPT_ONLY_ACTIONS[name]
     extra = set(params) - set(spec)
     if extra:
         raise ActionError(f"{name} does not take {', '.join(sorted(extra))}")
@@ -113,6 +124,26 @@ def validate_action(name, params, locations):
             if v not in locations:
                 raise ActionError(f"unknown location '{v}' (known: {', '.join(sorted(locations))})")
             clean[key] = v
+        elif kind == "gm_id":
+            if not isinstance(v, str) or not _GM_ID.match(v):
+                raise ActionError(f"{name}.{key} must be a command id like player.set_level")
+            clean[key] = v
+        elif kind == "gm_args":
+            if not isinstance(v, dict) or len(v) > 8:
+                raise ActionError(f"{name}.{key} must be a table of at most 8 arguments")
+            args = {}
+            for k, value in v.items():
+                if not _GM_KEY.match(str(k)):
+                    raise ActionError(f"{name}.{key}: bad argument name '{k}'")
+                if isinstance(value, bool):
+                    args[k] = "true" if value else "false"
+                elif isinstance(value, (int, float)) and value == value:
+                    args[k] = str(value)
+                elif isinstance(value, str) and len(value) <= 64:
+                    args[k] = value
+                else:
+                    raise ActionError(f"{name}.{key}.{k} must be a number, true/false or a short text")
+            clean[key] = args
     if name == "camera" and not clean:
         raise ActionError("camera needs at least one of pitch, distance, yaw_offset")
     return clean
@@ -129,6 +160,9 @@ def to_commands(name, params, scenario):
         x, z = loc[scenario["start"]]
         return [{"action": "close_windows"}, {"action": "gm", "text": ".revive"}, {"action": "gm", "text": ".heal"},
                 {"action": "teleport", "x": x, "z": z}, {"action": "gm", "text": ".respawn"}]
+    if name == "gm_command":
+        args = params.get("args", {})
+        return [{"action": "gm_command", "command_id": params["command"], "arg_keys": list(args), "arg_values": list(args.values())}]
     if name == "camera":
         cmd = {"action": "camera"}
         for key in ("pitch", "distance", "yaw_offset"):
@@ -146,6 +180,8 @@ def action_duration(cmd):
         return float(cmd.get("seconds", 6))
     if a == "walk_to":
         return float(cmd.get("seconds", 15))
+    if a == "gm_command":
+        return 6.0  # the client's GM command service times out after 5 s
     return 3.0
 
 
@@ -167,7 +203,7 @@ def load_scenario(name):
         step = dict(step)
         action = step.pop("action")
         try:
-            validate_action(action, step, locations)
+            validate_action(action, step, locations, script=True)
         except ActionError as e:
             raise ValueError(f"scenario {name}, script step {i + 1}: {e}") from None
     return scenario
