@@ -87,6 +87,33 @@ def markdown(review_doc, base_dir):
             if pic:
                 lines += ["", f"![{s['shot']}]({_link(shots_dir / pic, base_dir)})", ""]
 
+    exploration = review_doc.get("exploration")
+    if exploration:
+        evidence_dir = Path(review_doc["round_dir"]) / "evidence" / "explore"
+        lines += ["", "## Exploration", "", "Every row below ran in the game client and returned its own observation "
+                  "and screenshot (rejected actions never reached the client).", ""]
+        for name, e in exploration.items():
+            lines += [f"### {name}: {e.get('mode')}, {e.get('class')} {e.get('character')}", ""]
+            if e.get("failure"):
+                lines += [f"Stopped early: {e['failure']}", ""]
+            lines += ["| Step | Source | Action | Result | Picture |", "|---|---|---|---|---|"]
+            for s in e.get("steps", []):
+                params = ", ".join(f"{k}={v}" for k, v in (s.get("params") or {}).items())
+                if s.get("rejected"):
+                    result = "REJECTED: " + s["rejected"]
+                else:
+                    result = ("ok: " if s.get("ok") else "FAILED: ") + (s.get("result") or "")
+                pic = s.get("screenshot")
+                link = f"[{Path(pic).name}]({_link(evidence_dir / name / pic, base_dir)})" if pic else "–"
+                lines.append(f"| {s['step']} | {s.get('source')} | `{s['action']}` {params} | "
+                             f"{result.replace('|', '/')} | {link} |")
+            lines.append("")
+        findings = review_doc.get("explorer_findings") or []
+        if findings:
+            lines += ["Explorer's notes while playing (leads, not verified issues):", ""]
+            lines += [f"- [{f['severity']}] {f['scenario']} step {f['step']}: {f['title']}. {f['detail']}" for f in findings]
+            lines.append("")
+
     costs = review_doc.get("costs") or {}
     lines += ["", "## Cost", "",
               f"Builder this round: ${costs.get('builder_usd', 0):.2f}; run total ${costs.get('builder_usd_total', 0):.2f}. "

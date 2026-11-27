@@ -1,0 +1,47 @@
+name = "ui"
+description = "Open the menus, bags, character panel, quest log, spellbook, map and NPC dialogs; judge usability."
+goal = """Use the interface like a new player. Open the bags, the character panel, the quest log, the spellbook and
+the map; talk to Old Tamsin (a quest giver) and Quartermaster Holt (a vendor). Judge readability, layout, overlap,
+clipping, contrast and whether the windows close cleanly."""
+class = "warrior"
+setup = [".money 5000"]
+start = "mirewatch_square"
+max_actions = 14
+
+[[script]]
+action = "open_window"
+window = "bags"
+[[script]]
+action = "open_window"
+window = "character"
+[[script]]
+action = "close_windows"
+[[script]]
+action = "open_window"
+window = "questlog"
+[[script]]
+action = "close_windows"
+[[script]]
+action = "open_window"
+window = "spellbook"
+[[script]]
+action = "close_windows"
+[[script]]
+action = "open_window"
+window = "map"
+[[script]]
+action = "close_windows"
+[[script]]
+action = "goto"
+location = "old_tamsin"
+[[script]]
+action = "interact"
+name = "Old Tamsin"
+[[script]]
+action = "close_windows"
+[[script]]
+action = "goto"
+location = "quartermaster"
+[[script]]
+action = "interact"
+name = "Quartermaster Holt"

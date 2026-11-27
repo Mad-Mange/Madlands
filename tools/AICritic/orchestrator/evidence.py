@@ -121,11 +121,12 @@ def freshness_problems(manifest, round_started, build_finished):
     problems = []
     if build_finished is None or build_finished < round_started:
         problems.append("the client build is not from this round")
-    for f in manifest["files"]:
-        if f["path"].startswith("screenshots/") and f["path"].endswith(".png"):
-            if build_finished is None or f["mtime"] < build_finished:
-                problems.append(f"{f['path']} is older than this round's client build")
-    if not any(f["path"].startswith("screenshots/") for f in manifest["files"]):
+    pictures = [f for f in manifest["files"] if f["path"].endswith(".png")
+                and (f["path"].startswith("screenshots/") or "/screenshots/" in f["path"])]
+    for f in pictures:
+        if build_finished is None or f["mtime"] < build_finished:
+            problems.append(f"{f['path']} is older than this round's client build")
+    if not pictures:
         problems.append("no screenshots were captured")
     return problems
 

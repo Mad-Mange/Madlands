@@ -18,6 +18,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 | `server/Madlands.Bots` | Headless bot players (register/login via the API, then hunt creatures or wander) for load/integration testing. |
 | `server/Madlands.Server.Tests` | xUnit: protocol roundtrips, world logic, client core, real HTTP+UDP realm tests (`TestRealm`), Postgres tests (`[PostgresFact]`, skipped if no DB). |
 | `tools/Madlands.ContentTool` | `validate` content (same checks as server startup; used by CI). |
+| `tools/AICritic` | AI Builder/Critic (Python, `README.md`): Codex reviews builds (`/critic`, `/critic-audit`), playtests the game through the Playtest Controller (`/critic-explore`), and reviews fix loops built by Claude (`/critic-loop`). Runs land in `tools/AICritic/runs/` (gitignored). |
 | `art/` | Low-poly art as Python scripts for Blender (ADR 0012, `art/README.md`): `blender/build.py` exports FBX into `client/Assets/Madlands/Art/`; characters are sculpted from blended shapes (`blender/sculpt.py`) in three LODs, `blender/lookbook.py` renders them in outfits; `blender/motions.py` takes motion-captured clips from Quaternius (ADR 0015); `audio/` synthesizes the sounds and imports the Suno music (ADR 0016) as OGG into `Audio/`. |
 | `client/` | Unity project. Our code: `client/Assets/Madlands/{Scripts,Editor,UI}`. Scenes: `FrontEnd` (boot, UI, camera, networking) + `World_NNNN` map scenes loaded additively by mapId. In-game windows (bags, character, loot, vendor, quests) are plain C# classes owned by `HudController`, styled by `UI/Windows.uss`. |
 | `docs/zones/` | Zone design: map, story, NPCs, creatures and quest chains (`hollowmere.md`). |
@@ -54,6 +55,7 @@ $unity = "C:\Program Files\Unity\Hub\Editor\6000.6.5f1\Editor\Unity.exe"
 #   Madlands.Client.Editor.FrontEndBuilder.BuildFromCommandLine    -> regenerates FrontEnd scene + PanelSettings
 #   Madlands.Client.Editor.MapExporter.ExportFromCommandLine       -> content/maps/0001/{height.bin,map.json}
 #   Madlands.Client.Editor.ArtImporter.ReportFromCommandLine       -> logs every model: size, avatar, materials, clips
+#   Madlands.Client.Editor.PlaytestBuild.BuildFromCommandLine      -> builds/playtest/Madlands.exe (+ the Playtest Controller)
 # Unity cannot run batchmode while the user has the project open in the editor.
 
 # Visual end-to-end checks (server running). -autoconnect logs in as the lowercased -name with the dev
@@ -79,6 +81,43 @@ use a new `-name` per screenshot run, or `.additem` lines add up. From PowerShel
 that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unquoted. A running Release server locks
 `artifacts/bin/*/release`; build and test with `-c Debug` meanwhile (or run a second realm on other ports:
 `--port 7787 --http-port 7790`, client `-httpport 7790`).
+
+## AI critic and playtests (tools/AICritic)
+
+Claude Code builds, Codex CLI judges and playtests in a read-only sandbox. Every mode builds in its own worktree
+under `../Madlands-aicritic/` (never the main checkout), plays a fresh in-memory test realm with new test
+characters, and scores five weighted criteria: PASS (all scored, >= 8), IMPROVE (< 8), BLOCKED (a criterion
+not evaluable or a required step failed). Reports: `tools/AICritic/runs/<run-id>/latest-review.md`.
+
+```powershell
+/critic                                   # review the last commit (or --snapshot --paths <files> for uncommitted work)
+/critic-audit                             # review the game as it is
+/critic-explore combat                    # Codex plays: world, combat, ui, navigation, smoke or all
+/critic-explore all --max-actions 8       # every scenario, at most 8 AI actions each
+/critic-explore ui --mode scripted        # the scenario's fixed script, no explorer calls
+/critic-loop "Make enemy nameplates readable in groups" --from-run <run-id>   # you fix, Codex reviews, <= 3 rounds
+/critic-report                            # the latest verdict, scores, issues and screenshots
+# The same from a terminal (no Claude needed):
+python tools/AICritic/aicritic.py audit
+python tools/AICritic/aicritic.py review --snapshot --paths client/Assets/Madlands/Scripts/UI
+python tools/AICritic/aicritic.py explore combat ui --max-actions 6
+python tools/AICritic/aicritic.py explore smoke --mode scripted --no-review   # quick controller check
+python tools/AICritic/aicritic.py report [run-id]
+python tools/AICritic/aicritic.py approve <run-id>      # a person accepts a loop's changes (commit on its branch, never a merge)
+python -m unittest discover -s tools/AICritic/tests     # the tool's own tests (no Unity, no AI)
+```
+
+- **Playtest Controller** (`Scripts/Playtest/PlaytestController.cs`) exists only in playtest builds
+  (`PlaytestBuild` adds the `MADLANDS_PLAYTEST` define) and only runs with `-playtest <folder>`: it reads
+  `commands/NNNN.json`, executes one allowlisted action and writes `observations/NNNN.json` plus a screenshot.
+  Movement goes through `KeyBindings.SimulatedHeld/SimulatedPressed` (also `#if MADLANDS_PLAYTEST`), the rest
+  through the client's own methods like `AutoPlay`. A new action needs a case in the controller, an entry in
+  `ACTIONS`/`ACTION_HELP` in `tools/AICritic/orchestrator/playtest.py` (validation) and ideally a scenario step.
+- Scenarios are `tools/AICritic/scenarios/*.toml` (goal, class, GM setup lines, start location, script);
+  named places are in `locations.toml`. Codex can only pick allowlisted actions; GM commands come only from
+  scenario files.
+- Never run `aicritic.py run` from inside Claude Code (it starts another Claude and refuses to): use
+  `/critic-loop`. Audit, review and explore never change the game; approving and merging stay with the user.
 
 ## Gotchas learned the hard way
 

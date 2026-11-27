@@ -90,6 +90,18 @@ class ScoringTests(unittest.TestCase):
         self.assertEqual(len(scoring.ranked_issues(r, in_scope_only=True)), 1)
 
 
+class CaptureRetryTests(unittest.TestCase):
+    def test_only_socket_failures_before_login_are_retried(self):
+        from orchestrator import capture
+        bind = {"client_log": {"entered_world": False, "first_problems": [
+            "[B]Bind exception: System.Net.Sockets.SocketException (0x80004005): ... lacked sufficient buffer space"]}}
+        game = {"client_log": {"entered_world": False, "first_problems": ["NullReferenceException in HudController"]}}
+        late = {"client_log": {"entered_world": True, "first_problems": ["SocketException"]}}
+        self.assertTrue(capture.infrastructure_failure(bind))
+        self.assertFalse(capture.infrastructure_failure(game))
+        self.assertFalse(capture.infrastructure_failure(late))
+
+
 class ConfigTests(unittest.TestCase):
     def test_defaults_valid(self):
         config.validate(copy.deepcopy(config.DEFAULTS))

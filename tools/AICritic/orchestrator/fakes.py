@@ -124,10 +124,10 @@ def review(round_no, scenario):
         "issues": [
             {"rank": 1, "severity": "major", "criterion": "visual_quality", "in_scope": True,
              "title": "Dry-run issue", "detail": "A placeholder issue for the feedback prompt.",
-             "evidence": ["screenshots/village_hud.png"], "suggested_fix": "Nothing: this is a dry run."},
+             "reproduction": "Run the dry-run scene.", "evidence": ["screenshots/village_hud.png"], "suggested_fix": "Nothing: this is a dry run."},
             {"rank": 2, "severity": "minor", "criterion": "performance", "in_scope": False,
              "title": "Out-of-scope placeholder", "detail": "Shows how out-of-scope issues are listed.",
-             "evidence": [], "suggested_fix": "None."},
+             "reproduction": "", "evidence": [], "suggested_fix": "None."},
         ],
     }
 

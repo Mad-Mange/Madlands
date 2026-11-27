@@ -1,0 +1,31 @@
+# The smallest deterministic playtest: enter the world, move, turn, jump, frame the camera.
+name = "smoke"
+description = "Launch, connect, move, turn, jump and take screenshots."
+goal = "Check that the character can move, turn and jump at the start point, and that the picture looks right."
+class = "warrior"
+setup = []
+start = "mirewatch_square"
+max_actions = 8
+
+[[script]]
+action = "screenshot"
+[[script]]
+action = "face"
+yaw = 150
+[[script]]
+action = "move"
+direction = "forward"
+seconds = 2
+[[script]]
+action = "turn"
+degrees = 90
+[[script]]
+action = "move"
+direction = "forward"
+seconds = 1.5
+[[script]]
+action = "jump"
+[[script]]
+action = "camera"
+pitch = 35
+distance = 14

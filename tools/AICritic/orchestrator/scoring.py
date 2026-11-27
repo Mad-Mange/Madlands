@@ -69,6 +69,20 @@ def validate_review(review, pass_score=None):
     return warnings
 
 
+MAX_ISSUES = 5
+
+
+def normalize_review(review, pass_score):
+    """Validates the review and keeps at most MAX_ISSUES issues, the most important first.
+    Returns (review, warnings)."""
+    warnings = validate_review(review, pass_score)
+    issues = ranked_issues(review)
+    if len(issues) > MAX_ISSUES:
+        warnings.append(f"the critic listed {len(issues)} issues; only the {MAX_ISSUES} most important are kept")
+    review = dict(review, issues=issues[:MAX_ISSUES])
+    return review, warnings
+
+
 def score(review, weights, pass_score):
     """The verdict for a valid review."""
     crit = review["criteria"]

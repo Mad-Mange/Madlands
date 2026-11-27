@@ -19,8 +19,8 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def client_exe(worktree):
-    return Path(worktree) / "builds" / "client" / "Madlands.exe"
+def client_exe(worktree, target="client"):
+    return Path(worktree) / "builds" / UNITY_TARGETS[target][1] / "Madlands.exe"
 
 
 # ---------------------------------------------------------------------------- worktree preparation
@@ -104,29 +104,37 @@ def content_validate(cfg, wt, logs):
                     wt, logs / "content-validate.log", cfg["timeouts"]["content_validate"], env=proc.clean_env())
 
 
-def unity_build(cfg, wt, logs, not_before):
-    """BuildTools.BuildWindowsFromCommandLine -> builds/client/Madlands.exe. The old client folder is
-    deleted first, so a failed build can never leave an older executable behind."""
+UNITY_TARGETS = {
+    # name: (build method, output folder under builds/)
+    "client": ("Madlands.Client.Editor.BuildTools.BuildWindowsFromCommandLine", "client"),
+    "playtest": ("Madlands.Client.Editor.PlaytestBuild.BuildFromCommandLine", "playtest"),
+}
+
+
+def unity_build(cfg, wt, logs, not_before, target="client"):
+    """BuildTools.BuildWindowsFromCommandLine -> builds/client/Madlands.exe (or the playtest client ->
+    builds/playtest/Madlands.exe). The old folder is deleted first, so a failed build can never leave an
+    older executable behind."""
+    method, folder = UNITY_TARGETS[target]
     unity = resolve(cfg, "unity")
-    client_dir = Path(wt) / "builds" / "client"
+    client_dir = Path(wt) / "builds" / folder
     if client_dir.exists():
         if Path(wt).resolve() not in client_dir.resolve().parents:
             raise RuntimeError(f"refusing to delete {client_dir}: not inside the worktree")
         shutil.rmtree(client_dir)
-    log = logs / "unity-build.log"
-    r = proc.run("unity_build",
-                 [unity, "-batchmode", "-projectPath", Path(wt) / "client", "-logFile", log,
-                  "-executeMethod", "Madlands.Client.Editor.BuildTools.BuildWindowsFromCommandLine"],
-                 wt, logs / "unity-build.console.log", cfg["timeouts"]["unity_build"], env=proc.clean_env())
+    log = logs / f"unity-build{'' if target == 'client' else '-' + target}.log"
+    r = proc.run("unity_build" if target == "client" else f"unity_build_{target}",
+                 [unity, "-batchmode", "-projectPath", Path(wt) / "client", "-logFile", log, "-executeMethod", method],
+                 wt, log.with_suffix(".console.log"), cfg["timeouts"]["unity_build"], env=proc.clean_env())
     # Unity writes its own log through -logFile; point the result at it.
     r.log = str(log)
     summary = parse_unity_log(log)
-    exe = client_exe(wt)
+    exe = client_dir / "Madlands.exe"
     if r.ok:
         if not exe.exists():
-            r.error = "Unity reported success but builds/client/Madlands.exe is missing"
+            r.error = f"Unity reported success but builds/{folder}/Madlands.exe is missing"
         elif exe.stat().st_mtime < not_before:
-            r.error = "builds/client/Madlands.exe is older than this round (stale build)"
+            r.error = f"builds/{folder}/Madlands.exe is older than this round (stale build)"
     elif not r.error:
         first = summary["compile_errors"][:1] or summary["build_errors"][:1]
         r.error = f"Unity exited with {r.returncode}" + (f": {first[0]}" if first else "")
@@ -177,7 +185,7 @@ def parse_trx_dir(results_dir):
             "failures": failures[:40], "trx_files": files}
 
 
-def run_pipeline(cfg, wt, round_dir, not_before):
+def run_pipeline(cfg, wt, round_dir, not_before, target="client", tests=True):
     """Runs every required step in order and stops at the first failure.
     Returns (ok, steps, failure) where steps is a list of dicts for the report."""
     logs = Path(round_dir) / "evidence" / "logs"
@@ -194,15 +202,16 @@ def run_pipeline(cfg, wt, round_dir, not_before):
 
     if not record(dotnet_build(cfg, wt, logs)):
         return False, steps, "dotnet_build"
-    r, tests = dotnet_test(cfg, wt, logs, Path(round_dir) / "evidence" / "tests")
-    if not record(r, {"tests": {k: v for k, v in tests.items() if k != "failures"},
-                      "failures": tests["failures"][:10]}):
-        return False, steps, "dotnet_test"
+    if tests:
+        r, summary = dotnet_test(cfg, wt, logs, Path(round_dir) / "evidence" / "tests")
+        if not record(r, {"tests": {k: v for k, v in summary.items() if k != "failures"},
+                          "failures": summary["failures"][:10]}):
+            return False, steps, "dotnet_test"
     if not record(content_validate(cfg, wt, logs)):
         return False, steps, "content_validate"
-    r, unity = unity_build(cfg, wt, logs, not_before)
+    r, unity = unity_build(cfg, wt, logs, not_before, target)
     if not record(r, {"unity": unity}):
-        return False, steps, "unity_build"
+        return False, steps, r.name
     return True, steps, None
 
 

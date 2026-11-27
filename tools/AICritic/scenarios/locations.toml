@@ -1,0 +1,14 @@
+# Named places in Hollowmere (map 1) for `goto` and scenario starts: world x, z in meters.
+# Mirewatch's center is (0, -140), its palisade has a radius of 50 m with gates north, east and west.
+[locations]
+mirewatch_square = [0, -148]    # the start point, south of the well
+old_tamsin = [-17, -157]        # next to the quest giver Old Tamsin
+quartermaster = [10, -142]      # Quartermaster Holt's supply tent (vendor)
+north_gate = [0, -92]
+east_gate = [48, -140]
+west_gate = [-48, -140]
+mere_southwest = [-55, -97]     # open shore south of two Mire Croakers (level 1)
+mere_east = [58, -84]           # the east shore, a group of Mire Croakers
+greywood = [-160, 130]          # Dusk Wolves (level 3-5)
+ruins_overlook = [-60, 250]     # looking towards the drowned ruins
+bandit_camp = [229, 198]        # just south of the Shard Bandits (level 5-7)

@@ -1,2 +1,4 @@
 # Local settings (copy config.example.toml)
 config.toml
+# Reports, evidence and screenshots of every run
+runs/

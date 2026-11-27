@@ -145,6 +145,21 @@ def state_fingerprint(cwd):
     return {"head": head, "branch": br, "tree": tree, "hash": h}
 
 
+def snapshot_commit(repo, paths=None, message="aicritic snapshot"):
+    """A commit object (no branch, no ref) holding HEAD plus the uncommitted changes, or only those under
+    paths. The working tree, the index and every ref stay untouched."""
+    index = temp_index(repo, "snapshot")
+    env = {**os.environ, "GIT_INDEX_FILE": str(index)}
+    git(["read-tree", "HEAD"], repo, env=env)
+    git(["add", "-A", "--", *(paths or ["."])], repo, env=env)
+    tree = git(["write-tree"], repo, env=env)
+    try:
+        os.remove(index)
+    except OSError:
+        pass
+    return git(["commit-tree", tree, "-p", "HEAD", "-m", message], repo)
+
+
 def temp_index(cwd, name):
     """A temporary index file inside the repository's git dir (never inside the working tree)."""
     gitdir = Path(cwd, git(["rev-parse", "--git-dir"], cwd))

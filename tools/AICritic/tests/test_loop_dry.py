@@ -2,6 +2,8 @@
 
 import copy
 import json
+import os
+import stat
 import shutil
 import sys
 import tempfile
@@ -10,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from orchestrator import BLOCKED, IMPROVE, PASS, config, loop  # noqa: E402
+from orchestrator import BLOCKED, IMPROVE, PASS, config, loop, review  # noqa: E402
 
 
 class DryLoopTests(unittest.TestCase):
@@ -22,7 +24,10 @@ class DryLoopTests(unittest.TestCase):
         self.cfg["_source"] = "test"
 
     def tearDown(self):
-        shutil.rmtree(self.tmp, ignore_errors=True)
+        def writable(func, path, _exc):
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        shutil.rmtree(self.tmp, onexc=writable)
 
     def run_loop(self, scenario, rounds=None):
         return loop.run(self.cfg, f"Dry run {scenario}", rounds, dry_run=True, fake_pipeline=True,
@@ -101,6 +106,34 @@ class DryLoopTests(unittest.TestCase):
     def test_dry_run_is_never_approvable(self):
         state = self.run_loop("pass")
         self.assertEqual(state["approval"]["state"], "dry_run")
+
+    def test_round_reports_are_read_only(self):
+        state = self.run_loop("pass")
+        report = self.run_dir(state) / "round-01" / "review.json"
+        self.assertFalse(os.access(report, os.W_OK))
+
+    def test_review_and_audit_never_ask_for_approval(self):
+        for mode in ("change", "audit"):
+            state = review.review(self.cfg, mode, dry_run=True, fake_pipeline=True, scenario="pass")
+            self.assertEqual(state["outcome"]["verdict"], PASS)
+            self.assertEqual(state["approval"]["state"], "not_applicable")
+            self.assertEqual(state["kind"], "review" if mode == "change" else "audit")
+            prompt = (self.run_dir(state) / "round-01" / "critic" / "critic-prompt.md").read_text(encoding="utf-8")
+            self.assertIn("auditing" if mode == "audit" else "Builder's task", prompt)
+
+    def test_report_shows_the_latest_run(self):
+        state = review.review(self.cfg, "audit", dry_run=True, fake_pipeline=True, scenario="blocked")
+        doc = review.show_report(self.cfg)
+        self.assertEqual(doc["run_id"], state["run_id"])
+        self.assertEqual(doc["verdict"]["verdict"], BLOCKED)
+
+    def test_at_most_five_issues_are_kept(self):
+        from orchestrator import fakes, scoring
+        r = fakes.review(1, "pass")
+        r["issues"] = [dict(r["issues"][0], rank=i) for i in range(1, 8)]
+        kept, warnings = scoring.normalize_review(r, 8.0)
+        self.assertEqual(len(kept["issues"]), 5)
+        self.assertTrue(any("only the 5" in w for w in warnings))
 
 
 if __name__ == "__main__":

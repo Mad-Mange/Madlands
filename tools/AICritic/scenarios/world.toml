@@ -1,0 +1,48 @@
+name = "world"
+description = "Walk around Hollowmere: terrain, lighting, collisions and the environment."
+goal = """Explore Hollowmere as a player would. Visit different places (the village, the mere's shore, the Greywood,
+the ruins overlook), move around, frame the camera to look at the surroundings, and look for visual problems:
+floating or sunken objects, holes in the terrain, stretched textures, z-fighting, lighting or fog problems,
+things you can walk through or get stuck on, and anything that breaks the low-poly style. Walk (move,
+walk_to), jump and look around (turn, camera) as a player would; use goto only to reach a new area."""
+class = "warrior"
+setup = []
+start = "mirewatch_square"
+max_actions = 12
+
+[[script]]
+action = "camera"
+pitch = 25
+distance = 18
+[[script]]
+action = "face"
+yaw = 150
+[[script]]
+action = "move"
+direction = "forward"
+seconds = 3
+[[script]]
+action = "goto"
+location = "mere_east"
+[[script]]
+action = "face"
+yaw = 0
+[[script]]
+action = "move"
+direction = "forward"
+seconds = 2
+sprint = true
+[[script]]
+action = "goto"
+location = "greywood"
+[[script]]
+action = "turn"
+degrees = 120
+[[script]]
+action = "jump"
+[[script]]
+action = "goto"
+location = "ruins_overlook"
+[[script]]
+action = "face"
+yaw = 45

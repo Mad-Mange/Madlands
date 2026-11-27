@@ -16,7 +16,7 @@ DEFAULTS = {
         # Worktrees and the critic's evidence copies live here, outside the main checkout.
         "worktree_root": "../Madlands-aicritic",
         # Reports, prompts, logs and screenshots of every run (gitignored).
-        "runs_dir": "builds/aicritic",
+        "runs_dir": "tools/AICritic/runs",
     },
     "git": {
         "base_ref": "main",
@@ -73,6 +73,7 @@ DEFAULTS = {
         "bots": 180,
         "critic": 1800,
         "check_ai": 300,
+        "explorer_step": 240,
     },
     "weights": {
         "visual_quality": 25,
@@ -91,6 +92,15 @@ DEFAULTS = {
     },
     "scene": {
         "file": "scenes/hollowmere_smoke.toml",
+    },
+    "explore": {
+        # /critic-explore: time limit for a whole exploration, Codex effort per explorer step, whether the
+        # build runs the tests too (the bugs and stability criterion uses them), window size, login timeout.
+        "max_minutes": 30,
+        "explorer_effort": "medium",
+        "run_tests": True,
+        "resolution": [1600, 900],
+        "ready_timeout": 120,
     },
 }
 
@@ -141,6 +151,11 @@ def validate(cfg):
     for key in ("builder_usd_per_round", "builder_usd_total"):
         if cfg["budget"][key] <= 0:
             raise ConfigError(f"budget.{key} must be positive")
+    res = cfg["explore"]["resolution"]
+    if not (isinstance(res, list) and len(res) == 2 and all(isinstance(v, int) and v >= 320 for v in res)):
+        raise ConfigError("explore.resolution must be [width, height]")
+    if not 1 <= cfg["explore"]["max_minutes"] <= 240:
+        raise ConfigError("explore.max_minutes must be 1..240")
     for key, value in cfg["timeouts"].items():
         if not isinstance(value, (int, float)) or value <= 0:
             raise ConfigError(f"timeouts.{key} must be a positive number of seconds")

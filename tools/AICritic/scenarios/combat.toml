@@ -1,0 +1,32 @@
+name = "combat"
+description = "Find enemies, attack them, and watch the enemy AI, damage, death, loot and animations."
+goal = """Fight as a level 3 Shardmage. Find Mire Croakers near the mere, target them, fight, loot the corpses.
+Watch whether enemies react and chase you, whether damage and spell effects show up, whether death and loot
+work, and whether the animations and combat feedback (floating text, health bars, cast bar) look right.
+Move on to the Dusk Wolves in the Greywood if the croakers are too easy."""
+class = "shardmage"
+setup = [".level 3"]
+start = "mere_southwest"
+max_actions = 12
+
+[[script]]
+action = "face"
+yaw = 0
+[[script]]
+action = "target_nearest"
+[[script]]
+action = "attack"
+seconds = 8
+[[script]]
+action = "loot"
+[[script]]
+action = "close_windows"
+[[script]]
+action = "target_nearest"
+[[script]]
+action = "attack"
+seconds = 8
+[[script]]
+action = "camera"
+pitch = 30
+distance = 12

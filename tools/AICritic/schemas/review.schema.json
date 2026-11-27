@@ -1,71 +1,262 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": ["summary", "task_assessment", "criteria", "issues"],
+  "required": [
+    "summary",
+    "task_assessment",
+    "criteria",
+    "issues"
+  ],
   "properties": {
-    "summary": { "type": "string" },
+    "summary": {
+      "type": "string"
+    },
     "task_assessment": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["completed", "explanation"],
+      "required": [
+        "completed",
+        "explanation"
+      ],
       "properties": {
-        "completed": { "type": "string", "enum": ["yes", "partly", "no", "unknown"] },
-        "explanation": { "type": "string" }
+        "completed": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "partly",
+            "no",
+            "unknown"
+          ]
+        },
+        "explanation": {
+          "type": "string"
+        }
       }
     },
     "criteria": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["visual_quality", "gameplay", "animation_physics", "bugs_stability", "performance"],
+      "required": [
+        "visual_quality",
+        "gameplay",
+        "animation_physics",
+        "bugs_stability",
+        "performance"
+      ],
       "properties": {
         "visual_quality": {
-          "type": "object", "additionalProperties": false,
-          "required": ["evaluable", "score", "confidence", "rationale", "evidence", "missing_evidence"],
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evaluable",
+            "score",
+            "confidence",
+            "rationale",
+            "evidence",
+            "missing_evidence"
+          ],
           "properties": {
-            "evaluable": { "type": "boolean" }, "score": { "type": ["number", "null"] },
-            "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
-            "rationale": { "type": "string" }, "evidence": { "type": "array", "items": { "type": "string" } },
-            "missing_evidence": { "type": "string" }
+            "evaluable": {
+              "type": "boolean"
+            },
+            "score": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "rationale": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "missing_evidence": {
+              "type": "string"
+            }
           }
         },
         "gameplay": {
-          "type": "object", "additionalProperties": false,
-          "required": ["evaluable", "score", "confidence", "rationale", "evidence", "missing_evidence"],
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evaluable",
+            "score",
+            "confidence",
+            "rationale",
+            "evidence",
+            "missing_evidence"
+          ],
           "properties": {
-            "evaluable": { "type": "boolean" }, "score": { "type": ["number", "null"] },
-            "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
-            "rationale": { "type": "string" }, "evidence": { "type": "array", "items": { "type": "string" } },
-            "missing_evidence": { "type": "string" }
+            "evaluable": {
+              "type": "boolean"
+            },
+            "score": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "rationale": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "missing_evidence": {
+              "type": "string"
+            }
           }
         },
         "animation_physics": {
-          "type": "object", "additionalProperties": false,
-          "required": ["evaluable", "score", "confidence", "rationale", "evidence", "missing_evidence"],
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evaluable",
+            "score",
+            "confidence",
+            "rationale",
+            "evidence",
+            "missing_evidence"
+          ],
           "properties": {
-            "evaluable": { "type": "boolean" }, "score": { "type": ["number", "null"] },
-            "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
-            "rationale": { "type": "string" }, "evidence": { "type": "array", "items": { "type": "string" } },
-            "missing_evidence": { "type": "string" }
+            "evaluable": {
+              "type": "boolean"
+            },
+            "score": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "rationale": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "missing_evidence": {
+              "type": "string"
+            }
           }
         },
         "bugs_stability": {
-          "type": "object", "additionalProperties": false,
-          "required": ["evaluable", "score", "confidence", "rationale", "evidence", "missing_evidence"],
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evaluable",
+            "score",
+            "confidence",
+            "rationale",
+            "evidence",
+            "missing_evidence"
+          ],
           "properties": {
-            "evaluable": { "type": "boolean" }, "score": { "type": ["number", "null"] },
-            "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
-            "rationale": { "type": "string" }, "evidence": { "type": "array", "items": { "type": "string" } },
-            "missing_evidence": { "type": "string" }
+            "evaluable": {
+              "type": "boolean"
+            },
+            "score": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "rationale": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "missing_evidence": {
+              "type": "string"
+            }
           }
         },
         "performance": {
-          "type": "object", "additionalProperties": false,
-          "required": ["evaluable", "score", "confidence", "rationale", "evidence", "missing_evidence"],
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evaluable",
+            "score",
+            "confidence",
+            "rationale",
+            "evidence",
+            "missing_evidence"
+          ],
           "properties": {
-            "evaluable": { "type": "boolean" }, "score": { "type": ["number", "null"] },
-            "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
-            "rationale": { "type": "string" }, "evidence": { "type": "array", "items": { "type": "string" } },
-            "missing_evidence": { "type": "string" }
+            "evaluable": {
+              "type": "boolean"
+            },
+            "score": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "rationale": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "missing_evidence": {
+              "type": "string"
+            }
           }
         }
       }
@@ -75,16 +266,60 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["rank", "severity", "criterion", "in_scope", "title", "detail", "evidence", "suggested_fix"],
+        "required": [
+          "rank",
+          "severity",
+          "criterion",
+          "in_scope",
+          "title",
+          "detail",
+          "reproduction",
+          "evidence",
+          "suggested_fix"
+        ],
         "properties": {
-          "rank": { "type": "integer" },
-          "severity": { "type": "string", "enum": ["critical", "major", "minor"] },
-          "criterion": { "type": "string", "enum": ["visual_quality", "gameplay", "animation_physics", "bugs_stability", "performance"] },
-          "in_scope": { "type": "boolean" },
-          "title": { "type": "string" },
-          "detail": { "type": "string" },
-          "evidence": { "type": "array", "items": { "type": "string" } },
-          "suggested_fix": { "type": "string" }
+          "rank": {
+            "type": "integer"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "major",
+              "minor"
+            ]
+          },
+          "criterion": {
+            "type": "string",
+            "enum": [
+              "visual_quality",
+              "gameplay",
+              "animation_physics",
+              "bugs_stability",
+              "performance"
+            ]
+          },
+          "in_scope": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "reproduction": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "suggested_fix": {
+            "type": "string"
+          }
         }
       }
     }

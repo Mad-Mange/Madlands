@@ -110,6 +110,18 @@ def run_shot(cfg, scene, wt, shot, shots_dir, logs, salt):
     return result
 
 
+_SOCKET_TROUBLE = re.compile(r"(SocketException|Bind exception|Could not start the network socket|"
+                            r"buffer space|address already in use|Only one usage of each socket address)", re.I)
+
+
+def infrastructure_failure(shot_result):
+    """True when a shot failed before entering the world because of a socket error, not because of the game."""
+    log = shot_result.get("client_log") or {}
+    if log.get("entered_world"):
+        return False
+    return any(_SOCKET_TROUBLE.search(line) for line in log.get("first_problems", []))
+
+
 def run_bots(cfg, wt, logs):
     realm = cfg["realm"]
     if realm["bots"] <= 0:
@@ -201,6 +213,16 @@ def run_capture(cfg, scene, wt, round_dir, salt):
     try:
         for shot in scene["shot"]:
             s = run_shot(cfg, scene, wt, shot, shots_dir, logs, salt)
+            if not s["ok"] and infrastructure_failure(s):
+                # The client never got into the world because the OS refused it a socket (seen as WSAENOBUFS
+                # right after a bot run): try that shot once more, keeping the first attempt's log.
+                first = logs / f"client-{shot['name']}.log"
+                if first.exists():
+                    first.replace(logs / f"client-{shot['name']}.attempt1.log")
+                time.sleep(5)
+                reason = s["client_log"].get("first_problems", ["?"])[0]
+                s = run_shot(cfg, scene, wt, shot, shots_dir, logs, salt + "r")
+                s["retried_after"] = reason
             result["shots"].append(s)
             if not s["ok"] and failure is None:
                 failure = f"shot {shot['name']}: {s.get('error') or 'failed'}"

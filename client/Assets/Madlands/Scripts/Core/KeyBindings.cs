@@ -128,8 +128,16 @@ namespace Madlands.Client
 
         public static Key Get(GameAction action, int slot) => Bindings[action][slot];
 
+#if MADLANDS_PLAYTEST
+        /// <summary>Playtest builds only: actions the PlaytestController holds or presses, as if keys were down.</summary>
+        public static Func<GameAction, bool> SimulatedHeld, SimulatedPressed;
+#endif
+
         public static bool IsHeld(GameAction action)
         {
+#if MADLANDS_PLAYTEST
+            if (SimulatedHeld != null && SimulatedHeld(action)) return true;
+#endif
             var keyboard = Keyboard.current;
             if (keyboard == null) return false;
             foreach (var key in Bindings[action])
@@ -139,6 +147,9 @@ namespace Madlands.Client
 
         public static bool WasPressed(GameAction action)
         {
+#if MADLANDS_PLAYTEST
+            if (SimulatedPressed != null && SimulatedPressed(action)) return true;
+#endif
             var keyboard = Keyboard.current;
             if (keyboard == null) return false;
             foreach (var key in Bindings[action])

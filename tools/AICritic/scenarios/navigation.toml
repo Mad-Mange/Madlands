@@ -1,0 +1,112 @@
+name = "navigation"
+description = "Walk out through Mirewatch's three gates on routes a player would take; detect getting stuck."
+goal = """Test navigation on foot. walk_to and move go in a straight line, like a player holding forward: plan
+routes around buildings, stalls and trees (look at the screenshot), for example out through the north, west
+and east gates of the palisade and onto the slopes outside. Report places where the character gets stuck
+although the way looks open, cannot pass where a player would expect to, or walks through something solid."""
+class = "warrior"
+setup = []
+start = "mirewatch_square"
+max_actions = 20
+
+# Routes around the obstacles on the exported map (Assets/Madlands/Maps/World_0001_map.png, 1 px = 1 m):
+# the inn stands in front of the north gate (x -6..6, z -109..-118), a cottage in front of each side gate.
+# The north gate's opening is narrow (a signpost stands at its east post): go through it straight north.
+# North gate
+
+[[script]]
+action = "walk_to"
+x = 6
+z = -136
+
+[[script]]
+action = "walk_to"
+x = 6
+z = -124
+
+[[script]]
+action = "walk_to"
+x = 16
+z = -118
+
+[[script]]
+action = "walk_to"
+x = 16
+z = -100
+
+[[script]]
+action = "walk_to"
+x = 0
+z = -97
+
+[[script]]
+action = "walk_to"
+x = 0
+z = -75
+
+[[script]]
+action = "goto"
+location = "mirewatch_square"
+
+# West gate
+
+[[script]]
+action = "walk_to"
+x = -18
+z = -136
+
+[[script]]
+action = "walk_to"
+x = -35
+z = -129
+
+[[script]]
+action = "walk_to"
+x = -47
+z = -131
+
+[[script]]
+action = "walk_to"
+x = -46
+z = -140
+
+[[script]]
+action = "walk_to"
+x = -64
+z = -141
+
+[[script]]
+action = "goto"
+location = "mirewatch_square"
+
+# East gate
+
+[[script]]
+action = "walk_to"
+x = 10
+z = -136
+
+[[script]]
+action = "walk_to"
+x = 22
+z = -136
+
+[[script]]
+action = "walk_to"
+x = 36
+z = -131
+
+[[script]]
+action = "walk_to"
+x = 47
+z = -131
+
+[[script]]
+action = "walk_to"
+x = 46
+z = -140
+
+[[script]]
+action = "walk_to"
+x = 64
+z = -141
