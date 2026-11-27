@@ -54,6 +54,10 @@ namespace Madlands.Client
         private readonly Texture2D _arrowTexture;
         private MapInfo _map;
         private string _area;
+        // GM teleport picking (developer menu): clicks on the world map report world x, z.
+        private readonly Label _hint;
+        private readonly VisualElement _pickMarker;
+        private System.Action<float, float, bool> _pick;
 
         /// <summary>The player walked into a named place (also when entering the world in one).</summary>
         public event System.Action<string> AreaEntered;
@@ -125,8 +129,13 @@ namespace Madlands.Client
             _worldView.Add(_worldMarkers);
             _worldArrow = Arrow(_worldView);
             _worldView.Add(_worldArrow);
+            _pickMarker = new VisualElement { pickingMode = PickingMode.Ignore };
+            _pickMarker.AddToClassList("map-pick");
+            _pickMarker.AddToClassList("hidden");
+            _worldView.Add(_pickMarker);
+            _worldView.RegisterCallback<ClickEvent>(OnWorldClick);
             _window.Body.Add(_worldView);
-            GameWindow.Text(_window.Body, Loc.T("map.hint"), "window-hint");
+            _hint = GameWindow.Text(_window.Body, Loc.T("map.hint"), "window-hint");
 
             client.QuestLogChanged += () => _questLogVersion++;
         }
@@ -161,6 +170,55 @@ namespace Madlands.Client
 
         public void Close() => _window.Close();
 
+        /// <summary>
+        /// GM teleport (developer menu): opens the world map in picking mode until it closes. A click reports
+        /// the world x, z under the mouse (double-click: true, meaning "go there now").
+        /// </summary>
+        public bool BeginPick(System.Action<float, float, bool> picked)
+        {
+            if (_map == null || _map.worldMap == null || _map.worldMapSize <= 0f) return false;
+            _pick = picked;
+            if (!_window.IsOpen) ToggleWorldMap();
+            _hint.text = Loc.T("map.pickHint");
+            _hint.AddToClassList("map-pick-hint");
+            return true;
+        }
+
+        public bool IsPicking => _pick != null;
+
+        private void EndPick()
+        {
+            _pick = null;
+            _hint.text = Loc.T("map.hint");
+            _hint.RemoveFromClassList("map-pick-hint");
+            _pickMarker.AddToClassList("hidden");
+        }
+
+        private float ImagePixels => _worldImage.layout.width > 0f ? _worldImage.layout.width : WorldMapPixels;
+
+        private void OnWorldClick(ClickEvent e)
+        {
+            if (_pick == null || _map == null) return;
+            var local = _worldImage.WorldToLocal(e.position);
+            float ppm = ImagePixels / _map.worldMapSize;
+            float x = _map.worldMapMin.x + local.x / ppm;
+            float z = _map.worldMapMin.y + (ImagePixels - local.y) / ppm;
+            Place(_pickMarker, local.x, local.y);
+            _pickMarker.RemoveFromClassList("hidden");
+            _pick(x, z, e.clickCount >= 2);
+            e.StopPropagation();
+        }
+
+        /// <summary>Where a world position is on the open world map, in panel coordinates (automation).</summary>
+        public bool TryWorldMapPoint(float x, float z, out Vector2 panelPoint)
+        {
+            panelPoint = default;
+            if (!_window.IsOpen || _map == null || _map.worldMapSize <= 0f) return false;
+            float ppm = ImagePixels / _map.worldMapSize;
+            panelPoint = _worldImage.LocalToWorld(new Vector2((x - _map.worldMapMin.x) * ppm, ImagePixels - (z - _map.worldMapMin.y) * ppm));
+            return true;
+        }
+
         public bool HandleEscape()
         {
             if (!_window.IsOpen) return false;
@@ -174,6 +232,7 @@ namespace Madlands.Client
 
         public void Update()
         {
+            if (_pick != null && !_window.IsOpen) EndPick();
             if (_map == null || _map.worldMap == null || _map.worldMapSize <= 0f) return;
             var me = _client.LocalMovement;
             string area = _map.AreaAt(me.Position.X, me.Position.Z);

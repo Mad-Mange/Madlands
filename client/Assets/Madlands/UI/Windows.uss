@@ -989,3 +989,21 @@
     border-width: 1px;
     border-color: rgb(160, 120, 30);
 }
+
+/* GM teleport picking on the world map (developer menu). */
+.map-pick {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    margin-left: -9px;
+    margin-top: -9px;
+    border-width: 2px;
+    border-color: rgb(255, 86, 64);
+    border-radius: 9px;
+    background-color: rgba(255, 86, 64, 0.3);
+}
+
+.window-hint.map-pick-hint {
+    color: rgb(255, 196, 120);
+    -unity-font-style: bold;
+}

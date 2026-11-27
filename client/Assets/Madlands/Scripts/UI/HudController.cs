@@ -94,6 +94,8 @@ namespace Madlands.Client
         public QuestUi Quests => _quests;
         /// <summary>The developer GM menu (shown only to GM sessions).</summary>
         public DeveloperMenu DeveloperMenu => _developer;
+        /// <summary>The minimap and world map (the developer menu picks teleport points on it).</summary>
+        public MapUi Map => _map;
 
         private void Awake()
         {
@@ -208,6 +210,7 @@ namespace Madlands.Client
 
             bool openDeveloper = network.Settings != null && System.Array.IndexOf(network.Settings.OpenWindows, "gm") >= 0;
             _developer = new DeveloperMenu(Layer("developer"), Client, openDeveloper);
+            _developer.MapPickRequested += () => _map.BeginPick((x, z, go) => _developer.SetCoordinates(x, z, go));
         }
 
         private VisualElement Layer(string name)

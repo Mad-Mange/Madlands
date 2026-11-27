@@ -86,6 +86,9 @@ namespace Madlands.Client
         /// <summary>The header's "Game menu" button (the normal Esc menu stays one click away).</summary>
         public event System.Action GameMenuRequested;
 
+        /// <summary>"Pick on map": the world map should open and report clicks to <see cref="SetCoordinates"/>.</summary>
+        public event System.Action MapPickRequested;
+
         public bool IsOpen { get; private set; }
 
         /// <summary>The server reports GM rights for this session.</summary>
@@ -316,9 +319,13 @@ namespace Madlands.Client
             coordinates.Add(SmallLabel("Z"));
             _z = Field(coordinates, "0", () => Run(GmCommands.TeleportCoordinates, ("x", _x.value), ("z", _z.value)));
             ActionButton(coordinates, Loc.T("gm.go"), GmCommands.TeleportCoordinates, () => Args(("x", _x.value), ("z", _z.value)));
+            var pick = Row(body);
+            var pickButton = MakeButton(Loc.T("gm.pickOnMap"), PickOnMap);
+            pickButton.AddToClassList("primary");
+            pick.Add(pickButton);
+            pick.Add(MakeButton(Loc.T("gm.here"), FillCoordinates));
             var target = Row(body);
             ActionButton(target, Loc.T("gm.toTarget"), GmCommands.TeleportTarget, null, () => TargetUnit() == null ? Loc.T("gm.needTarget") : null);
-            target.Add(MakeButton(Loc.T("gm.here"), FillCoordinates));
         }
 
         private void BuildWorldSection(VisualElement parent)
@@ -618,6 +625,27 @@ namespace Madlands.Client
         }
 
         private static string LevelRange(GmCreatureEntry c) => c.MinLevel == c.MaxLevel ? $"{c.MinLevel}" : $"{c.MinLevel}-{c.MaxLevel}";
+
+        /// <summary>Opens the world map for picking a teleport destination (the "Pick on map" button).</summary>
+        public void PickOnMap()
+        {
+            _feedback.text = Loc.T("gm.pickStarted");
+            _feedback.RemoveFromClassList("ok");
+            _feedback.RemoveFromClassList("fail");
+            MapPickRequested?.Invoke();
+        }
+
+        /// <summary>A point picked on the world map: fills X and Z; <paramref name="teleport"/> goes there at once.</summary>
+        public void SetCoordinates(float x, float z, bool teleport)
+        {
+            _x.value = x.ToString("0.0", CultureInfo.InvariantCulture);
+            _z.value = z.ToString("0.0", CultureInfo.InvariantCulture);
+            if (teleport) Run(GmCommands.TeleportCoordinates, ("x", _x.value), ("z", _z.value));
+            else _feedback.text = string.Format(Loc.T("gm.picked"), _x.value, _z.value);
+        }
+
+        /// <summary>The teleport fields as text (automation checks what a map click filled in).</summary>
+        public string Coordinates => $"{_x.value},{_z.value}";
 
         private void FillCoordinates()
         {

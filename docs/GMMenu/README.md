@@ -35,7 +35,7 @@ items, quests and kills. Everything else is a temporary override that ends with 
 |---|---|
 | GM Commands | God Mode, No Cooldown (checkboxes bound to the server's state), Kill Target, Revive, Heal, Restore mana/energy, Set level, Teleport to a destination from the server |
 | Player Tools | Add item (searchable, real item catalog) and count, Add gold, Add XP, Speed % (apply / reset) |
-| Teleport | Coordinates (x, z; "Use my position"), To target |
+| Teleport | Coordinates (x, z) with Go; **Pick on map** opens the world map: a click sets X and Z (red mark), a double-click teleports there at once; "Use my position"; To target |
 | World Settings | Respawn nearby (radius), Damage % (apply / reset); time of day, weather and time scale are shown as not available |
 | Spawn Entities | Creatures / NPCs tabs over the server's creature list, count 1-10, Spawn; debug spawn count and Despawn |
 | Quest Tools | Quest (searchable) with Start, Complete and Reset |
@@ -121,7 +121,10 @@ structured result into the observation (`gm_result`) and the GM state into every
 writes `gm_commands.json` (every command with its schema, for discovery) and `gm_catalog.json` (creature and
 destination ids) into the mailbox. `open_developer_menu` opens the panel for a picture.
 
-`press_key` presses Esc or § through the Input System for checks of the key handling.
+`press_key` presses Esc or § through the Input System for checks of the key handling;
+`developer_pick_on_map` presses the menu's Pick on map button and `click_map` clicks the world map with the
+Input System mouse where a given world x, z is drawn (`double = true` for a double-click). Observations
+report the menu's X/Z fields (`developer_coordinates`) and whether the map is picking (`map_picking`).
 `gm_command` is for scenario scripts only: the Codex explorer cannot choose it, and the explore critic is told
 that a scenario marked CHEATS ENABLED used GM commands as setup, so an OK answer is not gameplay evidence.
 The sample workflow is `tools/AICritic/scenarios/gm_tools.toml` (always scripted):
@@ -182,6 +185,9 @@ uncommitted work excluded).
 - Keys, with real key presses through the Input System: Esc opens and closes the game menu as before; §
   opens the developer menu and § or Esc closes it; with the bags open the first Esc closes the bags and the
   second opens the game menu. No text focus was left behind.
+- Pick on map, with real mouse clicks through the Input System: a click at world (40, -120) filled the fields
+  with exactly `40.0, -120.0` and left the player where it was; a double-click at (-55, -97) filled them and
+  teleported the player there.
 - Without GM rights (a realm without `--gm-all`): Esc opens the game menu as before, the menu cannot open,
   `gm_command` answers `Unauthorized` and `.level` in chat is refused.
 

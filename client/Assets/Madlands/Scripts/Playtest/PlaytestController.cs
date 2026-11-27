@@ -63,6 +63,7 @@ namespace Madlands.Client
             public string command_id;
             public string key;
             public bool shift;
+            public bool @double;
             public List<string> arg_keys = new List<string>();
             public List<string> arg_values = new List<string>();
         }
@@ -159,6 +160,9 @@ namespace Madlands.Client
             public GmResultObs gm_result;
             /// <summary>Menus and input focus: the developer menu, the game (Esc) menu, a text field with the keyboard.</summary>
             public bool developer_menu_open, game_menu_open, typing;
+            /// <summary>The developer menu's teleport X and Z fields, and whether the world map is picking.</summary>
+            public string developer_coordinates = "";
+            public bool map_picking;
         }
 
         [Serializable]
@@ -573,6 +577,36 @@ namespace Madlands.Client
                     break;
                 }
 
+                case "developer_pick_on_map":
+                    if (_hud.DeveloperMenu == null || !_hud.DeveloperMenu.IsAvailable)
+                    {
+                        Fail(o, "the developer menu needs GM rights");
+                        yield break;
+                    }
+                    _hud.DeveloperMenu.Open();
+                    _hud.DeveloperMenu.PickOnMap();
+                    yield return new WaitForSeconds(0.6f);
+                    if (_hud.Map.IsPicking) Ok(o, "world map open for picking");
+                    else Fail(o, "the world map did not open for picking");
+                    break;
+
+                case "click_map":
+                {
+                    // Real mouse clicks (Input System) on the world map where world x, z is drawn.
+                    if (!_hud.Map.TryWorldMapPoint(c.x, c.z, out var panelPoint))
+                    {
+                        Fail(o, "the world map is not open");
+                        yield break;
+                    }
+                    var screen = PanelToScreen(panelPoint);
+                    yield return MouseClick(screen);
+                    if (c.@double) yield return MouseClick(screen);
+                    yield return new WaitForSeconds(c.@double ? 1.2f : 0.4f);
+                    Ok(o, $"clicked the map at world {c.x:0.0}, {c.z:0.0} (screen {screen.x:0}, {screen.y:0}){(c.@double ? " twice" : "")}: " +
+                          $"fields {_hud.DeveloperMenu.Coordinates}");
+                    break;
+                }
+
                 case "open_developer_menu":
                     if (_hud.DeveloperMenu == null || !_hud.DeveloperMenu.IsAvailable)
                     {
@@ -789,6 +823,11 @@ namespace Madlands.Client
             o.developer_menu_open = _hud != null && _hud.DeveloperMenu != null && _hud.DeveloperMenu.IsOpen;
             o.game_menu_open = o.in_world && InputGate.MenuOpen;
             o.typing = InputGate.Typing;
+            if (_hud != null && _hud.DeveloperMenu != null)
+            {
+                o.developer_coordinates = _hud.DeveloperMenu.Coordinates;
+                o.map_picking = _hud.Map != null && _hud.Map.IsPicking;
+            }
             if (Client != null)
             {
                 var gm = Client.GmStatus;
@@ -993,6 +1032,31 @@ namespace Madlands.Client
             {
                 // The orchestrator may be reading it; the next heartbeat follows in half a second.
             }
+        }
+
+        /// <summary>Panel coordinates of the HUD document to Input System screen coordinates (origin bottom left).</summary>
+        private Vector2 PanelToScreen(Vector2 panelPoint)
+        {
+            var panel = _hud.GetComponent<UnityEngine.UIElements.UIDocument>().rootVisualElement.panel;
+            var p0 = UnityEngine.UIElements.RuntimePanelUtils.ScreenToPanel(panel, Vector2.zero);
+            var p1 = UnityEngine.UIElements.RuntimePanelUtils.ScreenToPanel(panel, new Vector2(Screen.width, Screen.height));
+            float x = (panelPoint.x - p0.x) * Screen.width / (p1.x - p0.x);
+            float yFromTop = (panelPoint.y - p0.y) * Screen.height / (p1.y - p0.y);
+            return new Vector2(x, Screen.height - yFromTop);
+        }
+
+        private static IEnumerator MouseClick(Vector2 screen)
+        {
+            var mouse = Mouse.current;
+            if (mouse == null) yield break;
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = screen });
+            yield return null;
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = screen }.WithButton(MouseButton.Left, true));
+            yield return null;
+            yield return null;
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = screen }.WithButton(MouseButton.Left, false));
+            yield return null;
+            yield return null;
         }
 
         /// <summary>Discovery for automation: every GM command with its argument schema (from the shared table).</summary>

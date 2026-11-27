@@ -117,7 +117,8 @@ python -m unittest discover -s tools/AICritic/tests     # the tool's own tests (
   named places are in `locations.toml`. Codex can only pick allowlisted actions; GM commands come only from
   scenario files. Scripts may also use `gm_command` (a developer-menu command by id, e.g.
   `{ action = "gm_command", command = "spawn.entity", args = { creature = 2, count = 1 } }`) and
-  `open_developer_menu` and `press_key` (Esc or §); `gm_tools` is the sample (always scripted, marked as cheats for the critic).
+  `open_developer_menu`, `press_key` (Esc or §), `developer_pick_on_map` and `click_map` (mouse clicks on the
+  world map); `gm_tools` is the sample (always scripted, marked as cheats for the critic).
 - Never run `aicritic.py run` from inside Claude Code (it starts another Claude and refuses to): use
   `/critic-loop`. Audit, review and explore never change the game; approving and merging stay with the user.
 

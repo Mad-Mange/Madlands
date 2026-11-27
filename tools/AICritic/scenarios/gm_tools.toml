@@ -12,7 +12,7 @@ setup = []
 start = "mirewatch_square"
 # The script is the point: Codex never sends GM commands, so this scenario always runs scripted.
 scripted_only = true
-max_actions = 36
+max_actions = 40
 
 [[script]]
 action = "gm_command"
@@ -93,6 +93,18 @@ command = "spawn.despawn_debug"
 [[script]]
 action = "gm_command"
 command = "dev.reset_overrides"
+# Pick on map (real mouse clicks): a click fills X and Z, a double-click teleports there.
+[[script]]
+action = "developer_pick_on_map"
+[[script]]
+action = "click_map"
+x = 40
+z = -120
+[[script]]
+action = "click_map"
+x = -55
+z = -97
+double = true
 # Keys (real presses): Esc opens the game menu as always; § / ` toggles the developer menu and Esc also
 # closes it; with the bags open the first Esc closes the bags.
 [[script]]
