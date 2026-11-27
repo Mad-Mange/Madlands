@@ -61,6 +61,7 @@ namespace Madlands.Client
             public bool sprint;
             public string text;
             public string command_id;
+            public string key;
             public bool shift;
             public List<string> arg_keys = new List<string>();
             public List<string> arg_values = new List<string>();
@@ -551,22 +552,24 @@ namespace Madlands.Client
                     break;
                 }
 
-                case "press_escape":
+                case "press_key":
                 {
                     // A real key press through the Input System (the same path as the keyboard), so the whole
-                    // Esc chain runs: front end, HUD, developer menu, game menu.
+                    // chain runs: front end, HUD, the developer menu's own key, game menu. Only Esc and § / `.
                     var keyboard = Keyboard.current;
-                    if (keyboard == null)
+                    Key key = c.key == "escape" ? Key.Escape : c.key == "backquote" ? Key.Backquote : Key.None;
+                    if (keyboard == null || key == Key.None)
                     {
-                        Fail(o, "no keyboard device");
+                        Fail(o, keyboard == null ? "no keyboard device" : "key not allowed: " + c.key);
                         yield break;
                     }
-                    InputSystem.QueueStateEvent(keyboard, c.shift ? new KeyboardState(Key.LeftShift, Key.Escape) : new KeyboardState(Key.Escape));
+                    InputSystem.QueueStateEvent(keyboard, c.shift ? new KeyboardState(Key.LeftShift, key) : new KeyboardState(key));
                     yield return null;
                     yield return null;
                     InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                     yield return new WaitForSeconds(0.4f);
-                    Ok(o, (c.shift ? "pressed Shift+Esc" : "pressed Esc") + $": developer menu {(_hud.DeveloperMenu.IsOpen ? "open" : "closed")}, game menu {(InputGate.MenuOpen ? "open" : "closed")}");
+                    Ok(o, $"pressed {(c.shift ? "Shift+" : "")}{c.key}: developer menu {(_hud.DeveloperMenu.IsOpen ? "open" : "closed")}, " +
+                          $"game menu {(InputGate.MenuOpen ? "open" : "closed")}");
                     break;
                 }
 

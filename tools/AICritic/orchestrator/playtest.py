@@ -69,7 +69,7 @@ ACTION_HELP = {
 SCRIPT_ONLY_ACTIONS = {
     "gm_command": {"command": ("gm_id", True, None, None), "args": ("gm_args", False, None, None)},
     "open_developer_menu": {},
-    "press_escape": {"shift": ("bool", False, None, False)},
+    "press_key": {"key": ("enum", True, ("escape", "backquote"), None), "shift": ("bool", False, None, False)},
 }
 _NAME = re.compile(r"^[A-Za-z][A-Za-z '\-]{0,39}$")
 _GM_ID = re.compile(r"^[a-z_]+\.[a-z_]+$")

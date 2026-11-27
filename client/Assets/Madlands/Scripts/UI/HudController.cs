@@ -388,6 +388,7 @@ namespace Madlands.Client
             if (KeyBindings.WasPressed(GameAction.ToggleQuestLog)) _quests.ToggleLog();
             if (KeyBindings.WasPressed(GameAction.ToggleSpellbook)) _spellbook.Toggle();
             if (KeyBindings.WasPressed(GameAction.ToggleMap)) _map.ToggleWorldMap();
+            if (KeyBindings.WasPressed(GameAction.ToggleDeveloperMenu) && _developer.IsAvailable) _developer.Toggle();
             for (int i = 0; i < SlotCount; i++)
                 if (KeyBindings.WasPressed(KeyBindings.ActionButton(i))) UseSlot(_slots[i]);
         }

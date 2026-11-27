@@ -15,12 +15,14 @@ the rights come from the account, never from the client.
 - **Local development:** start the realm with `--gm-all` (every account is a GM), for example
   `dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --db memory --gm-all`.
 - **A persistent realm:** `dotnet run --project server/Madlands.Server -- set-gm <account> 1`.
-- In the world, **Esc** opens and closes the menu. It first closes what Esc closes today: the chat line, a
-  held item, loot, the vendor, open windows and then the target. **Shift+Esc**, or the menu's **Game menu**
-  button, opens the normal game menu. In *Developer Tools* you can make Esc open the game menu again;
-  that choice is stored per machine.
+- In the world, **§** (the key left of 1; \` on US keyboards; rebindable in Settings > Keys as
+  "Developer menu (GM)") opens and closes the menu. **Esc** also closes it, after what Esc closes today
+  (the chat line, a held item, loot, the vendor, open windows), and otherwise keeps opening the normal game
+  menu. The menu's **Game menu** button opens that too. In *Developer Tools* you can let Esc open the
+  developer menu instead (Shift+Esc then opens the game menu); that choice is stored per machine.
+  The plan asked for Esc; the owner chose a key of its own so that Esc keeps its usual meaning.
 - `-open gm` on the client command line opens the menu as soon as GM rights arrive (screenshots).
-- Without GM rights Esc behaves exactly as before and the menu is never shown.
+- Without GM rights the key does nothing, Esc behaves exactly as before and the menu is never shown.
 
 ## Using it
 
@@ -119,6 +121,7 @@ structured result into the observation (`gm_result`) and the GM state into every
 writes `gm_commands.json` (every command with its schema, for discovery) and `gm_catalog.json` (creature and
 destination ids) into the mailbox. `open_developer_menu` opens the panel for a picture.
 
+`press_key` presses Esc or § through the Input System for checks of the key handling.
 `gm_command` is for scenario scripts only: the Codex explorer cannot choose it, and the explore critic is told
 that a scenario marked CHEATS ENABLED used GM commands as setup, so an OK answer is not gameplay evidence.
 The sample workflow is `tools/AICritic/scenarios/gm_tools.toml` (always scripted):
@@ -176,9 +179,9 @@ uncommitted work excluded).
   - the navmesh, collision and spawn point overlays drawn; the menu opened by automation showed the server's
     state and the automation's own commands in its history;
   - one debug spawn removed, the overrides reset, and an unknown command answered with `UnknownCommand`.
-- Esc, with real key presses through the Input System: Esc opens the menu and Esc closes it; Shift+Esc opens
-  and Esc closes the game menu; with the bags open the first Esc closes the bags and only the second opens the
-  menu. No text focus was left behind.
+- Keys, with real key presses through the Input System: Esc opens and closes the game menu as before; §
+  opens the developer menu and § or Esc closes it; with the bags open the first Esc closes the bags and the
+  second opens the game menu. No text focus was left behind.
 - Without GM rights (a realm without `--gm-all`): Esc opens the game menu as before, the menu cannot open,
   `gm_command` answers `Unauthorized` and `.level` in chat is refused.
 

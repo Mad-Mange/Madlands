@@ -69,7 +69,7 @@ namespace Madlands.Client
         private readonly GameClient _client;
         private readonly DebugGeometryView _geometry;
         private readonly VisualElement _root;
-        private readonly Label _badge, _target, _feedback;
+        private readonly Label _badge, _target, _feedback, _keyHint;
         private Label _inspect, _spawnCount;
         private readonly VisualElement _history;
         private readonly List<System.Action> _bindings = new List<System.Action>();
@@ -91,8 +91,11 @@ namespace Madlands.Client
         /// <summary>The server reports GM rights for this session.</summary>
         public bool IsAvailable => _client.Gm.IsAvailable;
 
-        /// <summary>Whether Esc (with nothing else to close) opens this menu instead of the game menu.</summary>
-        public bool OpensOnEscape => Preferences.GetDeveloperSetting(EscapeSetting, "on") == "on";
+        /// <summary>
+        /// Whether Esc (with nothing else to close) also opens this menu instead of the game menu. Off by default:
+        /// the menu has its own key (<see cref="GameAction.ToggleDeveloperMenu"/>, § / `), Esc only closes it.
+        /// </summary>
+        public bool OpensOnEscape => Preferences.GetDeveloperSetting(EscapeSetting, "off") == "on";
 
         public DeveloperMenu(VisualElement layer, GameClient client, bool openWhenReady)
         {
@@ -147,9 +150,9 @@ namespace Madlands.Client
             });
             gameMenu.AddToClassList("dev-small");
             titleBar.Add(gameMenu);
-            var esc = new Label(Loc.T("gm.escKey"));
-            esc.AddToClassList("dev-key");
-            titleBar.Add(esc);
+            _keyHint = new Label();
+            _keyHint.AddToClassList("dev-key");
+            titleBar.Add(_keyHint);
             var close = MakeButton("×", Close);
             close.AddToClassList("dev-close");
             titleBar.Add(close);
@@ -546,6 +549,8 @@ namespace Madlands.Client
             var status = _client.GmStatus;
             _badge.text = status.GmLevel > 0 ? string.Format(Loc.T("gm.badge"), status.GmLevel) : Loc.T("gm.noRights");
             _target.text = TargetText();
+            string key = KeyBindings.ShortcutText(GameAction.ToggleDeveloperMenu);
+            _keyHint.text = key.Length > 0 ? key + " / " + Loc.T("gm.escKey") : Loc.T("gm.escKey");
             foreach (var bind in _bindings) bind();
             foreach (var action in _actions)
             {

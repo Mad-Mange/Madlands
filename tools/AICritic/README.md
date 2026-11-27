@@ -109,7 +109,7 @@ lines, a start location and a script for `--mode scripted`. `all` plays world, c
 
 **Developer GM menu** (`docs/GMMenu/README.md`): scenario scripts, never Codex, may also use `gm_command`
 (a menu command by its stable id, with arguments, through the client's GM command service, the same path
-as the menu), `open_developer_menu` and `press_escape` (a real Esc or Shift+Esc key press). Observations
+as the menu), `open_developer_menu` and `press_key` (a real Esc or § key press, optionally with Shift). Observations
 carry the GM state (`gm`), the structured result of a `gm_command` (`gm_result`) and whether the developer
 menu, the game menu or a text field is active. The mailbox also gets `gm_commands.json` (every command with
 its argument schema) and `gm_catalog.json` (creature and teleport destination ids). `gm_tools` is the

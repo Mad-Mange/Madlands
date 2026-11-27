@@ -117,14 +117,15 @@ python -m unittest discover -s tools/AICritic/tests     # the tool's own tests (
   named places are in `locations.toml`. Codex can only pick allowlisted actions; GM commands come only from
   scenario files. Scripts may also use `gm_command` (a developer-menu command by id, e.g.
   `{ action = "gm_command", command = "spawn.entity", args = { creature = 2, count = 1 } }`) and
-  `open_developer_menu`; `gm_tools` is the sample (always scripted, marked as cheats for the critic).
+  `open_developer_menu` and `press_key` (Esc or §); `gm_tools` is the sample (always scripted, marked as cheats for the critic).
 - Never run `aicritic.py run` from inside Claude Code (it starts another Claude and refuses to): use
   `/critic-loop`. Audit, review and explore never change the game; approving and merging stay with the user.
 
 ## Developer GM menu (docs/GMMenu)
 
-GM sessions (account GM level, or `--gm-all` locally) get a left-docked developer menu: Esc opens it when
-nothing else needs closing, Shift+Esc opens the normal game menu, `-open gm` opens it for screenshots.
+GM sessions (account GM level, or `--gm-all` locally) get a left-docked developer menu: § (the key left of
+1, the rebindable `GameAction.ToggleDeveloperMenu`) opens and closes it, Esc also closes it but otherwise still
+opens the game menu, `-open gm` opens it for screenshots.
 Commands have stable ids (`player.god_mode`, `spawn.entity`, `teleport.location` ...) and a typed schema in
 `shared/Madlands.Shared/Game/GmCommands.cs`. Every caller (the menu, the Playtest Controller's `gm_command`)
 goes through `GameClient.Gm` (`GmCommandClient`), and every server command through

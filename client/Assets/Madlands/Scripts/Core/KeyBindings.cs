@@ -53,6 +53,8 @@ namespace Madlands.Client
         Action22,
         Action23,
         Action24,
+        /// <summary>The developer GM menu (GM sessions only; docs/GMMenu).</summary>
+        ToggleDeveloperMenu,
     }
 
     /// <summary>
@@ -85,6 +87,8 @@ namespace Madlands.Client
             { GameAction.ToggleSpellbook, new[] { Key.P, Key.None } },
             { GameAction.ToggleMap, new[] { Key.M, Key.None } },
             { GameAction.ToggleDebug, new[] { Key.F3, Key.None } },
+            // The key left of 1: § on Nordic layouts, ` on US ones.
+            { GameAction.ToggleDeveloperMenu, new[] { Key.Backquote, Key.None } },
             { GameAction.Action1, new[] { Key.Digit1, Key.None } },
             { GameAction.Action2, new[] { Key.Digit2, Key.None } },
             { GameAction.Action3, new[] { Key.Digit3, Key.None } },
@@ -207,7 +211,7 @@ namespace Madlands.Client
                 case Key.Quote: return "'";
                 case Key.LeftBracket: return "[";
                 case Key.RightBracket: return "]";
-                case Key.Backquote: return "`";
+                case Key.Backquote: return LayoutName(key, "`"); // § on Nordic layouts
                 case Key.NumpadEnter: return "Num Enter";
                 case Key.NumLock: return "Num Lock";
                 case Key.UpArrow: return "Up";
@@ -227,6 +231,14 @@ namespace Madlands.Client
             return name;
         }
 
+        /// <summary>What the current keyboard layout prints on a key, else <paramref name="fallback"/>.</summary>
+        private static string LayoutName(Key key, string fallback)
+        {
+            var keyboard = Keyboard.current;
+            string name = keyboard != null ? keyboard[key].displayName : null;
+            return string.IsNullOrEmpty(name) ? fallback : name;
+        }
+
         /// <summary>The primary key of an action, or its secondary if the primary is unbound.</summary>
         public static string ShortcutText(GameAction action)
         {
@@ -236,7 +248,7 @@ namespace Madlands.Client
 
         public static string Label(GameAction action)
         {
-            return action >= GameAction.Action1
+            return action >= GameAction.Action1 && action <= GameAction.Action24
                 ? Loc.T("action.button", action - GameAction.Action1 + 1)
                 : Loc.T("action." + action);
         }

@@ -4,15 +4,15 @@ goal = """Exercise the developer GM menu's command path the way a test setup wou
 first spawn point (creature 1), raise the test character to level 8, spawn a Dusk Wolf (creature 2) as a debug
 spawn while in god mode, inspect its AI state, then turn god mode off, step next to the wolf and fight it for
 real. Afterwards show the server's navmesh there, and the collision geometry and spawn points in Mirewatch,
-open the menu for a picture, remove the debug spawn and reset every override, and check the Esc chain
-(developer menu, game menu, bags). Judge the gameplay you see (the
+open the menu for a picture, remove the debug spawn and reset every override, and check the keys
+(§ for the developer menu, Esc for the game menu and bags). Judge the gameplay you see (the
 fight, the overlays, the menu), not the fact that the commands answered OK."""
 class = "warrior"
 setup = []
 start = "mirewatch_square"
 # The script is the point: Codex never sends GM commands, so this scenario always runs scripted.
 scripted_only = true
-max_actions = 34
+max_actions = 36
 
 [[script]]
 action = "gm_command"
@@ -93,28 +93,40 @@ command = "spawn.despawn_debug"
 [[script]]
 action = "gm_command"
 command = "dev.reset_overrides"
-# Esc chain (real key presses): nothing open -> developer menu; again -> closed; Shift+Esc -> game menu;
-# Esc -> closed; with the bags open the first Esc closes the bags, the second opens the developer menu.
+# Keys (real presses): Esc opens the game menu as always; § / ` toggles the developer menu and Esc also
+# closes it; with the bags open the first Esc closes the bags.
 [[script]]
 action = "close_windows"
 [[script]]
-action = "press_escape"
+action = "press_key"
+key = "escape"
 [[script]]
-action = "press_escape"
+action = "press_key"
+key = "escape"
 [[script]]
-action = "press_escape"
-shift = true
+action = "press_key"
+key = "backquote"
 [[script]]
-action = "press_escape"
+action = "press_key"
+key = "escape"
+[[script]]
+action = "press_key"
+key = "backquote"
+[[script]]
+action = "press_key"
+key = "backquote"
 [[script]]
 action = "open_window"
 window = "bags"
 [[script]]
-action = "press_escape"
+action = "press_key"
+key = "escape"
 [[script]]
-action = "press_escape"
+action = "press_key"
+key = "escape"
 [[script]]
-action = "press_escape"
+action = "press_key"
+key = "escape"
 [[script]]
 action = "gm_command"
 command = "player.make_coffee"
