@@ -92,7 +92,7 @@ not evaluable or a required step failed). Reports: `tools/AICritic/runs/<run-id>
 ```powershell
 /critic                                   # review the last commit (or --snapshot --paths <files> for uncommitted work)
 /critic-audit                             # review the game as it is
-/critic-explore combat                    # Codex plays: world, combat, ui, navigation, smoke or all
+/critic-explore combat                    # Codex plays: world, combat, ui, navigation, smoke or all (camera, gm_tools: scripted)
 /critic-explore all --max-actions 8       # every scenario, at most 8 AI actions each
 /critic-explore ui --mode scripted        # the scenario's fixed script, no explorer calls
 /critic-loop "Make enemy nameplates readable in groups" --from-run <run-id>   # you fix, Codex reviews, <= 3 rounds

@@ -21,8 +21,9 @@ from .loop import _finish_run, finish_round, letters_salt, make_run_id, new_roun
 from .report import fill
 from .review import _prepare
 
-# gm_tools drives the developer GM menu's commands (cheats; always scripted, never part of "all").
-SCENARIO_NAMES = ("smoke", "world", "combat", "ui", "navigation", "gm_tools")
+# gm_tools drives the developer GM menu's commands (cheats) and camera replays the Greywood retreat among the
+# trees (a regression test): both always scripted, never part of "all".
+SCENARIO_NAMES = ("smoke", "world", "combat", "ui", "navigation", "gm_tools", "camera")
 ALL_SCENARIOS = ("world", "combat", "ui", "navigation")
 MAX_HISTORY = 10
 

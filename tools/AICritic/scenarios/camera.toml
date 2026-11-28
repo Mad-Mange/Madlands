@@ -1,0 +1,43 @@
+# A regression test for the camera among trees: the Greywood retreat from explore 20261127-065104-explore-combat
+# (a Dusk Wolf fight, nine meters backward, the kill), where a fir's crown covered the whole picture.
+name = "camera"
+description = "Fight a Dusk Wolf in the Greywood and back away from it among the trees: player and wolf must stay in view."
+goal = """Fight as a level 3 Shardmage in the Greywood. Target a Dusk Wolf, attack it, back away from it for two
+seconds while it chases you, then finish it. Afterwards frame the camera low and far behind the character and
+turn it around so trees stand between the camera and the character. Judge whether the character and the wolf
+stay visible the whole time: trees and bushes between the camera and them should give way (drawn as shadow
+only) and come back once the view is clear, the camera must never sit inside a crown, and trees beside the
+view should stay as they are. Also watch for popping or flicker as trees hide and come back."""
+class = "shardmage"
+setup = [".level 3"]
+start = "greywood"
+# The exact retreat is the point (the same steps as the run that found the problem), so this always runs scripted.
+scripted_only = true
+max_actions = 12
+
+[[script]]
+action = "target"
+name = "Dusk Wolf"
+[[script]]
+action = "attack"
+seconds = 6
+[[script]]
+action = "move"
+direction = "backward"
+seconds = 2
+[[script]]
+action = "attack"
+seconds = 4
+[[script]]
+action = "camera"
+pitch = 12
+distance = 18
+[[script]]
+action = "camera"
+yaw_offset = 90
+[[script]]
+action = "camera"
+yaw_offset = 90
+[[script]]
+action = "camera"
+yaw_offset = 90

@@ -104,6 +104,15 @@ class GmCommandActionTests(unittest.TestCase):
         text = explore._scenario_text([scenario], {}, [{"shot": "gm_tools"}])
         self.assertIn("CHEATS ENABLED", text)
 
+    def test_the_camera_scenario_replays_the_greywood_retreat(self):
+        scenario = playtest.load_scenario("camera")
+        self.assertTrue(scenario["scripted_only"])
+        self.assertFalse(explore.uses_gm_commands(scenario))
+        self.assertNotIn("camera", explore.expand(["all"]))
+        self.assertEqual(scenario["start"], "greywood")
+        moves = [s for s in scenario["script"] if s["action"] == "move"]
+        self.assertEqual(moves, [{"action": "move", "direction": "backward", "seconds": 2}])
+
 
 class FakeClientExploreTests(unittest.TestCase):
     def setUp(self):

@@ -9,7 +9,8 @@ Playtest Madlands with AICritic's explore mode (tools/AICritic). Arguments: $ARG
    fresh in-memory test realm, logs in a new test character per scenario and lets Codex choose one
    allowlisted action at a time from the screenshot and the controller's observation. A final Codex review
    scores the whole exploration. Client windows open on the desktop while it plays.
-   - Scenarios: world, combat, ui, navigation, smoke (minimal), or all (the first four).
+   - Scenarios: world, combat, ui, navigation, smoke (minimal), or all (the first four). Always scripted:
+     camera (the Greywood retreat among trees, a regression test) and gm_tools (developer GM menu commands).
    - `--mode scripted` plays each scenario's fixed script instead (deterministic, no explorer calls).
    - `--max-actions N` per scenario (default from the scenario, at most 40); `--max-minutes M` overall.
    - To test uncommitted controller or game changes add `--snapshot --paths <paths>`.

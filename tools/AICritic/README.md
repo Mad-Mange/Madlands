@@ -104,7 +104,9 @@ screenshot came back; if the client exits or stops answering, the scenario stops
 **Scenarios** (`scenarios/*.toml`): `smoke` (move, turn, jump, camera), `world` (terrain, lighting,
 collisions across Hollowmere), `combat` (a level 3 Shardmage against Mire Croakers: targeting, damage,
 death, loot), `ui` (bags, character, quest log, spellbook, map, an NPC dialog and a vendor) and
-`navigation` (walking out through Mirewatch's gates). Each has a goal for the AI explorer, a class, GM setup
+`navigation` (walking out through Mirewatch's gates). `camera` replays the Greywood retreat among the trees
+(a Dusk Wolf fight, two seconds backward, the kill, then low camera angles all around; always scripted): the
+regression test for trees hiding the player or the target. Each has a goal for the AI explorer, a class, GM setup
 lines, a start location and a script for `--mode scripted`. `all` plays world, combat, ui and navigation.
 
 **Developer GM menu** (`docs/GMMenu/README.md`): scenario scripts, never Codex, may also use `gm_command`
