@@ -444,6 +444,30 @@ public class ItemIntegrationTests
     }
 
     [Fact]
+    public async Task A_tonic_does_not_keep_its_drinker_in_combat()
+    {
+        // Bogroot Tonic heals every 5 s for 10 min, exactly the combat timeout: its ticks must not renew the
+        // drinker's own combat after a fight, or bread cannot be eaten until the tonic runs out.
+        const uint BogrootTonic = 4010, BogrootTonicAura = 507, MealAura = 500;
+        var (realm, s) = await StartAsync();
+        await using var _ = realm;
+        using var __ = s;
+        var c = s.Client;
+        s.Command(".level 3");
+        s.Command($".additem {BogrootTonic}");
+        s.Pump(() => s.Count(BogrootTonic) == 1);
+        c.UseItem(s.Find(BogrootTonic), c.LocalGuid);
+        s.Pump(() => c.Self.HasAura(BogrootTonicAura));
+
+        s.SpawnAndKill(MireCroaker, "Mire Croaker");
+        s.Pump(() => c.Self.Values.Has(UnitFlags.InCombat));
+        s.Pump(() => !c.Self.Values.Has(UnitFlags.InCombat), 12000);
+        Assert.True(c.Self.HasAura(BogrootTonicAura));
+        c.UseItem(s.Find(Hearthbread), c.LocalGuid);
+        s.Pump(() => c.Self.HasAura(MealAura));
+    }
+
+    [Fact]
     public async Task Items_money_and_quests_survive_relogging()
     {
         var database = new InMemoryGameDatabase();

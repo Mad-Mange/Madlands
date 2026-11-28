@@ -249,7 +249,10 @@ public sealed class CombatSystem
             float share = effective * 0.5f / _creatureScratch.Count;
             foreach (var c in _creatureScratch) AddThreat(c, healer, share, now);
         }
-        if (healer is not null && target.IsInCombat) healer.CombatUntilMs = Math.Max(healer.CombatUntilMs, now + CombatTimeoutMs);
+        // Healing someone who is fighting draws the healer into the fight. Not one's own heals: a heal over time
+        // ticking as often as the combat timeout (a tonic) would renew its own combat until it runs out.
+        if (healer is not null && healer != target && target.IsInCombat)
+            healer.CombatUntilMs = Math.Max(healer.CombatUntilMs, now + CombatTimeoutMs);
         return effective;
     }
 
