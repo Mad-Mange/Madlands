@@ -50,7 +50,7 @@ bugs_stability = 15
 performance = 10
 
 [realm]                                  # the test realm (fresh, in memory, fixed seed)
-port = 7787
+port = 17778                             # UDP: Madlands' test realm port
 http_port = 7790
 seed = 1
 stats_interval = 5

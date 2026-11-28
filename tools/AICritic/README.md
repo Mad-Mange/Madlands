@@ -125,7 +125,7 @@ that an OK answer to a GM command is not evidence that the game works.
   (review, audit and explore: detached, removed afterwards; fix loops: a new `aicritic/<run>` branch). The
   main checkout and its uncommitted work are never touched. `--snapshot` reviews uncommitted work through a
   commit object without a branch or ref; `--paths` limits it to some files.
-- **Local test realm only.** A fresh `--db memory --gm-all` realm on its own ports (7787/7790) with a
+- **Local test realm only.** A fresh `--db memory --gm-all` realm on its own ports (UDP 17778, HTTP 7790) with a
   fixed seed and new test characters for every shot and scenario: no real accounts or player data.
 - **Codex is read-only.** It runs with `--sandbox read-only`, `--ignore-user-config` (no MCP servers,
   plugins or project trust), `--ephemeral`, without project instructions, in a copy of the evidence outside

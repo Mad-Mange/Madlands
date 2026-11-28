@@ -446,7 +446,7 @@ This shortcut uses the default local development database settings.
 # 1. Start PostgreSQL (once; it keeps running in Docker)
 docker compose -f deploy/docker-compose.yml up -d
 
-# 2. Start the realm server: game on UDP 7777, account API on HTTP 7780 (local only).
+# 2. Start the realm server: game on UDP 17777, account API on HTTP 7780 (local only).
 #    --gm-all lets every account use GM commands (development only).
 dotnet run --project server/Madlands.Server -c Release -- --bind 127.0.0.1 --gm-all
 #    No Docker? Add --db memory (accounts and characters are lost when the server stops).

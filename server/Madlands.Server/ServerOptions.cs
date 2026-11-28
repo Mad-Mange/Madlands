@@ -6,8 +6,11 @@ public sealed class ServerOptions
 {
     public const string DevConnectionString = "Host=127.0.0.1;Port=15432;Username=madlands;Password=madlands_dev;Database=madlands";
 
-    /// <summary>UDP port of the game connection.</summary>
-    public int Port { get; set; } = 7777;
+    /// <summary>
+    /// UDP port of the game connection: 17777 in development (the default), 17778 for test realms (AICritic), 17779 in
+    /// production. 7777 clashed with other games (The Spell Brigade).
+    /// </summary>
+    public int Port { get; set; } = 17777;
     /// <summary>TCP port of the HTTP account API.</summary>
     public int HttpPort { get; set; } = 7780;
     /// <summary>IPv4 address to listen on; null = all interfaces. Use 127.0.0.1 for local-only testing.</summary>
@@ -37,7 +40,7 @@ public sealed class ServerOptions
     public int? RandomSeed { get; set; }
 
     public const string Usage =
-        "Madlands.Server [--port 7777] [--http-port 7780] [--bind 127.0.0.1] [--public-host <host>] [--content <path>]\n" +
+        "Madlands.Server [--port 17777] [--http-port 7780] [--bind 127.0.0.1] [--public-host <host>] [--content <path>]\n" +
         "                [--api-bind 127.0.0.1] [--trust-proxy] [--allow-plain-http]\n" +
         "                [--db postgres|memory] [--connection-string <npgsql>] [--api-rate-limit 120]\n" +
         "                [--map 1] [--max-connections 1000] [--stats-interval 10] [--gm-all] [--seed <n>] [--verbose]";

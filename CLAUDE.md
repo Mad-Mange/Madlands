@@ -30,7 +30,7 @@ Roadmap and phase status: `docs/roadmap.md`. Architecture and the lock-in decisi
 docker compose -f deploy/docker-compose.yml up -d   # PostgreSQL on localhost:15432 (+ Seq on 15341) for the server and the Postgres tests
 dotnet build Madlands.slnx                      # all .NET projects (output in /artifacts)
 dotnet test Madlands.slnx                       # 130+ tests incl. real HTTP+UDP realm, combat/loot/quests end to end, Postgres
-dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --gm-all           # UDP 7777 + HTTP 7780, PostgreSQL, GM commands for all
+dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --gm-all           # UDP 17777 + HTTP 7780, PostgreSQL, GM commands for all
 dotnet run --project server/Madlands.Server -- --bind 127.0.0.1 --db memory        # no Docker; data lost on exit
 dotnet run --project server/Madlands.Server -- set-gm <account> 3                  # permanent GM level for one account
 dotnet run --project server/Madlands.Server -- set-password <account> <password>   # new password (ends the account's sessions)
@@ -80,7 +80,8 @@ digit never gets into the world). Use `-logFile` for the player log. The server 
 use a new `-name` per screenshot run, or `.additem` lines add up. From PowerShell `Start-Process`, quote arguments
 that contain spaces yourself (`"-exec", "`".tele 3 4`""`), it joins the list unquoted. A running Release server locks
 `artifacts/bin/*/release`; build and test with `-c Debug` meanwhile (or run a second realm on other ports:
-`--port 7787 --http-port 7790`, client `-httpport 7790`).
+`--port 17778 --http-port 7790`, client `-httpport 7790`). UDP ports: 17777 development (default), 17778 test realms
+(AICritic), 17779 production; 7777 clashed with other games.
 
 ## AI critic and playtests (tools/AICritic)
 

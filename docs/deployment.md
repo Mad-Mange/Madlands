@@ -7,7 +7,7 @@ For local development see the README.
 
 | Part | Listens on | Reachable from |
 |---|---|---|
-| Game server (UDP) | `0.0.0.0:7777` | the internet (firewall: UDP 7777) |
+| Game server (UDP) | `0.0.0.0:17779` | the internet (firewall: UDP 17779) |
 | Account API (HTTP) | `127.0.0.1:7780` | only Caddy on the same machine |
 | Caddy (TLS) | `:443` (and `:80` for certificates) | the internet: `https://<domain>/api/...` |
 | PostgreSQL | `127.0.0.1:15432` (Docker) | only the realm server |
@@ -18,7 +18,7 @@ address while its account API would accept plain HTTP from outside (override: `-
 ## Steps (Linux VPS)
 
 1. **DNS:** point a domain (e.g. `realm.example.com`) at the server.
-2. **Firewall:** allow TCP 80 and 443 and UDP 7777; nothing else from outside.
+2. **Firewall:** allow TCP 80 and 443 and UDP 17779; nothing else from outside.
 3. **PostgreSQL:** pick a real password and start the database:
    ```bash
    export MADLANDS_PG_PASSWORD='<a long random password>'
@@ -31,7 +31,7 @@ address while its account API would accept plain HTTP from outside (override: `-
    ```
 5. **Run it** (as a systemd service, see below):
    ```bash
-   /opt/madlands/server/Madlands.Server --content /opt/madlands/content \
+   /opt/madlands/server/Madlands.Server --content /opt/madlands/content --port 17779 \
        --bind 0.0.0.0 --api-bind 127.0.0.1 --trust-proxy --public-host realm.example.com \
        --connection-string "Host=127.0.0.1;Port=15432;Username=madlands;Password=$MADLANDS_PG_PASSWORD;Database=madlands" \
        --realm-name "Madlands playtest"
@@ -55,7 +55,7 @@ After=network-online.target docker.service
 [Service]
 WorkingDirectory=/opt/madlands
 Environment=MADLANDS_PG_PASSWORD=<the password>
-ExecStart=/opt/madlands/server/Madlands.Server --content /opt/madlands/content --bind 0.0.0.0 --api-bind 127.0.0.1 --trust-proxy --public-host realm.example.com --connection-string "Host=127.0.0.1;Port=15432;Username=madlands;Password=${MADLANDS_PG_PASSWORD};Database=madlands"
+ExecStart=/opt/madlands/server/Madlands.Server --content /opt/madlands/content --port 17779 --bind 0.0.0.0 --api-bind 127.0.0.1 --trust-proxy --public-host realm.example.com --connection-string "Host=127.0.0.1;Port=15432;Username=madlands;Password=${MADLANDS_PG_PASSWORD};Database=madlands"
 Restart=on-failure
 # The server saves everyone on SIGTERM; give it time.
 TimeoutStopSec=30

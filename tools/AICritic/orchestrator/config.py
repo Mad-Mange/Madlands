@@ -83,7 +83,7 @@ DEFAULTS = {
         "performance": 10,
     },
     "realm": {
-        "port": 7787,
+        "port": 17778,
         "http_port": 7790,
         "seed": 1,
         "stats_interval": 5,
