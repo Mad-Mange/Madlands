@@ -12,7 +12,7 @@ namespace Madlands.Server.Persistence;
 public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
 {
     private const string CharacterColumns =
-        "id, account_id, name, race, class, level, map_id, pos_x, pos_y, pos_z, yaw, xp, health, power, money, starter_kit, rested_xp, last_saved_at";
+        "id, account_id, name, race, class, level, map_id, pos_x, pos_y, pos_z, yaw, xp, health, power, money, starter_kit, rested_xp, last_saved_at, home_map_id, home_x, home_y, home_z, home_yaw, home_ready_at_ms";
 
     private readonly NpgsqlDataSource _dataSource;
 
@@ -217,10 +217,12 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
             UPDATE characters
             SET map_id = @MapId, pos_x = @X, pos_y = @Y, pos_z = @Z, yaw = @Yaw, level = @Level,
                 xp = @Xp, health = @Health, power = @Power, money = @Money, starter_kit = @StarterKit, rested_xp = @RestedXp,
+                home_map_id = @HomeMapId, home_x = @HomeX, home_y = @HomeY, home_z = @HomeZ, home_yaw = @HomeYaw, home_ready_at_ms = @HomeReadyAtMs,
                 last_saved_at = now()
             WHERE id = @CharacterId
             """,
-            new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level, s.Xp, s.Health, s.Power, s.Money, s.StarterKit, s.RestedXp },
+            new { s.CharacterId, MapId = (int)s.MapId, s.X, s.Y, s.Z, s.Yaw, Level = (short)s.Level, s.Xp, s.Health, s.Power, s.Money, s.StarterKit, s.RestedXp,
+                HomeMapId = (int)s.HomeMapId, s.HomeX, s.HomeY, s.HomeZ, s.HomeYaw, s.HomeReadyAtMs },
             tx, cancellationToken: ct));
 
         // Items, quests and long buffs are rewritten as a whole: one statement each, whatever their number.
@@ -283,10 +285,17 @@ public sealed class PostgresGameDatabase : IGameDatabase, IAsyncDisposable
         public bool StarterKit { get; set; }
         public int RestedXp { get; set; }
         public DateTime? LastSavedAt { get; set; }
+        public int HomeMapId { get; set; }
+        public float HomeX { get; set; }
+        public float HomeY { get; set; }
+        public float HomeZ { get; set; }
+        public float HomeYaw { get; set; }
+        public long HomeReadyAtMs { get; set; }
 
         public CharacterRecord ToRecord() =>
             new(Id, AccountId, Name, (byte)Race, (byte)Class, (byte)Level, (ushort)MapId, PosX, PosY, PosZ, Yaw, Xp, Health, Power, Money, StarterKit,
-                RestedXp, LastSavedAt is { } saved ? DateTime.SpecifyKind(saved, DateTimeKind.Utc) : null);
+                RestedXp, LastSavedAt is { } saved ? DateTime.SpecifyKind(saved, DateTimeKind.Utc) : null,
+                (ushort)HomeMapId, HomeX, HomeY, HomeZ, HomeYaw, HomeReadyAtMs);
     }
 
     private sealed class ItemRow

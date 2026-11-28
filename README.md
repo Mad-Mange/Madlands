@@ -491,9 +491,9 @@ Run the tests with `dotnet test Madlands.slnx` (PostgreSQL tests are skipped if 
 | Right click a buff | Cancel it |
 | Enter | Chat. Lines starting with `.` are GM commands; `.help` lists them |
 | Esc | Close chat, windows, clear the target, or open the menu (Settings: key bindings, mouse, interface scale, graphics) |
-| F3 | Toggle the debug overlay (drag it where you like) |
+| F3 | Toggle the debug overlay (drag it where you like; use Copy position to copy the map and coordinates) |
 
-**Where to go in Hollowmere** ([zone guide](docs/zones/hollowmere.md)): you start in the village of Mirewatch on the south shore of the mere, where Captain Edda Brand, Old Tamsin and Old Pell (at the dock) have work, and Holt, Marla and Gerta sell supplies. Farmer Tenney waits in Westbrook to the west, the mirelings in the Reedfen to the east, the Greywood across the mere to the north-west, the bandits of Shardscar to the north-east and the Drowned Ruins on the far north shore, where Gloomjaw sleeps in its lagoon. `.level 5`, `.tele <x> <z>`, `.additem <id or name>`, `.money <copper>` and `.quest add|complete|reset <id>` are handy shortcuts.
+**Where to go in Hollowmere** ([zone guide](docs/zones/hollowmere.md)): you start in the village of Mirewatch on the south shore of the mere, where Captain Edda Brand, Old Tamsin and Old Pell (at the dock) have work, and Holt, Marla and Gerta sell supplies. Your Home Stone returns you to the starting point until you ask innkeeper Marla Fenn to make the Muddy Boot your home. Right-click the stone in your bags (or drag it onto an action bar); it can be used out of combat every 15 minutes. The destination and remaining cooldown survive logging out. If you lose the stone, ask an innkeeper to replace it. The current world has one inn; other inns can offer a new home when added. Farmer Tenney waits in Westbrook to the west, the mirelings in the Reedfen to the east, the Greywood across the mere to the north-west, the bandits of Shardscar to the north-east and the Drowned Ruins on the far north shore, where Gloomjaw sleeps in its lagoon. `.level 5`, `.tele <x> <z>`, `.additem <id or name>`, `.money <copper>` and `.quest add|complete|reset <id>` are handy shortcuts.
 
 ## 📁 Project structure
 

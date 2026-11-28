@@ -40,7 +40,7 @@ namespace Madlands.Client.Editor
         public override int GetPostprocessOrder() => 10; // after URP's own material conversion
 
         /// <summary>Raise when the import rules change: Unity then imports the art again with them.</summary>
-        public override uint GetVersion() => 13;
+        public override uint GetVersion() => 15;
 
         /// <summary>A texture of a textured model, by kind: basecolor, normal, ms (metallic in R, smoothness in A).</summary>
         private static string TexturePath(string material, string kind) => ArtRoot + "Textures/" + material + "_" + kind + ".png";
@@ -130,6 +130,34 @@ namespace Madlands.Client.Editor
         {
             if (!IsArt) return;
             root.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * root.transform.localRotation;
+            if (assetPath.Contains("/Ground/"))
+            {
+                // Terrain details draw the prototype's mesh directly and ignore its root transform.
+                // Bake the imported orientation into that mesh so its height points up both as a
+                // detail and when the FBX is instantiated normally.
+                var filter = root.GetComponent<MeshFilter>();
+                if (filter != null && filter.sharedMesh != null)
+                {
+                    var mesh = filter.sharedMesh;
+                    var rotation = root.transform.localRotation;
+                    var vertices = mesh.vertices;
+                    for (int i = 0; i < vertices.Length; i++) vertices[i] = rotation * vertices[i];
+                    mesh.vertices = vertices;
+                    var normals = mesh.normals;
+                    for (int i = 0; i < normals.Length; i++) normals[i] = rotation * normals[i];
+                    mesh.normals = normals;
+                    // Ground cover shares one wind shader; stones should never sway in it.
+                    if (Path.GetFileNameWithoutExtension(assetPath) == "Pebbles")
+                    {
+                        var colors = mesh.colors32;
+                        for (int i = 0; i < colors.Length; i++) colors[i].a = 0;
+                        mesh.colors32 = colors;
+                    }
+                    mesh.RecalculateBounds();
+                    root.transform.localRotation = Quaternion.identity;
+                }
+                else Debug.LogWarning("[ArtImporter] Ground cover must have a mesh on its root: " + assetPath);
+            }
             if (assetPath.Contains("/Characters/"))
             {
                 EditorApplication.delayCall -= RemeasureSkeletons;

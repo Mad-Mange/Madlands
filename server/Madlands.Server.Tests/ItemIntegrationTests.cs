@@ -110,6 +110,95 @@ public class ItemIntegrationTests
     }
 
     [Fact]
+    public async Task Home_stone_binds_at_an_inn_returns_without_consumption_and_stays_on_cooldown_after_relogin()
+    {
+        var database = new InMemoryGameDatabase();
+        await using var realm = await TestRealm.StartAsync(database, TestRealm.CombatContent(Post.Concat(new[] { At(13, 2, 1) }).ToArray()), gmAll: true);
+        var (account, character) = await realm.NewPlayerAsync("homeward", "Homeward", Warrior);
+        using (var s = new Session(realm, realm.Enter(account, character)))
+        {
+            var c = s.Client;
+            s.Pump(() => c.State == ClientState.InWorld && s.Count(HomeStone.ItemId) == 1);
+            var inn = s.Find("Marla Fenn");
+            var edda = s.Find("Captain Edda Brand");
+            s.ExpectError(ActionError.CantInteract, () => c.Interact(edda.Guid, InteractOption.SetHome));
+            c.Interact(inn.Guid);
+            s.Pump(() => s.Gossips > 0);
+            Assert.True((c.Gossip.Flags & NpcFlags.Innkeeper) != 0);
+            c.Interact(inn.Guid, InteractOption.SetHome);
+            s.Pump(() => s.Chat.Any(line => line.Contains("now your home")));
+            var home = c.LocalMovement.Position;
+            s.Command(".tele 25 25");
+            s.Pump(() => Vec3.HorizontalDistance(c.LocalMovement.Position, home) > 10);
+            s.ExpectError(ActionError.TooFarAway, () => c.Interact(inn.Guid, InteractOption.SetHome));
+            c.UseItem(s.Find(HomeStone.ItemId), c.LocalGuid);
+            s.Pump(() => Vec3.HorizontalDistance(c.LocalMovement.Position, home) < 0.2f && c.TryGetCooldown(HomeStone.SpellId, out _, out _));
+            Assert.Equal(1, s.Count(HomeStone.ItemId));
+            s.Command(".tele 25 25");
+            int errors = s.CastErrors.Count;
+            c.UseItem(s.Find(HomeStone.ItemId), c.LocalGuid);
+            s.Pump(() => s.CastErrors.Count > errors);
+            Assert.Equal(CastResult.OnCooldown, s.CastErrors[^1]);
+            Assert.True(Vec3.HorizontalDistance(c.LocalMovement.Position, home) > 10);
+            c.Disconnect();
+            realm.Pump(Array.Empty<GameClient>(), () => realm.Game.World.PlayerCount == 0);
+        }
+        await WorldIntegrationTests.WaitUntilAsync(() => realm.Host.Saver.SavedCount >= 1);
+        using var again = new Session(realm, realm.Enter(account, character));
+        again.Pump(() => again.Client.State == ClientState.InWorld && again.Count(HomeStone.ItemId) == 1 &&
+            again.Client.TryGetCooldown(HomeStone.SpellId, out _, out _));
+        int before = again.CastErrors.Count;
+        again.Client.UseItem(again.Find(HomeStone.ItemId), again.Client.LocalGuid);
+        again.Pump(() => again.CastErrors.Count > before);
+        Assert.Equal(CastResult.OnCooldown, again.CastErrors[^1]);
+        Assert.True(Vec3.HorizontalDistance(again.Client.LocalMovement.Position, new Vec3(25, 0, 25)) < 1);
+    }
+
+    [Fact]
+    public async Task Another_inn_can_replace_the_home_and_replace_a_lost_stone()
+    {
+        var (realm, s) = await StartAsync(null, At(13, 2, 1), At(13, 25, 25));
+        await using var _ = realm;
+        using var __ = s;
+        var c = s.Client;
+        var first = s.Find("Marla Fenn");
+        c.Interact(first.Guid, InteractOption.SetHome);
+        s.Pump(() => s.Chat.Count(line => line.Contains("now your home")) == 1);
+        c.DestroyItem(s.Find(HomeStone.ItemId));
+        s.Pump(() => s.Count(HomeStone.ItemId) == 0);
+        s.Command(".tele 24 24");
+        s.Pump(() => Vec3.HorizontalDistance(c.LocalMovement.Position, new Vec3(24, 0, 24)) < 1);
+        RemoteEntity? second = null;
+        s.Pump(() => (second = c.World.Entities.FirstOrDefault(e => e.Name == "Marla Fenn" &&
+            Vec3.HorizontalDistance(e.Movement.Newest.Position, new Vec3(25, 0, 25)) < 1)) is not null);
+        c.Interact(second!.Guid, InteractOption.SetHome);
+        s.Pump(() => s.Count(HomeStone.ItemId) == 1 && s.Chat.Count(line => line.Contains("now your home")) == 2);
+        var newHome = c.LocalMovement.Position;
+        s.Command(".tele -25 -25");
+        s.Pump(() => Vec3.HorizontalDistance(c.LocalMovement.Position, newHome) > 10);
+        c.UseItem(s.Find(HomeStone.ItemId), c.LocalGuid);
+        s.Pump(() => Vec3.HorizontalDistance(c.LocalMovement.Position, newHome) < 0.2f);
+    }
+
+    [Fact]
+    public async Task Home_stone_cannot_be_used_in_combat_and_does_not_start_its_cooldown()
+    {
+        var (realm, s) = await StartAsync(null, At(TrainingDummy, 0, 4));
+        await using var _ = realm;
+        using var __ = s;
+        var c = s.Client;
+        var dummy = s.Find("Training Dummy");
+        c.CastSpell(1, dummy.Guid);
+        s.Pump(() => c.Self.Values.Has(UnitFlags.InCombat));
+        int errors = s.CastErrors.Count;
+        c.UseItem(s.Find(HomeStone.ItemId), c.LocalGuid);
+        s.Pump(() => s.CastErrors.Count > errors);
+        Assert.Equal(CastResult.InCombat, s.CastErrors[^1]);
+        Assert.False(c.TryGetCooldown(HomeStone.SpellId, out var remaining, out var duration));
+        Assert.Equal(1, s.Count(HomeStone.ItemId));
+    }
+
+    [Fact]
     public async Task Glowcaps_are_gathered_only_for_the_quest_and_grow_back()
     {
         const uint GlowcapQuest = 30, Glowcap = 3009;

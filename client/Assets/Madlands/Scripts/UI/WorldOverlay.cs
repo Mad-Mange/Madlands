@@ -21,8 +21,10 @@ namespace Madlands.Client
         private sealed class Nameplate
         {
             public VisualElement Root;
+            public VisualElement Symbols;
             public Label Mark;
             public VisualElement Icon;
+            public VisualElement HomeIcon;
             public Label Name;
             public Label Title;
             public NpcRole Role;
@@ -126,8 +128,12 @@ namespace Madlands.Client
                     plate.Title.text = NpcRoleUi.Title(role) ?? "";
                 }
                 bool showIcon = status == QuestGiverStatus.None && role != NpcRole.None && !values.IsDead;
+                // The bind service is independent of quest status and the vendor's role icon.
+                bool showHome = reaction == Reaction.Friendly && !values.IsDead && (values.NpcFlags & NpcFlags.Innkeeper) != 0;
                 bool showTitle = role != NpcRole.None;
                 plate.Icon.style.display = showIcon ? DisplayStyle.Flex : DisplayStyle.None;
+                plate.HomeIcon.style.display = showHome ? DisplayStyle.Flex : DisplayStyle.None;
+                plate.Symbols.style.display = status != QuestGiverStatus.None || showIcon || showHome ? DisplayStyle.Flex : DisplayStyle.None;
                 plate.Title.style.display = showTitle ? DisplayStyle.Flex : DisplayStyle.None;
                 plate.Name.text = values.Level > 0 && !isPlayer ? entity.Name + "  " + values.Level : entity.Name;
                 plate.Fill.style.width = Length.Percent(values.HealthFraction * 100f);
@@ -138,7 +144,7 @@ namespace Madlands.Client
 
                 var p = RuntimePanelUtils.CameraTransformWorldToPanel(panel, head, cam);
                 plate.Root.style.left = p.x;
-                plate.Root.style.top = p.y - 33f - (showTitle ? 17f : 0f) - (status != QuestGiverStatus.None ? 42f : showIcon ? 34f : 0f);
+                plate.Root.style.top = p.y - 33f - (showTitle ? 17f : 0f) - (status != QuestGiverStatus.None ? 42f : showIcon || showHome ? 34f : 0f);
                 plate.Root.style.display = DisplayStyle.Flex;
             }
 
@@ -166,14 +172,24 @@ namespace Madlands.Client
                 if (e.button == 0 || e.button == 1) Clicked?.Invoke(guid, e.button == 1);
                 e.StopPropagation();
             });
+            var symbols = new VisualElement { pickingMode = PickingMode.Ignore };
+            symbols.AddToClassList("nameplate-symbols");
+            root.Add(symbols);
             var mark = new Label { pickingMode = PickingMode.Ignore };
             mark.AddToClassList("quest-mark");
             mark.style.display = DisplayStyle.None;
-            root.Add(mark);
+            symbols.Add(mark);
             var icon = new VisualElement { pickingMode = PickingMode.Ignore };
             icon.AddToClassList("nameplate-icon");
             icon.style.display = DisplayStyle.None;
-            root.Add(icon);
+            symbols.Add(icon);
+            var homeIcon = new VisualElement { pickingMode = PickingMode.Ignore };
+            homeIcon.AddToClassList("nameplate-icon");
+            homeIcon.AddToClassList("nameplate-home-icon");
+            var homePicture = ArtCatalog.Instance != null ? ArtCatalog.Instance.GetIcon("ItemIcon" + HomeStone.ItemId) : null;
+            if (homePicture != null) homeIcon.style.backgroundImage = new StyleBackground(homePicture);
+            homeIcon.style.display = DisplayStyle.None;
+            symbols.Add(homeIcon);
             var label = new Label(name) { pickingMode = PickingMode.Ignore };
             label.AddToClassList("nameplate-name");
             var title = new Label { pickingMode = PickingMode.Ignore };
@@ -194,7 +210,7 @@ namespace Madlands.Client
             root.Add(bar);
             root.Add(cast);
             _nameplateLayer.Add(root);
-            return new Nameplate { Root = root, Mark = mark, Icon = icon, Name = label, Title = title, Fill = fill, Cast = cast, CastFill = castFill };
+            return new Nameplate { Root = root, Symbols = symbols, Mark = mark, Icon = icon, HomeIcon = homeIcon, Name = label, Title = title, Fill = fill, Cast = cast, CastFill = castFill };
         }
 
         private void UpdateTexts(WorldView world, Camera cam, IPanel panel)

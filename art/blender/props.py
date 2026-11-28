@@ -691,16 +691,25 @@ def campfire():
         mb.sphere((math.cos(a) * 0.12, math.sin(a) * 0.12, 0.3), 0.065, m["FireGlow"], segments=5, rings=3)
     ember = lp.material("EmberGlow", "#c8461e", emission=2.0)
     mb.hull([(math.cos(a) * 0.42, math.sin(a) * 0.42, 0.02) for a in (i * math.pi / 4 for i in range(8))] + [(0, 0, 0.12)], ember)
+    body = mb.finish()
+    # Separate meshes let the client move the flames without moving the stones or the burning logs.
+    flames = lp.MeshBuilder("FlameOuter")
     core = lp.material("FlameCoreGlow", "#ffe39a", emission=4.0)
+    bright_flame = lp.material("FlameBrightGlow", "#ffbd4a", emission=3.0)
     for i in range(5):
         a = i * 2 * math.pi / 5
         r = 0.16
         base = (math.cos(a) * r, math.sin(a) * r, 0.15)
         tip = (math.cos(a) * r * 0.4 + rng.uniform(-0.05, 0.05), math.sin(a) * r * 0.4, 0.75 + rng.uniform(0, 0.3))
-        mb.hull([(base[0] + dx, base[1] + dy, base[2]) for dx, dy in ((0.12, 0), (-0.12, 0), (0, 0.12), (0, -0.12))]
-                + [((base[0] + tip[0]) / 2, (base[1] + tip[1]) / 2, (base[2] + tip[2]) / 2 + 0.05), tip], m["FireGlow"])
-    mb.hull([(0.1, 0, 0.15), (-0.1, 0, 0.15), (0, 0.1, 0.15), (0, -0.1, 0.15), (0.03, 0.02, 1.15), (0, 0, 0.55)], core)
-    return mb.finish()
+        flames.hull([(base[0] + dx, base[1] + dy, base[2]) for dx, dy in ((0.12, 0), (-0.12, 0), (0, 0.12), (0, -0.12))]
+                + [((base[0] + tip[0]) / 2, (base[1] + tip[1]) / 2, (base[2] + tip[2]) / 2 + 0.05), tip], bright_flame if i % 2 else m["FireGlow"])
+    outer = flames.finish()
+    outer.parent = body
+    inner = lp.MeshBuilder("FlameCore")
+    inner.hull([(0.1, 0, 0.15), (-0.1, 0, 0.15), (0, 0.1, 0.15), (0, -0.1, 0.15), (0.03, 0.02, 1.15), (0, 0, 0.55)], core)
+    inner_obj = inner.finish()
+    inner_obj.parent = body
+    return body
 
 def banner_pole():
     """A banner pole: a post with a finial, a crossbar from which a long swallow-tailed banner hangs with a sigil and a fringe."""

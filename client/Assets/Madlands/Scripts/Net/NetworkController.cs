@@ -106,6 +106,8 @@ namespace Madlands.Client
 
             // The map scene's lighting, fog and sky apply to everything created from now on.
             SceneManager.SetActiveScene(SceneManager.GetSceneByName(sceneName));
+            if (MapInfo.Current != null)
+                MapInfo.Current.gameObject.AddComponent<DayNightCycle>().Initialize(Client);
             _localPlayer = PlayerController.Create(_pendingSpawn, this, cameraController);
             worldView.RegisterLocal(_localPlayer.View);
             cameraController.SetTarget(_localPlayer);

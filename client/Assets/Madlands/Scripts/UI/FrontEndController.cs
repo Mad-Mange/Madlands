@@ -37,6 +37,9 @@ namespace Madlands.Client
         private Label _loginStatus, _charactersStatus, _createStatus, _realmLabel, _busyLabel, _charactersEmpty;
         private ScrollView _characterList;
         private DropdownField _raceDropdown, _classDropdown;
+        private Image _createPreviewImage;
+        private Label _createPreviewCaption;
+        private CharacterPreview _createPreview;
         private Button _quickLogin;
         private SettingsUi _settings;
         private PanelSettings _panelSettings;
@@ -101,6 +104,10 @@ namespace Madlands.Client
             _characterList = r.Q<ScrollView>("character-list");
             _raceDropdown = r.Q<DropdownField>("create-race");
             _classDropdown = r.Q<DropdownField>("create-class");
+            _createPreviewImage = r.Q<Image>("create-preview");
+            _createPreviewCaption = r.Q<Label>("create-preview-caption");
+            _classDropdown.RegisterValueChangedCallback(OnPreviewSelectionChanged);
+            _raceDropdown.RegisterValueChangedCallback(OnPreviewSelectionChanged);
             r.Q<Label>("version-label").text = $"v{Application.version} · protocol {ProtocolVersion.Current}";
 
             r.Q<Button>("login-button").clicked += () => _ = LoginAsync(register: false);
@@ -135,6 +142,9 @@ namespace Madlands.Client
 
         private void OnDisable()
         {
+            _classDropdown?.UnregisterValueChangedCallback(OnPreviewSelectionChanged);
+            _raceDropdown?.UnregisterValueChangedCallback(OnPreviewSelectionChanged);
+            ClosePreview();
             network.EnteredWorld -= OnEnteredWorld;
             network.LeftWorld -= OnLeftWorld;
         }
@@ -409,7 +419,30 @@ namespace Madlands.Client
             _createName.value = "";
             SetStatus(_createStatus, "");
             Show(_createScreen);
+            if (_createPreview == null)
+            {
+                _createPreview = new GameObject("Character preview stage").AddComponent<CharacterPreview>();
+                _createPreview.Initialize(_createPreviewImage);
+            }
+            RefreshPreview();
             _createName.Focus();
+        }
+
+        private void OnPreviewSelectionChanged(ChangeEvent<string> evt) => RefreshPreview();
+
+        private void RefreshPreview()
+        {
+            if (_createPreview == null || _list == null || _classDropdown.index < 0 || _classDropdown.index >= _list.Classes.Count) return;
+            var selected = _list.Classes[_classDropdown.index];
+            _createPreviewCaption.text = _createPreview.ShowClass(selected.Id) ? selected.Name : Loc.T("create.previewUnavailable");
+        }
+
+        private void ClosePreview()
+        {
+            if (_createPreview == null) return;
+            _createPreview.gameObject.SetActive(false);
+            Destroy(_createPreview.gameObject);
+            _createPreview = null;
         }
 
         private async Task CreateAsync()
@@ -461,6 +494,7 @@ namespace Madlands.Client
 
         private void Show(VisualElement screen)
         {
+            if (screen != _createScreen) ClosePreview();
             // A hidden text field must not keep the keyboard focus (its Enter would submit the old form again).
             _root.panel?.focusController?.focusedElement?.Blur();
             foreach (var s in new[] { _loginScreen, _charactersScreen, _createScreen })

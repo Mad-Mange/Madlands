@@ -509,6 +509,10 @@ public static class ContentLoader
                 if (e.Targets == EffectTargets.EnemiesNearTarget && s.Target == SpellTarget.None) Error($"{where}: enemiesNearTarget needs a spell target");
                 switch (e.Type)
                 {
+                    case SpellEffectType.ReturnHome:
+                        if (s.Id != HomeStone.SpellId || s.Target != SpellTarget.Self || e.Targets != EffectTargets.Target || s.CastTimeMs != 0 || s.CooldownMs != HomeStone.CooldownMs || !s.Has(SpellFlags.NotInCombat))
+                            Error($"{where}: returnHome must be the instant Home Stone self spell with its standard cooldown and notInCombat flag");
+                        break;
                     case SpellEffectType.SchoolDamage or SpellEffectType.Heal or SpellEffectType.Energize:
                         if (e.Min < 0 || e.Max < e.Min || e.PerLevel < 0) Error($"{where}: {e.Type} needs 0 <= min <= max and perLevel >= 0");
                         if (e.Type == SpellEffectType.Energize && e.Power == PowerType.None) Error($"{where}: energize needs a power");

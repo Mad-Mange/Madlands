@@ -122,6 +122,8 @@ namespace Madlands.Client
             }
             if ((menu.Flags & NpcFlags.Vendor) != 0)
                 Option("$", Loc.T("quest.browse"), () => _client.Interact(_npc, InteractOption.Vendor));
+            if ((menu.Flags & NpcFlags.Innkeeper) != 0)
+                Option("*", Loc.T("quest.setHome"), () => { _client.Interact(_npc, InteractOption.SetHome); _dialog.Close(); });
             _dialog.AddFooterButton(Loc.T("quest.goodbye"), _dialog.Close);
             _dialog.Open();
         }

@@ -129,7 +129,8 @@
                     "weaponDamage",
                     "heal",
                     "applyAura",
-                    "energize"
+                      "energize",
+                      "returnHome"
                   ]
                 },
                 "targets": {

@@ -11,7 +11,8 @@ public sealed record AccountRecord(long Id, string Username, string PasswordHash
 public sealed record CharacterRecord(
     long Id, long AccountId, string Name, byte Race, byte Class, byte Level,
     ushort MapId, float X, float Y, float Z, float Yaw, int Xp = 0, int? Health = null, int? Power = null,
-    long Money = 0, bool StarterKit = false, int RestedXp = 0, DateTime? LastSavedUtc = null);
+    long Money = 0, bool StarterKit = false, int RestedXp = 0, DateTime? LastSavedUtc = null,
+    ushort HomeMapId = 0, float HomeX = 0, float HomeY = 0, float HomeZ = 0, float HomeYaw = 0, long HomeReadyAtMs = 0);
 
 /// <summary>A stack in a slot (see ItemPos).</summary>
 public readonly record struct ItemRecord(byte Container, byte Slot, uint ItemId, int Count);
@@ -33,7 +34,8 @@ public sealed record CharacterData(IReadOnlyList<ItemRecord> Items, IReadOnlyLis
 /// <summary>What the write-behind saver persists for an online character. The arrays are copies owned by the snapshot.</summary>
 public readonly record struct CharacterSnapshot(
     long CharacterId, ushort MapId, float X, float Y, float Z, float Yaw, byte Level, int Xp, int Health, int Power,
-    long Money, bool StarterKit, ItemRecord[] Items, QuestRecord[] Quests, int RestedXp = 0, AuraRecord[]? Auras = null);
+    long Money, bool StarterKit, ItemRecord[] Items, QuestRecord[] Quests, int RestedXp = 0, AuraRecord[]? Auras = null,
+    ushort HomeMapId = 0, float HomeX = 0, float HomeY = 0, float HomeZ = 0, float HomeYaw = 0, long HomeReadyAtMs = 0);
 
 public enum CreateCharacterOutcome
 {

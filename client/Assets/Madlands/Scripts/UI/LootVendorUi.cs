@@ -33,7 +33,6 @@ namespace Madlands.Client
         }
 
         public bool IsOpen => _window.IsOpen;
-
         public void Close() => _window.Close();
 
         /// <summary>Follows the client's loot state (opened, an entry taken, closed by the server).</summary>
@@ -123,6 +122,8 @@ namespace Madlands.Client
         }
 
         public bool IsOpen => _window.IsOpen;
+        /// <summary>The merchant whose shop is open (Empty when closed).</summary>
+        public EntityGuid Npc => _window.IsOpen ? _vendor : EntityGuid.Empty;
 
         public void Close() => _window.Close();
 

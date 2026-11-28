@@ -90,10 +90,36 @@ public sealed class QuestSystem
         OnTalk(player, npc);
 
         bool vendor = (npc.NpcFlags & NpcFlags.Vendor) != 0;
+        if (option == InteractOption.SetHome)
+        {
+            if ((npc.NpcFlags & NpcFlags.Innkeeper) == 0)
+            {
+                Items.Fail(player, ActionError.CantInteract);
+                return;
+            }
+            if (player.Movement.IsAirborne)
+            {
+                Items.Fail(player, ActionError.CantDoThatNow);
+                return;
+            }
+            player.HomeMapId = _map.MapId;
+            player.HomePosition = player.Position;
+            player.HomeYaw = player.Yaw;
+            player.NextSaveAtMs = 0;
+            bool hasStone = Items.EnsureHomeStone(player);
+            Items.Flush(player);
+            _map.SendSystemMessage(player, hasStone ? "This inn is now your home." : "This inn is now your home. Free a bag slot and speak to the innkeeper to receive a Home Stone.");
+            return;
+        }
         if (option == InteractOption.Vendor)
         {
             if (vendor) Items.SendVendor(player, npc);
             else Items.Fail(player, ActionError.CantInteract);
+            return;
+        }
+        if (option != InteractOption.Talk)
+        {
+            Items.Fail(player, ActionError.CantInteract);
             return;
         }
         FillGossip(player, npc);

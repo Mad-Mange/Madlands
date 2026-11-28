@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using Madlands.ClientCore;
 using UnityEngine;
@@ -23,6 +24,8 @@ namespace Madlands.Client
         private float _nextScreenshotAt;
         private VisualElement _panel;
         private Label _text;
+        private Button _copyPosition;
+        private float _copiedUntil;
         private float _refreshAt;
         private bool _placed;
 
@@ -39,10 +42,14 @@ namespace Madlands.Client
             if (layer == null) return;
             _panel = new VisualElement { pickingMode = PickingMode.Position };
             _panel.AddToClassList("debug-panel");
-            _text = new Label { pickingMode = PickingMode.Ignore, enableRichText = true };
+            _text = new Label { pickingMode = PickingMode.Position, enableRichText = true };
             _panel.Add(_text);
+            _copyPosition = new Button(CopyPosition) { name = "debug-copy-position", text = Loc.T("debug.copyPosition") };
+            _copyPosition.AddToClassList("debug-copy-button");
+            _panel.Add(_copyPosition);
             layer.Add(_panel);
-            Draggable.Make(_panel, _panel, p => Preferences.SetDebugPanelPosition(p));
+            // The text is the drag handle; the button must receive its own pointer events.
+            Draggable.Make(_text, _panel, p => Preferences.SetDebugPanelPosition(p));
             // Placed once the HUD has a size: where it was left, else below the unit frames.
             _panel.RegisterCallback<GeometryChangedEvent>(_ =>
             {
@@ -119,6 +126,8 @@ namespace Madlands.Client
             _refreshAt = Time.unscaledTime + RefreshSeconds;
 
             var player = _network.LocalPlayer;
+            _copyPosition.SetEnabled(player != null);
+            _copyPosition.text = Loc.T(Time.unscaledTime < _copiedUntil ? "debug.copied" : "debug.copyPosition");
             // Our own Ping/Pong round trip (includes server tick wait): what gameplay actually feels.
             _text.text = $"<b>Madlands</b>  {_fps:0} fps  {1000f / Mathf.Max(_fps, 0.01f):0.0} ms\n" +
                          $"Ping: {client.Clock.LastRttMs:0} ms  (best {client.Clock.BestRttMs:0} ms)\n" +
@@ -126,6 +135,25 @@ namespace Madlands.Client
                          (player != null ? $"Pos: {player.State.Position}\nFlags: {player.State.Flags}\n" : "") +
                          $"Server time: {client.ServerTimeMs / 1000.0:0.0} s" +
                          (Detailed ? PerformanceText(client) : "");
+        }
+
+        private void CopyPosition()
+        {
+            var client = _network.Client;
+            var player = _network.LocalPlayer;
+            if (client == null || client.State != ClientState.InWorld || player == null) return;
+
+            // Read at the click, not at the last UI refresh; labels make height and horizontal axes clear.
+            var pos = player.State.Position;
+            var map = MapInfo.Current;
+            string area = map != null && map.mapId == client.MapId ? map.AreaAt(pos.X, pos.Z) : null;
+            string place = map != null && map.mapId == client.MapId ? map.mapName : "Madlands";
+            if (!string.IsNullOrEmpty(area)) place += " / " + area;
+            GUIUtility.systemCopyBuffer = string.Format(CultureInfo.InvariantCulture,
+                "{0} | Map {1}:{2} | X: {3:0.00}, Y: {4:0.00}, Z: {5:0.00}",
+                place, client.MapId, client.InstanceId, pos.X, pos.Y, pos.Z);
+            _copiedUntil = Time.unscaledTime + 2f;
+            _copyPosition.text = Loc.T("debug.copied");
         }
     }
 }

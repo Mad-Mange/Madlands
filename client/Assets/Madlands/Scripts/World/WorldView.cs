@@ -20,6 +20,7 @@ namespace Madlands.Client
         private readonly Dictionary<EntityGuid, UnitView> _units = new Dictionary<EntityGuid, UnitView>();
         private readonly Dictionary<EntityGuid, ObjectView> _objects = new Dictionary<EntityGuid, ObjectView>();
         private bool _ready;
+        private EntityGuid _conversationNpc;
 
         private void Awake()
         {
@@ -32,6 +33,9 @@ namespace Madlands.Client
 
         public void RegisterLocal(UnitView view) => _units[view.Guid] = view;
 
+        /// <summary>The NPC whose dialog or shop is currently open for this player.</summary>
+        public void SetConversationNpc(EntityGuid npc) => _conversationNpc = npc;
+
         /// <summary>
         /// Views are only created once the map scene is loaded and active (entities can arrive
         /// while it is still loading; they wait in <see cref="ClientWorld"/> until then).
@@ -40,6 +44,7 @@ namespace Madlands.Client
         {
             _ready = ready;
             if (!ready) return;
+            CampfireAmbience.AttachToScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
             foreach (var entity in _network.Client.World.Entities)
                 if (entity.View == null) OnEntitySpawned(entity);
         }
@@ -71,6 +76,7 @@ namespace Madlands.Client
             _views.Clear();
             _units.Clear();
             _objects.Clear();
+            _conversationNpc = EntityGuid.Empty;
         }
 
         private void LateUpdate()
@@ -80,7 +86,13 @@ namespace Madlands.Client
             {
                 if (!(entity.View is GameObject go)) continue;
                 Place(entity, go.transform);
-                if (entity.Unit != null && _units.TryGetValue(entity.Guid, out var view)) Animate(view, entity.Unit, client);
+                if (entity.Unit != null && _units.TryGetValue(entity.Guid, out var view))
+                {
+                    bool conversing = entity.Guid == _conversationNpc && !entity.Unit.Values.Has(UnitFlags.InCombat | UnitFlags.Dead)
+                                      && entity.Unit.Cast == null;
+                    view.SetConversationTarget(conversing && _network.LocalPlayer != null ? _network.LocalPlayer.transform : null);
+                    Animate(view, entity.Unit, client);
+                }
                 else if (_objects.TryGetValue(entity.Guid, out var obj))
                 {
                     obj.SetShining(obj.IsChest || client.NeedsItem(entity.ObjectItem));

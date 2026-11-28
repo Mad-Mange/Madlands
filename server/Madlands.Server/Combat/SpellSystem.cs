@@ -265,6 +265,9 @@ public sealed class SpellSystem
         var s = caster.Stats;
         switch (effect.Type)
         {
+            case SpellEffectType.ReturnHome:
+                if (caster is Player player && target == player) _map.Items.CompleteHomeStone(player, now);
+                break;
             case SpellEffectType.SchoolDamage:
             {
                 bool physical = spell.School == SpellSchool.Physical;

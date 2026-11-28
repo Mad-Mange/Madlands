@@ -98,6 +98,25 @@ ICONS = {
 }
 
 
+def home_stone():
+    """A smooth slate stone with a bright little house rune."""
+    mb = lp.MeshBuilder("HomeStone")
+    stone = lp.material("HomeStoneSlate", "#697d87")
+    rune = lp.material("HomeStoneRune", "#8de3d2")
+    mb.sphere((0, 0, 0.48), (0.34, 0.16, 0.43), stone, segments=12, rings=9)
+    # Face the rune towards the camera; its roof and doorway remain readable in a small slot.
+    mb.box((-0.11, -0.165, 0.59), (0.24, 0.025, 0.045), rune, rotation=(0, -0.72, 0))
+    mb.box((0.11, -0.165, 0.59), (0.24, 0.025, 0.045), rune, rotation=(0, 0.72, 0))
+    mb.box((-0.14, -0.165, 0.42), (0.045, 0.025, 0.25), rune)
+    mb.box((0.14, -0.165, 0.42), (0.045, 0.025, 0.25), rune)
+    mb.box((0, -0.165, 0.30), (0.32, 0.025, 0.045), rune)
+    mb.box((0, -0.17, 0.39), (0.055, 0.025, 0.16), rune)
+    return [mb.finish()]
+
+
+ICONS["ItemIcon6001"] = (home_stone, 0.0, 0.0)
+
+
 def held_item(builder, shield=False):
     """Render the same model the character holds, tilted to fill a square inventory slot."""
     obj = builder()

@@ -131,6 +131,8 @@ namespace Madlands.Shared.Game
         Gossip = 1 << 0,
         QuestGiver = 1 << 1,
         Vendor = 1 << 2,
+        /// <summary>Offers to set the player's home and replace a missing home stone.</summary>
+        Innkeeper = 1 << 3,
     }
 
     /// <summary>

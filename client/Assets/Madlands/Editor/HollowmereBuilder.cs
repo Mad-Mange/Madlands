@@ -498,7 +498,8 @@ namespace Madlands.Client.Editor
                     break;
             }
             foreach (var t in go.GetComponentsInChildren<Transform>())
-                GameObjectUtility.SetStaticEditorFlags(t.gameObject, StaticEditorFlags.BatchingStatic);
+                if (prop != "Campfire" || (t.name != "FlameOuter" && t.name != "FlameCore"))
+                    GameObjectUtility.SetStaticEditorFlags(t.gameObject, StaticEditorFlags.BatchingStatic);
             return go;
         }
 
@@ -849,7 +850,8 @@ namespace Madlands.Client.Editor
             }
             void Formation(string model, Vector2 p, float yaw, float scale, float sink)
             {
-                Place(model, parent, p.x, p.y, yaw, scale, Collide.Mesh, sink: sink);
+                var rock = Place(model, parent, p.x, p.y, yaw, scale, Collide.Mesh, sink: sink);
+                NaturalRockVisuals.Install(rock, model);
                 placed.Add(p);
             }
             float Facing(Vector2 dir) => Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
@@ -952,7 +954,8 @@ namespace Madlands.Client.Editor
                     noiseSpread = 0.4f,
                     healthyColor = Color.white,
                     dryColor = Color.white,
-                    alignToGround = 0.6f,
+                    // Plants grow upward on slopes; stones can follow the ground they rest on.
+                    alignToGround = i == Stones ? 0.6f : 0f,
                 };
             }
             data.detailPrototypes = prototypes;

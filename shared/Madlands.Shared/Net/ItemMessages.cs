@@ -89,6 +89,8 @@ namespace Madlands.Shared.Net
         Talk = 0,
         /// <summary>"Let me browse your goods" in the dialog.</summary>
         Vendor = 1,
+        /// <summary>Make this inn the player's home.</summary>
+        SetHome = 2,
     }
 
     /// <summary>Speaks with an NPC. The server answers with a <see cref="GossipMenu"/> or a <see cref="VendorInventory"/>.</summary>

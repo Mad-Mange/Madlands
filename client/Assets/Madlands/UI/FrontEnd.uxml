@@ -132,16 +132,25 @@
 
         <!-- Create character -->
         <ui:VisualElement name="create-screen" class="screen hidden" picking-mode="Ignore">
-            <ui:VisualElement class="panel">
+            <ui:VisualElement class="panel create-panel">
                 <ui:Label text="#create.title" class="heading" />
-                <ui:TextField name="create-name" label="#create.name" max-length="16" class="field" />
-                <ui:DropdownField name="create-race" label="#create.race" class="field" />
-                <ui:DropdownField name="create-class" label="#create.class" class="field" />
-                <ui:VisualElement class="button-row">
-                    <ui:Button name="create-button" text="#create.create" class="button primary" />
-                    <ui:Button name="create-cancel-button" text="#create.back" class="button" />
+                <ui:VisualElement class="create-body">
+                    <ui:VisualElement class="create-form">
+                        <ui:TextField name="create-name" label="#create.name" max-length="16" class="field" />
+                        <ui:DropdownField name="create-race" label="#create.race" class="field" />
+                        <ui:DropdownField name="create-class" label="#create.class" class="field" />
+                        <ui:Label text="#create.appearanceHint" class="create-hint" />
+                        <ui:VisualElement class="button-row">
+                            <ui:Button name="create-button" text="#create.create" class="button primary" />
+                            <ui:Button name="create-cancel-button" text="#create.back" class="button" />
+                        </ui:VisualElement>
+                        <ui:Label name="create-status" class="status" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="create-preview-frame" picking-mode="Ignore">
+                        <ui:Image name="create-preview" class="create-preview" scale-mode="ScaleToFit" picking-mode="Ignore" />
+                        <ui:Label name="create-preview-caption" class="create-preview-caption" picking-mode="Ignore" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:Label name="create-status" class="status" />
             </ui:VisualElement>
         </ui:VisualElement>
 

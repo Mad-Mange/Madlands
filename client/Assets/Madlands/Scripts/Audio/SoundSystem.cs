@@ -22,6 +22,7 @@ namespace Madlands.Client
         private static SoundSystem _instance;
         private static readonly System.Collections.Generic.HashSet<string> Missing = new System.Collections.Generic.HashSet<string>();
         private readonly AudioSource[] _voices = new AudioSource[Voices];
+        private readonly float[] _voiceLevels = new float[Voices];
         private int _next;
         private Loop _music;
         private Loop _ambience;
@@ -35,6 +36,8 @@ namespace Madlands.Client
             public string Current;
             public float Seconds;
             public float Level;
+            // Cross-fade position is independent of the user's volume setting.
+            public float FadeA, FadeB;
             /// <summary>Clips play to their end, then another take of the same name follows after a pause.</summary>
             public bool Playlist;
             /// <summary>The next take follows at once, without the pause.</summary>
@@ -98,6 +101,10 @@ namespace Madlands.Client
             AudioListener.volume = Preferences.MasterVolume;
             _music.Level = Preferences.MusicVolume * 0.6f;
             _ambience.Level = Preferences.AmbienceVolume * 0.8f;
+            ApplyLoopVolumes(_music);
+            ApplyLoopVolumes(_ambience);
+            for (int i = 0; i < Voices; i++)
+                _voices[i].volume = Mathf.Clamp01(_voiceLevels[i] * Preferences.EffectsVolume);
         }
 
         /// <summary>A flat sound (interface, your own jingles).</summary>
@@ -105,9 +112,10 @@ namespace Madlands.Client
         {
             var clip = Find(name);
             if (clip == null) return;
-            var voice = NextVoice();
+            int index = NextVoice();
+            var voice = _voices[index];
             voice.spatialBlend = 0f;
-            Launch(voice, clip, volume, pitchJitter);
+            Launch(index, clip, volume, pitchJitter);
         }
 
         /// <summary>A sound at a place in the world (silent when far from the listener).</summary>
@@ -117,10 +125,11 @@ namespace Madlands.Client
             if ((position - listener).sqrMagnitude > Audible * Audible) return;
             var clip = Find(name);
             if (clip == null) return;
-            var voice = NextVoice();
+            int index = NextVoice();
+            var voice = _voices[index];
             voice.transform.position = position;
             voice.spatialBlend = 1f;
-            Launch(voice, clip, volume, pitchJitter);
+            Launch(index, clip, volume, pitchJitter);
         }
 
         /// <summary>The clip by name (another variant than <paramref name="avoid"/> if there is one); a missing one is reported once (a typo or an unbuilt sound).</summary>
@@ -131,27 +140,30 @@ namespace Madlands.Client
             return clip;
         }
 
-        private void Launch(AudioSource voice, AudioClip clip, float volume, float pitchJitter)
+        private void Launch(int index, AudioClip clip, float volume, float pitchJitter)
         {
+            var voice = _voices[index];
             voice.clip = clip;
+            _voiceLevels[index] = volume;
             voice.volume = Mathf.Clamp01(volume * Preferences.EffectsVolume);
             voice.pitch = 1f + (pitchJitter > 0f ? Random.Range(-pitchJitter, pitchJitter) : 0f);
             voice.Play();
         }
 
         /// <summary>A free voice, or the one that started longest ago.</summary>
-        private AudioSource NextVoice()
+        private int NextVoice()
         {
             for (int i = 0; i < Voices; i++)
             {
-                var voice = _voices[(_next + i) % Voices];
+                int index = (_next + i) % Voices;
+                var voice = _voices[index];
                 if (!voice.isPlaying)
                 {
-                    _next = (_next + i + 1) % Voices;
-                    return voice;
+                    _next = (index + 1) % Voices;
+                    return index;
                 }
             }
-            var oldest = _voices[_next];
+            int oldest = _next;
             _next = (_next + 1) % Voices;
             return oldest;
         }
@@ -181,6 +193,8 @@ namespace Madlands.Client
             var next = loop.Active == loop.A ? loop.B : loop.A;
             next.Stop();
             next.clip = clip;
+            if (next == loop.A) loop.FadeA = 0f;
+            else loop.FadeB = 0f;
             next.volume = 0f;
             if (clip != null) next.Play();
             loop.Active = clip != null ? next : null;
@@ -219,13 +233,18 @@ namespace Madlands.Client
 
         private static void Fade(Loop loop)
         {
-            float step = Time.unscaledDeltaTime / loop.Seconds * Mathf.Max(loop.Level, 0.05f);
-            foreach (var source in new[] { loop.A, loop.B })
-            {
-                bool active = source == loop.Active;
-                source.volume = Mathf.MoveTowards(source.volume, active ? loop.Level : 0f, step);
-                if (!active && source.isPlaying && source.volume <= 0.0001f) source.Stop();
-            }
+            float step = Time.unscaledDeltaTime / loop.Seconds;
+            loop.FadeA = Mathf.MoveTowards(loop.FadeA, loop.Active == loop.A ? 1f : 0f, step);
+            loop.FadeB = Mathf.MoveTowards(loop.FadeB, loop.Active == loop.B ? 1f : 0f, step);
+            ApplyLoopVolumes(loop);
+            if (loop.Active != loop.A && loop.A.isPlaying && loop.FadeA <= 0f) loop.A.Stop();
+            if (loop.Active != loop.B && loop.B.isPlaying && loop.FadeB <= 0f) loop.B.Stop();
+        }
+
+        private static void ApplyLoopVolumes(Loop loop)
+        {
+            loop.A.volume = loop.FadeA * loop.Level;
+            loop.B.volume = loop.FadeB * loop.Level;
         }
     }
 }

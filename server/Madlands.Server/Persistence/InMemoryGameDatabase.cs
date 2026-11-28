@@ -162,6 +162,7 @@ public sealed class InMemoryGameDatabase : IGameDatabase
                 {
                     MapId = s.MapId, X = s.X, Y = s.Y, Z = s.Z, Yaw = s.Yaw, Level = s.Level, Xp = s.Xp, Health = s.Health, Power = s.Power,
                     Money = s.Money, StarterKit = s.StarterKit, RestedXp = s.RestedXp, LastSavedUtc = DateTime.UtcNow,
+                    HomeMapId = s.HomeMapId, HomeX = s.HomeX, HomeY = s.HomeY, HomeZ = s.HomeZ, HomeYaw = s.HomeYaw, HomeReadyAtMs = s.HomeReadyAtMs,
                 };
                 _data[s.CharacterId] = new CharacterData(s.Items.ToArray(), s.Quests.Select(q => q with { Progress = q.Progress.ToArray() }).ToArray(),
                     (s.Auras ?? Array.Empty<AuraRecord>()).ToArray());

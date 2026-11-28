@@ -12,6 +12,8 @@ import math
 import random
 
 import lowpoly as lp
+import sculpt as sc
+from nature import carved
 
 # ---------------------------------------------------------------- ground cover
 
@@ -39,12 +41,14 @@ def _blade(mb, x, y, angle, height, width, lean, root, tip):
     sx, sy = -dy * width, dx * width
     mid = (x + dx * lean * height * 0.3, y + dy * lean * height * 0.3, height * 0.5)
     end = (x + dx * lean * height, y + dy * lean * height, height * (1.0 - 0.3 * lean * lean))
-    mb.add([(x + sx, y + sy, -0.03), (x - sx, y - sy, -0.03), (mid[0] - sx * 0.7, mid[1] - sy * 0.7, mid[2]),
+    # A narrow base avoids a solid rectangular stem where many blades overlap.
+    mb.add([(x + sx * 0.25, y + sy * 0.25, -0.03), (x - sx * 0.25, y - sy * 0.25, -0.03),
+            (mid[0] - sx * 0.7, mid[1] - sy * 0.7, mid[2]),
             (mid[0] + sx * 0.7, mid[1] + sy * 0.7, mid[2])], [(0, 1, 2, 3)], root)
     mb.add([(mid[0] + sx * 0.7, mid[1] + sy * 0.7, mid[2]), (mid[0] - sx * 0.7, mid[1] - sy * 0.7, mid[2]), end], [(0, 1, 2)], tip)
 
 
-def _tuft(mb, rng, blades, height, root, tip, spread=0.12, width=0.03, lean=(0.15, 0.55)):
+def _tuft(mb, rng, blades, height, root, tip, spread=0.12, width=0.018, lean=(0.15, 0.55)):
     """Blades fanning out of one spot, each leaning out by a share of its height in the `lean` range."""
     for k in range(blades):
         a = 2 * math.pi * k / blades + rng.uniform(-0.4, 0.4)
@@ -52,7 +56,7 @@ def _tuft(mb, rng, blades, height, root, tip, spread=0.12, width=0.03, lean=(0.1
         _blade(mb, math.cos(a) * r, math.sin(a) * r, a, height * rng.uniform(0.65, 1.1), width * rng.uniform(0.8, 1.2), rng.uniform(*lean), root, tip)
 
 
-def grass_tuft(name, seed, root, tip, blades=13, height=0.48):
+def grass_tuft(name, seed, root, tip, blades=12, height=0.40):
     """A tuft of grass: blades dark at the root (the color of the ground under it), light at the tips."""
     def build():
         rng = random.Random(seed)
@@ -67,18 +71,18 @@ def grass_tall():
     rng = random.Random(23)
     mb = lp.MeshBuilder("GrassTall")
     root, tip = lp.material("GrassTallRoot", "#4f6e2e"), lp.material("GrassTallTip", "#a3ad5a")
-    seed = lp.material("GrassSeed", "#c0a465")
-    _tuft(mb, rng, 9, 0.85, root, tip, spread=0.16, width=0.032, lean=(0.05, 0.3))
-    for k in range(4):
+    seed = lp.material("GrassSeed", "#a99465")
+    _tuft(mb, rng, 8, 0.68, root, tip, spread=0.16, width=0.018, lean=(0.08, 0.38))
+    for k in range(3):
         a = rng.uniform(0, 2 * math.pi)
         r = rng.uniform(0.02, 0.12)
         x, y = math.cos(a) * r, math.sin(a) * r
-        h = rng.uniform(0.95, 1.2)
+        h = rng.uniform(0.72, 0.95)
         lean = (math.cos(a) * 0.12, math.sin(a) * 0.12)
         top = (x + lean[0], y + lean[1], h)
         _blade(mb, x, y, a, h * 0.8, 0.008, 0.15, root, tip)
         # The seed head: a slim spindle along the top of the stem.
-        sx, sy = -math.sin(a) * 0.022, math.cos(a) * 0.022
+        sx, sy = -math.sin(a) * 0.012, math.cos(a) * 0.012
         lo = (x + lean[0] * 0.75, y + lean[1] * 0.75, h * 0.78)
         mb.add([lo, (top[0] + sx, top[1] + sy, h * 0.9), (top[0] + lean[0] * 0.2, top[1] + lean[1] * 0.2, h * 1.02),
                 (top[0] - sx, top[1] - sy, h * 0.9)], [(0, 1, 2, 3)], seed)
@@ -95,6 +99,22 @@ def _star(mb, center, radius, points, inner, mat, cup=0.0, twist=0.0):
         verts.append((cx + math.cos(a) * r, cy + math.sin(a) * r, cz + (cup if k % 2 == 0 else cup * 0.5)))
     n = points * 2
     mb.add(verts, [(0, 1 + k, 1 + (k + 1) % n) for k in range(n)], mat)
+
+
+def _flower_stem(mb, x, y, angle, height, lean, root, tip):
+    """Two crossed, tapered ribbons keep the stem visible from every horizontal angle."""
+    dx, dy = math.cos(angle), math.sin(angle)
+    for sx, sy in ((-dy, dx), (dx, dy)):
+        width = 0.009
+        mid = (x + dx * lean * height * 0.5, y + dy * lean * height * 0.5, height * 0.5)
+        end = (x + dx * lean * height, y + dy * lean * height, height)
+        mb.add([(x - sx * width, y - sy * width, -0.02), (x + sx * width, y + sy * width, -0.02),
+                (mid[0] + sx * width * 0.75, mid[1] + sy * width * 0.75, mid[2]),
+                (mid[0] - sx * width * 0.75, mid[1] - sy * width * 0.75, mid[2])], [(0, 1, 2, 3)], root)
+        mb.add([(mid[0] - sx * width * 0.75, mid[1] - sy * width * 0.75, mid[2]),
+                (mid[0] + sx * width * 0.75, mid[1] + sy * width * 0.75, mid[2]),
+                (end[0] + sx * width * 0.45, end[1] + sy * width * 0.45, end[2]),
+                (end[0] - sx * width * 0.45, end[1] - sy * width * 0.45, end[2])], [(0, 1, 2, 3)], tip)
 
 
 def flowers(name, seed, petal, middle, kind):
@@ -116,7 +136,7 @@ def flowers(name, seed, petal, middle, kind):
             h = rng.uniform(0.24, 0.38) if kind != "bells" else rng.uniform(0.38, 0.55)
             lean = 0.18
             top = (x + math.cos(a) * lean * h, y + math.sin(a) * lean * h, h)
-            _blade(mb, x, y, a, h, 0.009, lean, leaf_root, leaf_tip)
+            _flower_stem(mb, x, y, a, h, lean, leaf_root, leaf_tip)
             if kind == "daisy":
                 _star(mb, (top[0], top[1], h + 0.005), 0.075, 8, 0.45, petal_mat, cup=0.01, twist=rng.uniform(0, 1))
                 _star(mb, (top[0], top[1], h + 0.014), 0.026, 5, 0.8, middle_mat)
@@ -163,7 +183,7 @@ def fern():
 
 
 def pebbles():
-    """A few rounded stones half sunk in the ground."""
+    """A few small, rounded stones half sunk in the ground, each with irregular facets."""
     rng = random.Random(41)
     mb = lp.MeshBuilder("Pebbles")
     tones = [lp.material(n, c) for n, c in (("Pebble", "#8f897d"), ("PebbleLight", "#aaa497"), ("PebbleDark", "#6c675f"))]
@@ -172,16 +192,20 @@ def pebbles():
         cx, cy = math.cos(a) * d, math.sin(a) * d
         r = rng.uniform(0.05, 0.13)
         pts = []
-        for _ in range(9):
-            t, e = rng.uniform(0, 2 * math.pi), rng.uniform(-0.6, 1.0)
-            pts.append((cx + math.cos(t) * math.cos(e) * r, cy + math.sin(t) * math.cos(e) * r * 0.8, max(-0.03, math.sin(e) * r * 0.55)))
+        phase = rng.uniform(0, 2 * math.pi)
+        for z, factor in ((-0.025, 0.82), (r * 0.22, 1.0), (r * 0.52, 0.60)):
+            for i in range(6):
+                angle = phase + i * math.pi / 3
+                k = factor * rng.uniform(0.8, 1.08)
+                pts.append((cx + math.cos(angle) * r * k, cy + math.sin(angle) * r * 0.8 * k, z + rng.uniform(-0.01, 0.01)))
+        pts.append((cx + rng.uniform(-0.15, 0.15) * r, cy + rng.uniform(-0.15, 0.15) * r, r * 0.7))
         mb.hull(pts, rng.choice(tones))
     return _one_material(mb.finish())
 
 
 GROUND = {
     "GrassTuft": grass_tuft("GrassTuft", 1, "#45682b", "#7ea64a"),
-    "GrassTuftMeadow": grass_tuft("GrassTuftMeadow", 2, "#6c8b3b", "#b6c067", blades=10, height=0.38),
+    "GrassTuftMeadow": grass_tuft("GrassTuftMeadow", 2, "#6c8b3b", "#a4b45f", blades=10, height=0.34),
     "GrassTall": grass_tall,
     "FlowersWhite": flowers("FlowersWhite", 3, "#f2efe2", "#e8b830", "daisy"),
     "FlowersYellow": flowers("FlowersYellow", 4, "#f0c82a", "#c8901a", "cup"),
@@ -228,7 +252,7 @@ def lily_pads():
 STONE = (("Stone", "#8f8b83"), ("StoneDark", "#74716a"), ("StoneWarm", "#9a8f80"))
 
 
-def _slab(mb, rng, cx, cy, z0, z1, rx, ry, mat, dip, sides=7, bevel=0.18):
+def _slab(mb, rng, cx, cy, z0, z1, rx, ry, mat, dip, sides=7, bevel=0.18, weathered=False):
     """
     A slab of rock: a blocky prism (corners pushed out toward a box) with chamfered top edges, its top and
     bottom tilted along `dip` (meters per meter in x and y, the same for a whole formation), flat-shaded.
@@ -247,6 +271,12 @@ def _slab(mb, rng, cx, cy, z0, z1, rx, ry, mat, dip, sides=7, bevel=0.18):
     pts += [(cx + x * 0.98, cy + y * 0.98, z1 - bevel + tilt(x, y)) for x, y in ring]
     inset = 1.0 - bevel / max(0.2, min(rx, ry))
     pts += [(cx + x * inset, cy + y * inset, z1 + tilt(x * inset, y * inset) + rng.uniform(-0.04, 0.04)) for x, y in ring]
+    if weathered:
+        # Use the same centers and dimensions as the original colliding slabs; blend these rounded
+        # volumes into one weathered formation after all the deterministic placement calls have run.
+        height = z1 - z0
+        radii = (rx * 1.02, ry * 1.02, height * 0.72)
+        return sc.ellipsoid((cx, cy, (z0 + z1) * 0.5), radii)
     mb.hull(pts, mat)
 
 
@@ -263,7 +293,7 @@ def _ledges(obj, grass, moss, min_z, steep=0.72):
     return obj
 
 
-def _formation(name, seed, width, depth, height, columns, slabs, taper, step_back, lean=0.0, rubble=4):
+def _formation(name, seed, width, depth, height, columns, slabs, taper, step_back, lean=0.0, rubble=4, weathered=False):
     """
     Rock in stacked strata: columns side by side across `width`, each a pile of slabs narrowing and stepping back
     as they rise (to `height`, the front facing -Y), the stone in bands of three tones, grass on every ledge,
@@ -274,6 +304,7 @@ def _formation(name, seed, width, depth, height, columns, slabs, taper, step_bac
         tones = [lp.material(n, c) for n, c in STONE]
         grass, moss = lp.material("CliffGrass", "#62803a"), lp.material("CliffMoss", "#56703a")
         mb = lp.MeshBuilder(name)
+        shapes = []
         # The strata dip a little, all the same way.
         a = rng.uniform(0, 2 * math.pi)
         dip = (math.cos(a) * 0.1, math.sin(a) * 0.1)
@@ -295,13 +326,26 @@ def _formation(name, seed, width, depth, height, columns, slabs, taper, step_bac
                 ry = depth * 0.5 * (1.0 - taper * 0.7 * f) * rng.uniform(0.9, 1.05)
                 ox = cx + lean * (z + t) + rng.uniform(-0.12, 0.12) * w
                 oy = step_back * depth * f + rng.uniform(-0.08, 0.08) * depth
-                _slab(mb, rng, ox, oy, z, z + t, rx, ry, tones[(band + k) % 3], dip, sides=rng.choice((6, 7, 8)))
+                shape = _slab(mb, rng, ox, oy, z, z + t, rx, ry, tones[(band + k) % 3], dip, sides=rng.choice((6, 7, 8)), weathered=weathered)
+                if shape is not None: shapes.append(shape)
                 z += t * 0.97
         for _ in range(rubble):
             a = rng.uniform(math.pi * 1.15, math.pi * 1.85)
             cx, cy = math.cos(a) * width * 0.45, math.sin(a) * depth * 0.75
             size = rng.uniform(0.3, 0.75)
-            _slab(mb, rng, cx, cy, -0.3, size * 0.9, size, size * rng.uniform(0.7, 1.0), rng.choice(tones), dip, sides=6, bevel=size * 0.3)
+            shape = _slab(mb, rng, cx, cy, -0.3, size * 0.9, size, size * rng.uniform(0.7, 1.0), rng.choice(tones), dip, sides=6, bevel=size * 0.3, weathered=weathered)
+            if shape is not None: shapes.append(shape)
+        if weathered:
+            shape = sc.lumpy(sc.union(*shapes, k=0.55), min(width, depth) * 0.055, min(width, depth) * 0.7, seed)
+            extent_x, extent_y = width * 0.8 + 1.5, depth * 1.4 + 1.5
+            cell = max(0.09, min(width, depth) / 38)
+            def paint(c, n):
+                if n.z > 0.72:
+                    return grass if c.z > height * 0.3 else moss
+                return tones[1] if n.z < -0.2 else tones[0] if n.y < 0.25 else tones[2]
+            carved(mb, shape, (-extent_x, -extent_y, -1.6), (extent_x, extent_y, height + 1.5), cell,
+                   max(600, int(width * height * 24)), paint)
+            return mb.finish()
         return _ledges(mb.finish(), grass, moss, height * 0.3)
     return build
 
@@ -314,3 +358,13 @@ PROPS = {
     "RockSpire": _formation("RockSpire", 57, 3.2, 3.0, 9.5, 1, 7, 0.4, 0.1, lean=0.08, rubble=5),
     "LilyPads": lily_pads,
 }
+
+# Visual-only counterparts of the original colliding strata. Keep the original props available: the
+# world and server collision continue using those meshes while these are installed over their renderers.
+PROPS.update({
+    "Cliff1Natural": _formation("Cliff1Natural", 51, 12.0, 5.0, 7.0, 4, 5, 0.22, 0.3, weathered=True),
+    "Cliff2Natural": _formation("Cliff2Natural", 52, 10.0, 5.5, 9.5, 3, 6, 0.25, 0.35, weathered=True),
+    "Outcrop1Natural": _formation("Outcrop1Natural", 53, 6.5, 5.0, 2.6, 3, 3, 0.3, 0.2, rubble=3, weathered=True),
+    "Outcrop2Natural": _formation("Outcrop2Natural", 54, 4.8, 4.4, 3.8, 2, 3, 0.3, 0.15, rubble=3, weathered=True),
+    "RockSpireNatural": _formation("RockSpireNatural", 57, 3.2, 3.0, 9.5, 1, 7, 0.4, 0.1, lean=0.08, rubble=5, weathered=True),
+})

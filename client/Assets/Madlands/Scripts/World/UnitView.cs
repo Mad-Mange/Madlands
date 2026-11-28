@@ -17,6 +17,7 @@ namespace Madlands.Client
         private const float LungeSeconds = 0.25f;
         /// <summary>How far the body turns toward a diagonal run (WoW turns the legs, we turn the model).</summary>
         private const float DiagonalTurn = 40f;
+        private const float ConversationTurnSpeed = 270f;
         /// <summary>
         /// A staff out of a cast or swing stands like a walking staff, whatever the clip does with the hand: its top
         /// leans this far forward and out to the side, clear of the arm (degrees), and it is held this far up its
@@ -53,10 +54,15 @@ namespace Madlands.Client
         private float _turnTarget;
         private float _speed;
         private bool _moving;
+        private bool _runningForward;
+        private float _runWeaponStability;
         private float _stepTimer;
         private readonly uint[] _gear = new uint[VisibleGear.Count];
         private bool _backward;
         private float _staffUpright;
+        private Transform _conversationTarget;
+        private float _conversationTurn;
+        private bool _conversationMovement;
 
         public EntityGuid Guid { get; private set; }
         public uint DisplayId { get; private set; }
@@ -64,6 +70,9 @@ namespace Madlands.Client
         public bool IsLocal { get; private set; }
         public Vector3 HeadPosition => transform.position + Vector3.up * (Shape.Height + 0.35f);
         public Vector3 ChestPosition => transform.position + Vector3.up * (Shape.Height * (_dead ? 0.2f : 0.6f));
+
+        /// <summary>Visually faces the local player while this NPC's dialog is open; null restores its server facing.</summary>
+        public void SetConversationTarget(Transform target) => _conversationTarget = IsLocal ? null : target;
 
         public static UnitView Attach(GameObject go, EntityGuid guid, uint displayId, bool isLocal)
         {
@@ -135,7 +144,9 @@ namespace Madlands.Client
         public void SetMovement(MovementFlags flags, Vec3 velocity)
         {
             bool airborne = (flags & MovementFlags.Airborne) != 0;
-            if (airborne && !_airborne && velocity.Y > 0f) _animator?.PlayJump();
+            _conversationMovement = airborne || (flags & MovementFlags.MoveMask) != 0 || velocity.HorizontalLengthSquared > 0.04f;
+            if (airborne && !_airborne && velocity.Y > 0f && !_dead) _animator?.PlayJump();
+            else if (!airborne && _airborne) _animator?.StopJump();
             _airborne = airborne;
             if (_animator == null) return;
 
@@ -149,6 +160,7 @@ namespace Madlands.Client
             float speed = new Vector2(velocity.X, velocity.Z).magnitude;
             if (forward || backward || left || right) _sitting = false;
             _moving = !airborne && (forward || backward || left || right) && speed > 0.5f;
+            _runningForward = _moving && forward && !walking;
             _speed = speed;
             _backward = backward;
 
@@ -201,7 +213,9 @@ namespace Madlands.Client
                 hand.localPosition = new Vector3(right ? Shape.Radius + 0.08f : -(Shape.Radius + 0.08f), 0.95f, 0.12f);
                 hand.localRotation = Quaternion.Euler(right ? 20f : 0f, 0f, 0f);
             }
-            ItemVisuals.Create(hand, displayId);
+            // The painted warrior's left-hand rig is mirrored relative to the scripted races' grip.
+            bool flipShield = !right && DisplayId == EntityVisuals.WarriorDisplay && ItemVisuals.IsShield(displayId);
+            ItemVisuals.Create(hand, displayId, flipShield);
         }
 
         /// <summary>Stands a held staff upright, and brings it into the hands' line for casts and swings.</summary>
@@ -256,6 +270,20 @@ namespace Madlands.Client
             if (blade.sqrMagnitude < 1e-4f || wanted.sqrMagnitude < 1e-4f) return;
             float angle = Vector3.SignedAngle(blade, wanted, axis) * Mathf.SmoothStep(0f, 1f, _weaponForward);
             forearm.rotation = Quaternion.AngleAxis(angle, axis) * forearm.rotation;
+        }
+
+        /// <summary>Keep a one-handed sword steadier while the warrior runs, without overriding attacks or casts.</summary>
+        private void SteadyWarriorWeapon()
+        {
+            bool sword = _mainDisplay == ItemVisuals.Shortsword || _mainDisplay == ItemVisuals.Cutlass;
+            bool supported = DisplayId == EntityVisuals.WarriorDisplay && sword && _mainHand != null && _model.RightHand != null;
+            bool steady = supported && _runningForward && !_dead && !_sitting && !_animator.ActionPlaying;
+            _runWeaponStability = Mathf.MoveTowards(_runWeaponStability, steady ? 1f : 0f, Time.deltaTime * 8f);
+            if (!supported || _dead || _sitting || _animator.ActionPlaying || _runWeaponStability <= 0f) return;
+            // Rotate the hand with the weapon around the grip; the arm still follows the running animation.
+            var direction = (Quaternion.AngleAxis(WeaponOut, _visual.up) * _visual.forward + Vector3.down * 0.2f).normalized;
+            var correction = Quaternion.FromToRotation(_mainHand.up, direction);
+            _model.RightHand.rotation = Quaternion.Slerp(Quaternion.identity, correction, 0.65f * _runWeaponStability) * _model.RightHand.rotation;
         }
 
         /// <summary>
@@ -351,14 +379,16 @@ namespace Madlands.Client
         {
 
             if (_moving && !_dead) Footsteps();
+            UpdateConversationTurn(Time.deltaTime);
 
             if (_animator != null)
             {
                 _animator.Update(Time.deltaTime);
                 _turn = Mathf.MoveTowards(_turn, _dead ? 0f : _turnTarget, Time.deltaTime * 240f);
-                _visual.localRotation = Quaternion.Euler(0f, _turn, 0f);
+                _visual.localRotation = Quaternion.Euler(0f, _turn + _conversationTurn, 0f);
                 HoldArmsOut();
                 TurnWeaponForward();
+                SteadyWarriorWeapon();
                 HoldStaff();
                 RelaxBareHand();
                 // A cloak trails behind a running unit (less when it backs up), airborne too.
@@ -376,7 +406,26 @@ namespace Madlands.Client
             _deadBlend = Mathf.MoveTowards(_deadBlend, _dead ? 1f : 0f, Time.deltaTime * 3f);
             _visual.localScale = new Vector3(1f + punch, 1f - punch * 0.5f, 1f + punch);
             _visual.localPosition = new Vector3(0f, -_deadBlend * Shape.Radius * 0.3f, forward);
-            _visual.localRotation = Quaternion.Euler(0f, 0f, _deadBlend * 90f);
+            _visual.localRotation = Quaternion.Euler(0f, _conversationTurn, _deadBlend * 90f);
+        }
+
+        private void UpdateConversationTurn(float deltaTime)
+        {
+            // Combat, movement and death keep their normal orientation and animations.
+            if (_dead || _casting || _conversationMovement || (_animator != null && _animator.ActionPlaying))
+            {
+                _conversationTurn = 0f;
+                return;
+            }
+            float target = 0f;
+            if (_conversationTarget != null)
+            {
+                var direction = _conversationTarget.position - transform.position;
+                direction.y = 0f;
+                if (direction.sqrMagnitude > 0.0001f)
+                    target = Mathf.DeltaAngle(transform.eulerAngles.y, Quaternion.LookRotation(direction).eulerAngles.y);
+            }
+            _conversationTurn = Mathf.MoveTowardsAngle(_conversationTurn, target, ConversationTurnSpeed * deltaTime);
         }
     }
 }

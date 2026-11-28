@@ -148,6 +148,17 @@ namespace Madlands.Client
 
         public bool PlayJump() => Play(_fullBody, "Jump", loop: false, hold: false);
 
+        /// <summary>Land immediately into locomotion, even if the jump clip has not finished yet.</summary>
+        public void StopJump()
+        {
+            // A death can have replaced the jump in the same layer; landing must never cancel it.
+            if (_fullBody.Playing >= 0 && _fullBody.Inputs.TryGetValue("Jump", out int jump) && _fullBody.Playing == jump)
+            {
+                _fullBody.Clips[jump].Pause();
+                _fullBody.Playing = -1;
+            }
+        }
+
         /// <summary>Falls over and stays down; <paramref name="instantly"/> skips to the end (already dead on spawn).</summary>
         public bool PlayDeath(bool instantly)
         {

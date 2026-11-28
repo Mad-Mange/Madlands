@@ -347,6 +347,7 @@ namespace Madlands.Client
             _inventory.PlaceCharacter(_vendor.IsOpen || _loot.IsOpen || _quests.DialogOpen);
             _vendor.Update();
             _quests.Update();
+            network.WorldView.SetConversationNpc(_quests.DialogOpen ? _quests.Npc : _vendor.Npc);
             _characterButton.EnableInClassList("active", _inventory.CharacterOpen);
             _bagsButton.EnableInClassList("active", _inventory.BagsOpen);
             _questsButton.EnableInClassList("active", _quests.LogOpen);

@@ -19,6 +19,7 @@ public sealed class ItemSystem
     private readonly ItemReceived _receivedMsg = new();
     private readonly ActionFailed _failedMsg = new();
     private readonly VendorInventory _vendorMsg = new();
+    private readonly Cooldown _cooldownMsg = new();
 
     public ItemSystem(MapInstance map)
     {
@@ -109,10 +110,59 @@ public sealed class ItemSystem
             Fail(player, ActionError.LevelTooLow, item.RequiredLevel);
             return;
         }
+        if (item.Id == HomeStone.ItemId)
+        {
+            UseHomeStone(player, castId, now);
+            return;
+        }
         // Use spells are instant (content validation), so success means the spell went off.
         if (_map.Spells.TryCast(player, item.UseSpell, target, castId, now, ignoreKnown: true) != CastResult.Success) return;
         player.Inventory.Consume(pos);
         Flush(player);
+    }
+
+    /// <summary>Give existing and new characters a stone if there is room; an innkeeper can replace it later.</summary>
+    public bool EnsureHomeStone(Player player)
+    {
+        if (player.Inventory.Count(HomeStone.ItemId) > 0) return true;
+        return Content.Items.TryGetValue(HomeStone.ItemId, out var stone) && player.Inventory.Add(stone, 1) == 1;
+    }
+
+    /// <summary>Restore the server-enforced cooldown and its client indicator after reconnecting.</summary>
+    public void SendHomeCooldown(Player player, long now)
+    {
+        long remaining = Math.Clamp(player.HomeReadyAtMs - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 0, HomeStone.CooldownMs);
+        if (remaining == 0) return;
+        player.Cooldowns[HomeStone.SpellId] = now + remaining;
+        _cooldownMsg.SpellId = HomeStone.SpellId;
+        _cooldownMsg.DurationMs = (int)remaining;
+        _map.Send(player, _cooldownMsg);
+    }
+
+    private void UseHomeStone(Player player, byte castId, long now)
+    {
+        // Cross-map transfers are not implemented yet; do not consume the cooldown if the home is elsewhere.
+        ushort homeMap = player.HomeMapId == 0 ? (ushort)player.Race.StartMap : player.HomeMapId;
+        if (homeMap != _map.MapId)
+        {
+            Fail(player, ActionError.CantDoThatNow);
+            return;
+        }
+        long remaining = Math.Max(0, player.HomeReadyAtMs - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        if (remaining > 0) player.Cooldowns[HomeStone.SpellId] = now + remaining;
+        _map.Spells.TryCast(player, HomeStone.SpellId, player.Guid, castId, now, ignoreKnown: true);
+    }
+
+    /// <summary>Complete the validated instant Return Home spell.</summary>
+    public void CompleteHomeStone(Player player, long now)
+    {
+        player.HomeReadyAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + HomeStone.CooldownMs;
+        player.NextSaveAtMs = 0;
+        // Also enforce this for GM god mode, which normally suppresses spell cooldowns.
+        SendHomeCooldown(player, now);
+        var destination = player.HomeMapId == 0 ? _map.Map.SpawnPosition : player.HomePosition;
+        var yaw = player.HomeMapId == 0 ? _map.Map.SpawnYaw : player.HomeYaw;
+        _map.Teleport(player, destination, yaw, now);
     }
 
     // ------------------------------------------------------------------ vendors

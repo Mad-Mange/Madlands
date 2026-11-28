@@ -173,6 +173,8 @@ public enum SpellEffectType
     ApplyAura,
     /// <summary>Restores min..max of the effect's power type.</summary>
     Energize,
+    /// <summary>Return the caster to their chosen inn (the Home Stone's self effect).</summary>
+    ReturnHome,
 }
 
 public enum EffectTargets

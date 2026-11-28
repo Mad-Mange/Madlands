@@ -92,12 +92,15 @@ internal static class AccountAdminChecks
         var quests = new[] { new QuestRecord(3, false, new[] { 5 }), new QuestRecord(7, false, new[] { 2, 0, 1 }), new QuestRecord(1, true, Array.Empty<int>()) };
         Assert.Null(c.LastSavedUtc);
         var auras = new[] { new AuraRecord(305, 6, 1, 1_500_000), new AuraRecord(505, 1, 1, 90_000) };
-        await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12, 123_456, true, items, quests, RestedXp: 640, Auras: auras));
+        await db.SaveCharacterAsync(new CharacterSnapshot(c.Id, 1, -12.5f, 30.25f, 99f, 3.1f, 7, 345, 80, 12, 123_456, true, items, quests, RestedXp: 640, Auras: auras,
+            HomeMapId: 1, HomeX: 5, HomeY: 6, HomeZ: 7, HomeYaw: 1.5f, HomeReadyAtMs: 1_800_000_000_000));
         var loaded = await db.LoadCharacterAsync(account, c.Id);
         Assert.Equal((-12.5f, 30.25f, 99f, 3.1f, (byte)7), (loaded!.X, loaded.Y, loaded.Z, loaded.Yaw, loaded.Level));
         Assert.Equal((345, (int?)80, (int?)12, 123_456L, true), (loaded.Xp, loaded.Health, loaded.Power, loaded.Money, loaded.StarterKit));
         // Rested experience, and when it was saved (the time away is measured from it).
         Assert.Equal(640, loaded.RestedXp);
+        Assert.Equal(((ushort)1, 5f, 6f, 7f, 1.5f, 1_800_000_000_000L),
+            (loaded.HomeMapId, loaded.HomeX, loaded.HomeY, loaded.HomeZ, loaded.HomeYaw, loaded.HomeReadyAtMs));
         Assert.InRange(loaded.LastSavedUtc!.Value, DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow.AddMinutes(5));
 
         var data = await db.LoadCharacterDataAsync(c.Id);

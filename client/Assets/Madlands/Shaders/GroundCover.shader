@@ -2,7 +2,8 @@
 // The colors come from the mesh's vertex colors (sRGB, baked from the Blender materials: a terrain detail may
 // only have one material). Everything is lit as if it lay flat, by the sun with its shadows, the ambient light
 // and the fog, so it takes the light like the ground it grows from and its roots melt into it; both sides of
-// a blade look the same. It sways in the wind, more the higher it stands off the ground. Casts no shadows:
+// a blade look the same. Vertex alpha controls wind (zero for stones); vegetation sways more the higher it
+// stands off the ground. Casts no shadows:
 // thousands of blades would only cost.
 Shader "Madlands/GroundCover"
 {
@@ -26,14 +27,14 @@ Shader "Madlands/GroundCover"
         CBUFFER_END
 
         // Gusts rolling across the land: two waves at angles to each other, offset by where the piece stands.
-        float3 Sway(float3 positionOS)
+        float3 Sway(float3 positionOS, half windWeight)
         {
             float3 positionWS = TransformObjectToWorld(positionOS);
             float3 origin = TransformObjectToWorld(float3(0, 0, 0));
             float t = _Time.y * _WindSpeed;
             float gust = sin(t + origin.x * 0.21 + origin.z * 0.13) * 0.6 + sin(t * 1.7 + origin.x * 0.05 - origin.z * 0.31) * 0.4;
             float up = max(0, positionWS.y - origin.y);
-            positionWS.xz += float2(0.8, 0.45) * gust * _Wind * up * (0.5 + up);
+            positionWS.xz += float2(0.8, 0.45) * gust * _Wind * windWeight * up * (0.5 + up);
             return positionWS;
         }
         ENDHLSL
@@ -71,7 +72,7 @@ Shader "Madlands/GroundCover"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 Varyings output;
-                output.positionWS = Sway(input.positionOS.xyz);
+                output.positionWS = Sway(input.positionOS.xyz, input.color.a);
                 output.positionCS = TransformWorldToHClip(output.positionWS);
                 output.color = SRGBToLinear(input.color.rgb);
                 output.fog = ComputeFogFactor(output.positionCS.z);
@@ -102,13 +103,14 @@ Shader "Madlands/GroundCover"
             struct Attributes
             {
                 float4 positionOS : POSITION;
+                half4 color : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             float4 Vert(Attributes input) : SV_POSITION
             {
                 UNITY_SETUP_INSTANCE_ID(input);
-                return TransformWorldToHClip(Sway(input.positionOS.xyz));
+                return TransformWorldToHClip(Sway(input.positionOS.xyz, input.color.a));
             }
 
             half4 Frag() : SV_Target

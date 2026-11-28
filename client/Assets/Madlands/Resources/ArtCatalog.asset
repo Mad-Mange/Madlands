@@ -149,8 +149,12 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: aee0b3287a067b941b5a058cc138cda6, type: 3}
   - Name: Cliff1
     Prefab: {fileID: 919132149155446097, guid: de8e57dad7a80364182f4ba975a112c3, type: 3}
+  - Name: Cliff1Natural
+    Prefab: {fileID: 919132149155446097, guid: 3fe2c1f814680c44c891963212fa2bad, type: 3}
   - Name: Cliff2
     Prefab: {fileID: 919132149155446097, guid: 929c1c7bace24e343b1064756d34d42e, type: 3}
+  - Name: Cliff2Natural
+    Prefab: {fileID: 919132149155446097, guid: 54f5fd024976d8245b8d723659fd1f6f, type: 3}
   - Name: Cottage
     Prefab: {fileID: 919132149155446097, guid: c75c18fa992194b45ad546da300ae4c9, type: 3}
   - Name: Crate
@@ -181,8 +185,12 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 3f0209c763b29ca458e8cdcb9a1e1179, type: 3}
   - Name: Outcrop1
     Prefab: {fileID: 919132149155446097, guid: 0f2eb432d327e3a49a8aba94e434f140, type: 3}
+  - Name: Outcrop1Natural
+    Prefab: {fileID: 919132149155446097, guid: c7f0c477693c81043aaccf759b744b19, type: 3}
   - Name: Outcrop2
     Prefab: {fileID: 919132149155446097, guid: bc2b9f6906e5f0b48aed6ceab7a45e7e, type: 3}
+  - Name: Outcrop2Natural
+    Prefab: {fileID: 919132149155446097, guid: 6cf07c44e480bae4797f33b40d3b5721, type: 3}
   - Name: Palisade
     Prefab: {fileID: 919132149155446097, guid: ed97c20c581e0014ea66c5579a97d619, type: 3}
   - Name: Reeds
@@ -193,6 +201,8 @@ MonoBehaviour:
     Prefab: {fileID: 919132149155446097, guid: 8d7e268279500af43a5bde5601853999, type: 3}
   - Name: RockSpire
     Prefab: {fileID: 919132149155446097, guid: d0936ea0a36ac9640b226bb30f6bcd06, type: 3}
+  - Name: RockSpireNatural
+    Prefab: {fileID: 919132149155446097, guid: 0844d070d94248f4a9002fccd68ae7e6, type: 3}
   - Name: RuinPillar
     Prefab: {fileID: 919132149155446097, guid: 4b31d2432f945a84c9ec813f8b502d6c, type: 3}
   - Name: RuinWall
@@ -268,26 +278,26 @@ MonoBehaviour:
     Name: Sit
     Clip: {fileID: 4724887770959480615, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
-    Name: Walk
-    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
-  - Set: HumanoidAnimations
     Name: StrafeLeft
     Clip: {fileID: 5222996160109349777, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidAnimations
     Name: StrafeRight
     Clip: {fileID: 8061675120238250040, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
+  - Set: HumanoidAnimations
+    Name: Walk
+    Clip: {fileID: 8349542763059015795, guid: 9ac31807a136f524589dc842a3daefa2, type: 3}
   - Set: HumanoidMotions
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: A_TPose
+    Clip: {fileID: 4996995007976980875, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Idle
-    Clip: {fileID: -8945691123924629249, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Attack1H
+    Clip: {fileID: 8394281637225282446, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Jump
-    Clip: {fileID: 1079665108409675491, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Attack2H
+    Clip: {fileID: -8883204860901330040, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Run
-    Clip: {fileID: -7551964380084998518, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: AttackUnarmed
+    Clip: {fileID: -3425250077569541093, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
     Name: CastLoop
     Clip: {fileID: -8265580086071612076, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
@@ -301,17 +311,17 @@ MonoBehaviour:
     Name: Fall
     Clip: {fileID: -5025487861805838091, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: A_TPose
-    Clip: {fileID: 4996995007976980875, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Attack1H
-    Clip: {fileID: 8394281637225282446, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: Attack2H
-    Clip: {fileID: -8883204860901330040, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Jump
+    Clip: {fileID: 1079665108409675491, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: HumanoidMotions
-    Name: AttackUnarmed
-    Clip: {fileID: -3425250077569541093, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
+    Name: Run
+    Clip: {fileID: -7551964380084998518, guid: 63e30cc0e04414b47ad50ee9de2631ac, type: 3}
   - Set: Bear
     Name: Walk
     Clip: {fileID: 8349542763059015795, guid: 2d2148d4137730f4f967328c961faf6a, type: 3}
@@ -334,20 +344,26 @@ MonoBehaviour:
     Name: Death
     Clip: {fileID: -982115091633673366, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
   - Set: Boar
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Set: Boar
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
   - Set: Boar
     Name: Hit
     Clip: {fileID: -5578746458225771231, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
   - Set: Boar
-    Name: Idle
-    Clip: {fileID: -8945691123924629249, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
-  - Set: Boar
     Name: Walk
     Clip: {fileID: 8349542763059015795, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
   - Set: Boar
     Name: Run
     Clip: {fileID: -7551964380084998518, guid: e7e0db3b6cacd4c47ad9d4780c3fd8e2, type: 3}
+  - Set: Crocodile
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
+  - Set: Crocodile
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
   - Set: Crocodile
     Name: Run
     Clip: {fileID: -7551964380084998518, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
@@ -360,12 +376,6 @@ MonoBehaviour:
   - Set: Crocodile
     Name: Attack
     Clip: {fileID: 4723146814002874508, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
-  - Set: Crocodile
-    Name: Idle
-    Clip: {fileID: -8945691123924629249, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
-  - Set: Crocodile
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 3abbdd3bedf55fe4196712d35c8617e6, type: 3}
   - Set: Gloomjaw
     Name: Death
     Clip: {fileID: -982115091633673366, guid: 2cab8747a8b879448b85f2d62e2742e4, type: 3}
@@ -421,14 +431,17 @@ MonoBehaviour:
     Name: Run
     Clip: {fileID: -7551964380084998518, guid: 169e49fadda6e1c4694ec0c1361862ac, type: 3}
   - Set: TrainingDummy
-    Name: Hit
-    Clip: {fileID: -5578746458225771231, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
-  - Set: TrainingDummy
     Name: Idle
     Clip: {fileID: -8945691123924629249, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
   - Set: TrainingDummy
+    Name: Hit
+    Clip: {fileID: -5578746458225771231, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
+  - Set: TrainingDummy
     Name: Death
     Clip: {fileID: -982115091633673366, guid: 0f17941adda4778429ef182f4c0e54e7, type: 3}
+  - Set: Wolf
+    Name: Idle
+    Clip: {fileID: -8945691123924629249, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
   - Set: Wolf
     Name: Hit
     Clip: {fileID: -5578746458225771231, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
@@ -444,9 +457,6 @@ MonoBehaviour:
   - Set: Wolf
     Name: Death
     Clip: {fileID: -982115091633673366, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
-  - Set: Wolf
-    Name: Idle
-    Clip: {fileID: -8945691123924629249, guid: 1349b8834a4180845a1bddfa10eb3f74, type: 3}
   Icons:
   - Name: IconGoods
     Texture: {fileID: 2800000, guid: 04b8fbda5f0ad8d42bd241dacdd77a93, type: 3}
@@ -532,6 +542,8 @@ MonoBehaviour:
     Texture: {fileID: 2800000, guid: ad18769829c4e404fbb8395d541d4b8e, type: 3}
   - Name: ItemIcon5004
     Texture: {fileID: 2800000, guid: 603e6a2b952ddf74b9d644464ead88de, type: 3}
+  - Name: ItemIcon6001
+    Texture: {fileID: 2800000, guid: c2b75bf99c3b1eb4fa26614b88da204c, type: 3}
   - Name: ItemKnightShield
     Texture: {fileID: 2800000, guid: 7c0d979ae4699fd44986614b821536b9, type: 3}
   - Name: ItemOrnateMace

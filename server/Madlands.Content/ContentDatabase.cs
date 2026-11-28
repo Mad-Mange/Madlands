@@ -76,6 +76,7 @@ public sealed class ContentDatabase
         if (creature.Gossip.Length > 0) flags |= NpcFlags.Gossip;
         if (_questsByGiver.ContainsKey(creature.Id) || _questsByEnder.ContainsKey(creature.Id)) flags |= NpcFlags.QuestGiver;
         if (creature.Vendor.Count > 0) flags |= NpcFlags.Vendor;
+        if (creature.Role == NpcRole.Innkeeper) flags |= NpcFlags.Innkeeper;
         return flags;
     }
 

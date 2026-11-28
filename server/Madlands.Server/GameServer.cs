@@ -281,7 +281,8 @@ public sealed class GameServer : IDisposable
         var quests = player.Quests.Active.Select(q => new QuestRecord(q.Quest.Id, false, q.Counts.ToArray()))
             .Concat(player.Quests.Rewarded.Select(id => new QuestRecord(id, true, Array.Empty<int>()))).ToArray();
         return new CharacterSnapshot(player.CharacterId, player.Map?.MapId ?? 0, p.X, p.Y, p.Z, player.Movement.Yaw, player.Level,
-            player.Xp, player.Health, player.Power, player.Inventory.Money, player.StarterKitGiven, items, quests, (int)player.RestedXp, auras);
+            player.Xp, player.Health, player.Power, player.Inventory.Money, player.StarterKitGiven, items, quests, (int)player.RestedXp, auras,
+            player.HomeMapId, player.HomePosition.X, player.HomePosition.Y, player.HomePosition.Z, player.HomeYaw, player.HomeReadyAtMs);
     }
 
     // ------------------------------------------------------------------ messages
@@ -558,6 +559,10 @@ public sealed class GameServer : IDisposable
             GmLevel = _options.GmAll ? Math.Max(1, result.GmLevel) : result.GmLevel,
             StarterKitGiven = character.StarterKit,
             RestedXp = Math.Max(0, character.RestedXp),
+            HomeMapId = character.HomeMapId,
+            HomePosition = new Vec3(character.HomeX, character.HomeY, character.HomeZ),
+            HomeYaw = character.HomeYaw,
+            HomeReadyAtMs = character.HomeReadyAtMs,
         };
         // Rest built up while logged out: at full speed if that was in a village, slower elsewhere.
         if (character.LastSavedUtc is { } saved)
@@ -569,6 +574,7 @@ public sealed class GameServer : IDisposable
         var data = result.Data ?? CharacterData.Empty;
         RestoreItemsAndQuests(player, content, character, data);
         if (!player.StarterKitGiven) map.Items.GiveStartingItems(player);
+        map.Items.EnsureHomeStone(player);
         player.Inventory.ClearChanges();
         // Long buffs kept over logging out (their time stood still), unless the character logged out dead.
         if (!wasDead)
@@ -602,6 +608,7 @@ public sealed class GameServer : IDisposable
         map.Spells.SendSpellbook(player);
         map.SendPlayerStats(player);
         map.Items.SendAll(player);
+        map.Items.SendHomeCooldown(player, now);
         map.Quests.SendLog(player);
         map.SendOwnAuras(player, now);
         _gm.OnEnteredWorld(player);

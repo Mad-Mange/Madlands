@@ -1,6 +1,8 @@
 {
   "$schema": "schemas/items.schema.json",
   "items": [
+    { "id": 6001, "name": "Home Stone", "icon": 6001, "quality": "common", "class": "quest", "useSpell": 509,
+      "description": "Use: Return to your home. Speak to an innkeeper to choose your home. 15 min cooldown." },
     {
       "id": 1001, "name": "Worn Shortsword", "icon": 1001, "displayId": 2001, "quality": "common",
       "class": "weapon", "slot": "mainHand", "buyPrice": 45, "sellPrice": 11,

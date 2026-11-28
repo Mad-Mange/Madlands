@@ -48,7 +48,7 @@ namespace Madlands.Client
             { Cleaver, "Cleaver" }, { KnightShield, "KnightShield" }, { WardenShield, "WardenShield" },
         };
 
-        public static void Create(Transform hand, uint displayId)
+        public static void Create(Transform hand, uint displayId, bool flipShield = false)
         {
             var catalog = ArtCatalog.Instance;
             var prefab = catalog != null && Models.TryGetValue(displayId, out var name) ? catalog.GetModel(name) : null;
@@ -57,7 +57,7 @@ namespace Madlands.Client
                 var item = Object.Instantiate(prefab, hand, false).transform;
                 // A shield's face looks along the arm in the T-pose, so a hanging arm held it flat like a tray:
                 // turned about the grip, it faces out from the forearm.
-                if (IsShield(displayId)) item.localRotation = Quaternion.AngleAxis(ShieldTurn, Vector3.up) * item.localRotation;
+                if (IsShield(displayId)) item.localRotation = Quaternion.AngleAxis(flipShield ? -ShieldTurn : ShieldTurn, Vector3.up) * item.localRotation;
                 return;
             }
             switch (displayId)

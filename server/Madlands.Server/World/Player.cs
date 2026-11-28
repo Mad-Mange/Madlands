@@ -50,6 +50,12 @@ public sealed class Player : Unit
     public ILootSource? Looting;
     /// <summary>The class's starting items were handed out (first login).</summary>
     public bool StarterKitGiven;
+    /// <summary>Home destination; zero map means the default starting location.</summary>
+    public ushort HomeMapId;
+    public Vec3 HomePosition;
+    public float HomeYaw;
+    /// <summary>UTC Unix milliseconds when the home stone can next be used.</summary>
+    public long HomeReadyAtMs;
     public long NextExploreCheckMs;
 
     /// <summary>Entities this player's client currently has spawned (its area of interest).</summary>
