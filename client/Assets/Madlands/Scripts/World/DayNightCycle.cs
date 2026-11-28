@@ -15,9 +15,17 @@ namespace Madlands.Client
         private Material _originalSkybox, _skybox;
         private float _skyExposure;
         private bool _initialized;
+        private float? _fixedPhase;
 
         public static float PhaseAt(double serverTimeMs) =>
             (float)(((serverTimeMs / 1000.0 / DayLengthSeconds + 1.0 / 3.0) % 1.0 + 1.0) % 1.0);
+
+        /// <summary>Stops the clock at an hour (0-24; screenshots, -timeofday); null follows the server again.</summary>
+        public void FixHour(float? hour)
+        {
+            _fixedPhase = hour.HasValue ? Mathf.Repeat(hour.Value, 24f) / 24f : (float?)null;
+            if (_initialized) ApplyPhase(_fixedPhase ?? PhaseAt(_client != null ? _client.ServerTimeMs : 0));
+        }
 
         public void Initialize(GameClient client)
         {
@@ -45,12 +53,12 @@ namespace Madlands.Client
                 RenderSettings.skybox = _skybox;
             }
             _initialized = true;
-            ApplyPhase(PhaseAt(_client != null ? _client.ServerTimeMs : 0));
+            ApplyPhase(_fixedPhase ?? PhaseAt(_client != null ? _client.ServerTimeMs : 0));
         }
 
         private void Update()
         {
-            if (_initialized && _client != null) ApplyPhase(PhaseAt(_client.ServerTimeMs));
+            if (_initialized && _client != null) ApplyPhase(_fixedPhase ?? PhaseAt(_client.ServerTimeMs));
         }
 
         /// <param name="phase">0 is midnight, 0.5 is noon.</param>

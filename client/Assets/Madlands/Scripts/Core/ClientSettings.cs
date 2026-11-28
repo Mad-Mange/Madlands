@@ -13,7 +13,8 @@ namespace Madlands.Client
     ///   Madlands.exe -autoconnect -screenshot shot.png -screenshotdelay 6 -quitafter 10
     ///   -screenshotburst 8 (eight pictures a quarter second apart, shot_1.png .. shot_8.png: spell effects in flight)
     ///   Framing for screenshots: -campitch 30 -camdistance 25 -camyaw 40 -hidedebug, -face 180 (turns the character
-    ///   to that compass direction once in the world: 0 north, 90 east)
+    ///   to that compass direction once in the world: 0 north, 90 east), -timeofday 22 (the world's clock stands at
+    ///   that hour, 0-24, instead of following the server: night pictures)
     ///   Combat checks: -class shardmage (new characters), -exec ".level 5;.spawn 2" (chat lines
     ///   sent after entering the world), -autofight (targets the nearest enemy and fights it)
     ///   Item and quest checks: -open bags,character,questlog (windows), -talkto "Old Tamsin" (opens
@@ -53,6 +54,8 @@ namespace Madlands.Client
         public bool HideDebug;
         /// <summary>A compass direction (degrees) to turn the character to once in the world (-face).</summary>
         public float? FaceYaw;
+        /// <summary>The hour the world's clock stands at (-timeofday, 0-24) instead of following the server: pictures.</summary>
+        public float? TimeOfDay;
         /// <summary>No HUD at all (-hidehud): for pictures of the world.</summary>
         public bool HideHud;
         /// <summary>Test runs: run forward from the start (-autorun), holding sprint (-sprint).</summary>
@@ -156,6 +159,10 @@ namespace Madlands.Client
                         break;
                     case "-face" when next != null:
                         s.FaceYaw = float.Parse(next, CultureInfo.InvariantCulture);
+                        i++;
+                        break;
+                    case "-timeofday" when next != null:
+                        s.TimeOfDay = Mathf.Repeat(float.Parse(next, CultureInfo.InvariantCulture), 24f);
                         i++;
                         break;
                     case "-hidedebug":
